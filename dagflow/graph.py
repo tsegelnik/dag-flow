@@ -1,23 +1,24 @@
 from __future__ import print_function
-from dagflow import tools
-from dagflow.node_group import NodeGroup
+from .tools import undefinedgraph, undefinedname
+from .node_group import NodeGroup
+
 
 class Graph(NodeGroup):
-    _context_graph = tools.undefinedgraph
-    _label         = tools.undefinedname
+    _context_graph = undefinedgraph
+    _label = undefinedname
 
     def __init__(self, *args, **kwargs):
-        NodeGroup.__init__(self, *args)
-        self._label = kwargs.pop('label', tools.undefinedname)
+        super().__init__(*args)
+        self._label = kwargs.pop("label", undefinedname)
 
         if kwargs:
-            raise Exception('Unparsed arguments: {!s}'.format(kwargs))
+            raise RuntimeError("Unparsed arguments: {!s}".format(kwargs))
 
     def add_node(self, name, **kwargs):
-        from dagflow import node
-        NodeClass = kwargs.pop('nodeclass', node.FunctionNode)
-        newnode = NodeClass(name, graph=self, **kwargs)
-        return newnode
+        from .node import FunctionNode
+
+        NodeClass = kwargs.pop("nodeclass", FunctionNode)
+        return NodeClass(name, graph=self, **kwargs)
 
     def label(self, *args, **kwargs):
         if self._label:
@@ -35,7 +36,7 @@ class Graph(NodeGroup):
         pass
 
     def print(self):
-        print('Graph with {} nodes'.format(len(self._nodes)))
+        print(f"Graph with {len(self._nodes)} nodes")
         for node in self._nodes:
             node.print()
 
@@ -48,4 +49,4 @@ class Graph(NodeGroup):
         return self
 
     def __exit__(self, *args, **kwargs):
-        Graph._context_graph = tools.undefinedgraph
+        Graph._context_graph = undefinedgraph

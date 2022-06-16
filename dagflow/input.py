@@ -1,25 +1,32 @@
 from __future__ import print_function
-from dagflow import tools
-from dagflow.shift import rshift, lshift
-from dagflow.edges import EdgeContainer
 
-class Input(object):
-    _name  = tools.undefinedname
-    _node  = tools.undefinednode
-    _output = tools.undefinedoutput
-    _corresponding_output = tools.undefinedoutput
+from .tools import StopNesting, undefinedname, undefinednode, undefinedoutput
 
-    def __init__(self, name, node, corresponding_output=tools.undefinedoutput):
+from .edges import EdgeContainer
+from .output import Output
+from .shift import lshift, rshift
+from .tools import IsIterable
+
+# TODO: Why there are two outputs and how it works?
+
+
+class Input:
+    _name = undefinedname
+    _node = undefinednode
+    _output = undefinedoutput
+    _corresponding_output = undefinedoutput
+
+    def __init__(self, name, node, corresponding_output=undefinedoutput):
         self._name = name
-        self._node=node
-        self._corresponding_output=corresponding_output
+        self._node = node
+        self._corresponding_output = corresponding_output
 
     def __str__(self):
-        return '->| {name}'.format(name=self._name)
+        return "->| {self._name}"
 
     def _set_output(self, output):
         if self._output:
-            raise Exception('Output is already connected to the input')
+            raise RuntimeError("Output is already connected to the input")
 
         self._output = output
 
@@ -56,7 +63,7 @@ class Input(object):
     @property
     def data(self):
         if not self._output:
-            raise Exception('May not read data from disconnected input')
+            raise RuntimeError("May not read data from disconnected input")
         return self._output.data
 
     @property
@@ -83,24 +90,49 @@ class Input(object):
         if disconnected_only and self.connected():
             return iter(tuple())
 
-        raise tools.StopNesting(self)
+        raise StopNesting(self)
 
     def _deep_iter_corresponding_outputs(self):
         if self._corresponding_output:
-            raise tools.StopNesting(self._corresponding_output)
+            raise StopNesting(self._corresponding_output)
 
         return iter(tuple())
 
-    __lshift__  = lshift
-    __rrshift__ = lshift
+    def __rshift__(self, other):
+        """
+        self >> other
+        """
+        if IsIterable(other):
+            return rshift(self, other)
+        self._set_output(
+            other if isinstance(other, Output) else Output(other, self.node)
+        )
+        self.node.outputs += self._output
+        return self._output
+
+    def __lshift__(self, other):
+        """
+        self << other
+        """
+        if IsIterable(other):
+            return lshift(self, other)
+
+    def __rrshift__(self, other):
+        """
+        other >> self
+        """
+        if IsIterable(other):
+            return lshift(self, other)
+
 
 class Inputs(EdgeContainer):
     _datatype = Input
+
     def __init__(self, iterable=None):
         EdgeContainer.__init__(self, iterable)
 
     def __str__(self):
-        return '->[{}]|'.format(len(self))
+        return f"->[{len(self)}]|"
 
     def _deep_iter_inputs(self, disconnected_only=False):
         for input in self:
@@ -112,4 +144,3 @@ class Inputs(EdgeContainer):
     def _touch(self):
         for input in self:
             input.touch()
-

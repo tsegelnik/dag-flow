@@ -1,12 +1,14 @@
 from __future__ import print_function
 from collections import OrderedDict, Iterable
-from dagflow.tools import IsIterable, nth
+from .tools import IsIterable, nth
 
-class EdgeContainer(object):
+
+class EdgeContainer:
     _dict = None
     _datatype = None
+
     def __init__(self, iterable=None):
-        object.__init__(self)
+        super().__init__()
         self._dict = OrderedDict()
 
         if iterable:
@@ -19,14 +21,17 @@ class EdgeContainer(object):
             return self
 
         if self._datatype and not isinstance(value, self._datatype):
-            raise Exception('The container does not support this type of data')
+            raise RuntimeError(
+                    f"The type {type(value)} of the data doesn't correpond "
+                    f"to {self._datatype}!"
+            )
 
         name = value.name
         if not name:
-            raise Exception('May not add objects with undefined name')
+            raise RuntimeError("May not add objects with undefined name")
 
         if name in self._dict:
-            raise Exception('May not add duplicated items')
+            raise RuntimeError("May not add duplicated items")
 
         self._dict[name] = value
 
@@ -42,7 +47,7 @@ class EdgeContainer(object):
         elif isinstance(key, Iterable):
             return tuple(self.__getitem__(k) for k in key)
 
-        raise Exception('Unsupported key type: '+type(key).__name__)
+        raise TypeError(f"Unsupported key type: {type(key).__name__}")
 
     def __getattr__(self, name):
         return self._dict[name]

@@ -1,24 +1,28 @@
 from __future__ import print_function
-from dagflow import tools
-from dagflow.shift import rshift, lshift
-from dagflow.edges import EdgeContainer
+
 import itertools as I
 
-class Output(object):
-    _name   = tools.undefinedname
-    _node   = tools.undefinednode
+from .edges import EdgeContainer
+from .shift import lshift, rshift
+from .tools import (StopNesting, undefineddata, undefineddatatype,
+                    undefinedname, undefinednode)
+
+
+class Output:
+    _name = undefinedname
+    _node = undefinednode
     _inputs = None
 
-    _data   = tools.undefineddata
-    _datatype = tools.undefineddatatype
+    _data = undefineddata
+    _datatype = undefineddatatype
 
     def __init__(self, name, node):
         self._name = name
-        self._node=node
-        self._inputs=[]
+        self._node = node
+        self._inputs = []
 
     def __str__(self):
-        return '|-> {name}'.format(name=self._name)
+        return f"|-> {self._name}"
 
     @property
     def name(self):
@@ -54,10 +58,10 @@ class Output(object):
 
     @data.setter
     def data(self, data):
-        if self._datatype is tools.undefineddatatype:
+        if self._datatype is undefineddatatype:
             self._datatype = type(data)
-        elif self._datatype!=type(data):
-            raise Exception('Unable to change existing data type')
+        elif self._datatype != type(data):
+            raise TypeError("Unable to change existing data type")
 
         self._data = data
         return data
@@ -72,12 +76,12 @@ class Output(object):
 
     def _connect_to(self, input):
         if input in self._inputs:
-            raise Exception('Output is already connected to the input')
+            raise RuntimeError("Output is already connected to the input")
 
         self._inputs.append(input)
         input._set_output(self)
 
-    __rshift__  = rshift
+    __rshift__ = rshift
     __rlshift__ = lshift
 
     def taint(self, force=False):
@@ -97,13 +101,14 @@ class Output(object):
         if disconnected_only and self.connected():
             return iter(tuple())
 
-        raise tools.StopNesting(self)
+        raise StopNesting(self)
 
     def _deep_iter_corresponding_outputs(self):
-        raise tools.StopNesting(self)
+        raise StopNesting(self)
 
     def repeat(self):
         return RepeatedOutput(self)
+
 
 class RepeatedOutput(object):
     def __init__(self, output):
@@ -112,13 +117,15 @@ class RepeatedOutput(object):
     def __iter__(self):
         return I.cycle((self._output,))
 
-    __rshift__  = rshift
+    __rshift__ = rshift
     __rlshift__ = lshift
+
 
 class Outputs(EdgeContainer):
     _datatype = Output
+
     def __init__(self, iterable=None):
-        EdgeContainer.__init__(self, iterable)
+        super().__init__(iterable)
 
     def __str__(self):
-        return '|[{}]->'.format(len(self))
+        return f"|[{len(self)}]->"

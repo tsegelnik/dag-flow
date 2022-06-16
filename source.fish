@@ -1,2 +1,2 @@
 set -x --prepend PYTHONPATH (pwd)/
-gitprompt
+fish_git_prompt

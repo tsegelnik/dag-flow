@@ -1,11 +1,9 @@
 from __future__ import print_function
-from dagflow.tools import IsIterable, StopNesting
+from .tools import IsIterable, StopNesting
 
 def get_proper_iterator(obj, methodname, onerror, **kwargs):
     if methodname:
-        method=getattr(obj, methodname, None)
-
-        if method:
+        if method := getattr(obj, methodname, None):
             return method(**kwargs)
 
     if isinstance(obj, dict):
@@ -13,14 +11,13 @@ def get_proper_iterator(obj, methodname, onerror, **kwargs):
     elif IsIterable(obj):
         return obj
 
-    raise Exception('Do not know how to get iterator for {}'.format(onerror))
+    raise RuntimeError(f'Do not know how to get iterator for {onerror}')
 
 def deep_iterate(obj, methodname, onerror, **kwargs):
     try:
         iterable = get_proper_iterator(obj, methodname, onerror, **kwargs)
         for element in iterable:
-            for sub in deep_iterate(element, methodname, onerror, **kwargs):
-                yield sub
+            yield from deep_iterate(element, methodname, onerror, **kwargs)
     except StopNesting as sn:
         yield sn.object
 
