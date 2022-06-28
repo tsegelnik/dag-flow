@@ -1,16 +1,17 @@
 from __future__ import print_function
 
 from .graph import Graph
-from .tools import (
-    undefinedname,
-    undefinedgraph,
-    undefinedfunction,
-    undefinedoutput,
-)
 from .input import Input
 from .legs import Legs
 from .output import Output
-from .tools import IsIterable
+from .shift import lshift, rshift
+from .tools import (
+    IsIterable,
+    undefinedfunction,
+    undefinedgraph,
+    undefinedname,
+    undefinedoutput,
+)
 
 
 class Node(Legs):
@@ -38,30 +39,24 @@ class Node(Legs):
             missing_input_handler=kwargs.pop("missing_input_handler", None),
         )
         self._name = name
-
         if newfcn := kwargs.pop("fcn", None):
             self._fcn = newfcn
-
         self._fcn_chain = []
         self.graph = kwargs.pop("graph", None)
         if not self.graph:
             self.graph = Graph.current()
         self._label = kwargs.pop("label", undefinedname)
-
         for opt in ("immediate", "auto_freeze", "frozen"):
             value = kwargs.pop(opt, None)
             if value is None:
                 continue
             setattr(self, f"_{opt}", bool(value))
-
         if input := kwargs.pop("input", None):
             self._add_input(input)
-
         if output := kwargs.pop("output", None):
             self._add_output(output)
-
         if kwargs:
-            raise ValueError("Unparsed arguments: {!s}".format(kwargs))
+            raise ValueError(f"Unparsed arguments: {kwargs}!")
 
     @property
     def name(self):
@@ -113,9 +108,7 @@ class Node(Legs):
             for input in self.inputs:
                 if input.invalid:
                     return
-
         self._invalid = invalid
-
         for output in self.outputs:
             output.invalid = invalid
 
@@ -142,47 +135,51 @@ class Node(Legs):
         if self._label:
             kwargs.setdefault("name", self._name)
             return self._label.format(*args, **kwargs)
-
         return self._label
-
-    def _add_input(self, name, corresponding_output=undefinedoutput):
+    
+    def _add_input(self, name, iinput=undefinedoutput):
         if IsIterable(name):
             return tuple(self._add_input(n) for n in name)
-
         if name in self.inputs:
             raise ValueError(f"Input {self.name}.{name} already exist!")
-        inp = Input(name, self, corresponding_output)
+        inp = Input(name, self, iinput)
         self.inputs += inp
-
         if self._graph:
             self._graph._add_input(inp)
-
         return inp
 
     def _add_output(self, name):
         if IsIterable(name):
             return tuple(self._add_output(n) for n in name)
-
+        if isinstance(name, Output):
+            if name.name in self.outputs:
+                raise RuntimeError(
+                    f"Output {self.name}.{name.name} already exist!"
+                )
+            if name.node:
+                raise RuntimeError(
+                    f"Output {name.name} is connected to another node {self.name}!"
+                )
+            name._node = self
+            self.outputs += name
+            if self._graph:
+                self._graph._add_output(name)
+            return name
         if name in self.outputs:
             raise RuntimeError(f"Output {self.name}.{name} already exist!")
-
         output = Output(name, self)
         self.outputs += output
-
         if self._graph:
             self._graph._add_output(output)
-
         return output
 
     def _add_pair(self, iname, oname):
         output = self._add_output(oname)
-        inp = self._add_input(iname, output)
-        return inp, output
+        return self._add_input(iname, output), output
 
     def _wrap_fcn(self, wrap_fcn, *other_fcns):
         prev_fcn = self._stash_fcn()
         self._fcn = self._make_wrap(prev_fcn, wrap_fcn)
-
         if other_fcns:
             self._wrap_fcn(*other_fcns)
 
@@ -204,15 +201,12 @@ class Node(Legs):
     def touch(self, force=False):
         if self._frozen:
             return
-
         if not self._tainted and not force:
             return
-
         ret = self.eval()
         self._tainted = False  # self._always_tainted
         if self._auto_freeze:
             self._frozen = True
-
         return ret
 
     def _eval(self):
@@ -223,34 +217,27 @@ class Node(Legs):
     def eval(self):
         if self.invalid:
             raise RuntimeError("Unable to evaluate invalid transformation")
-
         self._evaluating = True
-
         try:
             ret = self._eval()
-        except:
+        except Exception:
             self._evaluating = False
             raise
-
         self._evaluating = False
         return ret
 
     def freeze(self):
         if self._frozen:
             return
-
         if self._tainted:
             raise RuntimeError("Unable to freeze tainted node")
-
         self._frozen = True
         self._frozen_tainted = False
 
     def unfreeze(self):
         if not self._frozen:
             return
-
         self._frozen = False
-
         if self._frozen_tainted:
             self._frozen_tainted = False
             self.taint(force=True)
@@ -258,17 +245,13 @@ class Node(Legs):
     def taint(self, force=False):
         if self._tainted and not force:
             return
-
         if self._frozen:
             self._frozen_tainted = True
             return
-
         self._tainted = True
-
         ret = self.touch() if self._immediate else None
         for output in self.outputs:
             output.taint(force)
-
         return ret
 
     def print(self):
@@ -326,14 +309,13 @@ class FunctionNode(Node):
     def _make_wrap(self, prev_fcn, wrap_fcn):
         def wrapped_fcn(node, inputs, outputs):
             wrap_fcn(prev_fcn, node, inputs, outputs)
-
         return wrapped_fcn
 
     def _eval(self):
         self._evaluating = True
         try:
             ret = self._fcn(self, self.inputs, self.outputs)
-        except:
+        except Exception:
             self._evaluating = False
             raise
         self._evaluating = False
@@ -365,5 +347,4 @@ class StaticNode(Node):
     def _make_wrap(self, prev_fcn, wrap_fcn):
         def wrapped_fcn():
             wrap_fcn(prev_fcn, self, self.inputs, self.outputs)
-
         return wrapped_fcn

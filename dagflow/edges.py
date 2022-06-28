@@ -1,5 +1,8 @@
 from __future__ import print_function
-from collections import OrderedDict, Iterable
+
+from collections import OrderedDict
+from collections.abc import Iterable
+
 from .tools import IsIterable, nth
 
 
@@ -8,9 +11,7 @@ class EdgeContainer:
     _datatype = None
 
     def __init__(self, iterable=None):
-        super().__init__()
         self._dict = OrderedDict()
-
         if iterable:
             self.__iadd__(iterable)
 
@@ -19,22 +20,17 @@ class EdgeContainer:
             for v in value:
                 self.__iadd__(v)
             return self
-
         if self._datatype and not isinstance(value, self._datatype):
             raise RuntimeError(
-                    f"The type {type(value)} of the data doesn't correpond "
-                    f"to {self._datatype}!"
+                f"The type {type(value)} of the data doesn't correpond "
+                f"to {self._datatype}!"
             )
-
         name = value.name
         if not name:
             raise RuntimeError("May not add objects with undefined name")
-
         if name in self._dict:
             raise RuntimeError("May not add duplicated items")
-
         self._dict[name] = value
-
         return self
 
     def __getitem__(self, key):
@@ -46,7 +42,6 @@ class EdgeContainer:
             return tuple(self._dict.values())[key]
         elif isinstance(key, Iterable):
             return tuple(self.__getitem__(k) for k in key)
-
         raise TypeError(f"Unsupported key type: {type(key).__name__}")
 
     def __getattr__(self, name):

@@ -1,33 +1,47 @@
-from __future__ import print_function
+from __future__ import annotations, print_function
 
-from .tools import StopNesting, undefinedname, undefinednode, undefinedoutput
+from typing import TYPE_CHECKING, Union
 
 from .edges import EdgeContainer
 from .output import Output
 from .shift import lshift, rshift
-from .tools import IsIterable
+from .tools import IsIterable, StopNesting, Undefined
 
-# TODO: Why there are two outputs and how it works?
+if TYPE_CHECKING:
+    from .node import Node
 
 
 class Input:
-    _name = undefinedname
-    _node = undefinednode
-    _output = undefinedoutput
-    _corresponding_output = undefinedoutput
-
-    def __init__(self, name, node, corresponding_output=undefinedoutput):
+    def __init__(
+        self,
+        name: Union[str, Undefined] = Undefined("name"),
+        node: Union[Node, Undefined] = Undefined("Node"),
+        iinput: Union[Input, Undefined] = Undefined("iinput"),
+        output: Union[Output, Undefined] = Undefined("output"),
+    ):
         self._name = name
         self._node = node
-        self._corresponding_output = corresponding_output
+        self._iinput = iinput
+        self._output = output
 
     def __str__(self):
-        return "->| {self._name}"
+        return f"->| {self._name}"
 
-    def _set_output(self, output):
-        if self._output:
-            raise RuntimeError("Output is already connected to the input")
+    def __repr__(self):
+        return self.__str__()
 
+    def _set_iinput(self, iinput: Input, force: bool = False):
+        if self.iinput and not force:
+            raise RuntimeError(
+                f"The iinput is already setted to {self.iinput}!"
+            )
+        self._iinput = iinput
+
+    def _set_output(self, output: Output, force: bool = False):
+        if self.connected() and not force:
+            raise RuntimeError(
+                f"The output is already setted to {self.output}!"
+            )
         self._output = output
 
     @property
@@ -43,12 +57,12 @@ class Input:
         return self._node
 
     @property
-    def output(self):
-        return self._output
+    def iinput(self):
+        return self._iinput
 
     @property
     def invalid(self):
-        """Checks validity of the input data"""
+        """Checks validity of the output data"""
         return self._output.invalid
 
     @invalid.setter
@@ -57,17 +71,21 @@ class Input:
         self._node.invalid = invalid
 
     @property
-    def corresponding_output(self):
-        return self._corresponding_output
+    def output(self):
+        return self._output
 
     @property
     def data(self):
-        if not self._output:
-            raise RuntimeError("May not read data from disconnected input")
+        if not self.connected():
+            raise RuntimeError("May not read data from disconnected output!")
         return self._output.data
 
     @property
     def datatype(self):
+        if not self.connected():
+            raise RuntimeError(
+                "May not read datatype from disconnected output!"
+            )
         return self._output.datatype
 
     @property
@@ -83,53 +101,34 @@ class Input:
     def connected(self):
         return bool(self._output)
 
-    def disconnected(self):
-        return not bool(self._output)
-
     def _deep_iter_inputs(self, disconnected_only=False):
         if disconnected_only and self.connected():
             return iter(tuple())
-
         raise StopNesting(self)
 
-    def _deep_iter_corresponding_outputs(self):
-        if self._corresponding_output:
-            raise StopNesting(self._corresponding_output)
-
+    def _deep_iter_iinputs(self):
+        if self._iinput:
+            raise StopNesting(self._iinput)
         return iter(tuple())
-
-    def __rshift__(self, other):
-        """
-        self >> other
-        """
-        if IsIterable(other):
-            return rshift(self, other)
-        self._set_output(
-            other if isinstance(other, Output) else Output(other, self.node)
-        )
-        self.node.outputs += self._output
-        return self._output
 
     def __lshift__(self, other):
         """
         self << other
         """
-        if IsIterable(other):
-            return lshift(self, other)
+        return lshift(self, other)
 
     def __rrshift__(self, other):
         """
         other >> self
         """
-        if IsIterable(other):
-            return lshift(self, other)
+        return lshift(self, other)
 
 
 class Inputs(EdgeContainer):
     _datatype = Input
 
     def __init__(self, iterable=None):
-        EdgeContainer.__init__(self, iterable)
+        super().__init__(iterable)
 
     def __str__(self):
         return f"->[{len(self)}]|"
@@ -138,8 +137,11 @@ class Inputs(EdgeContainer):
         for input in self:
             if disconnected_only and input.connected():
                 continue
-
             yield input
+
+    def _deep_iter_iinputs(self):
+        for iinput in self:
+            yield iinput.iinput
 
     def _touch(self):
         for input in self:

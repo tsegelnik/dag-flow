@@ -5,7 +5,7 @@ from dagflow.graph import Graph
 from dagflow.graphviz import GraphDot
 from dagflow.wrappers import *
 
-from dagflow.printl import printl, set_prefix_function, current_level
+from dagflow.printl import set_prefix_function, current_level
 set_prefix_function(lambda: '{:<2d} '.format(current_level()),)
 
 def test_01():
@@ -24,6 +24,7 @@ def test_01():
 
     _, final = n3._add_pair('i1', 'o1')
 
+    print(f"{out1=}, {out2=}")
     (out1, out2) >> n2
     out3 >> n3
 

@@ -1,6 +1,7 @@
 from __future__ import print_function
-from .tools import undefinedgraph, undefinedname
+
 from .node_group import NodeGroup
+from .tools import undefinedgraph, undefinedname
 
 
 class Graph(NodeGroup):
@@ -16,9 +17,7 @@ class Graph(NodeGroup):
 
     def add_node(self, name, **kwargs):
         from .node import FunctionNode
-
-        NodeClass = kwargs.pop("nodeclass", FunctionNode)
-        return NodeClass(name, graph=self, **kwargs)
+        return kwargs.pop("nodeclass", FunctionNode)(name, graph=self, **kwargs)
 
     def label(self, *args, **kwargs):
         if self._label:

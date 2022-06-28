@@ -1,8 +1,10 @@
 from __future__ import print_function
 
 import input_extra
-from .shift import rshift, lshift
-from .tools import StopNesting
+from .output import Output, Outputs
+from .input import Inputs
+from .tools import IsIterable, StopNesting
+from .shift import lshift, rshift
 
 
 class Legs:
@@ -10,10 +12,6 @@ class Legs:
 
     def __init__(self, inputs=None, outputs=None, missing_input_handler=None):
         self._missing_input_handler = missing_input_handler
-
-        from .input import Inputs
-        from .output import Outputs
-
         self.inputs = Inputs(inputs)
         self.outputs = Outputs(outputs)
 
@@ -33,18 +31,14 @@ class Legs:
                 sethandler.node = self
         else:
             sethandler = input_extra.MissingInputFail(self)
-
         self.__missing_input_handler = sethandler
 
     def __getitem__(self, key):
         if isinstance(key, (int, slice, str)):
             return self.outputs[key]
-
-        if len(key) != 2:
-            raise ValueError("Legs key should be of length 2")
-
+        if (y := len(key)) != 2:
+            raise ValueError(f"Legs key should be of length 2, but given {y}!")
         ikey, okey = key
-
         if ikey and okey:
             if isinstance(ikey, (int, str)):
                 ikey = (ikey,)
@@ -55,17 +49,17 @@ class Legs:
                 self.outputs[okey],
                 missing_input_handler=self.__missing_input_handler,
             )
-
         if ikey:
             return self.inputs[ikey]
-
         if okey:
             return self.outputs[okey]
-
         raise ValueError("Empty keys specified")
 
-    def __str__(self):
+    def __str__(self) -> str:
         return f"->[{len(self.inputs)}],[{len(self.outputs)}]->"
+
+    def __repr__(self) -> str:
+        return self.__str__()
 
     def _deep_iter_outputs(self):
         return iter(self.outputs)
@@ -73,13 +67,12 @@ class Legs:
     def _deep_iter_inputs(self, disconnected_only=False):
         return iter(self.inputs)
 
-    def _deep_iter_corresponding_outputs(self):
+    def _deep_iter_iinputs(self):
         raise StopNesting(self)
 
     def print(self):
         for i, input in enumerate(self.inputs):
             print(i, input)
-
         for i, output in enumerate(self.outputs):
             print(i, output)
 

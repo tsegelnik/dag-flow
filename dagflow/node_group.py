@@ -1,7 +1,7 @@
 from __future__ import print_function
 from dagflow import shift
 
-class NodeGroup(object):
+class NodeGroup:
     _nodes  = None
 
     def __init__(self, *args):

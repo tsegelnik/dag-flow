@@ -1,6 +1,7 @@
 from __future__ import print_function
-from collections import Iterable
-import itertools as I
+
+from collections.abc import Iterable
+from itertools import islice
 
 
 class StopNesting(Exception):
@@ -14,7 +15,7 @@ def IsIterable(obj):
 
 def nth(iterable, n):
     "Returns the nth item or a default value"
-    return next(I.islice(iterable, n, None)) if n > -1 else tuple(iterable)[n]
+    return next(islice(iterable, n, None)) if n > -1 else tuple(iterable)[n]
 
 
 class Undefined:
@@ -44,5 +45,6 @@ undefineddatatype = Undefined("datatype")
 undefinednode = Undefined("node")
 undefinedgraph = Undefined("graph")
 undefinedoutput = Undefined("output")
+undefinedinput = Undefined("intput")
 undefinedleg = Undefined("leg")
 undefinedfunction = Undefined("function")

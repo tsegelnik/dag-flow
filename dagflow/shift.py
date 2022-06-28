@@ -1,14 +1,9 @@
 from __future__ import print_function
 
-import itertools as I
+from itertools import zip_longest
 
 from .tools import undefinedleg
-from .iterators import iter_corresponding_outputs, iter_inputs, iter_outputs
-
-# Python2 compatibility
-zip_longest = getattr(I, "zip_longest", None)
-if not zip_longest:
-    zip_longest = getattr(I, "izip_longest")
+from .iterators import iter_iinputs, iter_inputs, iter_outputs
 
 _rshift_scope_id = 0
 
@@ -30,22 +25,15 @@ def rshift(outputs, inputs):
     ):
         if not output:
             raise RuntimeError("Unable to connect mismatching lists")
-
         if not inp:
             missing_input_handler = getattr(
                 inputs, "_missing_input_handler", lambda *args, **kwargs: None
             )
             if not (inp := missing_input_handler(scope=scope_id)):
                 break
-
         output._connect_to(inp)
-
-    corresponding_outputs = tuple(iter_corresponding_outputs(inputs))
-
-    if len(corresponding_outputs) == 1:
-        return corresponding_outputs[0]
-
-    return corresponding_outputs
+    iinputs = tuple(iter_iinputs(inputs))
+    return iinputs[0] if len(iinputs) == 1 else iinputs
 
 
 def lshift(inputs, outputs):
