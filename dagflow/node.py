@@ -46,11 +46,9 @@ class Node(Legs):
         if not self.graph:
             self.graph = Graph.current()
         self._label = kwargs.pop("label", undefinedname)
-        for opt in ("immediate", "auto_freeze", "frozen"):
-            value = kwargs.pop(opt, None)
-            if value is None:
-                continue
-            setattr(self, f"_{opt}", bool(value))
+        for opt in {"immediate", "auto_freeze", "frozen"}:
+            if value := kwargs.pop(opt, None):
+                setattr(self, f"_{opt}", bool(value))
         if input := kwargs.pop("input", None):
             self._add_input(input)
         if output := kwargs.pop("output", None):
@@ -125,11 +123,11 @@ class Node(Legs):
         self._graph = graph
         self._graph.register_node(self)
 
-    def __call__(self, name):
+    def __call__(self, name, iinput=undefinedoutput):
         for inp in self.inputs:
             if inp.name == name:
                 return inp
-        return self._add_input(name)
+        return self._add_input(name, iinput)
 
     def label(self, *args, **kwargs):
         if self._label:
@@ -220,9 +218,9 @@ class Node(Legs):
         self._evaluating = True
         try:
             ret = self._eval()
-        except Exception:
+        except Exception as exc:
             self._evaluating = False
-            raise
+            raise exc
         self._evaluating = False
         return ret
 
@@ -260,7 +258,6 @@ class Node(Legs):
         )
         for i, input in enumerate(self.inputs):
             print("  ", i, input)
-
         for i, output in enumerate(self.outputs):
             print("  ", i, output)
 
@@ -315,9 +312,9 @@ class FunctionNode(Node):
         self._evaluating = True
         try:
             ret = self._fcn(self, self.inputs, self.outputs)
-        except Exception:
+        except Exception as exc:
             self._evaluating = False
-            raise
+            raise exc
         self._evaluating = False
         return ret
 

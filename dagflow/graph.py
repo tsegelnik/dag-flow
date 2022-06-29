@@ -11,7 +11,6 @@ class Graph(NodeGroup):
     def __init__(self, *args, **kwargs):
         super().__init__(*args)
         self._label = kwargs.pop("label", undefinedname)
-
         if kwargs:
             raise RuntimeError("Unparsed arguments: {!s}".format(kwargs))
 

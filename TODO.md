@@ -4,10 +4,14 @@
 ## Graph `<-> dagflow`
 
 - [x] Input renaming: `output -> input`, `corresponding_output -> output`
-- [ ] Automatic creation of outputs is *restricted*
-- [ ] Parentheses operator `()` as getter `[]` of inputs, but with creation
+- [x] Automatic creation of outputs is **restricted**
+- [x] Parentheses operator `()` as getter `[]` of inputs, but with creation
 of the input, instead of `KeyError`
-- [ ] Implementing of flexible shift operators `>>` and `<<`
+- [ ] Implementing of flexible shift operators `>>` and `<<` or *using current*?
+- [ ] Implement `hooks`
+- [ ] Fix bug with creation of new nodes via decorator:
+only works with a single instance, the graph holds only a new instance
+and forget old ones!
 
 ## Transformations
 

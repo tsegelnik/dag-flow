@@ -24,20 +24,20 @@ class Input:
         self._iinput = iinput
         self._output = output
 
-    def __str__(self):
+    def __str__(self) -> str:
         return f"->| {self._name}"
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return self.__str__()
 
-    def _set_iinput(self, iinput: Input, force: bool = False):
+    def _set_iinput(self, iinput: Input, force: bool = False) -> None:
         if self.iinput and not force:
             raise RuntimeError(
                 f"The iinput is already setted to {self.iinput}!"
             )
         self._iinput = iinput
 
-    def _set_output(self, output: Output, force: bool = False):
+    def _set_output(self, output: Output, force: bool = False) -> None:
         if self.connected() and not force:
             raise RuntimeError(
                 f"The output is already setted to {self.output}!"
@@ -45,19 +45,19 @@ class Input:
         self._output = output
 
     @property
-    def name(self):
+    def name(self) -> str:
         return self._name
 
     @name.setter
-    def name(self, name):
+    def name(self, name) -> None:
         self._name = name
 
     @property
-    def node(self):
+    def node(self) -> Node:
         return self._node
 
     @property
-    def iinput(self):
+    def iinput(self) -> Input:
         return self._iinput
 
     @property
@@ -95,10 +95,10 @@ class Input:
     def touch(self):
         return self._output.touch()
 
-    def taint(self, force=False):
+    def taint(self, force: bool = False) -> None:
         self._node.taint(force)
 
-    def connected(self):
+    def connected(self) -> bool:
         return bool(self._output)
 
     def _deep_iter_inputs(self, disconnected_only=False):
@@ -133,7 +133,7 @@ class Inputs(EdgeContainer):
     def __str__(self):
         return f"->[{len(self)}]|"
 
-    def _deep_iter_inputs(self, disconnected_only=False):
+    def _deep_iter_inputs(self, disconnected_only: bool = False):
         for input in self:
             if disconnected_only and input.connected():
                 continue
