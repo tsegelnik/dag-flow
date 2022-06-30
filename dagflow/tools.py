@@ -1,6 +1,7 @@
 from __future__ import print_function
 
 from collections.abc import Iterable
+from collections import UserDict
 from itertools import islice
 
 
@@ -31,20 +32,35 @@ class Undefined:
     def __bool__(self):
         return False
 
-    def __nonzero__(self):
-        """Python2 compatibility"""
-        return False
-
     def __call__(self, *args, **kwargs):
         pass
 
 
-undefinedname = Undefined("name")
-undefineddata = Undefined("data")
-undefineddatatype = Undefined("datatype")
-undefinednode = Undefined("node")
-undefinedgraph = Undefined("graph")
-undefinedoutput = Undefined("output")
-undefinedinput = Undefined("intput")
-undefinedleg = Undefined("leg")
-undefinedfunction = Undefined("function")
+class UndefinedDict(UserDict):
+    def __bool__(self):
+        return False
+
+    def __call__(self, arg):
+        if arg not in self.data:
+            self.data[arg] = Undefined(arg)
+        return self.data[arg]
+
+
+undefined = UndefinedDict(
+    {
+        key: Undefined(key)
+        for key in {
+            "name",
+            "data",
+            "datatype",
+            "node",
+            "graph",
+            "output",
+            "input",
+            "iinput",
+            "label",
+            "function",
+            "leg",
+        }
+    }
+)

@@ -5,20 +5,14 @@ from .input import Input
 from .legs import Legs
 from .output import Output
 from .shift import lshift, rshift
-from .tools import (
-    IsIterable,
-    undefinedfunction,
-    undefinedgraph,
-    undefinedname,
-    undefinedoutput,
-)
+from .tools import IsIterable, Undefined
 
 
 class Node(Legs):
-    _name = undefinedname
-    _label = undefinedname
-    _graph = undefinedgraph
-    _fcn = undefinedfunction
+    _name = Undefined("name")
+    _label = Undefined("label")
+    _graph = Undefined("graph")
+    _fcn = Undefined("function")
     _fcn_chain = None
 
     # Taintflag and status
@@ -45,7 +39,7 @@ class Node(Legs):
         self.graph = kwargs.pop("graph", None)
         if not self.graph:
             self.graph = Graph.current()
-        self._label = kwargs.pop("label", undefinedname)
+        self._label = kwargs.pop("label", Undefined("label"))
         for opt in {"immediate", "auto_freeze", "frozen"}:
             if value := kwargs.pop(opt, None):
                 setattr(self, f"_{opt}", bool(value))
@@ -123,7 +117,7 @@ class Node(Legs):
         self._graph = graph
         self._graph.register_node(self)
 
-    def __call__(self, name, iinput=undefinedoutput):
+    def __call__(self, name, iinput=Undefined("iinput")):
         for inp in self.inputs:
             if inp.name == name:
                 return inp
@@ -135,7 +129,7 @@ class Node(Legs):
             return self._label.format(*args, **kwargs)
         return self._label
     
-    def _add_input(self, name, iinput=undefinedoutput):
+    def _add_input(self, name, iinput=Undefined("iinput")):
         if IsIterable(name):
             return tuple(self._add_input(n) for n in name)
         if name in self.inputs:

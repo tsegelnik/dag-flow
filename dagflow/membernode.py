@@ -2,11 +2,11 @@ from __future__ import print_function
 
 from .graph import Graph
 from .node import Node
-from .tools import undefinedgraph
+from .tools import undefined
 
 
 class MemberNodesHolder:
-    _graph = undefinedgraph
+    _graph = undefined("graph")
 
     def __init__(self, graph=None):
         self.graph = graph

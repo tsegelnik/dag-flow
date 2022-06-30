@@ -4,22 +4,15 @@ from itertools import cycle
 
 from .edges import EdgeContainer
 from .shift import lshift, rshift
-from .tools import (
-    StopNesting,
-    undefineddata,
-    undefineddatatype,
-    undefinedname,
-    undefinednode,
-)
+from .tools import StopNesting, undefined
 
 
 class Output:
-    _name = undefinedname
-    _node = undefinednode
+    _name = undefined("name")
+    _node = undefined("node")
     _inputs = None
-
-    _data = undefineddata
-    _datatype = undefineddatatype
+    _data = undefined("data")
+    _datatype = undefined("datatype")
 
     def __init__(self, name, node):
         self._name = name
@@ -66,7 +59,7 @@ class Output:
 
     @data.setter
     def data(self, data):
-        if self._datatype is undefineddatatype:
+        if self._datatype is undefined("datatype"):
             self._datatype = type(data)
         elif self._datatype != type(data):
             raise TypeError("Unable to change existing data type")
@@ -75,6 +68,8 @@ class Output:
 
     @property
     def datatype(self):
+        if self._datatype is undefined("datatype"):
+            self._datatype = type(self.data)
         return self._datatype
 
     @property
@@ -84,22 +79,15 @@ class Output:
     def _connect_to(self, input):
         if input in self._inputs:
             raise RuntimeError("Output is already connected to the input")
-
         self._inputs.append(input)
         input._set_output(self)
         return input
 
-    __rshift__ = rshift
-    __rlshift__ = lshift
+    def __rshift__(self, other):
+        return rshift(self, other)
 
-    #def __rshift__(self, other):
-    #    from .input import Input
-    #    from .node import Node
-    #    if isinstance(other, Input):
-    #        return self._connect_to(other)
-    #    elif isinstance(other, Node):
-    #        return other._add_input(self)
-    #    return rshift(self, other)
+    def __rlshift__(self, other):
+        return lshift(self, other)
 
     def taint(self, force=False):
         for input in self._inputs:
@@ -130,8 +118,11 @@ class RepeatedOutput:
     def __iter__(self):
         return cycle((self._output,))
 
-    __rshift__ = rshift
-    __rlshift__ = lshift
+    def __rshift__(self, other):
+        return rshift(self, other)
+
+    def __rlshift__(self, other):
+        return lshift(self, other)
 
 
 class Outputs(EdgeContainer):

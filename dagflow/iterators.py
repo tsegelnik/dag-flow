@@ -7,8 +7,6 @@ def get_proper_iterator(obj, methodname, onerror, **kwargs):
     if methodname:
         if method := getattr(obj, methodname, None):
             return method(**kwargs)
-        # TODO: do we need exception?
-        #raise RuntimeError(f"Cannot find the {obj}.{methodname}!")
     if isinstance(obj, dict):
         return obj.values()
     elif IsIterable(obj):

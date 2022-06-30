@@ -2,7 +2,7 @@ from __future__ import print_function
 
 from itertools import zip_longest
 
-from .tools import undefinedleg
+from .tools import undefined
 from .iterators import iter_iinputs, iter_inputs, iter_outputs
 
 _rshift_scope_id = 0
@@ -21,10 +21,10 @@ def rshift(outputs, inputs):
     for output, inp in zip_longest(
         iter_outputs(outputs),
         iter_inputs(inputs, True),
-        fillvalue=undefinedleg,
+        fillvalue=undefined("leg"),
     ):
         if not output:
-            raise RuntimeError("Unable to connect mismatching lists")
+            raise RuntimeError("Unable to connect mismatching lists!")
         if not inp:
             missing_input_handler = getattr(
                 inputs, "_missing_input_handler", lambda *args, **kwargs: None

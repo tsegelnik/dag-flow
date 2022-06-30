@@ -1,11 +1,11 @@
 from __future__ import annotations, print_function
 
-from typing import TYPE_CHECKING, Union
+from typing import TYPE_CHECKING, Iterator, Union
 
 from .edges import EdgeContainer
 from .output import Output
 from .shift import lshift, rshift
-from .tools import IsIterable, StopNesting, Undefined
+from .tools import IsIterable, StopNesting, Undefined, undefined
 
 if TYPE_CHECKING:
     from .node import Node
@@ -14,10 +14,10 @@ if TYPE_CHECKING:
 class Input:
     def __init__(
         self,
-        name: Union[str, Undefined] = Undefined("name"),
-        node: Union[Node, Undefined] = Undefined("Node"),
-        iinput: Union[Input, Undefined] = Undefined("iinput"),
-        output: Union[Output, Undefined] = Undefined("output"),
+        name: Union[str, Undefined] = undefined("name"),
+        node: Union[Node, Undefined] = undefined("node"),
+        iinput: Union[Input, Undefined] = undefined("iinput"),
+        output: Union[Output, Undefined] = undefined("output"),
     ):
         self._name = name
         self._node = node
@@ -133,16 +133,18 @@ class Inputs(EdgeContainer):
     def __str__(self):
         return f"->[{len(self)}]|"
 
-    def _deep_iter_inputs(self, disconnected_only: bool = False):
+    def _deep_iter_inputs(
+        self, disconnected_only: bool = False
+    ) -> Iterator[Input]:
         for input in self:
             if disconnected_only and input.connected():
                 continue
             yield input
 
-    def _deep_iter_iinputs(self):
+    def _deep_iter_iinputs(self) -> Iterator[Union[Input, Output]]:
         for iinput in self:
             yield iinput.iinput
 
-    def _touch(self):
+    def _touch(self) -> None:
         for input in self:
             input.touch()

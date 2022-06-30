@@ -15,12 +15,12 @@ and forget old ones!
 
 ## Transformations
 
-- [ ] Implementing of some simple transformations with only `args` in function:
+- [x] Implementing of some simple transformations with only `args` in function:
 `Sum`, `Product`, `Division`, ...
-- [ ] Implementing of some simple transformations with `args` and `kwargs`:
+- [x] Implementing of some simple transformations with `args` and `kwargs`:
 `WeightedSum` with `weight`, ...
+- [ ] Check the style of the implementation
 
 ## Tests
 
 - [ ] Test the graph workflow with transformations
-

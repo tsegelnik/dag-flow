@@ -1,16 +1,16 @@
 from __future__ import print_function
 
 from .node_group import NodeGroup
-from .tools import undefinedgraph, undefinedname
+from .tools import undefined
 
 
 class Graph(NodeGroup):
-    _context_graph = undefinedgraph
-    _label = undefinedname
+    _context_graph = undefined("graph")
+    _label = undefined("name")
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args)
-        self._label = kwargs.pop("label", undefinedname)
+        self._label = kwargs.pop("label", undefined("name"))
         if kwargs:
             raise RuntimeError("Unparsed arguments: {!s}".format(kwargs))
 
@@ -47,4 +47,4 @@ class Graph(NodeGroup):
         return self
 
     def __exit__(self, *args, **kwargs):
-        Graph._context_graph = undefinedgraph
+        Graph._context_graph = undefined("graph")
