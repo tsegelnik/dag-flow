@@ -1,18 +1,19 @@
 from __future__ import print_function
 
+from .exception import CriticalError
 from .graph import Graph
 from .input import Input
 from .legs import Legs
 from .output import Output
 from .shift import lshift, rshift
-from .tools import IsIterable, Undefined
+from .tools import IsIterable, undefined
 
 
 class Node(Legs):
-    _name = Undefined("name")
-    _label = Undefined("label")
-    _graph = Undefined("graph")
-    _fcn = Undefined("function")
+    _name = undefined("name")
+    _label = undefined("label")
+    _graph = undefined("graph")
+    _fcn = undefined("function")
     _fcn_chain = None
 
     # Taintflag and status
@@ -39,7 +40,7 @@ class Node(Legs):
         self.graph = kwargs.pop("graph", None)
         if not self.graph:
             self.graph = Graph.current()
-        self._label = kwargs.pop("label", Undefined("label"))
+        self._label = kwargs.pop("label", undefined("label"))
         for opt in {"immediate", "auto_freeze", "frozen"}:
             if value := kwargs.pop(opt, None):
                 setattr(self, f"_{opt}", bool(value))
@@ -117,7 +118,7 @@ class Node(Legs):
         self._graph = graph
         self._graph.register_node(self)
 
-    def __call__(self, name, iinput=Undefined("iinput")):
+    def __call__(self, name, iinput=undefined("iinput")):
         for inp in self.inputs:
             if inp.name == name:
                 return inp
@@ -128,8 +129,8 @@ class Node(Legs):
             kwargs.setdefault("name", self._name)
             return self._label.format(*args, **kwargs)
         return self._label
-    
-    def _add_input(self, name, iinput=Undefined("iinput")):
+
+    def _add_input(self, name, iinput=undefined("iinput")):
         if IsIterable(name):
             return tuple(self._add_input(n) for n in name)
         if name in self.inputs:
@@ -300,6 +301,7 @@ class FunctionNode(Node):
     def _make_wrap(self, prev_fcn, wrap_fcn):
         def wrapped_fcn(node, inputs, outputs):
             wrap_fcn(prev_fcn, node, inputs, outputs)
+
         return wrapped_fcn
 
     def _eval(self):
@@ -311,6 +313,35 @@ class FunctionNode(Node):
             raise exc
         self._evaluating = False
         return ret
+
+    def eval(self):
+        try:
+            self._check_eval()
+        except Exception as exc:
+            raise exc from CriticalError(
+                "Cannot evaluate the function due to the critical error!"
+            )
+        return self._eval()
+
+    def _add_input(self, name, iinput=undefined("iinput")):
+        try:
+            self._check_input(name, iinput)
+        except CriticalError as exc:
+            raise exc from CriticalError(
+                f"Cannot add the input ({name=}, {iinput=}) due to "
+                "critical error!"
+            )
+        except Exception as exc:
+            print(exc)
+        return super()._add_input(name, iinput)
+
+    def _check_input(self, name=None, iinput=None) -> bool:
+        """Checks a signature of the function at the input connection stage"""
+        return True
+
+    def _check_eval(self) -> bool:
+        """Checks a signature of the function at the evaluation stage"""
+        return True
 
 
 class StaticNode(Node):
@@ -338,4 +369,5 @@ class StaticNode(Node):
     def _make_wrap(self, prev_fcn, wrap_fcn):
         def wrapped_fcn():
             wrap_fcn(prev_fcn, self, self.inputs, self.outputs)
+
         return wrapped_fcn

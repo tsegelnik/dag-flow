@@ -2,12 +2,11 @@
 
 from __future__ import print_function
 
-from numpy import arange
-from numpy.random import randint
-
 from dagflow.graph import Graph
 from dagflow.graphviz import savegraph
-from dagflow.lib import Product, Sum, makeArray, WeightedSum
+from dagflow.lib import Product, Sum, WeightedSum, makeArray
+from numpy import arange
+from numpy.random import randint
 
 Array = makeArray(arange(3, dtype="d"))
 
@@ -56,6 +55,8 @@ with Graph() as graph:
 with Graph() as graph:
     (in1, in2, in3, in4) = (Array(name) for name in {"n1", "n2", "n3", "n4"})
     weight = makeArray((2, 3))("weight")
+    # The same result with other weight
+    # weight = makeArray(5)("weight")
     s = Sum("sum")
     ws = WeightedSum("weightedsum")
     m = Product("product")
@@ -63,6 +64,9 @@ with Graph() as graph:
     (in1, in2) >> s
     (in3, in4) >> ws
     weight >> ws("weight")
+    # TODO: check this issue
+    # The way below does not work, due to automatic input naming
+    # (in3, in4, weight) >> ws
     (s, ws) >> m
 
     print("Result:", m.outputs.result.data)

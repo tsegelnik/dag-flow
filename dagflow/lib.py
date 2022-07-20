@@ -1,5 +1,6 @@
 from itertools import zip_longest
 
+from .exception import CriticalError, UnconnectedInput
 from .input_extra import MissingInputAddOne
 from .node import FunctionNode
 from .node_deco import NodeClass
@@ -78,14 +79,19 @@ class WeightedSum(FunctionNode):
             if input.name in {"weight", "weights"}:
                 return input
 
-    def _fcn(self, _, inputs, outputs):
+    def _check_input(self, name, iinput=None):
+        if not self.weight and name not in {"weight", "weights"}:
+            raise UnconnectedInput("weight")
+
+    def _check_eval(self):
         if not self.weight:
-            # TODO: do we need exception or warning?
-            raise RuntimeError(
+            raise CriticalError(
                 "The `weight` or `weights` input is not setted: "
                 "use `WeightedSum.weight = smth` or "
                 "`smth >> WeightedSum('weight')`!"
             )
+
+    def _fcn(self, _, inputs, outputs):
         inputs = tuple(
             input
             for input in inputs
@@ -127,5 +133,4 @@ class WeightedSum(FunctionNode):
                         f"The {len(inputs)=} > {len(weights)=}!"
                     )
                 out += input.data * weight
-
         return out
