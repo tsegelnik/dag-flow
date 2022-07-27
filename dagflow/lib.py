@@ -1,5 +1,7 @@
 from itertools import zip_longest
 
+from numpy import asanyarray
+
 from .exception import CriticalError, UnconnectedInput
 from .input_extra import MissingInputAddOne
 from .node import FunctionNode
@@ -7,13 +9,13 @@ from .node_deco import NodeClass
 from .tools import IsIterable
 
 
-def makeArray(arr):
-    @NodeClass(output="array")
-    def cls(node, inputs, outputs):
-        """Creates a node with single data output with predefined array"""
-        outputs[0].data = arr
+class Array(FunctionNode):
+    """Creates a note with single data output with predefined array"""
 
-    return cls
+    def __init__(self, name, array, outname="array", **kwargs):
+        super().__init__(name, **kwargs)
+        self._add_output(outname)
+        self.outputs.array.data = asanyarray(array)
 
 
 class Sum(FunctionNode):
@@ -79,11 +81,13 @@ class WeightedSum(FunctionNode):
             if input.name in {"weight", "weights"}:
                 return input
 
-    def _check_input(self, name, iinput=None):
+    def check_input(self, name, iinput=None):
+        super().check_input(name, iinput)
         if not self.weight and name not in {"weight", "weights"}:
             raise UnconnectedInput("weight")
 
-    def _check_eval(self):
+    def check_eval(self):
+        super().check_eval()
         if not self.weight:
             raise CriticalError(
                 "The `weight` or `weights` input is not setted: "

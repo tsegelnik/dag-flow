@@ -13,11 +13,14 @@ class Output:
     _inputs = None
     _data = undefined("data")
     _datatype = undefined("datatype")
+    _closed: bool = False
+    _debug: bool = False
 
-    def __init__(self, name, node):
+    def __init__(self, name, node, **kwargs):
         self._name = name
         self._node = node
         self._inputs = []
+        self._debug = kwargs.pop("debug", node.debug if node else False)
 
     def __str__(self):
         return f"|-> {self._name}"
@@ -73,12 +76,22 @@ class Output:
         return self._datatype
 
     @property
-    def tainted(self):
+    def tainted(self) -> bool:
         return self._node.tainted
+
+    @property
+    def closed(self) -> bool:
+        return self._closed
+
+    @property
+    def debug(self) -> bool:
+        return self._debug
 
     def _connect_to(self, input):
         if input in self._inputs:
-            raise RuntimeError("Output is already connected to the input")
+            raise RuntimeError(
+                f"Output '{self.name}' is already connected to the input '{input.name}'!"
+            )
         self._inputs.append(input)
         input._set_output(self)
         return input
@@ -110,10 +123,51 @@ class Output:
     def repeat(self):
         return RepeatedOutput(self)
 
+    def close(self) -> bool:
+        if self.debug:
+            print(f"DEBUG: Output '{self.name}': Closing output...")
+        if self._closed:
+            return True
+        self._closed = all(inp.close() for inp in self._inputs)
+        if not self._closed:
+            print(
+                "WARNING: Output '{self.name}': Some inputs are still open: "
+                f"'{tuple(inp.name for inp in self._inputs if inp.closed)}'!"
+            )
+            return False
+        # TODO: if we restrict to close the parent node of outputs,
+        #       it is neccessary to close other nodes by hand
+        self._closed = self.node.close()
+        if not self._closed:
+            print(
+                f"WARNING: Output '{self.name}': "
+                f"The node '{self.node}' is still open!"
+            )
+        return self.closed
+
+    def open(self) -> bool:
+        if self.debug:
+            print(f"DEBUG: Output '{self.name}': Opening output...")
+        if not self._closed:
+            return True
+        self._closed = not all(inp.open() for inp in self._inputs)
+        if self._closed:
+            print(
+                "WARNING: Output '{self.name}': Some inputs are still closed: "
+                f"'{tuple(inp.name for inp in self._inputs if inp.closed)}'!"
+            )
+        return not self._closed
+
 
 class RepeatedOutput:
+    _closed: bool = False
+
     def __init__(self, output):
         self._output = output
+
+    @property
+    def closed(self) -> bool:
+        return self._closed
 
     def __iter__(self):
         return cycle((self._output,))
@@ -124,6 +178,24 @@ class RepeatedOutput:
     def __rlshift__(self, other):
         return lshift(self, other)
 
+    def close(self) -> bool:
+        if self._closed:
+            return True
+        self._closed = self._output.close()
+        if not self._closed:
+            print(f"WARNING: Output '{self.name}': The output is still open!")
+        return self._closed
+
+    def open(self) -> bool:
+        if not self._closed:
+            return True
+        self._closed = not self._output.open()
+        if self._closed:
+            print(
+                f"WARNING: Output '{self.name}': The output is still closed!"
+            )
+        return not self._closed
+
 
 class Outputs(EdgeContainer):
     _datatype = Output
@@ -132,7 +204,20 @@ class Outputs(EdgeContainer):
         super().__init__(iterable)
 
     def __str__(self) -> str:
-        return f"|[{len(self)}]->"
+        # return f"|[{len(self)}]->"
+        return f"|[{tuple(obj.name for obj in self)}]->"
 
     def __repr__(self) -> str:
         return self.__str__()
+
+    def close(self) -> bool:
+        if self._closed:
+            return True
+        self._closed = all(out.close() for out in self)
+        return self._closed
+
+    def open(self) -> bool:
+        if not self._closed:
+            return True
+        self._closed = not all(out.open() for out in self)
+        return not self._closed

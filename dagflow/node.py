@@ -17,17 +17,18 @@ class Node(Legs):
     _fcn_chain = None
 
     # Taintflag and status
-    _tainted = True
-    _frozen = False
-    _frozen_tainted = False
-    _invalid = False
-
-    _evaluating = False
+    _tainted: bool = True
+    _frozen: bool = False
+    _frozen_tainted: bool = False
+    _invalid: bool = False
+    _closed: bool = False
+    _debug: bool = False
+    _evaluating: bool = False
 
     # Options
-    _auto_freeze = False
-    _immediate = False
-    # _always_tainted = False
+    _auto_freeze: bool = False
+    _immediate: bool = False
+    # _always_tainted: bool = False
 
     def __init__(self, name, **kwargs):
         super().__init__(
@@ -40,6 +41,9 @@ class Node(Legs):
         self.graph = kwargs.pop("graph", None)
         if not self.graph:
             self.graph = Graph.current()
+        self._debug = kwargs.pop(
+            "debug", self.graph.debug if self.graph else False
+        )
         self._label = kwargs.pop("label", undefined("label"))
         for opt in {"immediate", "auto_freeze", "frozen"}:
             if value := kwargs.pop(opt, None):
@@ -60,39 +64,47 @@ class Node(Legs):
         self._name = name
 
     @property
-    def tainted(self):
+    def tainted(self) -> bool:
         return self._tainted
 
     @property
-    def frozen_tainted(self):
+    def frozen_tainted(self) -> bool:
         return self._frozen_tainted
 
     @property
-    def frozen(self):
+    def frozen(self) -> bool:
         return self._frozen
 
     @property
-    def auto_freeze(self):
+    def auto_freeze(self) -> bool:
         return self._auto_freeze
 
     # @property
-    # def always_tainted(self):
+    # def always_tainted(self) -> bool:
     # return self._always_tainted
 
     @property
-    def evaluating(self):
+    def closed(self) -> bool:
+        return self._closed
+
+    @property
+    def debug(self) -> bool:
+        return self._debug
+
+    @property
+    def evaluating(self) -> bool:
         return self._evaluating
 
     @property
-    def immediate(self):
+    def immediate(self) -> bool:
         return self._immediate
 
     @property
-    def invalid(self):
+    def invalid(self) -> bool:
         return self._invalid
 
     @invalid.setter
-    def invalid(self, invalid):
+    def invalid(self, invalid) -> None:
         if invalid:
             self._tainted = True
             self._frozen = False
@@ -208,14 +220,20 @@ class Node(Legs):
         )
 
     def eval(self):
+        if self.debug:
+            print(f"DEBUG: Node '{self.name}': Evaluating node...")
         if self.invalid:
-            raise RuntimeError("Unable to evaluate invalid transformation")
+            raise CriticalError("Unable to evaluate invalid transformation!")
+        if not self._closed:
+            raise CriticalError("Close the node before evaluation!")
         self._evaluating = True
         try:
             ret = self._eval()
         except Exception as exc:
             self._evaluating = False
-            raise exc
+            raise exc from RuntimeError(
+                "An exception occured during evaluation!"
+            )
         self._evaluating = False
         return ret
 
@@ -255,6 +273,46 @@ class Node(Legs):
             print("  ", i, input)
         for i, output in enumerate(self.outputs):
             print("  ", i, output)
+
+    def close(self) -> bool:
+        if self.debug:
+            print(f"DEBUG: Node '{self.name}': Closing...")
+        if self._closed:
+            return self._closed
+        self._closed = all(inp.close() for inp in self.inputs)
+        if not self._closed:
+            print(
+                f"WARNING: Node '{self.name}': Some inputs are still open: "
+                f"'{tuple(inp.name for inp in self.inputs if not inp.closed)}'!"
+            )
+        else:
+            self._closed = all(out.close() for out in self.outputs)
+            if not self._closed:
+                print(
+                    f"WARNING: Node '{self.name}': Some outputs are still open: "
+                    f"'{tuple(out.name for out in self.outputs if not out.closed)}'!"
+                )
+        return self._closed
+
+    def open(self) -> bool:
+        if self.debug:
+            print(f"DEBUG: Node '{self.name}': Opening...")
+        if not self._closed:
+            return True
+        self._closed = not all(inp.open() for inp in self.inputs)
+        if self._closed:
+            print(
+                f"WARNING: Node '{self.name}': Some inputs are still closed: "
+                f"'{tuple(inp.name for inp in self.inputs if inp.closed)}'!"
+            )
+        else:
+            self._closed = not all(out.open() for out in self.outputs)
+            if self._closed:
+                print(
+                    f"WARNING: Node '{self.name}': Some outputs are still closed: "
+                    f"'{tuple(out.name for out in self.outputs if out.closed)}'!"
+                )
+        return self._closed
 
 
 class FunctionNode(Node):
@@ -315,17 +373,20 @@ class FunctionNode(Node):
         return ret
 
     def eval(self):
-        try:
-            self._check_eval()
-        except Exception as exc:
-            raise exc from CriticalError(
-                "Cannot evaluate the function due to the critical error!"
+        if self.debug:
+            print(f"DEBUG: Node '{self.name}': Evaluating...")
+        if not self._closed:
+            raise CriticalError(
+                "Close the node before evaluation! Unclosed inputs :"
+                f"'{tuple(inp.name for inp in self.inputs if not inp.closed)}',"
+                " Unclosed outputs: "
+                f"'{tuple(out.name for out in self.outputs if not out.closed)}'"
             )
         return self._eval()
 
     def _add_input(self, name, iinput=undefined("iinput")):
         try:
-            self._check_input(name, iinput)
+            self.check_input(name, iinput)
         except CriticalError as exc:
             raise exc from CriticalError(
                 f"Cannot add the input ({name=}, {iinput=}) due to "
@@ -335,13 +396,34 @@ class FunctionNode(Node):
             print(exc)
         return super()._add_input(name, iinput)
 
-    def _check_input(self, name=None, iinput=None) -> bool:
-        """Checks a signature of the function at the input connection stage"""
+    def _check_input(self) -> bool:
         return True
 
     def _check_eval(self) -> bool:
-        """Checks a signature of the function at the evaluation stage"""
         return True
+
+    def check_input(self, name=None, iinput=None) -> bool:
+        """Checks a signature of the function at the input connection stage"""
+        if self.debug:
+            print(
+                f"DEBUG: Node '{self.name}': "
+                f"Checking a possibility to add new input '{name}'..."
+            )
+        return self._check_input()
+
+    def check_eval(self) -> bool:
+        """Checks a signature of the function at the evaluation stage"""
+        if self.debug:
+            print(
+                f"DEBUG: Node '{self.name}': Checking the evaluation access..."
+            )
+        return self._check_eval()
+
+    def _close(self) -> bool:
+        super()._close()
+        if self._closed:
+            self._closed = self.check_eval()
+        return self._closed
 
 
 class StaticNode(Node):

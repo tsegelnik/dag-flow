@@ -2,7 +2,7 @@
 
 from dagflow.exception import CriticalError
 from dagflow.input_extra import MissingInputAddOne
-from dagflow.lib import WeightedSum, makeArray
+from dagflow.lib import WeightedSum, Array
 from dagflow.node import FunctionNode
 from numpy import arange, array
 from pytest import raises
@@ -15,13 +15,16 @@ class ThreeInputsSum(FunctionNode):
         )
         super().__init__(*args, **kwargs)
 
-    def _check_input(self, name, iinput=None):
+    def check_input(self, name, iinput=None):
+        super().check_input(name, iinput)
         if len(self.inputs) == 3:
             raise CriticalError("The node must have only 3 inputs!")
 
-    def _check_eval(self):
+    def check_eval(self):
+        super().check_eval()
         if (y := len(self.inputs)) != 3:
             raise CriticalError(f"The node must have 3 inputs, but given {y}!")
+        return True
 
     def _fcn(self, _, inputs, outputs):
         out = outputs[0].data = inputs[0].data.copy()
@@ -29,7 +32,7 @@ class ThreeInputsSum(FunctionNode):
             out += input.data
 
 
-arr = makeArray(arange(3, dtype="i"))("arr")  # [0, 1, 2]
+arr = Array("arr", arange(3, dtype="i"))  # [0, 1, 2]
 
 
 def test_00():
@@ -39,6 +42,10 @@ def test_00():
         with raises(CriticalError):
             node.eval()
         arr >> node
+    node.close()
+    # TODO: if we restrict to close the parent node of outputs,
+    #       it is neccessary to close other nodes by hand
+    # arr.close()
     assert (node.outputs.result.data == [0, 3, 6]).all()
     # Error while trying to append fourth input
     with raises(CriticalError):
@@ -52,7 +59,12 @@ def test_01():
     with raises(CriticalError):
         ws.eval()
     # multiply the first input by 2 and the second one by 3
-    makeArray((2, 3))("weight") >> ws("weight")
+    Array("weight", (2, 3)) >> ws("weight")
+    ws.close()
+    # TODO: if we restrict to close the parent node of outputs,
+    #       it is neccessary to close other nodes by hand
+    # arr.close()
+    ## ws["weight"].close()
     assert (ws.outputs.result.data == [0, 5, 10]).all()
 
 

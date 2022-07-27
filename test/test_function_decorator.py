@@ -2,14 +2,13 @@
 
 from __future__ import print_function
 
-from numpy import arange
-
 from dagflow.graph import Graph
 from dagflow.graphviz import savegraph
 from dagflow.input_extra import MissingInputAddOne
 from dagflow.node_deco import NodeClass, NodeInstance
 from dagflow.printl import current_level, printl, set_prefix_function
 from dagflow.wrappers import *
+from numpy import arange
 
 set_prefix_function(lambda: "{:<2d} ".format(current_level()))
 
@@ -58,6 +57,7 @@ def test_00():
     (in4, s) >> m
 
     graph._wrap_fcns(dataprinter, printer)
+    graph.close()
 
     printl(m.outputs.result.data)
     savegraph(graph, "output/decorators_graph_00.pdf")
@@ -76,6 +76,7 @@ def test_01():
     (initials[3], (initials[:3] >> s)) >> m
 
     graph._wrap_fcns(dataprinter, printer)
+    graph.close()
 
     printl(m.outputs.result.data)
     savegraph(graph, "output/decorators_graph_01.pdf")
@@ -121,6 +122,7 @@ def test_02():
     (initials[3], (initials[:3] >> s)) >> m
 
     graph._wrap_fcns(dataprinter, printer)
+    graph.close()
 
     printl(m.outputs.result.data)
     savegraph(graph, "output/decorators_graph_02.pdf")

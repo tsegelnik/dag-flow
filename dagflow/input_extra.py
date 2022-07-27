@@ -48,12 +48,15 @@ class MissingInputAdd(MissingInputHandler):
             self.input_fmt = fmt
 
     def __call__(self, idx=None, scope=None, **kwargs):
-        return self.node._add_input(
+        inp = self.node._add_input(
             self.input_fmt.format(
                 idx if idx is not None else len(self.node.inputs)
             ),
             **kwargs,
         )
+        if self.node.closed:
+            inp.close()
+        return inp
 
 
 class MissingInputAddPair(MissingInputAdd):
@@ -97,11 +100,12 @@ class MissingInputAddOne(MissingInputAdd):
         self.add_iinput = add_iinput
 
     def __call__(self, idx=None, scope=None):
-        out = (
-            self.node._add_output(self.output_fmt.format(idx_out))
-            if (idx_out := len(self.node.outputs)) == 0
-            else self.node.outputs[-1]
-        )
+        if (idx_out := len(self.node.outputs)) == 0:
+            out = self.node._add_output(self.output_fmt.format(idx_out))
+            if self.node.closed:
+                out.close()
+        else:
+            out = self.node.outputs[-1]
         if self.add_iinput:
             return super().__call__(idx, iinput=out, scope=scope)
         return super().__call__(idx, scope=scope)

@@ -16,6 +16,8 @@ and forget old ones!
 - [x] Two types of `Exceptions`:
   - connection and type checking (`non-critical` exception)
   - call function (`critical`)
+- [x] Recursive close of a graph
+- [ ] Memory allocation:
   - See `core/transformation/TransformationEntry.cc` method `updateTypes()`
 
 ## Transformations
@@ -28,4 +30,4 @@ and forget old ones!
 
 ## Tests
 
-- [ ] Test the graph workflow with transformations
+- [x] Test the graph workflow with transformations
