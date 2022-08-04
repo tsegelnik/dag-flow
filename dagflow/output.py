@@ -144,8 +144,6 @@ class Output:
                 f"'{tuple(inp.name for inp in self._inputs if inp.closed)}'!"
             )
             return False
-        # TODO: if we restrict to close the parent node of outputs,
-        #       it is neccessary to close other nodes by hand
         self._closed = self.node.close()
         if not self._closed:
             print(

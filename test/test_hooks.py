@@ -43,9 +43,6 @@ def test_00():
             node.eval()
         arr >> node
     node.close()
-    # TODO: if we restrict to close the parent node of outputs,
-    #       it is neccessary to close other nodes by hand
-    # arr.close()
     assert (node.outputs.result.data == [0, 3, 6]).all()
     # Error while trying to append fourth input
     with raises(CriticalError):
@@ -61,10 +58,6 @@ def test_01():
     # multiply the first input by 2 and the second one by 3
     Array("weight", (2, 3)) >> ws("weight")
     ws.close()
-    # TODO: if we restrict to close the parent node of outputs,
-    #       it is neccessary to close other nodes by hand
-    # arr.close()
-    ## ws["weight"].close()
     assert (ws.outputs.result.data == [0, 5, 10]).all()
 
 
