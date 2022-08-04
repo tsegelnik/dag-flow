@@ -17,6 +17,7 @@ and forget old ones!
   - connection and type checking (`non-critical` exception)
   - call function (`critical`)
 - [x] Recursive close of a graph
+- [x] Solve troubles with a connection of an input or output and closure
 - [ ] Memory allocation:
   - See `core/transformation/TransformationEntry.cc` method `updateTypes()`
 

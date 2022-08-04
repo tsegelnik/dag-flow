@@ -87,6 +87,15 @@ class Output:
     def debug(self) -> bool:
         return self._debug
 
+    def connect_to(self, input):
+        if self.closed:
+            print(
+                f"WARNING: Output '{self.name}': "
+                "A modification of the closed output is restricted!"
+            )
+        else:
+            return self._connect_to(input)
+
     def _connect_to(self, input):
         if input in self._inputs:
             raise RuntimeError(

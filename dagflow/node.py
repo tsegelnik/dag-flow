@@ -134,13 +134,27 @@ class Node(Legs):
         for inp in self.inputs:
             if inp.name == name:
                 return inp
-        return self._add_input(name, iinput)
+        if not self.closed:
+            return self._add_input(name, iinput)
+        print(
+            f"WARNING: Node '{self.name}': Input '{name}' doesn't exist, "
+            "and a modification of the closed node is restricted!"
+        )
 
     def label(self, *args, **kwargs):
         if self._label:
             kwargs.setdefault("name", self._name)
             return self._label.format(*args, **kwargs)
         return self._label
+
+    def add_input(self, name, iinput=undefined("iinput")):
+        if self.closed:
+            print(
+                f"WARNING: Node '{self.name}': "
+                "A modification of the closed node is restricted!"
+            )
+        else:
+            return self._add_input(name, iinput)
 
     def _add_input(self, name, iinput=undefined("iinput")):
         if IsIterable(name):
@@ -152,6 +166,15 @@ class Node(Legs):
         if self._graph:
             self._graph._add_input(inp)
         return inp
+
+    def add_output(self, name):
+        if self.closed:
+            print(
+                f"WARNING: Node '{self.name}': "
+                "A modification of the closed node is restricted!"
+            )
+        else:
+            return self._add_output(name)
 
     def _add_output(self, name):
         if IsIterable(name):
@@ -177,6 +200,15 @@ class Node(Legs):
         if self._graph:
             self._graph._add_output(output)
         return output
+
+    def add_pair(self, iname, oname):
+        if self.closed:
+            print(
+                f"WARNING: Node '{self.name}': "
+                "A modification of the closed node is restricted!"
+            )
+        else:
+            return self._add_pair(iname, oname)
 
     def _add_pair(self, iname, oname):
         output = self._add_output(oname)
@@ -383,6 +415,15 @@ class FunctionNode(Node):
                 f"'{tuple(out.name for out in self.outputs if not out.closed)}'"
             )
         return self._eval()
+
+    def add_input(self, name, iinput=undefined("iinput")):
+        if self.closed:
+            print(
+                f"WARNING: Node '{self.name}': "
+                "A modification of the closed node is restricted!"
+            )
+        else:
+            return self._add_input(name, iinput)
 
     def _add_input(self, name, iinput=undefined("iinput")):
         try:

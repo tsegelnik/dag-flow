@@ -32,14 +32,29 @@ class Graph(NodeGroup):
         return self._name
 
     def add_node(self, name, **kwargs):
+        if self.closed:
+            print(
+                f"WARNING: Graph '{self.name}': "
+                "A modification of the closed graph is restricted!"
+            )
+            return
         from .node import FunctionNode
-        return kwargs.pop("nodeclass", FunctionNode)(name, graph=self, **kwargs)
+
+        return kwargs.pop("nodeclass", FunctionNode)(
+            name, graph=self, **kwargs
+        )
 
     def label(self, *args, **kwargs):
         if self._label:
             return self._label.format(self._label, nodes=len(self._nodes))
 
     def add_nodes(self, pairs, **kwargs):
+        if self.closed:
+            print(
+                f"WARNING: Graph '{self.name}': "
+                "A modification of the closed graph is restricted!"
+            )
+            return
         return (self.add_node(name, fcn, **kwargs) for name, fcn in pairs)
 
     def _add_input(self, input):

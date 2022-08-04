@@ -36,6 +36,15 @@ class Input:
     def __repr__(self) -> str:
         return self.__str__()
 
+    def set_iinput(self, iinput: Input, force: bool = False) -> None:
+        if self.closed:
+            print(
+                f"WARNING: Input '{self.name}': "
+                "A modification of the closed input is restricted!"
+            )
+        else:
+            return self._set_iinput(iinput, force)
+
     def _set_iinput(self, iinput: Input, force: bool = False) -> None:
         if self.debug:
             print(
@@ -46,6 +55,15 @@ class Input:
                 f"The iinput is already setted to {self.iinput}!"
             )
         self._iinput = iinput
+
+    def set_output(self, output: Output, force: bool = False) -> None:
+        if self.closed:
+            print(
+                f"WARNING: Input '{self.name}': "
+                "A modification of the closed input is restricted!"
+            )
+        else:
+            return self._set_output(output, force)
 
     def _set_output(self, output: Output, force: bool = False) -> None:
         if self.debug:
