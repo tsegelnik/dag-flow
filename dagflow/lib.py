@@ -101,13 +101,13 @@ class WeightedSum(FunctionNode):
             for input in inputs
             if input.name not in {"weight", "weights"}
         )
-        if self.weight.datatype in (int, float):
+        if self.weight.dtype in (int, float):
             return self.__fcn_number(self.weight.data, inputs, outputs)
         elif IsIterable(self.weight.data) and len(self.weight.data) != 0:
             return self.__fcn_iterable(self.weight.data, inputs, outputs)
         raise RuntimeError(
             "There is no implementation of the WeightedSum for "
-            f"{self.weight.data, self.weight.datatype}!"
+            f"{self.weight.data, self.weight.dtype}!"
         )
 
     def __fcn_number(self, weight, inputs, outputs):

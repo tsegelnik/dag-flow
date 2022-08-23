@@ -12,7 +12,9 @@ class Output:
     _node = undefined("node")
     _inputs = None
     _data = undefined("data")
-    _datatype = undefined("datatype")
+    _dtype = undefined("dtype")
+    _shape = undefined("shape")
+    _allocated: bool = False
     _closed: bool = False
     _debug: bool = False
 
@@ -37,6 +39,10 @@ class Output:
         self._name = name
 
     @property
+    def allocated(self):
+        return self._allocated
+
+    @property
     def node(self):
         return self._node
 
@@ -57,23 +63,27 @@ class Output:
 
     @property
     def data(self):
-        self._node.touch()
+        self.touch()
         return self._data
 
     @data.setter
     def data(self, data):
-        if self._datatype is undefined("datatype"):
-            self._datatype = type(data)
-        elif self._datatype != type(data):
-            raise TypeError("Unable to change existing data type")
+        if self._dtype is undefined("dtype"):
+            self._dtype = type(data)
+        elif self._dtype != type(data):
+            raise TypeError("Unable to change the data type!")
+        if self._shape is undefined("shape"):
+            self._shape = data.shape()
         self._data = data
         return data
 
     @property
-    def datatype(self):
-        if self._datatype is undefined("datatype"):
-            self._datatype = type(self.data)
-        return self._datatype
+    def dtype(self):
+        return self._dtype
+
+    @property
+    def shape(self):
+        return self._shape
 
     @property
     def tainted(self) -> bool:
@@ -205,7 +215,7 @@ class RepeatedOutput:
 
 
 class Outputs(EdgeContainer):
-    _datatype = Output
+    _dtype = Output
 
     def __init__(self, iterable=None) -> None:
         super().__init__(iterable)

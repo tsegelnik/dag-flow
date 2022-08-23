@@ -18,6 +18,10 @@ and forget old ones!
   - call function (`critical`)
 - [x] Recursive close of a graph
 - [x] Solve troubles with a connection of an input or output and closure
+- [ ] Implement 2 descriptors for the `Output`:
+  - `Shape` and `dtype`
+  - `Allocation` and `view`
+- [ ] Move `handlers` to the `binding` stage
 - [ ] Memory allocation:
   - See `core/transformation/TransformationEntry.cc` method `updateTypes()`
 

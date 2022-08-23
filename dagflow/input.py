@@ -121,12 +121,12 @@ class Input:
         return self._output.data
 
     @property
-    def datatype(self):
+    def dtype(self):
         if not self.connected():
             raise RuntimeError(
-                "May not read datatype from disconnected output!"
+                "May not read dtype from disconnected output!"
             )
-        return self._output.datatype
+        return self._output.dtype
 
     @property
     def tainted(self) -> bool:
@@ -200,7 +200,7 @@ class Input:
 
 
 class Inputs(EdgeContainer):
-    _datatype = Input
+    _dtype = Input
     _closed: bool = False
 
     def __init__(self, iterable=None):

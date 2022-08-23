@@ -113,7 +113,6 @@ class MissingInputAddOne(MissingInputAdd):
 
 class MissingInputAddEach(MissingInputAdd):
     """
-    Adds an input for each output in >> operator.
     Adds an output for each block (for each >> operation)
     """
 

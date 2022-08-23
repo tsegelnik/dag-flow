@@ -409,7 +409,7 @@ class FunctionNode(Node):
             print(f"DEBUG: Node '{self.name}': Evaluating...")
         if not self._closed:
             raise CriticalError(
-                "Close the node before evaluation! Unclosed inputs :"
+                "Close the node before evaluation! Unclosed inputs:"
                 f"'{tuple(inp.name for inp in self.inputs if not inp.closed)}',"
                 " Unclosed outputs: "
                 f"'{tuple(out.name for out in self.outputs if not out.closed)}'"

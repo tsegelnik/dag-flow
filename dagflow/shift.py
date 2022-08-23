@@ -16,6 +16,7 @@ def rshift_scope_id():
 
 
 def rshift(outputs, inputs):
+    """ `>>` operator """
     scope_id = rshift_scope_id()
 
     for output, inp in zip_longest(
@@ -37,4 +38,5 @@ def rshift(outputs, inputs):
 
 
 def lshift(inputs, outputs):
+    """ `<<` operator """
     return rshift(outputs, inputs)
