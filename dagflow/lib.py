@@ -15,6 +15,7 @@ class Array(FunctionNode):
     def __init__(self, name, array, outname="array", **kwargs):
         super().__init__(name, **kwargs)
         self._add_output(outname)
+        # TODO: this way copies the np.ndarray -> check this
         self.outputs.array.data = asanyarray(array)
 
 
@@ -101,14 +102,7 @@ class WeightedSum(FunctionNode):
             for input in inputs
             if input.name not in {"weight", "weights"}
         )
-        if self.weight.dtype in (int, float):
-            return self.__fcn_number(self.weight.data, inputs, outputs)
-        elif IsIterable(self.weight.data) and len(self.weight.data) != 0:
-            return self.__fcn_iterable(self.weight.data, inputs, outputs)
-        raise RuntimeError(
-            "There is no implementation of the WeightedSum for "
-            f"{self.weight.data, self.weight.dtype}!"
-        )
+        return self.__fcn_iterable(self.weight.data, inputs, outputs)
 
     def __fcn_number(self, weight, inputs, outputs):
         out = outputs[0].data = inputs[0].data.copy()

@@ -2,6 +2,8 @@ from __future__ import print_function
 
 from itertools import cycle
 
+from numpy import zeros
+
 from .edges import EdgeContainer
 from .shift import lshift, rshift
 from .tools import StopNesting, undefined
@@ -63,19 +65,18 @@ class Output:
 
     @property
     def data(self):
-        self.touch()
+        if self._data is undefined("data"):
+            self.touch()
         return self._data
 
     @data.setter
-    def data(self, data):
-        if self._dtype is undefined("dtype"):
-            self._dtype = type(data)
-        elif self._dtype != type(data):
-            raise TypeError("Unable to change the data type!")
-        if self._shape is undefined("shape"):
-            self._shape = data.shape()
-        self._data = data
-        return data
+    def data(self, val):
+        if self._data is undefined("data"):
+            self._data = val
+            self._dtype = val.dtype
+            self._shape = val.shape
+        else:
+            print(f"WARNING: Output '{self.name}': The data is already set!")
 
     @property
     def dtype(self):
@@ -96,6 +97,29 @@ class Output:
     @property
     def debug(self) -> bool:
         return self._debug
+
+    def view(self, dtype=None, type=None):
+        if self._allocated:
+            return self.data.view(dtype=dtype, type=type)
+        print(
+            f"WARNING: Output '{self.name}': "
+            "The output memory is not allocated!"
+        )
+
+    def allocate(self, **kwargs):
+        if self._allocated:
+            print(
+                f"WARNING: Output '{self.name}': "
+                "The output memory is allocated!"
+            )
+            return
+        if self.debug:
+            print(f"DEBUG: Output '{self.name}': Allocate the memory...")
+        try:
+            self.data = zeros(self.shape, self.dtype, **kwargs)
+            self._allocated = True
+        except Exception:
+            self._allocated = False
 
     def connect_to(self, input):
         if self.closed:
@@ -160,6 +184,7 @@ class Output:
                 f"WARNING: Output '{self.name}': "
                 f"The node '{self.node}' is still open!"
             )
+        self.allocate()
         return self.closed
 
     def open(self) -> bool:
@@ -221,7 +246,6 @@ class Outputs(EdgeContainer):
         super().__init__(iterable)
 
     def __str__(self) -> str:
-        # return f"|[{len(self)}]->"
         return f"|[{tuple(obj.name for obj in self)}]->"
 
     def __repr__(self) -> str:

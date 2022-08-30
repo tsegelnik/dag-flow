@@ -10,77 +10,7 @@ from numpy import arange, asarray
 from numpy.random import randint
 
 array = arange(3, dtype="d")
-
-# Check predefined Array, Sum and Product
-with Graph() as graph:
-    (in1, in2, in3, in4) = (
-        Array(name, array) for name in {"n1", "n2", "n3", "n4"}
-    )
-    s = Sum("sum")
-    m = Product("product")
-
-    (in1, in2, in3) >> s
-    (in4, s) >> m
-    m.close()
-
-    print("Result:", m.outputs.result.data)
-    savegraph(graph, "dagflow_example_1a.png")
-
-# Check random generated Array, Sum and Product
-with Graph() as graph:
-    (in1, in2, in3, in4) = (
-        Array(name, array) for name in {"n1", "n2", "n3", "n4"}
-    )
-    s = Sum("sum")
-    m = Product("product")
-
-    (in1, in2, in3) >> s
-    (in4, s) >> m
-    m.close()
-
-    print("Result:", m.outputs.result.data)
-    savegraph(graph, "dagflow_example_1b.png")
-
-# Check predefined Array, two Sum's and Product
-with Graph() as graph:
-    (in1, in2, in3, in4) = (
-        Array(name, array) for name in {"n1", "n2", "n3", "n4"}
-    )
-    s = Sum("sum")
-    s2 = Sum("sum")
-    m = Product("product")
-
-    (in1, in2) >> s
-    (in3, in4) >> s2
-    (s, s2) >> m
-    m.close()
-
-    print("Result:", m.outputs.result.data)
-    savegraph(graph, "dagflow_example_2.png")
-
-# Check predefined Array, Sum, WeightedSum and Product
-with Graph() as graph:
-    (in1, in2, in3, in4) = (
-        Array(name, array) for name in {"n1", "n2", "n3", "n4"}
-    )
-    weight = Array("weight", (2, 3))
-    # The same result with other weight
-    # weight = makeArray(5)("weight")
-    s = Sum("sum")
-    ws = WeightedSum("weightedsum")
-    m = Product("product")
-
-    (in1, in2) >> s
-    (in3, in4) >> ws
-    weight >> ws("weight")
-    # TODO: check this issue
-    # The way below does not work, due to automatic input naming
-    # (in3, in4, weight) >> ws
-    (s, ws) >> m
-    m.close()
-
-    print("Result:", m.outputs.result.data)
-    savegraph(graph, "dagflow_example_3.png")
+debug = False
 
 
 class ThreeInputsOneOutput(FunctionNode):
@@ -107,7 +37,79 @@ class ThreeInputsOneOutput(FunctionNode):
         return [out.data for out in self.outputs]
 
 
-with Graph() as graph:
+# Check predefined Array, Sum and Product
+with Graph(debug=debug) as graph:
+    (in1, in2, in3, in4) = (
+        Array(name, array) for name in {"n1", "n2", "n3", "n4"}
+    )
+    s = Sum("sum")
+    m = Product("product")
+
+    (in1, in2, in3) >> s
+    (in4, s) >> m
+    m.close()
+
+    print("Result:", m.outputs.result.data)
+    savegraph(graph, "dagflow_example_1a.png")
+
+# Check random generated Array, Sum and Product
+with Graph(debug=debug) as graph:
+    (in1, in2, in3, in4) = (
+        Array(name, array) for name in {"n1", "n2", "n3", "n4"}
+    )
+    s = Sum("sum")
+    m = Product("product")
+
+    (in1, in2, in3) >> s
+    (in4, s) >> m
+    m.close()
+
+    print("Result:", m.outputs.result.data)
+    savegraph(graph, "dagflow_example_1b.png")
+
+# Check predefined Array, two Sum's and Product
+with Graph(debug=debug) as graph:
+    (in1, in2, in3, in4) = (
+        Array(name, array) for name in {"n1", "n2", "n3", "n4"}
+    )
+    s = Sum("sum")
+    s2 = Sum("sum")
+    m = Product("product")
+
+    (in1, in2) >> s
+    (in3, in4) >> s2
+    (s, s2) >> m
+    m.close()
+
+    print("Result:", m.outputs.result.data)
+    savegraph(graph, "dagflow_example_2.png")
+
+# Check predefined Array, Sum, WeightedSum and Product
+with Graph(debug=debug) as graph:
+    (in1, in2, in3, in4) = (
+        Array(name, array) for name in {"n1", "n2", "n3", "n4"}
+    )
+    weight = Array("weight", (2, 3))
+    # The same result with other weight
+    # weight = makeArray(5)("weight")
+    s = Sum("sum")
+    ws = WeightedSum("weightedsum")
+    m = Product("product")
+
+    (in1, in2) >> s
+    (in3, in4) >> ws
+    weight >> ws("weight")
+    # TODO: check this issue
+    # The way below does not work, due to automatic input naming
+    # (in3, in4, weight) >> ws
+    (s, ws) >> m
+    m.close()
+
+    print("Result:", m.outputs.result.data)
+    savegraph(graph, "dagflow_example_3.png")
+
+
+with Graph(debug=debug) as graph:
     (in1, in2, in3) = (Array(name, array) for name in {"n1", "n2", "n3"})
     (in4, in5, in6) = (
         Array(name, asarray((1, 0, 0))) for name in {"n4", "n5", "n6"}

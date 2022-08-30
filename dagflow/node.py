@@ -22,10 +22,11 @@ class Node(Legs):
     _frozen_tainted: bool = False
     _invalid: bool = False
     _closed: bool = False
-    _debug: bool = False
-    _evaluating: bool = False
+    _allocated: bool = False
+    _evaluated: bool = False
 
     # Options
+    _debug: bool = False
     _auto_freeze: bool = False
     _immediate: bool = False
     # _always_tainted: bool = False
@@ -92,8 +93,8 @@ class Node(Legs):
         return self._debug
 
     @property
-    def evaluating(self) -> bool:
-        return self._evaluating
+    def evaluated(self) -> bool:
+        return self._evaluated
 
     @property
     def immediate(self) -> bool:
@@ -147,14 +148,28 @@ class Node(Legs):
             return self._label.format(*args, **kwargs)
         return self._label
 
-    def add_input(self, name, iinput=undefined("iinput")):
-        if self.closed:
+    def allocate(self, **kwargs):
+        if self._allocated:
             print(
-                f"WARNING: Node '{self.name}': "
-                "A modification of the closed node is restricted!"
+                f"WARNING: Node '{self.name}': The memory is already allocated!"
             )
-        else:
+            return
+        if self.debug:
+            print(f"DEBUG: Node '{self.name}': Allocate the memory...")
+        try:
+            self._allocated = all(
+                out.allocate(**kwargs) for out in self.outputs
+            )
+        except Exception:
+            self._allocated = False
+
+    def add_input(self, name, iinput=undefined("iinput")):
+        if not self.closed:
             return self._add_input(name, iinput)
+        print(
+            f"WARNING: Node '{self.name}': "
+            "A modification of the closed node is restricted!"
+        )
 
     def _add_input(self, name, iinput=undefined("iinput")):
         if IsIterable(name):
@@ -168,13 +183,12 @@ class Node(Legs):
         return inp
 
     def add_output(self, name):
-        if self.closed:
-            print(
-                f"WARNING: Node '{self.name}': "
-                "A modification of the closed node is restricted!"
-            )
-        else:
+        if not self.closed:
             return self._add_output(name)
+        print(
+            f"WARNING: Node '{self.name}': "
+            "A modification of the closed node is restricted!"
+        )
 
     def _add_output(self, name):
         if IsIterable(name):
@@ -202,13 +216,12 @@ class Node(Legs):
         return output
 
     def add_pair(self, iname, oname):
-        if self.closed:
-            print(
-                f"WARNING: Node '{self.name}': "
-                "A modification of the closed node is restricted!"
-            )
-        else:
+        if not self.closed:
             return self._add_pair(iname, oname)
+        print(
+            f"WARNING: Node '{self.name}': "
+            "A modification of the closed node is restricted!"
+        )
 
     def _add_pair(self, iname, oname):
         output = self._add_output(oname)
@@ -258,15 +271,15 @@ class Node(Legs):
             raise CriticalError("Unable to evaluate invalid transformation!")
         if not self._closed:
             raise CriticalError("Close the node before evaluation!")
-        self._evaluating = True
+        self._evaluated = True
         try:
             ret = self._eval()
         except Exception as exc:
-            self._evaluating = False
+            self._evaluated = False
             raise exc from RuntimeError(
                 "An exception occured during evaluation!"
             )
-        self._evaluating = False
+        self._evaluated = False
         return ret
 
     def freeze(self):
@@ -395,13 +408,13 @@ class FunctionNode(Node):
         return wrapped_fcn
 
     def _eval(self):
-        self._evaluating = True
+        self._evaluated = True
         try:
             ret = self._fcn(self, self.inputs, self.outputs)
         except Exception as exc:
-            self._evaluating = False
+            self._evaluated = False
             raise exc
-        self._evaluating = False
+        self._evaluated = False
         return ret
 
     def eval(self):
@@ -477,11 +490,11 @@ class StaticNode(Node):
         super().__init__(*args, **kwargs)
 
     def _eval(self):
-        self._evaluating = True
+        self._evaluated = True
         if self._touch_inputs:
             self.inputs._touch()
         ret = self._fcn()
-        self._evaluating = False
+        self._evaluated = False
         return ret
 
     def _stash_fcn(self):
