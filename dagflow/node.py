@@ -153,7 +153,7 @@ class Node(Legs):
             print(
                 f"WARNING: Node '{self.name}': The memory is already allocated!"
             )
-            return
+            return self._allocated
         if self.debug:
             print(f"DEBUG: Node '{self.name}': Allocate the memory...")
         try:
@@ -162,6 +162,7 @@ class Node(Legs):
             )
         except Exception:
             self._allocated = False
+        return self._allocated
 
     def add_input(self, name, iinput=undefined("iinput")):
         if not self.closed:
@@ -271,6 +272,8 @@ class Node(Legs):
             raise CriticalError("Unable to evaluate invalid transformation!")
         if not self._closed:
             raise CriticalError("Close the node before evaluation!")
+        #if not self._allocated:
+        #    raise CriticalError("Allocate the memory before evaluation!")
         self._evaluated = True
         try:
             ret = self._eval()
@@ -319,24 +322,26 @@ class Node(Legs):
         for i, output in enumerate(self.outputs):
             print("  ", i, output)
 
-    def close(self) -> bool:
+    def close(self, **kwargs) -> bool:
         if self.debug:
             print(f"DEBUG: Node '{self.name}': Closing...")
         if self._closed:
             return self._closed
-        self._closed = all(inp.close() for inp in self.inputs)
+        self._closed = all(inp.close(**kwargs) for inp in self.inputs)
         if not self._closed:
             print(
                 f"WARNING: Node '{self.name}': Some inputs are still open: "
                 f"'{tuple(inp.name for inp in self.inputs if not inp.closed)}'!"
             )
         else:
-            self._closed = all(out.close() for out in self.outputs)
+            self._closed = all(out.close(**kwargs) for out in self.outputs)
             if not self._closed:
                 print(
                     f"WARNING: Node '{self.name}': Some outputs are still open: "
                     f"'{tuple(out.name for out in self.outputs if not out.closed)}'!"
                 )
+                return False
+            #self.allocate(**kwargs)
         return self._closed
 
     def open(self) -> bool:
@@ -427,6 +432,13 @@ class FunctionNode(Node):
                 " Unclosed outputs: "
                 f"'{tuple(out.name for out in self.outputs if not out.closed)}'"
             )
+        #if not self._allocated:
+        #    raise CriticalError(
+        #        "Memory is not allocated! Problem inputs:"
+        #        f"'{tuple(inp.name for inp in self.inputs if not inp.allocated)}',"
+        #        " Problem outputs: "
+        #        f"'{tuple(out.name for out in self.outputs if not out.allocated)}'"
+        #    )
         return self._eval()
 
     def add_input(self, name, iinput=undefined("iinput")):

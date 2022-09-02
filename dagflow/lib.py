@@ -1,6 +1,6 @@
 from itertools import zip_longest
 
-from numpy import asanyarray
+from numpy import asanyarray, copyto
 
 from .exception import CriticalError, UnconnectedInput
 from .input_extra import MissingInputAddOne
@@ -29,7 +29,8 @@ class Sum(FunctionNode):
         super().__init__(*args, **kwargs)
 
     def _fcn(self, _, inputs, outputs):
-        out = outputs[0].data = inputs[0].data.copy()
+        out = outputs.result.data
+        copyto(out, inputs[0].data.copy())
         if len(inputs) > 1:
             for input in inputs[1:]:
                 out += input.data
@@ -45,7 +46,8 @@ class Product(FunctionNode):
         super().__init__(*args, **kwargs)
 
     def _fcn(self, _, inputs, outputs):
-        out = outputs[0].data = inputs[0].data.copy()
+        out = outputs.result.data
+        copyto(out, inputs[0].data.copy())
         if len(inputs) > 1:
             for input in inputs[1:]:
                 out *= input.data
@@ -61,7 +63,8 @@ class Division(FunctionNode):
         super().__init__(*args, **kwargs)
 
     def _fcn(self, _, inputs, outputs):
-        out = outputs[0].data = inputs[0].data.copy()
+        out = outputs[0].data
+        copyto(out, inputs[0].data.copy())
         if len(inputs) > 1:
             for input in inputs[1:]:
                 out /= input.data
@@ -105,7 +108,8 @@ class WeightedSum(FunctionNode):
         return self.__fcn_iterable(self.weight.data, inputs, outputs)
 
     def __fcn_number(self, weight, inputs, outputs):
-        out = outputs[0].data = inputs[0].data.copy()
+        out = outputs[0].data
+        copyto(out, inputs[0].data.copy())
         if len(inputs) > 1:
             for input in inputs[1:]:
                 out += input.data
@@ -114,8 +118,8 @@ class WeightedSum(FunctionNode):
     def __fcn_iterable(self, weights, inputs, outputs):
         if len(weights) == 1:
             return self.__fcn_number(weights[0], inputs, outputs)
-        out = outputs[0].data = inputs[0].data.copy()
-        out *= weights[0]
+        out = outputs[0].data
+        copyto(out, inputs[0].data.copy()*weights[0])
         if len(inputs) > 1:
             for input, weight in zip(inputs[1:], weights[1:]):
                 if input is None:

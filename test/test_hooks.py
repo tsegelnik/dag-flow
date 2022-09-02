@@ -4,7 +4,7 @@ from dagflow.exception import CriticalError
 from dagflow.input_extra import MissingInputAddOne
 from dagflow.lib import WeightedSum, Array
 from dagflow.node import FunctionNode
-from numpy import arange, array
+from numpy import arange, array, copyto
 from pytest import raises
 
 
@@ -27,7 +27,8 @@ class ThreeInputsSum(FunctionNode):
         return True
 
     def _fcn(self, _, inputs, outputs):
-        out = outputs[0].data = inputs[0].data.copy()
+        out = outputs.result.data
+        copyto(out, inputs[0].data.copy())
         for input in inputs[1:]:
             out += input.data
 

@@ -13,6 +13,7 @@ if TYPE_CHECKING:
 
 class Input:
     _closed: bool = False
+    _allocated: bool = True
     _debug: bool = False
 
     def __init__(
@@ -102,6 +103,10 @@ class Input:
         return self._closed
 
     @property
+    def allocated(self) -> bool:
+        return self._allocated
+
+    @property
     def debug(self) -> bool:
         return self._debug
 
@@ -113,6 +118,14 @@ class Input:
     @property
     def output(self) -> Output:
         return self._output
+
+    def update_shape(self) -> None:
+        if self._shape is undefined("shape"):
+            self._shape = self.inputs[0].data.shape
+
+    def update_dtype(self) -> None:
+        if self._dtype is undefined("dtype"):
+            self._dtype = self.inputs[0].data.dtype
 
     @property
     def data(self):
@@ -127,6 +140,14 @@ class Input:
                 "May not read dtype from disconnected output!"
             )
         return self._output.dtype
+
+    @property
+    def shape(self):
+        if not self.connected():
+            raise RuntimeError(
+                "May not read shape from disconnected output!"
+            )
+        return self._output.shape
 
     @property
     def tainted(self) -> bool:
@@ -163,26 +184,52 @@ class Input:
         """
         return lshift(self, other)
 
-    def close(self) -> bool:
+    def close(self, **kwargs) -> bool:
         if self.debug:
             print(f"DEBUG: Input '{self.name}': Closing input...")
         if self._closed:
             return True
         self._closed = True
         if self._iinput:
-            self._closed = self._iinput.close()
+            self._closed = self._iinput.close(**kwargs)
             if not self._closed:
                 print(
                     f"WARNING: Input '{self.name}': The input is still open!"
                 )
                 return False
         if self.output:
-            self._closed = self._output.close()
+            self._closed = self._output.close(**kwargs)
             if not self._closed:
                 print(
                     f"WARNING: Input '{self.name}': The output is still open!"
                 )
+                return False
+            self.allocate(**kwargs)
         return self._closed
+
+    def allocate(self, **kwargs) -> bool:
+        if self.debug:
+            print(f"DEBUG: Input '{self.name}': Allocating memory...")
+        if self._allocated:
+            print(f"WARNING: Input '{self.name}': Memory is already allocated!")
+            return True
+        self._allocated = True
+        if self._iinput:
+            self._allocated = self._iinput.allocate(**kwargs)
+            if not self._allocated:
+                print(
+                    f"WARNING: Input '{self.name}': "
+                    "The input memory is not allocated!"
+                )
+                return False
+        if self.output:
+            self._allocated = self._output.allocate(**kwargs)
+            if not self._allocated:
+                print(
+                    f"WARNING: Input '{self.name}': "
+                    "The output memory is not allocated!"
+                )
+        return self._allocated
 
     def open(self) -> bool:
         if self.debug:

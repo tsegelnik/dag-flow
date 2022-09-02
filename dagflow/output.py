@@ -2,7 +2,7 @@ from __future__ import print_function
 
 from itertools import cycle
 
-from numpy import zeros
+from numpy import empty, result_type
 
 from .edges import EdgeContainer
 from .shift import lshift, rshift
@@ -65,7 +65,7 @@ class Output:
 
     @property
     def data(self):
-        if self._data is undefined("data"):
+        if not self.evaluated:
             self.touch()
         return self._data
 
@@ -75,8 +75,13 @@ class Output:
             self._data = val
             self._dtype = val.dtype
             self._shape = val.shape
+            self._allocated = True
         else:
             print(f"WARNING: Output '{self.name}': The data is already set!")
+
+    @property
+    def evaluated(self):
+        return self.node.evaluated if self.node else False
 
     @property
     def dtype(self):
@@ -98,6 +103,20 @@ class Output:
     def debug(self) -> bool:
         return self._debug
 
+    def update_shape(self) -> None:
+        if self._shape is undefined("shape"):
+            if self.node and len(self.node.inputs) != 0:
+                self._shape = self.node.inputs[0].shape
+            elif len(self.inputs) != 0:
+                self._shape = self.inputs[0].shape
+
+    def update_dtype(self) -> None:
+        if self._dtype is undefined("dtype"):
+            if self.node and len(self.node.inputs) != 0:
+                self._dtype = result_type(*self.node.inputs)
+            elif len(self.inputs) != 0:
+                self._dtype = result_type(*self.inputs)
+
     def view(self, dtype=None, type=None):
         if self._allocated:
             return self.data.view(dtype=dtype, type=type)
@@ -110,15 +129,21 @@ class Output:
         if self._allocated:
             print(
                 f"WARNING: Output '{self.name}': "
-                "The output memory is allocated!"
+                f"The output memory is already allocated: {self.data}!"
             )
-            return
+            return self._allocated
         if self.debug:
             print(f"DEBUG: Output '{self.name}': Allocate the memory...")
         try:
-            self.data = zeros(self.shape, self.dtype, **kwargs)
+            self.update_dtype()
+            self.update_shape()
+            self.data = empty(self.shape, self.dtype, **kwargs)
             self._allocated = True
-        except Exception:
+        except Exception as exc:
+            print(
+                f"WARNING: Output '{self.name}': "
+                f"The output memory is not allocated due to exception '{exc}'!"
+            )
             self._allocated = False
 
     def connect_to(self, input):

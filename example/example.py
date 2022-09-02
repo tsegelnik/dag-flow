@@ -6,11 +6,11 @@ from dagflow.graphviz import savegraph
 from dagflow.input_extra import MissingInputAddEach
 from dagflow.lib import Array, Product, Sum, WeightedSum
 from dagflow.node import FunctionNode
-from numpy import arange, asarray
+from numpy import arange, asarray, copyto
 from numpy.random import randint
 
 array = arange(3, dtype="d")
-debug = False
+debug = True
 
 
 class ThreeInputsOneOutput(FunctionNode):
@@ -27,9 +27,9 @@ class ThreeInputsOneOutput(FunctionNode):
 
     def _fcn(self, _, inputs, outputs):
         for i, output in enumerate(outputs):
-            n = 3 * i
-            out = output.data = inputs[n].data.copy()
-            for input in inputs[n + 1 : 2 * n]:
+            out = output.data
+            copyto(out, inputs[3*i].data)
+            for input in inputs[3*i+1: (i+1)*3]:
                 out += input.data
 
     @property
@@ -96,13 +96,13 @@ with Graph(debug=debug) as graph:
     ws = WeightedSum("weightedsum")
     m = Product("product")
 
-    (in1, in2) >> s
+    (in1, in2) >> s # [0,2,4]
     (in3, in4) >> ws
-    weight >> ws("weight")
+    weight >> ws("weight") # [0,1,2] * (2 + 3) = [0,5,10]
     # TODO: check this issue
     # The way below does not work, due to automatic input naming
     # (in3, in4, weight) >> ws
-    (s, ws) >> m
+    (s, ws) >> m # [0,2,4] * [0,5,10] = [0,10,40]
     m.close()
 
     print("Result:", m.outputs.result.data)
