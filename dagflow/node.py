@@ -156,8 +156,8 @@ class Node(Legs):
                 return inp
         if not self.closed:
             return self._add_input(name, iinput)
-        print(
-            f"WARNING: Node '{self.name}': Input '{name}' doesn't exist, "
+        self.logger.warning(
+            f"Node '{self.name}': Input '{name}' doesn't exist, "
             "and a modification of the closed node is restricted!"
         )
 
@@ -169,12 +169,11 @@ class Node(Legs):
 
     def allocate(self, **kwargs):
         if self._allocated:
-            print(
-                f"WARNING: Node '{self.name}': The memory is already allocated!"
+            self.logger.warning(
+                f"Node '{self.name}': The memory is already allocated!"
             )
             return self._allocated
-        if self.debug:
-            print(f"DEBUG: Node '{self.name}': Allocate the memory...")
+        self.logger.debug(f"Node '{self.name}': Allocate the memory...")
         try:
             self._allocated = all(
                 out.allocate(**kwargs) for out in self.outputs
@@ -186,8 +185,8 @@ class Node(Legs):
     def add_input(self, name, iinput=undefined("iinput")):
         if not self.closed:
             return self._add_input(name, iinput)
-        print(
-            f"WARNING: Node '{self.name}': "
+        self.logger.warning(
+            f"Node '{self.name}': "
             "A modification of the closed node is restricted!"
         )
 
@@ -205,8 +204,8 @@ class Node(Legs):
     def add_output(self, name):
         if not self.closed:
             return self._add_output(name)
-        print(
-            f"WARNING: Node '{self.name}': "
+        self.logger.warning(
+            f"Node '{self.name}': "
             "A modification of the closed node is restricted!"
         )
 
@@ -238,8 +237,8 @@ class Node(Legs):
     def add_pair(self, iname, oname):
         if not self.closed:
             return self._add_pair(iname, oname)
-        print(
-            f"WARNING: Node '{self.name}': "
+        self.logger.warning(
+            f"Node '{self.name}': "
             "A modification of the closed node is restricted!"
         )
 
@@ -285,8 +284,7 @@ class Node(Legs):
         )
 
     def eval(self):
-        if self.debug:
-            print(f"DEBUG: Node '{self.name}': Evaluating node...")
+        self.logger.debug(f"Node '{self.name}': Evaluating node...")
         if self.invalid:
             raise CriticalError("Unable to evaluate invalid transformation!")
         if not self._closed:
@@ -342,21 +340,20 @@ class Node(Legs):
             print("  ", i, output)
 
     def close(self, **kwargs) -> bool:
-        if self.debug:
-            print(f"DEBUG: Node '{self.name}': Closing...")
+        self.logger.debug(f"Node '{self.name}': Closing...")
         if self._closed:
             return self._closed
         self._closed = all(inp.close(**kwargs) for inp in self.inputs)
         if not self._closed:
-            print(
-                f"WARNING: Node '{self.name}': Some inputs are still open: "
+            self.logger.warning(
+                f"Node '{self.name}': Some inputs are still open: "
                 f"'{tuple(inp.name for inp in self.inputs if not inp.closed)}'!"
             )
         else:
             self._closed = all(out.close(**kwargs) for out in self.outputs)
             if not self._closed:
-                print(
-                    f"WARNING: Node '{self.name}': Some outputs are still open: "
+                self.logger.warning(
+                    f"Node '{self.name}': Some outputs are still open: "
                     f"'{tuple(out.name for out in self.outputs if not out.closed)}'!"
                 )
                 return False
@@ -364,21 +361,20 @@ class Node(Legs):
         return self._closed
 
     def open(self) -> bool:
-        if self.debug:
-            print(f"DEBUG: Node '{self.name}': Opening...")
+        self.logger.debug(f"Node '{self.name}': Opening...")
         if not self._closed:
             return True
         self._closed = not all(inp.open() for inp in self.inputs)
         if self._closed:
-            print(
-                f"WARNING: Node '{self.name}': Some inputs are still closed: "
+            self.logger.warning(
+                f"Node '{self.name}': Some inputs are still closed: "
                 f"'{tuple(inp.name for inp in self.inputs if inp.closed)}'!"
             )
         else:
             self._closed = not all(out.open() for out in self.outputs)
             if self._closed:
-                print(
-                    f"WARNING: Node '{self.name}': Some outputs are still closed: "
+                self.logger.warning(
+                    f"Node '{self.name}': Some outputs are still closed: "
                     f"'{tuple(out.name for out in self.outputs if out.closed)}'!"
                 )
         return self._closed
@@ -442,8 +438,7 @@ class FunctionNode(Node):
         return ret
 
     def eval(self):
-        if self.debug:
-            print(f"DEBUG: Node '{self.name}': Evaluating...")
+        self.logger.debug(f"Node '{self.name}': Evaluating...")
         if not self._closed:
             raise CriticalError(
                 "Close the node before evaluation! Unclosed inputs:"
@@ -462,8 +457,8 @@ class FunctionNode(Node):
 
     def add_input(self, name, iinput=undefined("iinput")):
         if self.closed:
-            print(
-                f"WARNING: Node '{self.name}': "
+            self.logger.warning(
+                f"Node '{self.name}': "
                 "A modification of the closed node is restricted!"
             )
         else:
@@ -489,19 +484,17 @@ class FunctionNode(Node):
 
     def check_input(self, name=None, iinput=None) -> bool:
         """Checks a signature of the function at the input connection stage"""
-        if self.debug:
-            print(
-                f"DEBUG: Node '{self.name}': "
-                f"Checking a possibility to add new input '{name}'..."
-            )
+        self.logger.debug(
+            f"Node '{self.name}': "
+            f"Checking a possibility to add new input '{name}'..."
+        )
         return self._check_input()
 
     def check_eval(self) -> bool:
         """Checks a signature of the function at the evaluation stage"""
-        if self.debug:
-            print(
-                f"DEBUG: Node '{self.name}': Checking the evaluation access..."
-            )
+        self.logger.debug(
+            f"Node '{self.name}': Checking the evaluation access..."
+        )
         return self._check_eval()
 
     def _close(self) -> bool:

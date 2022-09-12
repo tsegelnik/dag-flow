@@ -7,5 +7,15 @@ def pytest_sessionstart(session):
     before performing collection and entering the run test loop.
     """
     path = getcwd()
-    if path.split("/")[-1] != "test":
+    lastdir = path.split("/")[-1]
+    if lastdir == "dag-flow":  # rootdir
         chdir("./test")
+    elif lastdir in (
+        "dagflow",
+        "example",
+        "doc",
+        "docs",
+        "source",
+        "sources",
+    ):  # childdir
+        chdir("../test")

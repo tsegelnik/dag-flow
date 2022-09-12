@@ -2,7 +2,7 @@ from __future__ import print_function
 
 from itertools import cycle
 
-from numpy import zeros, result_type
+from numpy import result_type, zeros
 
 from .edges import EdgeContainer
 from .shift import lshift, rshift
@@ -53,6 +53,10 @@ class Output:
         return self._inputs
 
     @property
+    def logger(self):
+        return self._node.logger
+
+    @property
     def invalid(self):
         """Checks the validity of the current node"""
         return self._node.invalid
@@ -77,7 +81,9 @@ class Output:
             self._shape = val.shape
             self._allocated = True
         else:
-            print(f"WARNING: Output '{self.name}': The data is already set!")
+            self.logger.warning(
+                f"Output '{self.name}': The data is already set!"
+            )
 
     @property
     def evaluated(self):
@@ -124,36 +130,34 @@ class Output:
     def view(self, dtype=None, type=None):
         if self._allocated:
             return self.data.view(dtype=dtype, type=type)
-        print(
-            f"WARNING: Output '{self.name}': "
-            "The output memory is not allocated!"
+        self.logger.warning(
+            f"Output '{self.name}': The output memory is not allocated!"
         )
 
     def allocate(self, **kwargs):
         if self._allocated:
-            print(
-                f"WARNING: Output '{self.name}': "
+            self.logger.warning(
+                f"Output '{self.name}': "
                 f"The output memory is already allocated: {self.data}!"
             )
             return self._allocated
-        if self.debug:
-            print(f"DEBUG: Output '{self.name}': Allocate the memory...")
+        self.logger.debug(f"Output '{self.name}': Allocate the memory...")
         try:
             self.update_dtype()
             self.update_shape()
             self.data = zeros(self.shape, self.dtype, **kwargs)
             self._allocated = True
         except Exception as exc:
-            print(
-                f"WARNING: Output '{self.name}': "
+            self.logger.warning(
+                f"Output '{self.name}': "
                 f"The output memory is not allocated due to exception '{exc}'!"
             )
             self._allocated = False
 
     def connect_to(self, input):
         if self.closed:
-            print(
-                f"WARNING: Output '{self.name}': "
+            self.logger.warning(
+                f"Output '{self.name}': "
                 "A modification of the closed output is restricted!"
             )
         else:
@@ -196,35 +200,33 @@ class Output:
         return RepeatedOutput(self)
 
     def close(self) -> bool:
-        if self.debug:
-            print(f"DEBUG: Output '{self.name}': Closing output...")
+        self.logger.debug(f"Output '{self.name}': Closing output...")
         if self._closed:
             return True
         self._closed = all(inp.close() for inp in self._inputs)
         if not self._closed:
-            print(
-                "WARNING: Output '{self.name}': Some inputs are still open: "
+            self.logger.warning(
+                "Output '{self.name}': Some inputs are still open: "
                 f"'{tuple(inp.name for inp in self._inputs if inp.closed)}'!"
             )
             return False
         self._closed = self.node.close()
         if not self._closed:
-            print(
-                f"WARNING: Output '{self.name}': "
+            self.logger.warning(
+                f"Output '{self.name}': "
                 f"The node '{self.node}' is still open!"
             )
         self.allocate()
         return self.closed
 
     def open(self) -> bool:
-        if self.debug:
-            print(f"DEBUG: Output '{self.name}': Opening output...")
+        self.logger.debug(f"Output '{self.name}': Opening output...")
         if not self._closed:
             return True
         self._closed = not all(inp.open() for inp in self._inputs)
         if self._closed:
-            print(
-                "WARNING: Output '{self.name}': Some inputs are still closed: "
+            self.logger.warning(
+                f"Output '{self.name}': Some inputs are still closed: "
                 f"'{tuple(inp.name for inp in self._inputs if inp.closed)}'!"
             )
         return not self._closed
@@ -254,7 +256,9 @@ class RepeatedOutput:
             return True
         self._closed = self._output.close()
         if not self._closed:
-            print(f"WARNING: Output '{self.name}': The output is still open!")
+            self.logger.warning(
+                f"Output '{self.name}': The output is still open!"
+            )
         return self._closed
 
     def open(self) -> bool:
@@ -262,8 +266,8 @@ class RepeatedOutput:
             return True
         self._closed = not self._output.open()
         if self._closed:
-            print(
-                f"WARNING: Output '{self.name}': The output is still closed!"
+            self.logger.warning(
+                f"Output '{self.name}': The output is still closed!"
             )
         return not self._closed
 
