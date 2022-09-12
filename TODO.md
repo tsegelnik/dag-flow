@@ -24,6 +24,17 @@ and forget old ones!
 - [ ] Move `handlers` to the `binding` stage
 - [ ] Memory allocation:
   - See `core/transformation/TransformationEntry.cc` method `updateTypes()`
+- [ ] Dict as `kwargs`:
+  - `{'weight' : data} >> ws('weight')`
+- [ ] Datatype: `allocatable`, `non-alloc`
+- [ ] Datadescr: `dtype`, `shape`
+- [ ] Loops:
+  - Close:
+    - Update types
+    - Update shapes
+  - Allocate
+  - See <https://hackmd.io/mMNrlOp7Q7i9wkVFvP4W4Q>
+- [ ] Logging
 
 ## Transformations
 
@@ -36,3 +47,4 @@ and forget old ones!
 ## Tests
 
 - [x] Test the graph workflow with transformations
+

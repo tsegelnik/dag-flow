@@ -15,7 +15,8 @@ class Array(FunctionNode):
     def __init__(self, name, array, outname="array", **kwargs):
         super().__init__(name, **kwargs)
         self._add_output(outname)
-        # TODO: this way copies the np.ndarray -> check this
+        # TODO: at allocation take self._array as input
+        #self._array = array
         self.outputs.array.data = asanyarray(array)
 
 

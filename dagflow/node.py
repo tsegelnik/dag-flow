@@ -4,6 +4,7 @@ from .exception import CriticalError
 from .graph import Graph
 from .input import Input
 from .legs import Legs
+from .logger import Logger
 from .output import Output
 from .shift import lshift, rshift
 from .tools import IsIterable, undefined
@@ -46,6 +47,20 @@ class Node(Legs):
             "debug", self.graph.debug if self.graph else False
         )
         self._label = kwargs.pop("label", undefined("label"))
+        if (logger := kwargs.pop("logger", False)) or (
+            self.graph and (logger := self.graph.logger)
+        ):
+            self._logger = logger
+        else:
+            from .logger import get_logger
+
+            self._logger = get_logger(
+                filename=kwargs.pop("logfile", None),
+                debug=self.debug,
+                console=kwargs.pop("console", True),
+                formatstr=kwargs.pop("logformat", None),
+                name=kwargs.pop("loggername", None),
+            )
         for opt in {"immediate", "auto_freeze", "frozen"}:
             if value := kwargs.pop(opt, None):
                 setattr(self, f"_{opt}", bool(value))
@@ -63,6 +78,10 @@ class Node(Legs):
     @name.setter
     def name(self, name):
         self._name = name
+
+    @property
+    def logger(self) -> Logger:
+        return self._logger
 
     @property
     def tainted(self) -> bool:
@@ -272,7 +291,7 @@ class Node(Legs):
             raise CriticalError("Unable to evaluate invalid transformation!")
         if not self._closed:
             raise CriticalError("Close the node before evaluation!")
-        #if not self._allocated:
+        # if not self._allocated:
         #    raise CriticalError("Allocate the memory before evaluation!")
         self._evaluated = True
         try:
@@ -341,7 +360,7 @@ class Node(Legs):
                     f"'{tuple(out.name for out in self.outputs if not out.closed)}'!"
                 )
                 return False
-            #self.allocate(**kwargs)
+            # self.allocate(**kwargs)
         return self._closed
 
     def open(self) -> bool:
@@ -432,7 +451,7 @@ class FunctionNode(Node):
                 " Unclosed outputs: "
                 f"'{tuple(out.name for out in self.outputs if not out.closed)}'"
             )
-        #if not self._allocated:
+        # if not self._allocated:
         #    raise CriticalError(
         #        "Memory is not allocated! Problem inputs:"
         #        f"'{tuple(inp.name for inp in self.inputs if not inp.allocated)}',"

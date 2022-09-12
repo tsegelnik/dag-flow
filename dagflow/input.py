@@ -197,6 +197,7 @@ class Input:
                     f"WARNING: Input '{self.name}': The input is still open!"
                 )
                 return False
+        # important
         if self.output:
             self._closed = self._output.close(**kwargs)
             if not self._closed:
@@ -222,6 +223,7 @@ class Input:
                     "The input memory is not allocated!"
                 )
                 return False
+        # important
         if self.output:
             self._allocated = self._output.allocate(**kwargs)
             if not self._allocated:

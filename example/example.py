@@ -98,10 +98,7 @@ with Graph(debug=debug) as graph:
 
     (in1, in2) >> s # [0,2,4]
     (in3, in4) >> ws
-    weight >> ws("weight") # [0,1,2] * (2 + 3) = [0,5,10]
-    # TODO: check this issue
-    # The way below does not work, due to automatic input naming
-    # (in3, in4, weight) >> ws
+    weight >> ws("weight") # [0,1,2] * 2 + [0,1,2] * 3 = [0,5,10]
     (s, ws) >> m # [0,2,4] * [0,5,10] = [0,10,40]
     m.close()
 

@@ -2,7 +2,7 @@ from __future__ import print_function
 
 from itertools import cycle
 
-from numpy import empty, result_type
+from numpy import zeros, result_type
 
 from .edges import EdgeContainer
 from .shift import lshift, rshift
@@ -104,6 +104,8 @@ class Output:
         return self._debug
 
     def update_shape(self) -> None:
+        # TODO: Custom method
+        # raise Exception()
         if self._shape is undefined("shape"):
             if self.node and len(self.node.inputs) != 0:
                 self._shape = self.node.inputs[0].shape
@@ -111,6 +113,8 @@ class Output:
                 self._shape = self.inputs[0].shape
 
     def update_dtype(self) -> None:
+        # TODO: Custom method
+        # raise Exception()
         if self._dtype is undefined("dtype"):
             if self.node and len(self.node.inputs) != 0:
                 self._dtype = result_type(*self.node.inputs)
@@ -137,7 +141,7 @@ class Output:
         try:
             self.update_dtype()
             self.update_shape()
-            self.data = empty(self.shape, self.dtype, **kwargs)
+            self.data = zeros(self.shape, self.dtype, **kwargs)
             self._allocated = True
         except Exception as exc:
             print(

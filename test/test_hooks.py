@@ -1,11 +1,12 @@
 #!/usr/bin/env python
 
-from dagflow.exception import CriticalError
-from dagflow.input_extra import MissingInputAddOne
-from dagflow.lib import WeightedSum, Array
-from dagflow.node import FunctionNode
 from numpy import arange, array, copyto
 from pytest import raises
+
+from dagflow.exception import CriticalError
+from dagflow.input_extra import MissingInputAddOne
+from dagflow.lib import Array, WeightedSum
+from dagflow.node import FunctionNode
 
 
 class ThreeInputsSum(FunctionNode):
