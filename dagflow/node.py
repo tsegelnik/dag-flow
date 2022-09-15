@@ -209,7 +209,7 @@ class Node(Legs):
             "A modification of the closed node is restricted!"
         )
 
-    def _add_output(self, name):
+    def _add_output(self, name, **kwargs):
         if IsIterable(name):
             return tuple(self._add_output(n) for n in name)
         if isinstance(name, Output):
@@ -228,7 +228,13 @@ class Node(Legs):
             return name
         if name in self.outputs:
             raise RuntimeError(f"Output {self.name}.{name} already exist!")
-        output = Output(name, self)
+        output = Output(
+            name,
+            self,
+            shapefunc=self._shapefunc,
+            typefunc=self._typefunc,
+            **kwargs,
+        )
         self.outputs += output
         if self._graph:
             self._graph._add_output(output)
@@ -378,6 +384,18 @@ class Node(Legs):
                     f"'{tuple(out.name for out in self.outputs if out.closed)}'!"
                 )
         return self._closed
+
+    def _shapefunc(self, node) -> None:
+        """A output takes this function to determine the shape"""
+        raise RuntimeError(
+            "Unimplemented method: the method must be overridden!"
+        )
+
+    def _typefunc(self, node) -> None:
+        """A output takes this function to determine the dtype"""
+        raise RuntimeError(
+            "Unimplemented method: the method must be overridden!"
+        )
 
 
 class FunctionNode(Node):

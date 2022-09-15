@@ -1,6 +1,7 @@
 from __future__ import print_function
 
 from itertools import cycle
+from typing import Iterable
 
 from numpy import result_type, zeros
 
@@ -16,6 +17,7 @@ class Output:
     _data = undefined("data")
     _dtype = undefined("dtype")
     _shape = undefined("shape")
+    _allocatable: bool = True
     _allocated: bool = False
     _closed: bool = False
     _debug: bool = False
@@ -25,6 +27,26 @@ class Output:
         self._node = node
         self._inputs = []
         self._debug = kwargs.pop("debug", node.debug if node else False)
+        if shapef := kwargs.pop("shapefunc", self._shapefunc):
+            self._shapefunc = shapef
+        if typef := kwargs.pop("typefunc", self._typefunc):
+            self._typefunc = typef
+        self._allocatable = kwargs.pop("allocatable", True)
+        if self.allocatable:
+            return
+        if (data := kwargs.get("data")) is not None:
+            self._data = data
+            try:
+                self._dtype = self._data.dtype
+                self._shape = self._data.shape
+            except Exception:
+                self._dtype = type(self._data)
+                self._shape = (
+                    len(self.data)
+                    if isinstance(self._data, Iterable)
+                    else None
+                )
+        self._allocated = True
 
     def __str__(self):
         return f"|-> {self._name}"
@@ -39,6 +61,10 @@ class Output:
     @name.setter
     def name(self, name):
         self._name = name
+
+    @property
+    def allocatable(self):
+        return self._allocatable
 
     @property
     def allocated(self):
@@ -109,24 +135,6 @@ class Output:
     def debug(self) -> bool:
         return self._debug
 
-    def update_shape(self) -> None:
-        # TODO: Custom method
-        # raise Exception()
-        if self._shape is undefined("shape"):
-            if self.node and len(self.node.inputs) != 0:
-                self._shape = self.node.inputs[0].shape
-            elif len(self.inputs) != 0:
-                self._shape = self.inputs[0].shape
-
-    def update_dtype(self) -> None:
-        # TODO: Custom method
-        # raise Exception()
-        if self._dtype is undefined("dtype"):
-            if self.node and len(self.node.inputs) != 0:
-                self._dtype = result_type(*self.node.inputs)
-            elif len(self.inputs) != 0:
-                self._dtype = result_type(*self.inputs)
-
     def view(self, dtype=None, type=None):
         if self._allocated:
             return self.data.view(dtype=dtype, type=type)
@@ -143,8 +151,12 @@ class Output:
             return self._allocated
         self.logger.debug(f"Output '{self.name}': Allocate the memory...")
         try:
-            self.update_dtype()
-            self.update_shape()
+            self._shape = self._shapefunc(self.node)
+            self._dtype = self._typefunc(self.node)
+            self.logger.debug(
+                f"Output '{self.name}': Evaluated shape={self.shape}, "
+                f"dtype={self.dtype}"
+            )
             self.data = zeros(self.shape, self.dtype, **kwargs)
             self._allocated = True
         except Exception as exc:
@@ -166,7 +178,8 @@ class Output:
     def _connect_to(self, input):
         if input in self._inputs:
             raise RuntimeError(
-                f"Output '{self.name}' is already connected to the input '{input.name}'!"
+                f"Output '{self.name}' is already connected "
+                "to the input '{input.name}'!"
             )
         self._inputs.append(input)
         input._set_output(self)
@@ -216,7 +229,8 @@ class Output:
                 f"Output '{self.name}': "
                 f"The node '{self.node}' is still open!"
             )
-        self.allocate()
+        if self.allocatable:
+            self.allocate()
         return self.closed
 
     def open(self) -> bool:
@@ -230,6 +244,18 @@ class Output:
                 f"'{tuple(inp.name for inp in self._inputs if inp.closed)}'!"
             )
         return not self._closed
+
+    def _shapefunc(self, node) -> None:
+        """The function to determine the shape"""
+        raise RuntimeError(
+            "Unimplemented method: the method must be overridden!"
+        )
+
+    def _typefunc(self, node) -> None:
+        """The function to determine the dtype"""
+        raise RuntimeError(
+            "Unimplemented method: the method must be overridden!"
+        )
 
 
 class RepeatedOutput:

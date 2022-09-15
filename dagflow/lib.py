@@ -1,23 +1,28 @@
 from itertools import zip_longest
 
-from numpy import asanyarray, copyto
+from numpy import array, copyto, result_type
 
 from .exception import CriticalError, UnconnectedInput
 from .input_extra import MissingInputAddOne
-from .node import FunctionNode
-from .node_deco import NodeClass
+from .node import FunctionNode, StaticNode
+#from .node_deco import NodeClass
 from .tools import IsIterable
 
 
-class Array(FunctionNode):
+class Array(StaticNode):
     """Creates a note with single data output with predefined array"""
 
-    def __init__(self, name, array, outname="array", **kwargs):
+    def __init__(self, name, arr, outname="array", **kwargs):
         super().__init__(name, **kwargs)
-        self._add_output(outname)
-        # TODO: at allocation take self._array as input
-        #self._array = array
-        self.outputs.array.data = asanyarray(array)
+        self._add_output(outname, allocatable=False, data=array(arr, copy=True))
+
+    def _shapefunc(self, node) -> None:
+        """A output takes this function to determine the shape"""
+        return node.outputs.array.shape
+
+    def _typefunc(self, node) -> None:
+        """A output takes this function to determine the dtype"""
+        return node.outputs.array.dtype
 
 
 class Sum(FunctionNode):
@@ -36,6 +41,14 @@ class Sum(FunctionNode):
             for input in inputs[1:]:
                 out += input.data
 
+    def _shapefunc(self, node) -> None:
+        """A output takes this function to determine the shape"""
+        return node.inputs[0].data.shape
+
+    def _typefunc(self, node) -> None:
+        """A output takes this function to determine the dtype"""
+        return result_type(*tuple(inp.dtype for inp in node.inputs))
+
 
 class Product(FunctionNode):
     """Product of all the inputs together"""
@@ -52,6 +65,14 @@ class Product(FunctionNode):
         if len(inputs) > 1:
             for input in inputs[1:]:
                 out *= input.data
+
+    def _shapefunc(self, node) -> None:
+        """A output takes this function to determine the shape"""
+        return node.inputs[0].data.shape
+
+    def _typefunc(self, node) -> None:
+        """A output takes this function to determine the dtype"""
+        return result_type(*tuple(inp.dtype for inp in node.inputs))
 
 
 class Division(FunctionNode):
@@ -70,6 +91,14 @@ class Division(FunctionNode):
             for input in inputs[1:]:
                 out /= input.data
 
+    def _shapefunc(self, node) -> None:
+        """A output takes this function to determine the shape"""
+        return node.inputs[0].data.shape
+
+    def _typefunc(self, node) -> None:
+        """A output takes this function to determine the dtype"""
+        return result_type(*tuple(inp.dtype for inp in node.inputs))
+
 
 class WeightedSum(FunctionNode):
     """Weighted sum of all the inputs together"""
@@ -79,6 +108,14 @@ class WeightedSum(FunctionNode):
             "missing_input_handler", MissingInputAddOne(output_fmt="result")
         )
         super().__init__(*args, **kwargs)
+
+    def _shapefunc(self, node) -> None:
+        """A output takes this function to determine the shape"""
+        return node.inputs[0].data.shape
+
+    def _typefunc(self, node) -> None:
+        """A output takes this function to determine the dtype"""
+        return result_type(*tuple(inp.dtype for inp in node.inputs))
 
     @property
     def weight(self):
@@ -120,7 +157,7 @@ class WeightedSum(FunctionNode):
         if len(weights) == 1:
             return self.__fcn_number(weights[0], inputs, outputs)
         out = outputs[0].data
-        copyto(out, inputs[0].data.copy()*weights[0])
+        copyto(out, inputs[0].data.copy() * weights[0])
         if len(inputs) > 1:
             for input, weight in zip(inputs[1:], weights[1:]):
                 if input is None:

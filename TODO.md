@@ -18,23 +18,24 @@ and forget old ones!
   - call function (`critical`)
 - [x] Recursive close of a graph
 - [x] Solve troubles with a connection of an input or output and closure
-- [ ] Implement 2 descriptors for the `Output`:
+- [x] Implement 2 descriptors for the `Output`:
   - `Shape` and `dtype`
   - `Allocation` and `view`
-- [ ] Move `handlers` to the `binding` stage
-- [ ] Memory allocation:
+- [x] Move `handlers` to the `binding` stage
+- [x] Memory allocation:
   - See `core/transformation/TransformationEntry.cc` method `updateTypes()`
+- [x] Datatype: `allocatable`, `non-alloc`
+- [x] Datadescr: `dtype`, `shape`
 - [ ] Dict as `kwargs`:
   - `{'weight' : data} >> ws('weight')`
-- [ ] Datatype: `allocatable`, `non-alloc`
-- [ ] Datadescr: `dtype`, `shape`
 - [ ] Loops:
   - Close:
     - Update types
     - Update shapes
   - Allocate
   - See <https://hackmd.io/mMNrlOp7Q7i9wkVFvP4W4Q>
-- [ ] Logging
+- [x] Logging
+- [ ] Output inputs problem
 
 ## Transformations
 

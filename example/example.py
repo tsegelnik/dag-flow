@@ -1,6 +1,6 @@
 from __future__ import print_function
 
-from numpy import arange, asarray, copyto
+from numpy import arange, asarray, copyto, result_type
 from numpy.random import randint
 
 from dagflow.exception import CriticalError
@@ -36,6 +36,14 @@ class ThreeInputsOneOutput(FunctionNode):
     @property
     def result(self):
         return [out.data for out in self.outputs]
+
+    def _shapefunc(self, node) -> None:
+        """A output takes this function to determine the shape"""
+        return node.inputs[0].data.shape
+
+    def _typefunc(self, node) -> None:
+        """A output takes this function to determine the dtype"""
+        return result_type(*tuple(inp.dtype for inp in node.inputs))
 
 
 # Check predefined Array, Sum and Product

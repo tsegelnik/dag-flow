@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-from numpy import arange, array, copyto
+from numpy import arange, array, copyto, result_type
 from pytest import raises
 
 from dagflow.exception import CriticalError
@@ -32,6 +32,14 @@ class ThreeInputsSum(FunctionNode):
         copyto(out, inputs[0].data.copy())
         for input in inputs[1:]:
             out += input.data
+
+    def _shapefunc(self, node) -> None:
+        """A output takes this function to determine the shape"""
+        return node.inputs[0].data.shape
+
+    def _typefunc(self, node) -> None:
+        """A output takes this function to determine the dtype"""
+        return result_type(*tuple(inp.dtype for inp in node.inputs))
 
 
 arr = Array("arr", arange(3, dtype="i"))  # [0, 1, 2]
