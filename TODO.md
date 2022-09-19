@@ -6,7 +6,8 @@
 - [x] Automatic creation of outputs is **restricted**
 - [x] Parentheses operator `()` as getter `[]` of inputs, but with creation
 of the input, instead of `KeyError`
-- [ ] Implementing of flexible shift operators `>>` and `<<` or *using current*?
+- [x] Implementing of flexible shift operators `>>` and `<<` or *using current*?
+  - Now using curren implementation.
 - [ ] Fix bug with creation of new nodes via decorator:
 only works with a single instance, the graph holds only a new instance
 and forget old ones!
@@ -26,8 +27,9 @@ and forget old ones!
   - See `core/transformation/TransformationEntry.cc` method `updateTypes()`
 - [x] Datatype: `allocatable`, `non-alloc`
 - [x] Datadescr: `dtype`, `shape`
-- [ ] Dict as `kwargs`:
-  - `{'weight' : data} >> ws('weight')`
+- [x] Dict as `kwargs`:
+  - `ws = WeightedSum()"`;
+  -`{'weight' : data} >> ws` is the same as `data >> ws('weight')`
 - [ ] Loops:
   - Close:
     - Update types
@@ -35,7 +37,7 @@ and forget old ones!
   - Allocate
   - See <https://hackmd.io/mMNrlOp7Q7i9wkVFvP4W4Q>
 - [x] Logging
-- [ ] Output inputs problem
+- [ ] Inputs problem: there is a difference between node and output inputs
 
 ## Transformations
 

@@ -6,6 +6,7 @@ from typing import Iterable
 from numpy import result_type, zeros
 
 from .edges import EdgeContainer
+from .exception import CriticalError
 from .shift import lshift, rshift
 from .tools import StopNesting, undefined
 
@@ -151,20 +152,39 @@ class Output:
             return self._allocated
         self.logger.debug(f"Output '{self.name}': Allocate the memory...")
         try:
-            self._shape = self._shapefunc(self.node)
-            self._dtype = self._typefunc(self.node)
+            self._update_shape()
+            self._update_dtype()
             self.logger.debug(
                 f"Output '{self.name}': Evaluated shape={self.shape}, "
-                f"dtype={self.dtype}"
+                f"evaluated dtype={self.dtype}"
             )
             self.data = zeros(self.shape, self.dtype, **kwargs)
+            self.logger.debug(
+                f"Output '{self.name}': The memory is successfully allocated!"
+            )
             self._allocated = True
         except Exception as exc:
-            self.logger.warning(
-                f"Output '{self.name}': "
-                f"The output memory is not allocated due to exception '{exc}'!"
+            self.logger.error(
+                f"Output '{self.name}': The output memory is not allocated "
+                f"due to the exception: {exc}!"
             )
             self._allocated = False
+
+    def _update_shape(self):
+        try:
+            self._shape = self._shapefunc(self.node)
+        except Exception as exc:
+            raise CriticalError(
+                "Cannot update `shape` due to the exception: "
+            ) from exc
+
+    def _update_dtype(self):
+        try:
+            self._dtype = self._typefunc(self.node)
+        except Exception as exc:
+            raise CriticalError(
+                "Cannot update `dtype` due to the exception: "
+            ) from exc
 
     def connect_to(self, input):
         if self.closed:

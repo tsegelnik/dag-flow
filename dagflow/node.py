@@ -191,6 +191,9 @@ class Node(Legs):
         )
 
     def _add_input(self, name, iinput=undefined("iinput")):
+        self.logger.debug(
+            f"Node '{self.name}': Adding input '{name}' with iinput='{iinput}'..."
+        )
         if IsIterable(name):
             return tuple(self._add_input(n) for n in name)
         if name in self.inputs:
@@ -464,6 +467,7 @@ class FunctionNode(Node):
                 " Unclosed outputs: "
                 f"'{tuple(out.name for out in self.outputs if not out.closed)}'"
             )
+        # TODO: If we need an allocation methods and flags in the nodes?
         # if not self._allocated:
         #    raise CriticalError(
         #        "Memory is not allocated! Problem inputs:"
