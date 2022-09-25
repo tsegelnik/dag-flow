@@ -140,7 +140,7 @@ class Output:
         if self._allocated:
             return self.data.view(dtype=dtype, type=type)
         self.logger.warning(
-            f"Output '{self.name}': The output memory is not allocated!"
+            f"Output '{self.name}': The output memory is not allocated."
         )
 
     def allocate(self, **kwargs):
@@ -159,7 +159,7 @@ class Output:
                 f"evaluated dtype={self.dtype}"
             )
             self.data = zeros(self.shape, self.dtype, **kwargs)
-            self.logger.debug(
+            self.logger.info(
                 f"Output '{self.name}': The memory is successfully allocated!"
             )
             self._allocated = True

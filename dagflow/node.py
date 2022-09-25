@@ -167,6 +167,7 @@ class Node(Legs):
             return self._label.format(*args, **kwargs)
         return self._label
 
+    # TODO: do we need an allocation?
     def allocate(self, **kwargs):
         if self._allocated:
             self.logger.warning(
@@ -293,21 +294,21 @@ class Node(Legs):
         )
 
     def eval(self):
-        self.logger.debug(f"Node '{self.name}': Evaluating node...")
+        self.logger.info(f"Node '{self.name}': Evaluating node...")
         if self.invalid:
             raise CriticalError("Unable to evaluate invalid transformation!")
         if not self._closed:
             raise CriticalError("Close the node before evaluation!")
+        # TODO: do we need an allocation?
         # if not self._allocated:
         #    raise CriticalError("Allocate the memory before evaluation!")
         self._evaluated = True
         try:
             ret = self._eval()
+            self.logger.debug(f"Node '{self.name}': Evaluated return={ret}")
         except Exception as exc:
             self._evaluated = False
-            raise exc from RuntimeError(
-                "An exception occured during evaluation!"
-            )
+            raise exc from RuntimeError("An exception occured during evaluation!")
         self._evaluated = False
         return ret
 
@@ -366,6 +367,7 @@ class Node(Legs):
                     f"'{tuple(out.name for out in self.outputs if not out.closed)}'!"
                 )
                 return False
+            # TODO: do we need an allocation?
             # self.allocate(**kwargs)
         return self._closed
 
@@ -452,6 +454,7 @@ class FunctionNode(Node):
         self._evaluated = True
         try:
             ret = self._fcn(self, self.inputs, self.outputs)
+            self.logger.debug(f"Node '{self.name}': Evaluated return={ret}")
         except Exception as exc:
             self._evaluated = False
             raise exc

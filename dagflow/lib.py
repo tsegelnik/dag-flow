@@ -24,6 +24,9 @@ class Array(StaticNode):
         """A output takes this function to determine the dtype"""
         return node.outputs.array.dtype
 
+    def _fcn(self):
+        return self.outputs.array.data
+
 
 class Sum(FunctionNode):
     """Sum of all the inputs together"""
@@ -40,6 +43,7 @@ class Sum(FunctionNode):
         if len(inputs) > 1:
             for input in inputs[1:]:
                 out += input.data
+        return out
 
     def _shapefunc(self, node) -> None:
         """A output takes this function to determine the shape"""
@@ -65,6 +69,7 @@ class Product(FunctionNode):
         if len(inputs) > 1:
             for input in inputs[1:]:
                 out *= input.data
+        return out
 
     def _shapefunc(self, node) -> None:
         """A output takes this function to determine the shape"""
@@ -90,6 +95,7 @@ class Division(FunctionNode):
         if len(inputs) > 1:
             for input in inputs[1:]:
                 out /= input.data
+        return out
 
     def _shapefunc(self, node) -> None:
         """A output takes this function to determine the shape"""

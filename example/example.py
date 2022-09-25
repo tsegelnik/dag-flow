@@ -32,6 +32,7 @@ class ThreeInputsOneOutput(FunctionNode):
             copyto(out, inputs[3 * i].data)
             for input in inputs[3 * i + 1 : (i + 1) * 3]:
                 out += input.data
+        return out
 
     @property
     def result(self):
