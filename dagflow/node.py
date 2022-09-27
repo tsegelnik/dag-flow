@@ -39,6 +39,10 @@ class Node(Legs):
         self._name = name
         if newfcn := kwargs.pop("fcn", None):
             self._fcn = newfcn
+        if shapefunc := kwargs.pop("shapefunc", None):
+            self._shapefunc = shapefunc
+        if typefunc := kwargs.pop("typefunc", None):
+            self._typefunc = typefunc
         self._fcn_chain = []
         self.graph = kwargs.pop("graph", None)
         if not self.graph:

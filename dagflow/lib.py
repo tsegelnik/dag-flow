@@ -5,12 +5,11 @@ from numpy import array, copyto, result_type
 from .exception import CriticalError, UnconnectedInput
 from .input_extra import MissingInputAddOne
 from .node import FunctionNode, StaticNode
-#from .node_deco import NodeClass
 from .tools import IsIterable
 
 
 class Array(StaticNode):
-    """Creates a note with single data output with predefined array"""
+    """Creates a node with a single data output with predefined array"""
 
     def __init__(self, name, arr, outname="array", **kwargs):
         super().__init__(name, **kwargs)
@@ -28,6 +27,29 @@ class Array(StaticNode):
         return self.outputs.array.data
 
 
+class Concatenation(FunctionNode):
+    """Creates a node with a single data output from all the inputs data"""
+
+    def __init__(self, *args, **kwargs):
+        kwargs.setdefault(
+            "missing_input_handler", MissingInputAddOne(output_fmt="result")
+        )
+        super().__init__(*args, **kwargs)
+
+    def _shapefunc(self, node) -> None:
+        """A output takes this function to determine the shape"""
+        return tuple(out.shape for out in node.outputs)
+
+    def _typefunc(self, node) -> None:
+        """A output takes this function to determine the dtype"""
+        return result_type(*tuple(inp.dtype for inp in node.inputs))
+
+    def _fcn(self, _, inputs, outputs):
+        res = outputs.result.data
+        res[:] = [inp.data for inp in inputs]
+        return res
+
+
 class Sum(FunctionNode):
     """Sum of all the inputs together"""
 
@@ -39,7 +61,7 @@ class Sum(FunctionNode):
 
     def _fcn(self, _, inputs, outputs):
         out = outputs.result.data
-        copyto(out, inputs[0].data.copy())
+        copyto(out, inputs[0].data)
         if len(inputs) > 1:
             for input in inputs[1:]:
                 out += input.data
@@ -65,7 +87,7 @@ class Product(FunctionNode):
 
     def _fcn(self, _, inputs, outputs):
         out = outputs.result.data
-        copyto(out, inputs[0].data.copy())
+        copyto(out, inputs[0].data)
         if len(inputs) > 1:
             for input in inputs[1:]:
                 out *= input.data
@@ -163,7 +185,7 @@ class WeightedSum(FunctionNode):
         if len(weights) == 1:
             return self.__fcn_number(weights[0], inputs, outputs)
         out = outputs[0].data
-        copyto(out, inputs[0].data.copy() * weights[0])
+        copyto(out, inputs[0].data * weights[0])
         if len(inputs) > 1:
             for input, weight in zip(inputs[1:], weights[1:]):
                 if input is None:

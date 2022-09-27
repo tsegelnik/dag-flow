@@ -136,9 +136,9 @@ class Output:
     def debug(self) -> bool:
         return self._debug
 
-    def view(self, dtype=None, type=None):
+    def view(self, **kwargs):
         if self._allocated:
-            return self.data.view(dtype=dtype, type=type)
+            return self.data.view(**kwargs)
         self.logger.warning(
             f"Output '{self.name}': The output memory is not allocated."
         )

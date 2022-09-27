@@ -121,19 +121,16 @@ class Input:
     def output(self) -> Output:
         return self._output
 
-    def update_shape(self) -> None:
-        if self._shape is undefined("shape"):
-            self._shape = self.inputs[0].data.shape
-
-    def update_dtype(self) -> None:
-        if self._dtype is undefined("dtype"):
-            self._dtype = self.inputs[0].data.dtype
-
     @property
     def data(self):
         if not self.connected():
             raise RuntimeError("May not read data from disconnected output!")
         return self._output.data
+
+    def view(self, **kwargs):
+        if not self.connected():
+            raise RuntimeError("May not read data from disconnected output!")
+        return self._output.view(**kwargs)
 
     @property
     def dtype(self):

@@ -8,9 +8,6 @@
 of the input, instead of `KeyError`
 - [x] Implementing of flexible shift operators `>>` and `<<` or *using current*?
   - Now using curren implementation.
-- [ ] Fix bug with creation of new nodes via decorator:
-only works with a single instance, the graph holds only a new instance
-and forget old ones!
 - [x] Implement `hooks`:
   - At an input connection
   - At a function evaluation
@@ -30,14 +27,20 @@ and forget old ones!
 - [x] Dict as `kwargs`:
   - `ws = WeightedSum()"`;
   -`{'weight' : data} >> ws` is the same as `data >> ws('weight')`
+- [x] Logging
+- [x] Inputs problem: there is a difference between node and output inputs
+- [ ] Fix decorators
+- [ ] Update naming for the second order `input` and `output`: `parent`, `child`
+- [ ] `iinput` is a meta data, do not use in allocation and closure;
+use `Node` to do this stuff; do not use second order `input` and `output`
 - [ ] Loops:
   - Close:
-    - Update types
-    - Update shapes
-  - Allocate
+    - Typing:
+      - Update types
+      - Update shapes
+    - Allocation
   - See <https://hackmd.io/mMNrlOp7Q7i9wkVFvP4W4Q>
-- [x] Logging
-- [ ] Inputs problem: there is a difference between node and output inputs
+- [ ] `Tainted`
 
 ## Transformations
 
