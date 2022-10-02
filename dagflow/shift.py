@@ -3,7 +3,7 @@ from __future__ import print_function
 from itertools import zip_longest
 
 from .tools import undefined
-from .iterators import iter_iinputs, iter_inputs, iter_outputs
+from .iterators import iter_parent_outputs, iter_inputs, iter_outputs
 
 _rshift_scope_id = 0
 
@@ -44,8 +44,8 @@ def rshift(outputs, inputs):
             if not (inp := missing_input_handler(scope=scope_id)):
                 break
         output._connect_to(inp)
-    iinputs = tuple(iter_iinputs(inputs))
-    return iinputs[0] if len(iinputs) == 1 else iinputs
+    parent_outputs = tuple(iter_parent_outputs(inputs))
+    return parent_outputs[0] if len(parent_outputs) == 1 else parent_outputs
 
 
 def lshift(inputs, outputs):

@@ -33,12 +33,16 @@ of the input, instead of `KeyError`
 - [ ] Update naming for the second order `input` and `output`: `parent`, `child`
 - [ ] `iinput` is a meta data, do not use in allocation and closure;
 use `Node` to do this stuff; do not use second order `input` and `output`
-- [ ] Loops:
+- [ ] Loops scheme:
   - Close:
     - Typing:
       - Update types
       - Update shapes
     - Allocation
+  - Graph:
+    - Node:
+      - Inputs
+      - Outputs
   - See <https://hackmd.io/mMNrlOp7Q7i9wkVFvP4W4Q>
 - [ ] `Tainted`
 

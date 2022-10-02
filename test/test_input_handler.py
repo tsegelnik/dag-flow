@@ -78,7 +78,7 @@ def test_02():
     s.print()
 
     for input, output in zip(s.inputs, s.outputs):
-        assert input.iinput is output
+        assert input.parent_output is output
     graph.close()
 
     savegraph(
@@ -131,7 +131,7 @@ def test_04():
     in4 = graph.add_node("n4", output="o1")
 
     s = graph.add_node(
-        "add", missing_input_handler=MissingInputAddOne(add_iinput=True)
+        "add", missing_input_handler=MissingInputAddOne(add_parent_output=True)
     )
 
     (in1, in2, in3) >> s
@@ -143,7 +143,7 @@ def test_04():
 
     output = s.outputs[0]
     for input in s.inputs:
-        assert input.iinput is output
+        assert input.parent_output is output
     graph.close()
 
     savegraph(
@@ -166,7 +166,7 @@ def test_05():
     in4 = graph.add_node("n4", output="o1")
 
     s = graph.add_node(
-        "add", missing_input_handler=MissingInputAddEach(add_iinput=False)
+        "add", missing_input_handler=MissingInputAddEach(add_parent_output=False)
     )
 
     (in1, in2, in3) >> s
@@ -188,7 +188,7 @@ def test_06():
     """
     Test InputAddEach handler: add new input on each new connect and
     add an output for each >> group.
-    This version also sets the iinput for each input
+    This version also sets the parent_output for each input
     """
     graph = Graph()
 
@@ -198,7 +198,7 @@ def test_06():
     in4 = graph.add_node("n4", output="o1")
 
     s = graph.add_node(
-        "add", missing_input_handler=MissingInputAddEach(add_iinput=True)
+        "add", missing_input_handler=MissingInputAddEach(add_parent_output=True)
     )
 
     (in1, in2, in3) >> s
@@ -210,9 +210,9 @@ def test_06():
 
     o1, o2 = s.outputs
     for input in s.inputs[:3]:
-        assert input.iinput is o1
+        assert input.parent_output is o1
     for input in s.inputs[3:]:
-        assert input.iinput is o2
+        assert input.parent_output is o2
     graph.close()
 
     savegraph(

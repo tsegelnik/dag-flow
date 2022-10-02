@@ -20,13 +20,13 @@ class Input:
         self,
         name: Union[str, Undefined] = undefined("name"),
         node: Union[Node, Undefined] = undefined("node"),
-        iinput: Union[Input, Undefined] = undefined("iinput"),
+        parent_output: Union[Input, Undefined] = undefined("parent_output"),
         output: Union[Output, Undefined] = undefined("output"),
         **kwargs,
     ):
         self._name = name
         self._node = node
-        self._iinput = iinput
+        self._parent_output = parent_output
         self._output = output
         self._closed = kwargs.pop("closed", False)
         self._debug = kwargs.pop("debug", node.debug if node else False)
@@ -37,24 +37,24 @@ class Input:
     def __repr__(self) -> str:
         return self.__str__()
 
-    def set_iinput(self, iinput: Input, force: bool = False) -> None:
+    def set_parent_output(self, parent_output: Input, force: bool = False) -> None:
         if self.closed:
             self.logger.warning(
                 f"Input '{self.name}': "
                 "A modification of the closed input is restricted!"
             )
         else:
-            return self._set_iinput(iinput, force)
+            return self._set_parent_output(parent_output, force)
 
-    def _set_iinput(self, iinput: Input, force: bool = False) -> None:
+    def _set_parent_output(self, parent_output: Input, force: bool = False) -> None:
         self.logger.debug(
-            f"Input '{self.name}': Adding iinput '{iinput.name}'..."
+            f"Input '{self.name}': Adding parent_output '{parent_output.name}'..."
         )
-        if self.iinput and not force:
+        if self.parent_output and not force:
             raise RuntimeError(
-                f"The iinput is already setted to {self.iinput}!"
+                f"The parent_output is already setted to {self.parent_output}!"
             )
-        self._iinput = iinput
+        self._parent_output = parent_output
 
     def set_output(self, output: Output, force: bool = False) -> None:
         if self.closed:
@@ -92,8 +92,8 @@ class Input:
         return self._node.logger
 
     @property
-    def iinput(self) -> Input:
-        return self._iinput
+    def parent_output(self) -> Input:
+        return self._parent_output
 
     @property
     def invalid(self) -> bool:
@@ -166,9 +166,9 @@ class Input:
             return iter(tuple())
         raise StopNesting(self)
 
-    def _deep_iter_iinputs(self):
-        if self._iinput:
-            raise StopNesting(self._iinput)
+    def _deep_iter_parent_outputs(self):
+        if self._parent_output:
+            raise StopNesting(self._parent_output)
         return iter(tuple())
 
     def __lshift__(self, other):
@@ -188,8 +188,8 @@ class Input:
         if self._closed:
             return True
         self._closed = True
-        if self._iinput:
-            self._closed = self._iinput.close(**kwargs)
+        if self._parent_output:
+            self._closed = self._parent_output.close(**kwargs)
             if not self._closed:
                 self.logger.warning(
                     f"Input '{self.name}': The input is still open!"
@@ -212,8 +212,8 @@ class Input:
             self.logger.warning(f"Input '{self.name}': Memory is already allocated!")
             return True
         self._allocated = True
-        if self._iinput:
-            self._allocated = self._iinput.allocate(**kwargs)
+        if self._parent_output:
+            self._allocated = self._parent_output.allocate(**kwargs)
             if not self._allocated:
                 self.logger.warning(
                     f"Input '{self.name}': "
@@ -235,8 +235,8 @@ class Input:
         if not self._closed:
             return True
         self._closed = False
-        if self._iinput:
-            self._closed = not self._iinput.open()
+        if self._parent_output:
+            self._closed = not self._parent_output.open()
             if self._closed:
                 self.logger.warning(
                     f"Input '{self.name}': The input is still closed!"
@@ -262,9 +262,9 @@ class Inputs(EdgeContainer):
                 continue
             yield input
 
-    def _deep_iter_iinputs(self) -> Iterator[Union[Input, Output]]:
-        for iinput in self:
-            yield iinput.iinput
+    def _deep_iter_parent_outputs(self) -> Iterator[Union[Input, Output]]:
+        for parent_output in self:
+            yield parent_output.parent_output
 
     def _touch(self) -> None:
         for input in self:
