@@ -29,22 +29,22 @@ of the input, instead of `KeyError`
   -`{'weight' : data} >> ws` is the same as `data >> ws('weight')`
 - [x] Logging
 - [x] Inputs problem: there is a difference between node and output inputs
-- [ ] Fix decorators
-- [ ] Update naming for the second order `input` and `output`: `parent`, `child`
-- [ ] `iinput` is a meta data, do not use in allocation and closure;
+- [x] Update naming for the second order `input` and `output`: `parent`, `child`
+- [x] `iinput` is a meta data, do not use in allocation and closure;
 use `Node` to do this stuff; do not use second order `input` and `output`
 - [ ] Loops scheme:
-  - Close:
-    - Typing:
-      - Update types
-      - Update shapes
-    - Allocation
-  - Graph:
-    - Node:
-      - Inputs
-      - Outputs
-  - See <https://hackmd.io/mMNrlOp7Q7i9wkVFvP4W4Q>
+  1) Close:
+      - Typing:
+        - Update types
+        - Update shapes
+      - Allocation
+  2) Graph:
+      - Node:
+        - Inputs
+        - Outputs
+  3) See <https://hackmd.io/mMNrlOp7Q7i9wkVFvP4W4Q>
 - [ ] `Tainted`
+- [ ] Fix decorators
 
 ## Transformations
 
@@ -53,6 +53,8 @@ use `Node` to do this stuff; do not use second order `input` and `output`
 - [x] Implementing of some simple transformations with `args` and `kwargs`:
 `WeightedSum` with `weight`, ...
 - [x] Check the style of the implementation
+- [ ] Update the inputs checks before evaluation
+- [ ] Concatenation
 
 ## Tests
 

@@ -363,16 +363,17 @@ class Node(Legs):
                 f"Node '{self.name}': Some inputs are still open: "
                 f"'{tuple(inp.name for inp in self.inputs if not inp.closed)}'!"
             )
-        else:
-            self._closed = all(out.close(**kwargs) for out in self.outputs)
-            if not self._closed:
-                self.logger.warning(
-                    f"Node '{self.name}': Some outputs are still open: "
-                    f"'{tuple(out.name for out in self.outputs if not out.closed)}'!"
-                )
-                return False
-            # TODO: do we need an allocation?
-            # self.allocate(**kwargs)
+            return False
+        self._closed = all(out.close(**kwargs) for out in self.outputs)
+        if not self._closed:
+            self.logger.warning(
+                f"Node '{self.name}': Some outputs are still open: "
+                f"'{tuple(out.name for out in self.outputs if not out.closed)}'!"
+            )
+            return False
+        # TODO: do we need an allocation?
+        # self.allocate(**kwargs)
+        self.logger.debug(f"Node '{self.name}': Closing completed successfully")
         return self._closed
 
     def open(self) -> bool:
@@ -385,13 +386,14 @@ class Node(Legs):
                 f"Node '{self.name}': Some inputs are still closed: "
                 f"'{tuple(inp.name for inp in self.inputs if inp.closed)}'!"
             )
-        else:
-            self._closed = not all(out.open() for out in self.outputs)
-            if self._closed:
-                self.logger.warning(
-                    f"Node '{self.name}': Some outputs are still closed: "
-                    f"'{tuple(out.name for out in self.outputs if out.closed)}'!"
-                )
+            return False
+        self._closed = not all(out.open() for out in self.outputs)
+        if self._closed:
+            self.logger.warning(
+                f"Node '{self.name}': Some outputs are still closed: "
+                f"'{tuple(out.name for out in self.outputs if out.closed)}'!"
+            )
+        self.taint()
         return self._closed
 
     def _shapefunc(self, node) -> None:
@@ -485,13 +487,12 @@ class FunctionNode(Node):
         return self._eval()
 
     def add_input(self, name, parent_output=undefined("parent_output")):
-        if self.closed:
-            self.logger.warning(
-                f"Node '{self.name}': "
-                "A modification of the closed node is restricted!"
-            )
-        else:
+        if not self.closed:
             return self._add_input(name, parent_output)
+        self.logger.warning(
+            f"Node '{self.name}': "
+            "A modification of the closed node is restricted!"
+        )
 
     def _add_input(self, name, parent_output=undefined("parent_output")):
         try:

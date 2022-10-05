@@ -187,19 +187,18 @@ class Output:
             ) from exc
 
     def connect_to(self, input):
-        if self.closed:
-            self.logger.warning(
-                f"Output '{self.name}': "
-                "A modification of the closed output is restricted!"
-            )
-        else:
+        if not self.closed:
             return self._connect_to(input)
+        self.logger.warning(
+            f"Output '{self.name}': "
+            "A modification of the closed output is restricted!"
+        )
 
     def _connect_to(self, input):
         if input in self._inputs:
             raise RuntimeError(
                 f"Output '{self.name}' is already connected "
-                "to the input '{input.name}'!"
+                f"to the input '{input.name}'!"
             )
         self._inputs.append(input)
         input._set_output(self)
@@ -232,25 +231,26 @@ class Output:
     def repeat(self):
         return RepeatedOutput(self)
 
-    def close(self) -> bool:
+    def close(self, **kwargs) -> bool:
         self.logger.debug(f"Output '{self.name}': Closing output...")
         if self._closed:
             return True
-        self._closed = all(inp.close() for inp in self._inputs)
+        self._closed = all(inp.close(**kwargs) for inp in self._inputs)
         if not self._closed:
             self.logger.warning(
                 "Output '{self.name}': Some inputs are still open: "
                 f"'{tuple(inp.name for inp in self._inputs if inp.closed)}'!"
             )
             return False
-        self._closed = self.node.close()
+        self._closed = self.node.close(**kwargs)
         if not self._closed:
             self.logger.warning(
                 f"Output '{self.name}': "
                 f"The node '{self.node}' is still open!"
             )
+            return False
         if self.allocatable:
-            self.allocate()
+            self.allocate(**kwargs)
         return self.closed
 
     def open(self) -> bool:

@@ -37,16 +37,19 @@ class Input:
     def __repr__(self) -> str:
         return self.__str__()
 
-    def set_parent_output(self, parent_output: Input, force: bool = False) -> None:
-        if self.closed:
-            self.logger.warning(
-                f"Input '{self.name}': "
-                "A modification of the closed input is restricted!"
-            )
-        else:
+    def set_parent_output(
+        self, parent_output: Output, force: bool = False
+    ) -> None:
+        if not self.closed:
             return self._set_parent_output(parent_output, force)
+        self.logger.warning(
+            f"Input '{self.name}': "
+            "A modification of the closed input is restricted!"
+        )
 
-    def _set_parent_output(self, parent_output: Input, force: bool = False) -> None:
+    def _set_parent_output(
+        self, parent_output: Output, force: bool = False
+    ) -> None:
         self.logger.debug(
             f"Input '{self.name}': Adding parent_output '{parent_output.name}'..."
         )
@@ -57,13 +60,12 @@ class Input:
         self._parent_output = parent_output
 
     def set_output(self, output: Output, force: bool = False) -> None:
-        if self.closed:
-            self.logger.warning(
-                f"Input '{self.name}': "
-                "A modification of the closed input is restricted!"
-            )
-        else:
+        if not self.closed:
             return self._set_output(output, force)
+        self.logger.warning(
+            f"Input '{self.name}': "
+            "A modification of the closed input is restricted!"
+        )
 
     def _set_output(self, output: Output, force: bool = False) -> None:
         self.logger.debug(
@@ -135,17 +137,13 @@ class Input:
     @property
     def dtype(self):
         if not self.connected():
-            raise RuntimeError(
-                "May not read dtype from disconnected output!"
-            )
+            raise RuntimeError("May not read dtype from disconnected output!")
         return self._output.dtype
 
     @property
     def shape(self):
         if not self.connected():
-            raise RuntimeError(
-                "May not read shape from disconnected output!"
-            )
+            raise RuntimeError("May not read shape from disconnected output!")
         return self._output.shape
 
     @property
@@ -203,13 +201,15 @@ class Input:
                     f"Input '{self.name}': The output is still open!"
                 )
                 return False
-            self.allocate(**kwargs)
+        self._closed = self.allocate(**kwargs)
         return self._closed
 
     def allocate(self, **kwargs) -> bool:
         self.logger.debug(f"Input '{self.name}': Allocating memory...")
         if self._allocated:
-            self.logger.warning(f"Input '{self.name}': Memory is already allocated!")
+            self.logger.warning(
+                f"Input '{self.name}': Memory is already allocated!"
+            )
             return True
         self._allocated = True
         if self._parent_output:
