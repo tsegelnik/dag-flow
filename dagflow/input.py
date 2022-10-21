@@ -181,29 +181,6 @@ class Input:
         """
         return lshift(self, other)
 
-    def close(self, **kwargs) -> bool:
-        self.logger.debug(f"Input '{self.name}': Closing input...")
-        if self._closed:
-            return True
-        self._closed = True
-        if self._parent_output:
-            self._closed = self._parent_output.close(**kwargs)
-            if not self._closed:
-                self.logger.warning(
-                    f"Input '{self.name}': The input is still open!"
-                )
-                return False
-        # important
-        if self.output:
-            self._closed = self._output.close(**kwargs)
-            if not self._closed:
-                self.logger.warning(
-                    f"Input '{self.name}': The output is still open!"
-                )
-                return False
-        self._closed = self.allocate(**kwargs)
-        return self._closed
-
     def allocate(self, **kwargs) -> bool:
         self.logger.debug(f"Input '{self.name}': Allocating memory...")
         if self._allocated:
@@ -229,6 +206,45 @@ class Input:
                     "The output memory is not allocated!"
                 )
         return self._allocated
+
+    def _close(self, **kwargs) -> bool:
+        self.logger.debug(f"Input '{self.name}': Closing the input...")
+        if self._closed:
+            self.logger.debug(
+                f"Input '{self.name}': The input is already closed!"
+            )
+            return self._closed
+        self._closed = self._output._close()
+        if self._closed:
+            self.logger.debug(
+                f"Input '{self.name}': The closure completed successfully!"
+            )
+        else:
+            self.logger.debug(f"Input '{self.name}': The closure failed!")
+        return self._closed
+
+    def close(self, **kwargs) -> bool:
+        self.logger.debug(f"Input '{self.name}': Closing input...")
+        if self._closed:
+            return True
+        self._closed = True
+        if self._parent_output:
+            self._closed = self._parent_output.close(**kwargs)
+            if not self._closed:
+                self.logger.warning(
+                    f"Input '{self.name}': The input is still open!"
+                )
+                return False
+        # important
+        if self.output:
+            self._closed = self._output.close(**kwargs)
+            if not self._closed:
+                self.logger.warning(
+                    f"Input '{self.name}': The output is still open!"
+                )
+                return False
+        self._closed = self.allocate(**kwargs)
+        return self._closed
 
     def open(self) -> bool:
         self.logger.debug(f"Input '{self.name}': Opening the input...")
