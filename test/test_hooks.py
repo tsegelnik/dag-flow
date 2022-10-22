@@ -20,6 +20,7 @@ class ThreeInputsSum(FunctionNode):
         super().check_input(name, iinput)
         if len(self.inputs) == 3:
             raise CriticalError("The node must have only 3 inputs!")
+        return True
 
     def check_eval(self):
         super().check_eval()
@@ -32,14 +33,18 @@ class ThreeInputsSum(FunctionNode):
         copyto(out, inputs[0].data.copy())
         for input in inputs[1:]:
             out += input.data
+        return out
 
-    def _shapefunc(self, node) -> None:
-        """A output takes this function to determine the shape"""
-        return node.inputs[0].data.shape
-
-    def _typefunc(self, node) -> None:
-        """A output takes this function to determine the dtype"""
-        return result_type(*tuple(inp.dtype for inp in node.inputs))
+    def _typefunc(self) -> None:
+        """A output takes this function to determine the dtype and shape"""
+        self.outputs.result._shape = self.inputs[0].shape
+        self.outputs.result._dtype = result_type(
+            *tuple(inp.dtype for inp in self.inputs)
+        )
+        self.logger.debug(
+            f"Node '{self.name}': dtype={self.outputs.result.dtype}, "
+            f"shape={self.outputs.result.shape}"
+        )
 
 
 arr = Array("arr", arange(3, dtype="i"))  # [0, 1, 2]

@@ -3,6 +3,7 @@
 from __future__ import print_function
 
 import numpy as N
+
 from dagflow.graph import Graph
 from dagflow.graphviz import savegraph
 from dagflow.input_extra import MissingInputAddOne

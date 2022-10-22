@@ -23,6 +23,7 @@ class Node(Legs):
     _invalid: bool = False
     _closed: bool = False
     _allocated: bool = False
+    _allocatable: bool = True
     _evaluated: bool = False
 
     # Options
@@ -71,6 +72,7 @@ class Node(Legs):
             self._add_input(input)
         if output := kwargs.pop("output", None):
             self._add_output(output)
+        self._allocatable = kwargs.pop("allocatable", True)
         if kwargs:
             raise ValueError(f"Unparsed arguments: {kwargs}!")
 
@@ -117,6 +119,14 @@ class Node(Legs):
     @property
     def evaluated(self) -> bool:
         return self._evaluated
+
+    @property
+    def allocated(self) -> bool:
+        return self._allocated
+
+    @property
+    def allocatable(self) -> bool:
+        return self._allocatable
 
     @property
     def immediate(self) -> bool:
@@ -203,6 +213,8 @@ class Node(Legs):
     def _add_output(self, name, **kwargs):
         if IsIterable(name):
             return tuple(self._add_output(n) for n in name)
+        kwargs.setdefault("allocatable", self.allocatable)
+        kwargs.setdefault("typefunc", self._typefunc)
         if isinstance(name, Output):
             if name.name in self.outputs:
                 raise RuntimeError(
@@ -219,12 +231,7 @@ class Node(Legs):
             return name
         if name in self.outputs:
             raise RuntimeError(f"Output {self.name}.{name} already exist!")
-        output = Output(
-            name,
-            self,
-            typefunc=self._typefunc,
-            **kwargs,
-        )
+        output = Output(name, self, **kwargs)
         self.outputs += output
         if self._graph:
             self._graph._add_output(output)
@@ -341,15 +348,22 @@ class Node(Legs):
         for i, output in enumerate(self.outputs):
             print("  ", i, output)
 
+    def _typefunc(self) -> None:
+        """A output takes this function to determine the dtype and shape"""
+        raise RuntimeError(
+            "Unimplemented method: the method must be overridden!"
+        )
+
     def update_types(self, **kwargs) -> bool:
         self.logger.debug(f"Node '{self.name}': Update types...")
         try:
-            self._typefunc()
+            res = self._typefunc()
             self.logger.debug(f"Node '{self.name}': Type update is finished.")
         except Exception as exc:
             self.logger.error(
                 f"Node '{self.name}': Type update failed due to exception: {exc}!"
             )
+        return res
 
     def allocate(self, **kwargs):
         if self._allocated:
@@ -420,6 +434,7 @@ class Node(Legs):
                 f"Node '{self.name}': The node is already closed!"
             )
             return self._closed
+        self.update_types(**kwargs)
         self._closed = all(inp.close(**kwargs) for inp in self.inputs)
         if not self._closed:
             self.logger.warning(
@@ -434,9 +449,15 @@ class Node(Legs):
                 f"'{tuple(out.name for out in self.outputs if not out.closed)}'!"
             )
             return False
-        self.allocate(**kwargs)
-        self.logger.debug(
-            f"Node '{self.name}': Closing completed successfully"
+        self._closed = self.allocate(**kwargs)
+        if not self._closed:
+            self.logger.warning(
+                f"Node '{self.name}': Some outputs are still open: "
+                f"'{tuple(out.name for out in self.outputs if not out.closed)}'!"
+            )
+        else:
+            self.logger.debug(
+                f"Node '{self.name}': Closing completed successfully!"
         )
         return self._closed
 
@@ -459,12 +480,6 @@ class Node(Legs):
             )
         self.taint()
         return self._closed
-
-    def _typefunc(self, node) -> None:
-        """A output takes this function to determine the dtype and shape"""
-        raise RuntimeError(
-            "Unimplemented method: the method must be overridden!"
-        )
 
 
 class FunctionNode(Node):

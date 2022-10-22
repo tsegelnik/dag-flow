@@ -20,7 +20,7 @@ class Input:
         self,
         name: Union[str, Undefined] = undefined("name"),
         node: Union[Node, Undefined] = undefined("node"),
-        parent_output: Union[Input, Undefined] = undefined("parent_output"),
+        parent_output: Union[Output, Undefined] = undefined("parent_output"),
         output: Union[Output, Undefined] = undefined("output"),
         **kwargs,
     ):
@@ -214,7 +214,11 @@ class Input:
                 f"Input '{self.name}': The input is already closed!"
             )
             return self._closed
-        self._closed = self._output._close()
+        self._closed = True
+        if self._output:
+            self._closed = self._output._close()
+        if self._parent_output:
+            self._closed = (self._parent_output._close() and self._closed)
         if self._closed:
             self.logger.debug(
                 f"Input '{self.name}': The closure completed successfully!"
