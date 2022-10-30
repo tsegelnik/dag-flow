@@ -1,0 +1,12 @@
+stages:
+    - tests
+
+tests:
+    image: git.jinr.ru:5005/gna/gna-base-docker-image:latest
+    stage: tests
+
+    script:
+    - pytest
+    artifacts:
+        paths:
+            - test_results
