@@ -67,7 +67,7 @@ class Legs:
     def _deep_iter_inputs(self, disconnected_only=False):
         return iter(self.inputs)
 
-    def _deep_iter_iinputs(self):
+    def _deep_iter_parent_outputs(self):
         raise StopNesting(self)
 
     def print(self):

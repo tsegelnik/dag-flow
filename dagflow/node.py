@@ -1,9 +1,9 @@
 from __future__ import print_function
 
 from .exception import CriticalError
-from .graph import Graph
 from .input import Input
 from .legs import Legs
+from .logger import Logger
 from .output import Output
 from .shift import lshift, rshift
 from .tools import IsIterable, undefined
@@ -17,17 +17,20 @@ class Node(Legs):
     _fcn_chain = None
 
     # Taintflag and status
-    _tainted = True
-    _frozen = False
-    _frozen_tainted = False
-    _invalid = False
-
-    _evaluating = False
+    _tainted: bool = True
+    _frozen: bool = False
+    _frozen_tainted: bool = False
+    _invalid: bool = False
+    _closed: bool = False
+    _allocated: bool = False
+    _allocatable: bool = True
+    _evaluated: bool = False
 
     # Options
-    _auto_freeze = False
-    _immediate = False
-    # _always_tainted = False
+    _debug: bool = False
+    _auto_freeze: bool = False
+    _immediate: bool = False
+    # _always_tainted: bool = False
 
     def __init__(self, name, **kwargs):
         super().__init__(
@@ -36,20 +39,47 @@ class Node(Legs):
         self._name = name
         if newfcn := kwargs.pop("fcn", None):
             self._fcn = newfcn
+        if typefunc := kwargs.pop("typefunc", None):
+            self._typefunc = typefunc
         self._fcn_chain = []
         self.graph = kwargs.pop("graph", None)
         if not self.graph:
+            from .graph import Graph
+
             self.graph = Graph.current()
+        self._debug = kwargs.pop(
+            "debug", self.graph.debug if self.graph else False
+        )
         self._label = kwargs.pop("label", undefined("label"))
+        if (logger := kwargs.pop("logger", False)) or (
+            self.graph and (logger := self.graph.logger)
+        ):
+            self._logger = logger
+        else:
+            from .logger import get_logger
+
+            self._logger = get_logger(
+                filename=kwargs.pop("logfile", None),
+                debug=self.debug,
+                console=kwargs.pop("console", True),
+                formatstr=kwargs.pop("logformat", None),
+                name=kwargs.pop("loggername", None),
+            )
         for opt in {"immediate", "auto_freeze", "frozen"}:
             if value := kwargs.pop(opt, None):
                 setattr(self, f"_{opt}", bool(value))
+        self._allocatable = kwargs.pop("allocatable", True)
         if input := kwargs.pop("input", None):
             self._add_input(input)
         if output := kwargs.pop("output", None):
             self._add_output(output)
         if kwargs:
             raise ValueError(f"Unparsed arguments: {kwargs}!")
+        self.logger.debug(
+            f"Node '{self.name}': The node is instantiated with following "
+            f"options: allocatable={self._allocatable}, label={self._label}, "
+            f"debug={self._debug}"
+        )
 
     @property
     def name(self):
@@ -60,39 +90,59 @@ class Node(Legs):
         self._name = name
 
     @property
-    def tainted(self):
+    def logger(self) -> Logger:
+        return self._logger
+
+    @property
+    def tainted(self) -> bool:
         return self._tainted
 
     @property
-    def frozen_tainted(self):
+    def frozen_tainted(self) -> bool:
         return self._frozen_tainted
 
     @property
-    def frozen(self):
+    def frozen(self) -> bool:
         return self._frozen
 
     @property
-    def auto_freeze(self):
+    def auto_freeze(self) -> bool:
         return self._auto_freeze
 
     # @property
-    # def always_tainted(self):
+    # def always_tainted(self) -> bool:
     # return self._always_tainted
 
     @property
-    def evaluating(self):
-        return self._evaluating
+    def closed(self) -> bool:
+        return self._closed
 
     @property
-    def immediate(self):
+    def debug(self) -> bool:
+        return self._debug
+
+    @property
+    def evaluated(self) -> bool:
+        return self._evaluated
+
+    @property
+    def allocated(self) -> bool:
+        return self._allocated
+
+    @property
+    def allocatable(self) -> bool:
+        return self._allocatable
+
+    @property
+    def immediate(self) -> bool:
         return self._immediate
 
     @property
-    def invalid(self):
+    def invalid(self) -> bool:
         return self._invalid
 
     @invalid.setter
-    def invalid(self, invalid):
+    def invalid(self, invalid) -> None:
         if invalid:
             self._tainted = True
             self._frozen = False
@@ -118,11 +168,16 @@ class Node(Legs):
         self._graph = graph
         self._graph.register_node(self)
 
-    def __call__(self, name, iinput=undefined("iinput")):
+    def __call__(self, name, parent_output=undefined("parent_output")):
         for inp in self.inputs:
             if inp.name == name:
                 return inp
-        return self._add_input(name, iinput)
+        if not self.closed:
+            return self._add_input(name, parent_output)
+        self.logger.warning(
+            f"Node '{self.name}': Input '{name}' doesn't exist, "
+            "and a modification of the closed node is restricted!"
+        )
 
     def label(self, *args, **kwargs):
         if self._label:
@@ -130,20 +185,41 @@ class Node(Legs):
             return self._label.format(*args, **kwargs)
         return self._label
 
-    def _add_input(self, name, iinput=undefined("iinput")):
+    def add_input(self, name, parent_output=undefined("parent_output")):
+        if not self.closed:
+            return self._add_input(name, parent_output)
+        self.logger.warning(
+            f"Node '{self.name}': "
+            "A modification of the closed node is restricted!"
+        )
+
+    def _add_input(self, name, parent_output=undefined("parent_output")):
+        self.logger.debug(
+            f"Node '{self.name}': Adding input '{name}' with parent_output='{parent_output}'..."
+        )
         if IsIterable(name):
             return tuple(self._add_input(n) for n in name)
         if name in self.inputs:
             raise ValueError(f"Input {self.name}.{name} already exist!")
-        inp = Input(name, self, iinput)
+        inp = Input(name, self, parent_output)
         self.inputs += inp
         if self._graph:
             self._graph._add_input(inp)
         return inp
 
-    def _add_output(self, name):
+    def add_output(self, name):
+        if not self.closed:
+            return self._add_output(name)
+        self.logger.warning(
+            f"Node '{self.name}': "
+            "A modification of the closed node is restricted!"
+        )
+
+    def _add_output(self, name, **kwargs):
         if IsIterable(name):
             return tuple(self._add_output(n) for n in name)
+        kwargs.setdefault("allocatable", self._allocatable)
+        kwargs.setdefault("typefunc", self._typefunc)
         if isinstance(name, Output):
             if name.name in self.outputs:
                 raise RuntimeError(
@@ -160,11 +236,19 @@ class Node(Legs):
             return name
         if name in self.outputs:
             raise RuntimeError(f"Output {self.name}.{name} already exist!")
-        output = Output(name, self)
+        output = Output(name, self, **kwargs)
         self.outputs += output
         if self._graph:
             self._graph._add_output(output)
         return output
+
+    def add_pair(self, iname, oname):
+        if not self.closed:
+            return self._add_pair(iname, oname)
+        self.logger.warning(
+            f"Node '{self.name}': "
+            "A modification of the closed node is restricted!"
+        )
 
     def _add_pair(self, iname, oname):
         output = self._add_output(oname)
@@ -208,15 +292,33 @@ class Node(Legs):
         )
 
     def eval(self):
+        self.logger.info(f"Node '{self.name}': Evaluating node...")
         if self.invalid:
-            raise RuntimeError("Unable to evaluate invalid transformation")
-        self._evaluating = True
+            raise CriticalError("Unable to evaluate invalid transformation!")
+        if not self._closed:
+            raise CriticalError(
+                "Close the node before evaluation! Unclosed inputs:"
+                f"'{tuple(inp.name for inp in self.inputs if not inp.closed)}',"
+                " Unclosed outputs: "
+                f"'{tuple(out.name for out in self.outputs if not out.closed)}'"
+            )
+        if not self._allocated:
+            raise CriticalError(
+                "Memory is not allocated! Problem inputs:"
+                f"'{tuple(inp.name for inp in self.inputs if not inp.allocated)}',"
+                " Problem outputs: "
+                f"'{tuple(out.name for out in self.outputs if not out.allocated)}'"
+            )
+        self._evaluated = True
         try:
             ret = self._eval()
+            self.logger.debug(f"Node '{self.name}': Evaluated return={ret}")
         except Exception as exc:
-            self._evaluating = False
-            raise exc
-        self._evaluating = False
+            self._evaluated = False
+            raise exc from RuntimeError(
+                "An exception occured during evaluation!"
+            )
+        self._evaluated = False
         return ret
 
     def freeze(self):
@@ -256,6 +358,139 @@ class Node(Legs):
         for i, output in enumerate(self.outputs):
             print("  ", i, output)
 
+    def _typefunc(self) -> None:
+        """A output takes this function to determine the dtype and shape"""
+        raise RuntimeError(
+            "Unimplemented method: the method must be overridden!"
+        )
+
+    def update_types(self, **kwargs) -> bool:
+        self.logger.debug(f"Node '{self.name}': Update types...")
+        try:
+            res = self._typefunc()
+            self.logger.debug(f"Node '{self.name}': Type update is finished.")
+        except Exception as exc:
+            self.logger.error(
+                f"Node '{self.name}': Type update failed due to exception: {exc}!"
+            )
+        return res
+
+    def allocate(self, **kwargs):
+        if self._allocated:
+            self.logger.warning(
+                f"Node '{self.name}': The memory is already allocated!"
+            )
+            return self._allocated
+        self.logger.info(f"Node '{self.name}': Allocate the memory...")
+        try:
+            self._allocated = all(
+                (
+                    all(inp.allocate(**kwargs) for inp in self.inputs),
+                    all(out.allocate(**kwargs) for out in self.outputs),
+                )
+            )
+        except Exception as exc:
+            self.logger.error(
+                f"Node '{self.name}': Memory allocation failed due to "
+                f"exception: {exc}"
+            )
+            self._allocated = False
+        if self._allocated:
+            self.logger.info(
+                f"Node '{self.name}': Memory allocation completed successfully!"
+            )
+        else:
+            self.logger.error(
+                f"Node '{self.name}': Memory allocation failed! "
+                "Inputs allocation status: "
+                f"{tuple(inp._allocated for inp in self.inputs)}. "
+                " Outputs allocation status: "
+                f"{tuple(out._allocated for out in self.outputs)}"
+            )
+        return self._allocated
+
+    def _close(self, **kwargs) -> bool:
+        self.logger.debug(f"Node '{self.name}': Closing...")
+        if self._closed:
+            self.logger.debug(
+                f"Node '{self.name}': The node is already closed!"
+            )
+            return self._closed
+        self._closed = all(
+            (
+                all(inp._close(**kwargs) for inp in self.inputs),
+                all(out._close(**kwargs) for out in self.outputs),
+                self._allocated,
+            )
+        )
+        if self._closed:
+            self.logger.debug(
+                f"Node '{self.name}': The closure completed successfully!"
+            )
+        else:
+            self.logger.error(
+                f"Node '{self.name}': The closure failed! Open inputs: "
+                f"'{tuple(inp.name for inp in self.inputs if not inp.closed)}'!"
+                " Open outputs: "
+                f"'{tuple(out.name for out in self.outputs if not out.closed)}'!"
+                f" Allocation status: {self._allocated}"
+            )
+        return self._closed
+
+    def close(self, **kwargs) -> bool:
+        self.logger.debug(f"Node '{self.name}': Closing...")
+        if self._closed:
+            self.logger.debug(
+                f"Node '{self.name}': The node is already closed!"
+            )
+            return self._closed
+        self.update_types(**kwargs)
+        self._closed = all(inp.close(**kwargs) for inp in self.inputs)
+        if not self._closed:
+            self.logger.warning(
+                f"Node '{self.name}': Some inputs are still open: "
+                f"'{tuple(inp.name for inp in self.inputs if not inp.closed)}'!"
+            )
+            return False
+        self._closed = all(out.close(**kwargs) for out in self.outputs)
+        if not self._closed:
+            self.logger.warning(
+                f"Node '{self.name}': Some outputs are still open: "
+                f"'{tuple(out.name for out in self.outputs if not out.closed)}'!"
+            )
+            return False
+        self._closed = self.allocate(**kwargs)
+        if not self._closed:
+            self.logger.warning(
+                f"Node '{self.name}': Some outputs are still open: "
+                f"'{tuple(out.name for out in self.outputs if not out.closed)}'!"
+            )
+        else:
+            self.logger.debug(
+                f"Node '{self.name}': Closing completed successfully!"
+            )
+        return self._closed
+
+    def open(self) -> bool:
+        self.logger.debug(f"Node '{self.name}': Opening...")
+        if not self._closed:
+            return True
+        self._closed = not all(inp.open() for inp in self.inputs)
+        if self._closed:
+            self.logger.warning(
+                f"Node '{self.name}': Some inputs are still closed: "
+                f"'{tuple(inp.name for inp in self.inputs if inp.closed)}'!"
+            )
+            return False
+        self._closed = not all(out.open() for out in self.outputs)
+        if self._closed:
+            self.logger.warning(
+                f"Node '{self.name}': Some outputs are still closed: "
+                f"'{tuple(out.name for out in self.outputs if out.closed)}'!"
+            )
+        self.taint()
+        return self._closed
+
 
 class FunctionNode(Node):
     """Function signature: fcn(node, inputs, outputs)
@@ -291,9 +526,6 @@ class FunctionNode(Node):
         node.fcn() # will have NO self provided as first argument
     """
 
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-
     def _stash_fcn(self):
         self._fcn_chain.append(self._fcn)
         return self._fcn
@@ -305,43 +537,62 @@ class FunctionNode(Node):
         return wrapped_fcn
 
     def _eval(self):
-        self._evaluating = True
+        self._evaluated = True
         try:
             ret = self._fcn(self, self.inputs, self.outputs)
+            self.logger.debug(f"Node '{self.name}': Evaluated return={ret}")
         except Exception as exc:
-            self._evaluating = False
+            self._evaluated = False
             raise exc
-        self._evaluating = False
+        self._evaluated = False
         return ret
 
-    def eval(self):
-        try:
-            self._check_eval()
-        except Exception as exc:
-            raise exc from CriticalError(
-                "Cannot evaluate the function due to the critical error!"
-            )
-        return self._eval()
+    def add_input(self, name, parent_output=undefined("parent_output")):
+        if not self.closed:
+            return self._add_input(name, parent_output)
+        self.logger.warning(
+            f"Node '{self.name}': "
+            "A modification of the closed node is restricted!"
+        )
 
-    def _add_input(self, name, iinput=undefined("iinput")):
+    def _add_input(self, name, parent_output=undefined("parent_output")):
         try:
-            self._check_input(name, iinput)
+            self.check_input(name, parent_output)
         except CriticalError as exc:
             raise exc from CriticalError(
-                f"Cannot add the input ({name=}, {iinput=}) due to "
+                f"Cannot add the input ({name=}, {parent_output=}) due to "
                 "critical error!"
             )
         except Exception as exc:
             print(exc)
-        return super()._add_input(name, iinput)
+        return super()._add_input(name, parent_output)
 
-    def _check_input(self, name=None, iinput=None) -> bool:
-        """Checks a signature of the function at the input connection stage"""
+    def _check_input(self) -> bool:
         return True
 
     def _check_eval(self) -> bool:
-        """Checks a signature of the function at the evaluation stage"""
         return True
+
+    def check_input(self, name=None, parent_output=None) -> bool:
+        """Checks a signature of the function at the input connection stage"""
+        self.logger.debug(
+            f"Node '{self.name}': "
+            f"Checking a possibility to add new input '{name}'..."
+        )
+        return self._check_input()
+
+    def check_eval(self) -> bool:
+        """Checks a signature of the function at the evaluation stage"""
+        self.logger.debug(
+            f"Node '{self.name}': Checking the evaluation access..."
+        )
+        return self._check_eval()
+
+    def _close(self) -> bool:
+        super()._close()
+        if self._closed:
+            self._closed = self.check_eval()
+        return self._closed
 
 
 class StaticNode(Node):
@@ -354,11 +605,11 @@ class StaticNode(Node):
         super().__init__(*args, **kwargs)
 
     def _eval(self):
-        self._evaluating = True
+        self._evaluated = True
         if self._touch_inputs:
             self.inputs._touch()
         ret = self._fcn()
-        self._evaluating = False
+        self._evaluated = False
         return ret
 
     def _stash_fcn(self):

@@ -8,7 +8,7 @@ from .tools import IsIterable, nth
 
 class EdgeContainer:
     _dict = None
-    _datatype = None
+    _dtype = None
 
     def __init__(self, iterable=None):
         self._dict = OrderedDict()
@@ -20,10 +20,10 @@ class EdgeContainer:
             for v in value:
                 self.__iadd__(v)
             return self
-        if self._datatype and not isinstance(value, self._datatype):
+        if self._dtype and not isinstance(value, self._dtype):
             raise RuntimeError(
                 f"The type {type(value)} of the data doesn't correpond "
-                f"to {self._datatype}!"
+                f"to {self._dtype}!"
             )
         name = value.name
         if not name:

@@ -6,7 +6,8 @@ class NoncriticalError(Exception):
     pass
 
 
-def UnconnectedInput(name):
+def UnconnectedInput(cls, name):
     return NoncriticalError(
-        f"Warning: The required input is not connected: '{name}'!"
+        f"UnconnectedInput: {type(cls).__name__} {cls.name}: "
+        f"The following input is not connected: '{name}'!"
     )
