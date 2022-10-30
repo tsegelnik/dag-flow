@@ -28,26 +28,11 @@ class Output:
         self._node = node
         self._inputs = []
         self._debug = kwargs.pop("debug", node.debug if node else False)
-        if shapef := kwargs.pop("shapefunc", self._shapefunc):
-            self._shapefunc = shapef
-        if typef := kwargs.pop("typefunc", self._typefunc):
-            self._typefunc = typef
         self._allocatable = kwargs.pop("allocatable", True)
-        if self.allocatable:
-            return
-        if (data := kwargs.get("data")) is not None:
-            self._data = data
-            try:
-                self._dtype = self._data.dtype
-                self._shape = self._data.shape
-            except Exception:
-                self._dtype = type(self._data)
-                self._shape = (
-                    len(self.data)
-                    if isinstance(self._data, Iterable)
-                    else None
-                )
-        self._allocated = True
+        if not self._allocatable:
+            if (data := kwargs.get("data")) is not None:
+                self.data = data
+            self._allocated = True
 
     def __str__(self):
         return f"|-> {self._name}"
@@ -143,49 +128,6 @@ class Output:
             f"Output '{self.name}': The output memory is not allocated."
         )
 
-    def allocate(self, **kwargs):
-        if self._allocated:
-            self.logger.warning(
-                f"Output '{self.name}': "
-                f"The output memory is already allocated: {self.data}!"
-            )
-            return self._allocated
-        self.logger.debug(f"Output '{self.name}': Allocate the memory...")
-        try:
-            self._update_shape()
-            self._update_dtype()
-            self.logger.debug(
-                f"Output '{self.name}': Evaluated shape={self.shape}, "
-                f"evaluated dtype={self.dtype}"
-            )
-            self.data = zeros(self.shape, self.dtype, **kwargs)
-            self.logger.info(
-                f"Output '{self.name}': The memory is successfully allocated!"
-            )
-            self._allocated = True
-        except Exception as exc:
-            self.logger.error(
-                f"Output '{self.name}': The output memory is not allocated "
-                f"due to the exception: {exc}!"
-            )
-            self._allocated = False
-
-    def _update_shape(self):
-        try:
-            self._shape = self._shapefunc(self.node)
-        except Exception as exc:
-            raise CriticalError(
-                "Cannot update `shape` due to the exception: "
-            ) from exc
-
-    def _update_dtype(self):
-        try:
-            self._dtype = self._typefunc(self.node)
-        except Exception as exc:
-            raise CriticalError(
-                "Cannot update `dtype` due to the exception: "
-            ) from exc
-
     def connect_to(self, input):
         if not self.closed:
             return self._connect_to(input)
@@ -231,6 +173,51 @@ class Output:
     def repeat(self):
         return RepeatedOutput(self)
 
+    def allocate(self, **kwargs):
+        if not self._allocatable:
+            self.logger.debug(
+                f"Output '{self.name}': "
+                f"The output is not allocatable: data={self._data}!"
+            )
+            return self._allocated
+        if self._allocated:
+            self.logger.debug(
+                f"Output '{self.name}': "
+                f"The output memory is already allocated: data={self._data}!"
+            )
+            return self._allocated
+        self.logger.info(f"Output '{self.name}': Allocate the memory...")
+        try:
+            # NOTE: may be troubles with multidimensional arrays!
+            self._data = zeros(self.shape, self.dtype, **kwargs)
+            self.logger.info(
+                f"Output '{self.name}': The memory is successfully allocated!"
+            )
+            self._allocated = True
+        except Exception as exc:
+            self.logger.error(
+                f"Output '{self.name}': The output memory is not allocated "
+                f"due to the exception: {exc}!"
+            )
+            self._allocated = False
+        return self._allocated
+
+    def _close(self, **kwargs) -> bool:
+        self.logger.debug(f"Output '{self.name}': Closing output...")
+        if self._closed:
+            return True
+        self._closed = self._allocated
+        if not self._closed:
+            self.logger.warning(
+                f"Output '{self.name}': Some inputs are still open: "
+                f"'{tuple(inp.name for inp in self._inputs if inp.closed)}'!"
+            )
+        else:
+            self.logger.debug(
+                f"Output '{self.name}': The closure completed successfully!"
+            )
+        return self.closed
+
     def close(self, **kwargs) -> bool:
         self.logger.debug(f"Output '{self.name}': Closing output...")
         if self._closed:
@@ -264,18 +251,6 @@ class Output:
                 f"'{tuple(inp.name for inp in self._inputs if inp.closed)}'!"
             )
         return not self._closed
-
-    def _shapefunc(self, node) -> None:
-        """The function to determine the shape"""
-        raise RuntimeError(
-            "Unimplemented method: the method must be overridden!"
-        )
-
-    def _typefunc(self, node) -> None:
-        """The function to determine the dtype"""
-        raise RuntimeError(
-            "Unimplemented method: the method must be overridden!"
-        )
 
 
 class RepeatedOutput:

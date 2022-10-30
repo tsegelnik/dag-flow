@@ -12,6 +12,7 @@ set_prefix_function(
 )
 
 counter = 0
+nodeargs = dict(typefunc=lambda: True, allocatable=False)
 
 
 def test_graph_big_01():
@@ -33,17 +34,17 @@ def test_graph_big_01():
         fcn(node, inputs, outputs)
         plot(f"[done evaluating {node.name}]")
 
-    A1 = g.add_node("A1")
-    A2 = g.add_node("A2", auto_freeze=True, label="{name}|frozen")
-    A3 = g.add_node("A3", immediate=True, label="{name}|immediate")
-    B = g.add_node("B")
-    C1 = g.add_node("C1")
-    C2 = g.add_node("C2")
-    D = g.add_node("D")
-    E = g.add_node("E")
-    F = g.add_node("F")
-    H = g.add_node("H")
-    P = g.add_node("P", immediate=True, label="{name}|immediate")
+    A1 = g.add_node("A1", **nodeargs)
+    A2 = g.add_node("A2", auto_freeze=True, label="{name}|frozen", **nodeargs)
+    A3 = g.add_node("A3", immediate=True, label="{name}|immediate", **nodeargs)
+    B = g.add_node("B", **nodeargs)
+    C1 = g.add_node("C1", **nodeargs)
+    C2 = g.add_node("C2", **nodeargs)
+    D = g.add_node("D", **nodeargs)
+    E = g.add_node("E", **nodeargs)
+    F = g.add_node("F", **nodeargs)
+    H = g.add_node("H", **nodeargs)
+    P = g.add_node("P", immediate=True, label="{name}|immediate", **nodeargs)
 
     g._wrap_fcns(toucher, printer, plotter)
 

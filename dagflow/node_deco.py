@@ -11,12 +11,11 @@ def NodeClass(fcn=None, **kwargsdeco):
     which should be instantiated in order to be used as node
 
     NOTE: The decorator works only for one instance of class!
-          If there are several instances, works properly only the last one
     """
     if not fcn:
         return lambda fcn1: NodeClass(fcn1, **kwargsdeco)
     kwargsdeco["fcn"] = fcn
-    parent = kwargsdeco.pop("parent", FunctionNode)
+    parent = kwargsdeco.pop("parent", FunctionNode) 
     class NewNodeClass(parent):
         def __init__(self, *args, **kwargsclass):
             self._fcn = fcn

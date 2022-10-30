@@ -14,13 +14,14 @@ if TYPE_CHECKING:
 class Input:
     _closed: bool = False
     _allocated: bool = True
+    _allocatable: bool = False
     _debug: bool = False
 
     def __init__(
         self,
         name: Union[str, Undefined] = undefined("name"),
         node: Union[Node, Undefined] = undefined("node"),
-        parent_output: Union[Input, Undefined] = undefined("parent_output"),
+        parent_output: Union[Output, Undefined] = undefined("parent_output"),
         output: Union[Output, Undefined] = undefined("output"),
         **kwargs,
     ):
@@ -30,6 +31,9 @@ class Input:
         self._output = output
         self._closed = kwargs.pop("closed", False)
         self._debug = kwargs.pop("debug", node.debug if node else False)
+        self._allocatable = kwargs.pop("allocatable", False)
+        if not self._allocatable:
+            self._allocated = True
 
     def __str__(self) -> str:
         return f"->| {self._name}"
@@ -111,6 +115,10 @@ class Input:
         return self._allocated
 
     @property
+    def allocatable(self) -> bool:
+        return self._allocatable
+
+    @property
     def debug(self) -> bool:
         return self._debug
 
@@ -181,6 +189,61 @@ class Input:
         """
         return lshift(self, other)
 
+    def allocate(self, **kwargs) -> bool:
+        if not self._allocatable:
+            self.logger.debug(
+                f"Input '{self.name}': The input is not allocatable!"
+            )
+            return True
+        if self._allocated:
+            self.logger.debug(
+                f"Input '{self.name}': Memory is already allocated!"
+            )
+            return True
+        self.logger.info(f"Input '{self.name}': Allocating memory...")
+        self._allocated = True
+        if self._parent_output:
+            self._allocated = self._parent_output.allocate(**kwargs)
+            if not self._allocated:
+                self.logger.warning(
+                    f"Input '{self.name}': "
+                    "The input memory is not allocated!"
+                )
+                return False
+        # important
+        if self.output:
+            self._allocated = self._output.allocate(**kwargs)
+            if not self._allocated:
+                self.logger.warning(
+                    f"Input '{self.name}': "
+                    "The output memory is not allocated!"
+                )
+        if self._allocated:
+            self.logger.info(
+                f"Input '{self.name}': The memory is successfully allocated!"
+            )
+        return self._allocated
+
+    def _close(self, **kwargs) -> bool:
+        self.logger.debug(f"Input '{self.name}': Closing the input...")
+        if self._closed:
+            self.logger.debug(
+                f"Input '{self.name}': The input is already closed!"
+            )
+            return self._closed
+        self._closed = True
+        if self._output:
+            self._closed = self._output._close()
+        if self._parent_output:
+            self._closed = self._parent_output._close() and self._closed
+        if self._closed:
+            self.logger.debug(
+                f"Input '{self.name}': The closure completed successfully!"
+            )
+        else:
+            self.logger.debug(f"Input '{self.name}': The closure failed!")
+        return self._closed
+
     def close(self, **kwargs) -> bool:
         self.logger.debug(f"Input '{self.name}': Closing input...")
         if self._closed:
@@ -203,32 +266,6 @@ class Input:
                 return False
         self._closed = self.allocate(**kwargs)
         return self._closed
-
-    def allocate(self, **kwargs) -> bool:
-        self.logger.debug(f"Input '{self.name}': Allocating memory...")
-        if self._allocated:
-            self.logger.warning(
-                f"Input '{self.name}': Memory is already allocated!"
-            )
-            return True
-        self._allocated = True
-        if self._parent_output:
-            self._allocated = self._parent_output.allocate(**kwargs)
-            if not self._allocated:
-                self.logger.warning(
-                    f"Input '{self.name}': "
-                    "The input memory is not allocated!"
-                )
-                return False
-        # important
-        if self.output:
-            self._allocated = self._output.allocate(**kwargs)
-            if not self._allocated:
-                self.logger.warning(
-                    f"Input '{self.name}': "
-                    "The output memory is not allocated!"
-                )
-        return self._allocated
 
     def open(self) -> bool:
         self.logger.debug(f"Input '{self.name}': Opening the input...")

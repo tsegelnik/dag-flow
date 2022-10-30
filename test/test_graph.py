@@ -10,14 +10,14 @@ from dagflow.wrappers import *
 set_prefix_function(
     lambda: "{:<2d} ".format(current_level()),
 )
-
+nodeargs = dict(typefunc=lambda: True, allocatable=False)
 
 def test_01():
     """Simple test of the graph plotter"""
     g = Graph()
-    n1 = g.add_node("node1")
-    n2 = g.add_node("node2")
-    n3 = g.add_node("node3")
+    n1 = g.add_node("node1", **nodeargs)
+    n2 = g.add_node("node2", **nodeargs)
+    n3 = g.add_node("node3", **nodeargs)
     g._wrap_fcns(toucher, printer)
 
     in1, out1 = n1._add_pair("i1", "o1")
@@ -40,9 +40,9 @@ def test_01():
 def test_02():
     """Simple test of the graph plotter"""
     g = Graph()
-    n1 = g.add_node("node1")
-    n2 = g.add_node("node2")
-    n3 = g.add_node("node3")
+    n1 = g.add_node("node1", **nodeargs)
+    n2 = g.add_node("node2", **nodeargs)
+    n3 = g.add_node("node3", **nodeargs)
     g._wrap_fcns(toucher, printer)
 
     out1 = n1._add_output("o1")
@@ -68,10 +68,10 @@ def test_02():
 def test_02a():
     """Simple test of the graph plotter"""
     g = Graph()
-    n1 = g.add_node("node1")
-    n2 = g.add_node("node2")
-    n3 = g.add_node("node3")
-    n4 = g.add_node("node4")
+    n1 = g.add_node("node1", **nodeargs)
+    n2 = g.add_node("node2", **nodeargs)
+    n3 = g.add_node("node3", **nodeargs)
+    n4 = g.add_node("node4", **nodeargs)
     g._wrap_fcns(toucher, printer)
 
     out1 = n1._add_output("o1")

@@ -1,7 +1,6 @@
 from __future__ import print_function
 
 from .exception import CriticalError
-from .graph import Graph
 from .input import Input
 from .legs import Legs
 from .logger import Logger
@@ -24,6 +23,7 @@ class Node(Legs):
     _invalid: bool = False
     _closed: bool = False
     _allocated: bool = False
+    _allocatable: bool = True
     _evaluated: bool = False
 
     # Options
@@ -39,13 +39,13 @@ class Node(Legs):
         self._name = name
         if newfcn := kwargs.pop("fcn", None):
             self._fcn = newfcn
-        if shapefunc := kwargs.pop("shapefunc", None):
-            self._shapefunc = shapefunc
         if typefunc := kwargs.pop("typefunc", None):
             self._typefunc = typefunc
         self._fcn_chain = []
         self.graph = kwargs.pop("graph", None)
         if not self.graph:
+            from .graph import Graph
+
             self.graph = Graph.current()
         self._debug = kwargs.pop(
             "debug", self.graph.debug if self.graph else False
@@ -68,12 +68,18 @@ class Node(Legs):
         for opt in {"immediate", "auto_freeze", "frozen"}:
             if value := kwargs.pop(opt, None):
                 setattr(self, f"_{opt}", bool(value))
+        self._allocatable = kwargs.pop("allocatable", True)
         if input := kwargs.pop("input", None):
             self._add_input(input)
         if output := kwargs.pop("output", None):
             self._add_output(output)
         if kwargs:
             raise ValueError(f"Unparsed arguments: {kwargs}!")
+        self.logger.debug(
+            f"Node '{self.name}': The node is instantiated with following "
+            f"options: allocatable={self._allocatable}, label={self._label}, "
+            f"debug={self._debug}"
+        )
 
     @property
     def name(self):
@@ -118,6 +124,14 @@ class Node(Legs):
     @property
     def evaluated(self) -> bool:
         return self._evaluated
+
+    @property
+    def allocated(self) -> bool:
+        return self._allocated
+
+    @property
+    def allocatable(self) -> bool:
+        return self._allocatable
 
     @property
     def immediate(self) -> bool:
@@ -171,22 +185,6 @@ class Node(Legs):
             return self._label.format(*args, **kwargs)
         return self._label
 
-    # TODO: do we need an allocation?
-    def allocate(self, **kwargs):
-        if self._allocated:
-            self.logger.warning(
-                f"Node '{self.name}': The memory is already allocated!"
-            )
-            return self._allocated
-        self.logger.debug(f"Node '{self.name}': Allocate the memory...")
-        try:
-            self._allocated = all(
-                out.allocate(**kwargs) for out in self.outputs
-            )
-        except Exception:
-            self._allocated = False
-        return self._allocated
-
     def add_input(self, name, parent_output=undefined("parent_output")):
         if not self.closed:
             return self._add_input(name, parent_output)
@@ -220,6 +218,8 @@ class Node(Legs):
     def _add_output(self, name, **kwargs):
         if IsIterable(name):
             return tuple(self._add_output(n) for n in name)
+        kwargs.setdefault("allocatable", self._allocatable)
+        kwargs.setdefault("typefunc", self._typefunc)
         if isinstance(name, Output):
             if name.name in self.outputs:
                 raise RuntimeError(
@@ -236,13 +236,7 @@ class Node(Legs):
             return name
         if name in self.outputs:
             raise RuntimeError(f"Output {self.name}.{name} already exist!")
-        output = Output(
-            name,
-            self,
-            shapefunc=self._shapefunc,
-            typefunc=self._typefunc,
-            **kwargs,
-        )
+        output = Output(name, self, **kwargs)
         self.outputs += output
         if self._graph:
             self._graph._add_output(output)
@@ -302,17 +296,28 @@ class Node(Legs):
         if self.invalid:
             raise CriticalError("Unable to evaluate invalid transformation!")
         if not self._closed:
-            raise CriticalError("Close the node before evaluation!")
-        # TODO: do we need an allocation?
-        # if not self._allocated:
-        #    raise CriticalError("Allocate the memory before evaluation!")
+            raise CriticalError(
+                "Close the node before evaluation! Unclosed inputs:"
+                f"'{tuple(inp.name for inp in self.inputs if not inp.closed)}',"
+                " Unclosed outputs: "
+                f"'{tuple(out.name for out in self.outputs if not out.closed)}'"
+            )
+        if not self._allocated:
+            raise CriticalError(
+                "Memory is not allocated! Problem inputs:"
+                f"'{tuple(inp.name for inp in self.inputs if not inp.allocated)}',"
+                " Problem outputs: "
+                f"'{tuple(out.name for out in self.outputs if not out.allocated)}'"
+            )
         self._evaluated = True
         try:
             ret = self._eval()
             self.logger.debug(f"Node '{self.name}': Evaluated return={ret}")
         except Exception as exc:
             self._evaluated = False
-            raise exc from RuntimeError("An exception occured during evaluation!")
+            raise exc from RuntimeError(
+                "An exception occured during evaluation!"
+            )
         self._evaluated = False
         return ret
 
@@ -353,10 +358,93 @@ class Node(Legs):
         for i, output in enumerate(self.outputs):
             print("  ", i, output)
 
+    def _typefunc(self) -> None:
+        """A output takes this function to determine the dtype and shape"""
+        raise RuntimeError(
+            "Unimplemented method: the method must be overridden!"
+        )
+
+    def update_types(self, **kwargs) -> bool:
+        self.logger.debug(f"Node '{self.name}': Update types...")
+        try:
+            res = self._typefunc()
+            self.logger.debug(f"Node '{self.name}': Type update is finished.")
+        except Exception as exc:
+            self.logger.error(
+                f"Node '{self.name}': Type update failed due to exception: {exc}!"
+            )
+        return res
+
+    def allocate(self, **kwargs):
+        if self._allocated:
+            self.logger.warning(
+                f"Node '{self.name}': The memory is already allocated!"
+            )
+            return self._allocated
+        self.logger.info(f"Node '{self.name}': Allocate the memory...")
+        try:
+            self._allocated = all(
+                (
+                    all(inp.allocate(**kwargs) for inp in self.inputs),
+                    all(out.allocate(**kwargs) for out in self.outputs),
+                )
+            )
+        except Exception as exc:
+            self.logger.error(
+                f"Node '{self.name}': Memory allocation failed due to "
+                f"exception: {exc}"
+            )
+            self._allocated = False
+        if self._allocated:
+            self.logger.info(
+                f"Node '{self.name}': Memory allocation completed successfully!"
+            )
+        else:
+            self.logger.error(
+                f"Node '{self.name}': Memory allocation failed! "
+                "Inputs allocation status: "
+                f"{tuple(inp._allocated for inp in self.inputs)}. "
+                " Outputs allocation status: "
+                f"{tuple(out._allocated for out in self.outputs)}"
+            )
+        return self._allocated
+
+    def _close(self, **kwargs) -> bool:
+        self.logger.debug(f"Node '{self.name}': Closing...")
+        if self._closed:
+            self.logger.debug(
+                f"Node '{self.name}': The node is already closed!"
+            )
+            return self._closed
+        self._closed = all(
+            (
+                all(inp._close(**kwargs) for inp in self.inputs),
+                all(out._close(**kwargs) for out in self.outputs),
+                self._allocated,
+            )
+        )
+        if self._closed:
+            self.logger.debug(
+                f"Node '{self.name}': The closure completed successfully!"
+            )
+        else:
+            self.logger.error(
+                f"Node '{self.name}': The closure failed! Open inputs: "
+                f"'{tuple(inp.name for inp in self.inputs if not inp.closed)}'!"
+                " Open outputs: "
+                f"'{tuple(out.name for out in self.outputs if not out.closed)}'!"
+                f" Allocation status: {self._allocated}"
+            )
+        return self._closed
+
     def close(self, **kwargs) -> bool:
         self.logger.debug(f"Node '{self.name}': Closing...")
         if self._closed:
+            self.logger.debug(
+                f"Node '{self.name}': The node is already closed!"
+            )
             return self._closed
+        self.update_types(**kwargs)
         self._closed = all(inp.close(**kwargs) for inp in self.inputs)
         if not self._closed:
             self.logger.warning(
@@ -371,9 +459,16 @@ class Node(Legs):
                 f"'{tuple(out.name for out in self.outputs if not out.closed)}'!"
             )
             return False
-        # TODO: do we need an allocation?
-        # self.allocate(**kwargs)
-        self.logger.debug(f"Node '{self.name}': Closing completed successfully")
+        self._closed = self.allocate(**kwargs)
+        if not self._closed:
+            self.logger.warning(
+                f"Node '{self.name}': Some outputs are still open: "
+                f"'{tuple(out.name for out in self.outputs if not out.closed)}'!"
+            )
+        else:
+            self.logger.debug(
+                f"Node '{self.name}': Closing completed successfully!"
+            )
         return self._closed
 
     def open(self) -> bool:
@@ -395,18 +490,6 @@ class Node(Legs):
             )
         self.taint()
         return self._closed
-
-    def _shapefunc(self, node) -> None:
-        """A output takes this function to determine the shape"""
-        raise RuntimeError(
-            "Unimplemented method: the method must be overridden!"
-        )
-
-    def _typefunc(self, node) -> None:
-        """A output takes this function to determine the dtype"""
-        raise RuntimeError(
-            "Unimplemented method: the method must be overridden!"
-        )
 
 
 class FunctionNode(Node):
@@ -443,9 +526,6 @@ class FunctionNode(Node):
         node.fcn() # will have NO self provided as first argument
     """
 
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-
     def _stash_fcn(self):
         self._fcn_chain.append(self._fcn)
         return self._fcn
@@ -466,25 +546,6 @@ class FunctionNode(Node):
             raise exc
         self._evaluated = False
         return ret
-
-    def eval(self):
-        self.logger.debug(f"Node '{self.name}': Evaluating...")
-        if not self._closed:
-            raise CriticalError(
-                "Close the node before evaluation! Unclosed inputs:"
-                f"'{tuple(inp.name for inp in self.inputs if not inp.closed)}',"
-                " Unclosed outputs: "
-                f"'{tuple(out.name for out in self.outputs if not out.closed)}'"
-            )
-        # TODO: If we need an allocation methods and flags in the nodes?
-        # if not self._allocated:
-        #    raise CriticalError(
-        #        "Memory is not allocated! Problem inputs:"
-        #        f"'{tuple(inp.name for inp in self.inputs if not inp.allocated)}',"
-        #        " Problem outputs: "
-        #        f"'{tuple(out.name for out in self.outputs if not out.allocated)}'"
-        #    )
-        return self._eval()
 
     def add_input(self, name, parent_output=undefined("parent_output")):
         if not self.closed:

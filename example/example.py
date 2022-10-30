@@ -11,20 +11,13 @@ from dagflow.lib import Array, Product, Sum, WeightedSum
 from dagflow.node import FunctionNode
 
 array = arange(3, dtype="d")
-debug = True
+debug = False
 
 
 class ThreeInputsOneOutput(FunctionNode):
     def __init__(self, *args, **kwargs):
         kwargs.setdefault("missing_input_handler", MissingInputAddEach())
         super().__init__(*args, **kwargs)
-
-    def check_input(self, name, iinput=None):
-        super().check_input(name, iinput)
-
-    def check_eval(self):
-        super().check_eval()
-        return True
 
     def _fcn(self, _, inputs, outputs):
         for i, output in enumerate(outputs):
@@ -38,13 +31,16 @@ class ThreeInputsOneOutput(FunctionNode):
     def result(self):
         return [out.data for out in self.outputs]
 
-    def _shapefunc(self, node) -> None:
-        """A output takes this function to determine the shape"""
-        return node.inputs[0].data.shape
-
-    def _typefunc(self, node) -> None:
-        """A output takes this function to determine the dtype"""
-        return result_type(*tuple(inp.dtype for inp in node.inputs))
+    def _typefunc(self) -> None:
+        """A output takes this function to determine the dtype and shape"""
+        for i, output in enumerate(self.outputs):
+            inputs = self.inputs[2*i:2*(1+i)]
+            output._shape = inputs[0].shape
+            output._dtype = result_type(tuple(inp.dtype for inp in inputs))
+        self.logger.debug(
+            f"Node '{self.name}': dtype={tuple(out.dtype for out in self.outputs)}, "
+            f"shape={tuple(out.shape for out in self.outputs)}"
+        )
 
 
 # Check predefined Array, Sum and Product
@@ -57,7 +53,7 @@ with Graph(debug=debug) as graph:
 
     (in1, in2, in3) >> s
     (in4, s) >> m
-    m.close()
+    graph.close()
 
     print("Result:", m.outputs.result.data)
     savegraph(graph, "dagflow_example_1a.png")
@@ -72,7 +68,7 @@ with Graph(debug=debug) as graph:
 
     (in1, in2, in3) >> s
     (in4, s) >> m
-    m.close()
+    graph.close()
 
     print("Result:", m.outputs.result.data)
     savegraph(graph, "dagflow_example_1b.png")
@@ -89,7 +85,7 @@ with Graph(debug=debug) as graph:
     (in1, in2) >> s
     (in3, in4) >> s2
     (s, s2) >> m
-    m.close()
+    graph.close()
 
     print("Result:", m.outputs.result.data)
     savegraph(graph, "dagflow_example_2.png")
@@ -112,7 +108,7 @@ with Graph(debug=debug) as graph:
     # NOTE: also it is possible to use the old style binding:
     #weight >> ws("weight")
     (s, ws) >> m  # [0,2,4] * [0,5,10] = [0,10,40]
-    m.close()
+    graph.close()
 
     print("Result:", m.outputs.result.data)
     savegraph(graph, "dagflow_example_3.png")
@@ -130,7 +126,7 @@ with Graph(debug=debug) as graph:
     (in1, in2, in3) >> s
     (in4, in5, in6) >> s
     (in7, in8, in9) >> s
-    s.close()
+    graph.close()
 
     print("Result:", s.result)
     savegraph(graph, "dagflow_example_4.png")

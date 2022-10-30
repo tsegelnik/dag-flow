@@ -13,18 +13,19 @@ class Array(StaticNode):
 
     def __init__(self, name, arr, outname="array", **kwargs):
         super().__init__(name, **kwargs)
-        self._add_output(outname, allocatable=False, data=array(arr, copy=True))
-
-    def _shapefunc(self, node) -> None:
-        """A output takes this function to determine the shape"""
-        return node.outputs.array.shape
-
-    def _typefunc(self, node) -> None:
-        """A output takes this function to determine the dtype"""
-        return node.outputs.array.dtype
+        self._add_output(
+            outname, allocatable=False, data=array(arr, copy=True)
+        )
 
     def _fcn(self):
         return self.outputs.array.data
+
+    def _typefunc(self) -> None:
+        """A output takes this function to determine the dtype and shape"""
+        self.logger.debug(
+            f"Node '{self.name}': dtype={self.outputs.array.dtype}, "
+            f"shape={self.outputs.array.shape}"
+        )
 
 
 class Concatenation(FunctionNode):
@@ -36,13 +37,16 @@ class Concatenation(FunctionNode):
         )
         super().__init__(*args, **kwargs)
 
-    def _shapefunc(self, node) -> None:
-        """A output takes this function to determine the shape"""
-        return tuple(out.shape for out in node.outputs)
-
-    def _typefunc(self, node) -> None:
-        """A output takes this function to determine the dtype"""
-        return result_type(*tuple(inp.dtype for inp in node.inputs))
+    def _typefunc(self) -> None:
+        """A output takes this function to determine the dtype and shape"""
+        self.outputs.result._shape = tuple(inp.shape for inp in self.inputs)
+        self.outputs.result._dtype = result_type(
+            *tuple(inp.dtype for inp in self.inputs)
+        )
+        self.logger.debug(
+            f"Node '{self.name}': dtype={self.outputs.result.dtype}, "
+            f"shape={self.outputs.result.shape}"
+        )
 
     def _fcn(self, _, inputs, outputs):
         res = outputs.result.data
@@ -67,13 +71,16 @@ class Sum(FunctionNode):
                 out += input.data
         return out
 
-    def _shapefunc(self, node) -> None:
-        """A output takes this function to determine the shape"""
-        return node.inputs[0].data.shape
-
-    def _typefunc(self, node) -> None:
-        """A output takes this function to determine the dtype"""
-        return result_type(*tuple(inp.dtype for inp in node.inputs))
+    def _typefunc(self) -> None:
+        """A output takes this function to determine the dtype and shape"""
+        self.outputs.result._shape = self.inputs[0].shape
+        self.outputs.result._dtype = result_type(
+            *tuple(inp.dtype for inp in self.inputs)
+        )
+        self.logger.debug(
+            f"Node '{self.name}': dtype={self.outputs.result.dtype}, "
+            f"shape={self.outputs.result.shape}"
+        )
 
 
 class Product(FunctionNode):
@@ -93,13 +100,16 @@ class Product(FunctionNode):
                 out *= input.data
         return out
 
-    def _shapefunc(self, node) -> None:
-        """A output takes this function to determine the shape"""
-        return node.inputs[0].data.shape
-
-    def _typefunc(self, node) -> None:
-        """A output takes this function to determine the dtype"""
-        return result_type(*tuple(inp.dtype for inp in node.inputs))
+    def _typefunc(self) -> None:
+        """A output takes this function to determine the dtype and shape"""
+        self.outputs.result._shape = self.inputs[0].shape
+        self.outputs.result._dtype = result_type(
+            *tuple(inp.dtype for inp in self.inputs)
+        )
+        self.logger.debug(
+            f"Node '{self.name}': dtype={self.outputs.result.dtype}, "
+            f"shape={self.outputs.result.shape}"
+        )
 
 
 class Division(FunctionNode):
@@ -119,13 +129,16 @@ class Division(FunctionNode):
                 out /= input.data
         return out
 
-    def _shapefunc(self, node) -> None:
-        """A output takes this function to determine the shape"""
-        return node.inputs[0].data.shape
-
-    def _typefunc(self, node) -> None:
-        """A output takes this function to determine the dtype"""
-        return result_type(*tuple(inp.dtype for inp in node.inputs))
+    def _typefunc(self) -> None:
+        """A output takes this function to determine the dtype and shape"""
+        self.outputs.result._shape = self.inputs[0].shape
+        self.outputs.result._dtype = result_type(
+            *tuple(inp.dtype for inp in self.inputs)
+        )
+        self.logger.debug(
+            f"Node '{self.name}': dtype={self.outputs.result.dtype}, "
+            f"shape={self.outputs.result.shape}"
+        )
 
 
 class WeightedSum(FunctionNode):
@@ -137,13 +150,16 @@ class WeightedSum(FunctionNode):
         )
         super().__init__(*args, **kwargs)
 
-    def _shapefunc(self, node) -> None:
-        """A output takes this function to determine the shape"""
-        return node.inputs[0].data.shape
-
-    def _typefunc(self, node) -> None:
-        """A output takes this function to determine the dtype"""
-        return result_type(*tuple(inp.dtype for inp in node.inputs))
+    def _typefunc(self) -> None:
+        """A output takes this function to determine the dtype and shape"""
+        self.outputs.result._shape = self.inputs[0].shape
+        self.outputs.result._dtype = result_type(
+            *tuple(inp.dtype for inp in self.inputs)
+        )
+        self.logger.debug(
+            f"Node '{self.name}': dtype={self.outputs.result.dtype}, "
+            f"shape={self.outputs.result.shape}"
+        )
 
     @property
     def weight(self):
@@ -154,7 +170,8 @@ class WeightedSum(FunctionNode):
     def check_input(self, name, iinput=None):
         super().check_input(name, iinput)
         if not self.weight and name not in {"weight", "weights"}:
-            raise UnconnectedInput("weight")
+            raise UnconnectedInput(self, "weight")
+        return True
 
     def check_eval(self):
         super().check_eval()
@@ -164,6 +181,7 @@ class WeightedSum(FunctionNode):
                 "use `WeightedSum.weight = smth` or "
                 "`smth >> WeightedSum('weight')`!"
             )
+        return True
 
     def _fcn(self, _, inputs, outputs):
         inputs = tuple(
