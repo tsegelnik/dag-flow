@@ -11,7 +11,7 @@ from dagflow.lib import Array, Product, Sum, WeightedSum
 from dagflow.node import FunctionNode
 
 array = arange(3, dtype="d")
-debug = True
+debug = False
 
 
 class ThreeInputsOneOutput(FunctionNode):

@@ -68,13 +68,18 @@ class Node(Legs):
         for opt in {"immediate", "auto_freeze", "frozen"}:
             if value := kwargs.pop(opt, None):
                 setattr(self, f"_{opt}", bool(value))
+        self._allocatable = kwargs.pop("allocatable", True)
         if input := kwargs.pop("input", None):
             self._add_input(input)
         if output := kwargs.pop("output", None):
             self._add_output(output)
-        self._allocatable = kwargs.pop("allocatable", True)
         if kwargs:
             raise ValueError(f"Unparsed arguments: {kwargs}!")
+        self.logger.debug(
+            f"Node '{self.name}': The node is instantiated with following "
+            f"options: allocatable={self._allocatable}, label={self._label}, "
+            f"debug={self._debug}"
+        )
 
     @property
     def name(self):
@@ -213,7 +218,7 @@ class Node(Legs):
     def _add_output(self, name, **kwargs):
         if IsIterable(name):
             return tuple(self._add_output(n) for n in name)
-        kwargs.setdefault("allocatable", self.allocatable)
+        kwargs.setdefault("allocatable", self._allocatable)
         kwargs.setdefault("typefunc", self._typefunc)
         if isinstance(name, Output):
             if name.name in self.outputs:
@@ -298,7 +303,12 @@ class Node(Legs):
                 f"'{tuple(out.name for out in self.outputs if not out.closed)}'"
             )
         if not self._allocated:
-            raise CriticalError("Allocate the memory before evaluation!")
+            raise CriticalError(
+                "Memory is not allocated! Problem inputs:"
+                f"'{tuple(inp.name for inp in self.inputs if not inp.allocated)}',"
+                " Problem outputs: "
+                f"'{tuple(out.name for out in self.outputs if not out.allocated)}'"
+            )
         self._evaluated = True
         try:
             ret = self._eval()
@@ -371,7 +381,7 @@ class Node(Legs):
                 f"Node '{self.name}': The memory is already allocated!"
             )
             return self._allocated
-        self.logger.debug(f"Node '{self.name}': Allocate the memory...")
+        self.logger.info(f"Node '{self.name}': Allocate the memory...")
         try:
             self._allocated = all(
                 (
@@ -386,7 +396,7 @@ class Node(Legs):
             )
             self._allocated = False
         if self._allocated:
-            self.logger.debug(
+            self.logger.info(
                 f"Node '{self.name}': Memory allocation completed successfully!"
             )
         else:
@@ -458,7 +468,7 @@ class Node(Legs):
         else:
             self.logger.debug(
                 f"Node '{self.name}': Closing completed successfully!"
-        )
+            )
         return self._closed
 
     def open(self) -> bool:
@@ -516,9 +526,6 @@ class FunctionNode(Node):
         node.fcn() # will have NO self provided as first argument
     """
 
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-
     def _stash_fcn(self):
         self._fcn_chain.append(self._fcn)
         return self._fcn
@@ -539,25 +546,6 @@ class FunctionNode(Node):
             raise exc
         self._evaluated = False
         return ret
-
-    def eval(self):
-        self.logger.debug(f"Node '{self.name}': Evaluating...")
-        if not self._closed:
-            raise CriticalError(
-                "Close the node before evaluation! Unclosed inputs:"
-                f"'{tuple(inp.name for inp in self.inputs if not inp.closed)}',"
-                " Unclosed outputs: "
-                f"'{tuple(out.name for out in self.outputs if not out.closed)}'"
-            )
-        # TODO: If we need an allocation methods and flags in the nodes?
-        if not self._allocated:
-            raise CriticalError(
-                "Memory is not allocated! Problem inputs:"
-                f"'{tuple(inp.name for inp in self.inputs if not inp.allocated)}',"
-                " Problem outputs: "
-                f"'{tuple(out.name for out in self.outputs if not out.allocated)}'"
-            )
-        return self._eval()
 
     def add_input(self, name, parent_output=undefined("parent_output")):
         if not self.closed:

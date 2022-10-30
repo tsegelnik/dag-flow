@@ -2,8 +2,6 @@
 
 from __future__ import print_function
 
-import numpy as N
-
 from dagflow.graph import Graph
 from dagflow.graphviz import savegraph
 from dagflow.input_extra import MissingInputAddOne
@@ -14,24 +12,26 @@ from dagflow.wrappers import *
 set_prefix_function(
     lambda: "{:<2d} ".format(current_level()),
 )
+nodeargs = dict(typefunc=lambda: True, allocatable=False)
+debug = False
 
 call_counter = 0
 
-with Graph() as graph:
+with Graph(debug=debug) as graph:
 
-    @NodeInstanceStatic()
+    @NodeInstanceStatic(**nodeargs)
     def array():
         global call_counter
         call_counter += 1
         printl(f"Call array ({call_counter})")
 
-    @NodeInstanceStatic()
+    @NodeInstanceStatic(**nodeargs)
     def adder():
         global call_counter
         call_counter += 1
         printl(f"Call Adder ({call_counter})")
 
-    @NodeInstanceStatic()
+    @NodeInstanceStatic(**nodeargs)
     def multiplier():
         global call_counter
         call_counter += 1

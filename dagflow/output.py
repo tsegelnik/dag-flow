@@ -29,7 +29,7 @@ class Output:
         self._inputs = []
         self._debug = kwargs.pop("debug", node.debug if node else False)
         self._allocatable = kwargs.pop("allocatable", True)
-        if not self.allocatable:
+        if not self._allocatable:
             if (data := kwargs.get("data")) is not None:
                 self.data = data
             self._allocated = True
@@ -175,18 +175,18 @@ class Output:
 
     def allocate(self, **kwargs):
         if not self._allocatable:
-            self.logger.warning(
+            self.logger.debug(
                 f"Output '{self.name}': "
                 f"The output is not allocatable: data={self._data}!"
             )
             return self._allocated
         if self._allocated:
-            self.logger.warning(
+            self.logger.debug(
                 f"Output '{self.name}': "
-                f"The output memory is already allocated: {self._data}!"
+                f"The output memory is already allocated: data={self._data}!"
             )
             return self._allocated
-        self.logger.debug(f"Output '{self.name}': Allocate the memory...")
+        self.logger.info(f"Output '{self.name}': Allocate the memory...")
         try:
             # NOTE: may be troubles with multidimensional arrays!
             self._data = zeros(self.shape, self.dtype, **kwargs)
