@@ -1,10 +1,10 @@
 from __future__ import print_function
 
-import input_extra
-from .output import Output, Outputs
+from . import input_extra
 from .input import Inputs
-from .tools import IsIterable, StopNesting
+from .output import Output, Outputs
 from .shift import lshift, rshift
+from .tools import IsIterable, StopNesting
 
 
 class Legs:
