@@ -74,8 +74,3 @@ def test_01():
     Array("weight", (2, 3)) >> ws("weight")
     ws.close()
     assert (ws.outputs.result.data == [0, 5, 10]).all()
-
-
-if __name__ == "__main__":
-    test_00()
-    test_01()

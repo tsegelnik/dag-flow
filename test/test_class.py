@@ -35,7 +35,3 @@ def test_00():
     printl(result)
 
     savegraph(graph, "output/class_00.pdf")
-
-
-if __name__ == "__main__":
-    test_00()

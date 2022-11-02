@@ -162,7 +162,3 @@ def test_graph_big_01():
     final.data
     label = "Done reading E."
     plot()
-
-
-if __name__ == "__main__":
-    test_graph_big_01()

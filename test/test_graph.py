@@ -88,9 +88,3 @@ def test_02a():
     print(out4.data)
     d = GraphDot(g)
     d.savegraph("output/test2a_01.png")
-
-
-if __name__ == "__main__":
-    test_01()
-    test_02()
-    test_02a()

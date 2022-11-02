@@ -48,7 +48,3 @@ def test_00():
     printl(result)
 
     savegraph(graph, "output/decorators_static_graph_00.pdf")
-
-
-if __name__ == "__main__":
-    test_00()

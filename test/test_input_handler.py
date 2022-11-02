@@ -219,13 +219,3 @@ def test_06():
         "output/missing_input_handler_06.pdf",
         label="Add inputs and an output for each block",
     )
-
-
-if __name__ == "__main__":
-    test_00()
-    test_01()
-    test_02()
-    test_03()
-    test_04()
-    test_05()
-    test_06()

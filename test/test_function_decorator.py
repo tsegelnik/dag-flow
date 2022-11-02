@@ -122,9 +122,3 @@ def test_02():
 
     printl(m.outputs.result.data)
     savegraph(graph, "output/decorators_graph_02.pdf")
-
-
-if __name__ == "__main__":
-    test_00()
-    test_01()
-    test_02()

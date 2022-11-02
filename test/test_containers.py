@@ -84,12 +84,3 @@ def test_03():
     print(legs3)
     legs3.print()
     print()
-
-
-if __name__ == "__main__":
-    test_01()
-    print()
-    test_02()
-    print()
-    test_03()
-    print()
