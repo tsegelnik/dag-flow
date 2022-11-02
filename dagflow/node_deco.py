@@ -1,4 +1,3 @@
-from __future__ import print_function
 
 from .input_extra import MissingInputAddOne
 from .membernode import MemberNode, StaticMemberNode

@@ -1,4 +1,3 @@
-from __future__ import annotations, print_function
 
 from typing import TYPE_CHECKING, Iterator, Union
 

@@ -3,7 +3,6 @@
 """Test missing input handlers"""
 
 
-from __future__ import print_function
 
 from contextlib import suppress
 

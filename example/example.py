@@ -1,4 +1,3 @@
-from __future__ import print_function
 
 from numpy import arange, asarray, copyto, result_type
 from numpy.random import randint

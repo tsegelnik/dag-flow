@@ -1,4 +1,3 @@
-from __future__ import print_function
 
 from collections.abc import Iterable
 from collections import UserDict

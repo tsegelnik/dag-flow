@@ -1,4 +1,3 @@
-from __future__ import print_function
 
 from . import input_extra
 from .input import Inputs
