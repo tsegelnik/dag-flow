@@ -1,14 +1,13 @@
 
-from typing import TYPE_CHECKING, Iterator, Union
+from typing import Iterator, Union, TypeVar
 
 from .edges import EdgeContainer
 from .output import Output
 from .shift import lshift, rshift
 from .tools import IsIterable, StopNesting, Undefined, undefined
 
-if TYPE_CHECKING:
-    from .node import Node
-
+NodeT = TypeVar('NodeT', bound='Node')
+InputT = TypeVar('InputT', bound='Input')
 
 class Input:
     _closed: bool = False
@@ -19,7 +18,7 @@ class Input:
     def __init__(
         self,
         name: Union[str, Undefined] = undefined("name"),
-        node: Union[Node, Undefined] = undefined("node"),
+        node: Union[NodeT, Undefined] = undefined("node"),
         parent_output: Union[Output, Undefined] = undefined("parent_output"),
         output: Union[Output, Undefined] = undefined("output"),
         **kwargs,
@@ -89,7 +88,7 @@ class Input:
         self._name = name
 
     @property
-    def node(self) -> Node:
+    def node(self) -> NodeT:
         return self._node
 
     @property
@@ -97,7 +96,7 @@ class Input:
         return self._node.logger
 
     @property
-    def parent_output(self) -> Input:
+    def parent_output(self) -> InputT:
         return self._parent_output
 
     @property
