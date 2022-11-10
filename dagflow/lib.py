@@ -1,11 +1,8 @@
-from itertools import zip_longest
-
 from numpy import array, copyto, result_type
 
 from .exception import CriticalError, UnconnectedInput
 from .input_extra import MissingInputAddOne
-from .node import FunctionNode, StaticNode
-from .tools import IsIterable
+from .nodes import FunctionNode, StaticNode
 
 
 class Array(StaticNode):

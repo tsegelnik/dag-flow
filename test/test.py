@@ -2,7 +2,7 @@
 
 from dagflow.input import Input
 from dagflow.output import Output
-from dagflow.node import FunctionNode
+from dagflow.nodes import FunctionNode
 from dagflow.graph import Graph
 from dagflow.wrappers import *
 

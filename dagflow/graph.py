@@ -1,7 +1,6 @@
 
 from .logger import Logger, get_logger
 from .node_group import NodeGroup
-from .node import FunctionNode
 from .tools import undefined
 
 
@@ -69,6 +68,7 @@ class Graph(NodeGroup):
         It is possible to pass the node class via the `nodeclass` arg
         (default: `FunctionNode`)
         """
+        from .nodes import FunctionNode
         if not self.closed:
             return kwargs.pop("nodeclass", FunctionNode)(
                 name, graph=self, **kwargs

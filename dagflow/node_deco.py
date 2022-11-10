@@ -1,7 +1,7 @@
 
 from .input_extra import MissingInputAddOne
 from .membernode import MemberNode, StaticMemberNode
-from .node import FunctionNode, StaticNode
+from .nodes import FunctionNode, StaticNode
 
 
 def NodeClass(fcn=None, **kwargsdeco):
@@ -14,7 +14,7 @@ def NodeClass(fcn=None, **kwargsdeco):
     if not fcn:
         return lambda fcn1: NodeClass(fcn1, **kwargsdeco)
     kwargsdeco["fcn"] = fcn
-    parent = kwargsdeco.pop("parent", FunctionNode) 
+    parent = kwargsdeco.pop("parent", FunctionNode)
     class NewNodeClass(parent):
         def __init__(self, *args, **kwargsclass):
             self._fcn = fcn

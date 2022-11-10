@@ -6,7 +6,7 @@ from pytest import raises
 from dagflow.exception import CriticalError
 from dagflow.input_extra import MissingInputAddOne
 from dagflow.lib import Array, WeightedSum
-from dagflow.node import FunctionNode
+from dagflow.nodes import FunctionNode
 
 
 class ThreeInputsSum(FunctionNode):
@@ -46,9 +46,7 @@ class ThreeInputsSum(FunctionNode):
             f"shape={self.outputs.result.shape}"
         )
 
-
 arr = Array("arr", arange(3, dtype="i"))  # [0, 1, 2]
-
 
 def test_00():
     node = ThreeInputsSum("threesum")
@@ -72,5 +70,6 @@ def test_01():
         ws.eval()
     # multiply the first input by 2 and the second one by 3
     Array("weight", (2, 3)) >> ws("weight")
+
     ws.close()
     assert (ws.outputs.result.data == [0, 5, 10]).all()
