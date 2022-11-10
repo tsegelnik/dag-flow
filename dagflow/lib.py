@@ -3,8 +3,8 @@ from numpy import array, copyto, result_type
 from .exception import CriticalError, UnconnectedInput
 from .input_extra import MissingInputAddOne
 from .nodes import FunctionNode, StaticNode
-
 from .output import Output
+import numpy as np
 
 class Array(StaticNode):
     """Creates a node with a single data output with predefined array"""
@@ -27,6 +27,15 @@ class Array(StaticNode):
             f"shape={self.outputs.array.shape}"
         )
 
+class VariableArray(Array):
+    """Creates a node with a single data output with predefined array, enables editing"""
+
+    def set(self, data: np.ndarray) -> bool:
+        if self.frozen:
+            return False
+
+        self._output.data[:]=data
+        return True
 
 class Concatenation(FunctionNode):
     """Creates a node with a single data output from all the inputs data"""
