@@ -4,18 +4,21 @@ from .exception import CriticalError, UnconnectedInput
 from .input_extra import MissingInputAddOne
 from .nodes import FunctionNode, StaticNode
 
+from .output import Output
 
 class Array(StaticNode):
     """Creates a node with a single data output with predefined array"""
 
+    _data: Output
     def __init__(self, name, arr, outname="array", **kwargs):
         super().__init__(name, **kwargs)
-        self._add_output(
+        output = self._add_output(
             outname, allocatable=False, data=array(arr, copy=True)
         )
+        self._data = output.data
 
     def _fcn(self):
-        return self.outputs.array.data
+        return self.data
 
     def _typefunc(self) -> None:
         """A output takes this function to determine the dtype and shape"""
