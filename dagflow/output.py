@@ -1,14 +1,12 @@
-
 from itertools import cycle
 from typing import Iterable
 
-from numpy import result_type, zeros
+from numpy import zeros
+from numpy.typing import ArrayLike
 
 from .edges import EdgeContainer
-from .exception import CriticalError
 from .shift import lshift, rshift
 from .tools import StopNesting, undefined
-
 
 class Output:
     _name = undefined("name")
@@ -151,9 +149,12 @@ class Output:
     def __rlshift__(self, other):
         return lshift(self, other)
 
-    def taint(self, force=False):
+    def taint_children(self, force=False):
         for input in self._inputs:
             input.taint(force)
+
+    def taint(self, force=False):
+        self._node.taint(force=force)
 
     def touch(self):
         return self._node.touch()
@@ -251,6 +252,20 @@ class Output:
             )
         return not self._closed
 
+class SettableOutput(Output):
+    def set(self, data: ArrayLike, check_taint: bool=False) -> bool:
+        if self.node._frozen:
+            return False
+
+        tainted = True
+        if check_taint:
+            tainted = (self._data!=data).any()
+
+        if tainted:
+            self._data[:]=data
+            self.taint()
+
+        return tainted
 
 class RepeatedOutput:
     _closed: bool = False

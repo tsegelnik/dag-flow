@@ -3,7 +3,7 @@ from .exception import CriticalError
 from .input import Input
 from .legs import Legs
 from .logger import Logger
-from .output import Output
+from .output import Output, SettableOutput
 from .shift import lshift, rshift
 from .tools import IsIterable, undefined
 
@@ -214,7 +214,7 @@ class Node(Legs):
             "A modification of the closed node is restricted!"
         )
 
-    def _add_output(self, name, **kwargs):
+    def _add_output(self, name, *, settable=False, **kwargs):
         if IsIterable(name):
             return tuple(self._add_output(n) for n in name)
         kwargs.setdefault("allocatable", self._allocatable)
@@ -235,7 +235,10 @@ class Node(Legs):
             return name
         if name in self.outputs:
             raise RuntimeError(f"Output {self.name}.{name} already exist!")
-        output = Output(name, self, **kwargs)
+        if settable:
+            output = SettableOutput(name, self, **kwargs)
+        else:
+            output = Output(name, self, **kwargs)
         self.outputs += output
         if self._graph:
             self._graph._add_output(output)
@@ -345,7 +348,7 @@ class Node(Legs):
         self._tainted = True
         ret = self.touch() if self._immediate else None
         for output in self.outputs:
-            output.taint(force)
+            output.taint_children(force)
         return ret
 
     def print(self):
