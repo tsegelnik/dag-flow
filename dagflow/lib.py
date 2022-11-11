@@ -4,21 +4,22 @@ from .exception import CriticalError, UnconnectedInput
 from .input_extra import MissingInputAddOne
 from .nodes import FunctionNode, StaticNode
 from .output import Output
-import numpy as np
+from numpy.typing import ArrayLike
 
 class Array(StaticNode):
     """Creates a node with a single data output with predefined array"""
 
-    _data: Output
+    _data: ArrayLike
     def __init__(self, name, arr, outname="array", **kwargs):
         super().__init__(name, **kwargs)
         output = self._add_output(
             outname, allocatable=False, data=array(arr, copy=True)
         )
-        self._data = output.data
+        self.close()
+        self._data = output._data
 
     def _fcn(self):
-        return self.data
+        return self._data
 
     def _typefunc(self) -> None:
         """A output takes this function to determine the dtype and shape"""
@@ -30,12 +31,17 @@ class Array(StaticNode):
 class VariableArray(Array):
     """Creates a node with a single data output with predefined array, enables editing"""
 
-    def set(self, data: np.ndarray) -> bool:
-        if self.frozen:
-            return False
+    _output: Output
+    def __init__(self, name, arr, *, outname="array", **kwargs):
+        super(Array, self).__init__(name, **kwargs)
+        self._output = self._add_output(
+            outname, allocatable=False, data=array(arr, copy=True), settable=True
+        )
+        self.close()
+        self._data = self._output._data
 
-        self._output.data[:]=data
-        return True
+    def set(self, data: ArrayLike, check_taint: bool=False) -> bool:
+        return self._output.set(data, check_taint)
 
 class Concatenation(FunctionNode):
     """Creates a node with a single data output from all the inputs data"""
