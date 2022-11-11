@@ -1,13 +1,12 @@
 
-from typing import Iterator, Union, TypeVar
+from typing import Iterator, Union
 
 from .edges import EdgeContainer
 from .output import Output
 from .shift import lshift, rshift
 from .tools import IsIterable, StopNesting, Undefined, undefined
 
-NodeT = TypeVar('NodeT', bound='Node')
-InputT = TypeVar('InputT', bound='Input')
+from .types import NodeT, InputT
 
 class Input:
     _closed: bool = False
