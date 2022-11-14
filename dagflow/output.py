@@ -1,5 +1,5 @@
 from itertools import cycle
-from typing import Iterable
+from typing import Iterable, List
 
 from numpy import zeros
 from numpy.typing import ArrayLike
@@ -7,11 +7,12 @@ from numpy.typing import ArrayLike
 from .edges import EdgeContainer
 from .shift import lshift, rshift
 from .tools import StopNesting, undefined
+from .types import InputT, OutputT
 
 class Output:
     _name = undefined("name")
     _node = undefined("node")
-    _inputs = None
+    _inputs: List[InputT]
     _data = undefined("data")
     _dtype = undefined("dtype")
     _shape = undefined("shape")
@@ -124,6 +125,28 @@ class Output:
         self.logger.warning(
             f"Output '{self.name}': The output memory is not allocated."
         )
+
+    @classmethod
+    def take_over(cls, other) -> OutputT:
+        self = cls(None, None)
+        self._name = other._name
+        self._node = other._node
+        self._inputs = other._inputs
+        self._data = other._data
+        self._dtype = other._dtype
+        self._shape = other._shape
+        self._allocatable = other._allocatable
+        self._allocated = other._allocated
+        self._closed = other._closed
+        self._debug = other._debug
+
+        if self._node:
+            self._node.outputs._replace(other, self)
+
+        for input in self._inputs:
+            input._set_parent_output(self, force=True)
+
+        return self
 
     def connect_to(self, input):
         if not self.closed:

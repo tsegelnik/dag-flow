@@ -3,6 +3,7 @@ from collections import OrderedDict
 from collections.abc import Iterable
 
 from .tools import IsIterable, nth
+from .exception import CriticalError
 
 
 class EdgeContainer:
@@ -57,3 +58,11 @@ class EdgeContainer:
 
     def __contains__(self, name):
         return name in self._dict
+
+    def _replace(self, old, new):
+        for k, v in self._dict.items():
+            if old is v:
+                self._dict[k] = new
+                break
+        else:
+            raise CriticalError('Unable to replace an output/input (not found)')
