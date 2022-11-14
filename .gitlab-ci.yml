@@ -11,3 +11,7 @@ tests:
     artifacts:
         paths:
             - test_results
+    only:
+        - master
+        - update-to-data-preservation
+        - merge_requests
