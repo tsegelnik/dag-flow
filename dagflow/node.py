@@ -146,16 +146,22 @@ class Node(Legs):
             self.invalidate_self()
         else:
             if any(input.invalid for input in self.inputs):
-                    return
-            self._invalid = False
+                return
+            self.invalidate_self(False)
         for output in self.outputs:
             output.invalid = invalid
 
-    def invalidate_self(self) -> None:
-        self._tainted = True
-        self._frozen = False
-        self._frozen_tainted = False
-        self._invalid = True
+    def invalidate_self(self, invalid=True) -> None:
+        if invalid:
+            self._tainted = True
+            self._frozen = False
+            self._frozen_tainted = False
+            self._invalid = True
+        else:
+            self._tainted = True
+            self._frozen = False
+            self._frozen_tainted = False
+            self._invalid = False
 
     def invalidate_children(self) -> None:
         for output in self.outputs:
@@ -163,7 +169,7 @@ class Node(Legs):
 
     def invalidate_parents(self) -> None:
         for input in self.inputs:
-            node = input.node
+            node = input.parent_node
             node.invalidate_self()
             node.invalidate_parents()
 
