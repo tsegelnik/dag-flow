@@ -1,4 +1,5 @@
-from dagflow.lib import Array, Sum
+from dagflow.lib.Array import Array
+from dagflow.lib.Sum import Sum
 from dagflow.graph import Graph
 from dagflow.output import SettableOutput
 from dagflow.exception import CriticalError

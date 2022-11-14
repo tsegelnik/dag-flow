@@ -1,4 +1,5 @@
-from dagflow.lib import VariableArray, Sum
+from dagflow.lib.VariableArray import VariableArray
+from dagflow.lib.Sum import Sum
 
 def test_VariableArray_01():
 	value = 123.
