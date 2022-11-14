@@ -45,6 +45,9 @@ class EdgeContainer:
         raise TypeError(f"Unsupported key type: {type(key).__name__}")
 
     def __getattr__(self, name):
+        if name.startswith('__'):
+            return super().__getattr__(name)
+
         return self._dict[name]
 
     def __len__(self):
