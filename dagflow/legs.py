@@ -9,6 +9,8 @@ from .tools import IsIterable, StopNesting
 class Legs:
     __missing_input_handler = None
 
+    inputs: Inputs
+    outputs: Outputs
     def __init__(self, inputs=None, outputs=None, missing_input_handler=None):
         self._missing_input_handler = missing_input_handler
         self.inputs = Inputs(inputs)
