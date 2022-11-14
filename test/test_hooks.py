@@ -5,9 +5,9 @@ from pytest import raises
 
 from dagflow.exception import CriticalError
 from dagflow.input_extra import MissingInputAddOne
-from dagflow.lib import Array, WeightedSum
+from dagflow.lib.Array import Array
+from dagflow.lib.WeightedSum import WeightedSum
 from dagflow.nodes import FunctionNode
-
 
 class ThreeInputsSum(FunctionNode):
     def __init__(self, *args, **kwargs):

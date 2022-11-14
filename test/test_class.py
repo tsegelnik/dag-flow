@@ -5,7 +5,9 @@ from numpy import arange
 
 from dagflow.graph import Graph
 from dagflow.graphviz import savegraph
-from dagflow.lib import Array, Product, Sum
+from dagflow.lib.Array import Array
+from dagflow.lib.Product import Product
+from dagflow.lib.Sum import Sum
 from dagflow.printl import current_level, printl, set_prefix_function
 from dagflow.wrappers import *
 

@@ -1,6 +1,5 @@
 #!/usr/bin/env python
 
-
 import contextlib
 
 from dagflow.input import Input, Inputs
