@@ -14,13 +14,16 @@ class Input:
     _allocated: bool = True
     _allocatable: bool = False
     _debug: bool = False
+    _NodeT: Optional[NodeT]
+    _output: Optional[Output]
+    _parent_output: Optional[Output]
 
     def __init__(
         self,
-        name: Union[str, Undefined] = undefined("name"),
-        node: Union[NodeT, Undefined] = undefined("node"),
-        parent_output: Union[Output, Undefined] = undefined("parent_output"),
-        output: Union[Output, Undefined] = undefined("output"),
+        name: Optional[str] = undefined("name"),
+        node: Optional[NodeT] = undefined("node"),
+        parent_output: Optional[Output] = undefined("parent_output"),
+        output: Optional[Output] = undefined("output"),
         **kwargs,
     ):
         self._name = name
