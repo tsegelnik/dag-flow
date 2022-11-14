@@ -94,6 +94,10 @@ class Input:
         return self._node
 
     @property
+    def parent_node(self) -> NodeT:
+        return self._output.node
+
+    @property
     def logger(self):
         return self._node.logger
 
