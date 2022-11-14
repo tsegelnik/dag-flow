@@ -1,7 +1,7 @@
 from itertools import cycle
 from typing import Iterable, List
 
-from numpy import zeros
+from numpy import zeros, ndarray
 from numpy.typing import ArrayLike
 
 from .edges import EdgeContainer
@@ -13,7 +13,7 @@ class Output:
     _name = undefined("name")
     _node = undefined("node")
     _inputs: List[InputT]
-    _data = undefined("data")
+    _data: ndarray = undefined("data")
     _dtype = undefined("dtype")
     _shape = undefined("shape")
     _allocatable: bool = True
@@ -78,13 +78,13 @@ class Output:
             input.invalid = invalid
 
     @property
-    def data(self):
+    def data(self) -> ndarray:
         if not self.evaluated:
             self.touch()
         return self._data
 
     @data.setter
-    def data(self, val):
+    def data(self, val: ndarray):
         if self._data is undefined("data"):
             self._data = val
             self._dtype = val.dtype
