@@ -2,8 +2,6 @@
 
 """Test missing input handlers"""
 
-
-
 from contextlib import suppress
 
 from dagflow.graph import Graph
