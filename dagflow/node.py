@@ -143,16 +143,29 @@ class Node(Legs):
     @invalid.setter
     def invalid(self, invalid) -> None:
         if invalid:
-            self._tainted = True
-            self._frozen = False
-            self._frozen_tainted = False
+            self.invalidate_self()
         else:
-            for input in self.inputs:
-                if input.invalid:
+            if any(input.invalid for input in self.inputs):
                     return
-        self._invalid = invalid
+            self._invalid = False
         for output in self.outputs:
             output.invalid = invalid
+
+    def invalidate_self(self) -> None:
+        self._tainted = True
+        self._frozen = False
+        self._frozen_tainted = False
+        self._invalid = True
+
+    def invalidate_children(self) -> None:
+        for output in self.outputs:
+            output.invalid = True
+
+    def invalidate_parents(self) -> None:
+        for input in self.inputs:
+            node = input.node
+            node.invalidate_self()
+            node.invalidate_parents()
 
     @property
     def graph(self):
