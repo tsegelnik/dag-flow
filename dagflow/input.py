@@ -1,5 +1,5 @@
 
-from typing import Iterator, Union
+from typing import Iterator, Union, Optional
 
 from .edges import EdgeContainer
 from .output import Output
