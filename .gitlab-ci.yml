@@ -10,4 +10,8 @@ tests:
     - pytest
     artifacts:
         paths:
-            - test_results
+            - test/output
+    only:
+        - master
+        - update-to-data-preservation
+        - merge_requests
