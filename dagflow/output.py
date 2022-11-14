@@ -276,8 +276,8 @@ class Output:
         return not self._closed
 
 class SettableOutput(Output):
-    def set(self, data: ArrayLike, check_taint: bool=False) -> bool:
-        if self.node._frozen:
+    def set(self, data: ArrayLike, check_taint: bool=False, force: bool=False) -> bool:
+        if self.node._frozen and not force:
             return False
 
         tainted = True
@@ -287,6 +287,8 @@ class SettableOutput(Output):
         if tainted:
             self._data[:]=data
             self.taint()
+            self.node.invalidate_parents()
+            self.node._tainted=False
 
         return tainted
 
