@@ -344,9 +344,12 @@ class Node(Legs):
             return
         self._tainted = True
         ret = self.touch() if self._immediate else None
+        self.taint_children(force)
+        return ret
+
+    def taint_children(self, force=False):
         for output in self.outputs:
             output.taint(force)
-        return ret
 
     def print(self):
         print(
