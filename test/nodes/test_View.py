@@ -21,10 +21,7 @@ def test_View_00():
         initial = Array('array', array)
         view = View("view")
 
-    print(initial, view)
     initial >> view
-
-    graph._wrap_fcns(dataprinter, printer)
     graph.close()
 
     assert view.tainted==True
