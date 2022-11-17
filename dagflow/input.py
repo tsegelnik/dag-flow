@@ -1,5 +1,6 @@
 
 from typing import Iterator, Union, TypeVar, Optional
+from numpy import ndarray
 
 from .edges import EdgeContainer
 from .output import Output
@@ -15,6 +16,7 @@ class Input:
     _allocatable: bool = False
     _debug: bool = False
     _NodeT: Optional[NodeT]
+    _data: Optional[ndarray] = None
     _output: Optional[Output]
     _parent_output: Optional[Output]
 

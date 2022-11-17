@@ -2,7 +2,7 @@
 from itertools import cycle
 from typing import Iterable
 
-from numpy import result_type, zeros
+from numpy import zeros, ndarray
 
 from .edges import EdgeContainer
 from .exception import CriticalError
@@ -14,7 +14,7 @@ class Output:
     _name = undefined("name")
     _node = undefined("node")
     _inputs = None
-    _data = undefined("data")
+    _data: ndarray = undefined("data")
     _dtype = undefined("dtype")
     _shape = undefined("shape")
     _allocatable: bool = True
