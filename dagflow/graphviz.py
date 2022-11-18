@@ -75,7 +75,7 @@ else:
         def _add_edges(self, nodedag):
             for output in nodedag.outputs:
                 if output.connected():
-                    for input in output.inputs:
+                    for input in output.child_inputs:
                         self._add_edge(nodedag, output, input)
                 else:
                     self._add_open_output(nodedag, output)

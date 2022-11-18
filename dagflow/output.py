@@ -13,7 +13,7 @@ from .tools import StopNesting, undefined
 class Output:
     _name = undefined("name")
     _node = undefined("node")
-    _inputs = None
+    _child_inputs = None
     _data = undefined("data")
     _dtype = undefined("dtype")
     _shape = undefined("shape")
@@ -25,7 +25,7 @@ class Output:
     def __init__(self, name, node, **kwargs):
         self._name = name
         self._node = node
-        self._inputs = []
+        self._child_inputs = []
         self._debug = kwargs.pop("debug", node.debug if node else False)
         self._allocatable = kwargs.pop("allocatable", True)
         if not self._allocatable:
@@ -60,8 +60,8 @@ class Output:
         return self._node
 
     @property
-    def inputs(self):
-        return self._inputs
+    def child_inputs(self):
+        return self._child_inputs
 
     @property
     def logger(self):
@@ -75,7 +75,7 @@ class Output:
     @invalid.setter
     def invalid(self, invalid):
         """Sets the validity of the following nodes"""
-        for input in self.inputs:
+        for input in self.child_inputs:
             input.invalid = invalid
 
     @property
@@ -136,12 +136,12 @@ class Output:
         )
 
     def _connect_to(self, input):
-        if input in self._inputs:
+        if input in self._child_inputs:
             raise RuntimeError(
                 f"Output '{self.name}' is already connected "
                 f"to the input '{input.name}'!"
             )
-        self._inputs.append(input)
+        self._child_inputs.append(input)
         input._set_parent_output(self)
         return input
 
@@ -152,14 +152,14 @@ class Output:
         return lshift(self, other)
 
     def taint(self, force=False):
-        for input in self._inputs:
+        for input in self._child_inputs:
             input.taint(force)
 
     def touch(self):
         return self._node.touch()
 
     def connected(self):
-        return bool(self._inputs)
+        return bool(self._child_inputs)
 
     def _deep_iter_outputs(self, disconnected_only=False):
         if disconnected_only and self.connected():
@@ -208,8 +208,8 @@ class Output:
         self._closed = self._allocated
         if not self._closed:
             self.logger.warning(
-                f"Output '{self.name}': Some inputs are still open: "
-                f"'{tuple(inp.name for inp in self._inputs if inp.closed)}'!"
+                f"Output '{self.name}': Some child inputs are still open: "
+                f"'{tuple(inp.name for inp in self._child_inputs if inp.closed)}'!"
             )
         else:
             self.logger.debug(
@@ -221,11 +221,11 @@ class Output:
         self.logger.debug(f"Output '{self.name}': Closing output...")
         if self._closed:
             return True
-        self._closed = all(inp.close(**kwargs) for inp in self._inputs)
+        self._closed = all(inp.close(**kwargs) for inp in self._child_inputs)
         if not self._closed:
             self.logger.warning(
-                "Output '{self.name}': Some inputs are still open: "
-                f"'{tuple(inp.name for inp in self._inputs if inp.closed)}'!"
+                "Output '{self.name}': Some child inputs are still open: "
+                f"'{tuple(inp.name for inp in self._child_inputs if inp.closed)}'!"
             )
             return False
         self._closed = self.node.close(**kwargs)
@@ -243,11 +243,11 @@ class Output:
         self.logger.debug(f"Output '{self.name}': Opening output...")
         if not self._closed:
             return True
-        self._closed = not all(inp.open() for inp in self._inputs)
+        self._closed = not all(inp.open() for inp in self._child_inputs)
         if self._closed:
             self.logger.warning(
-                f"Output '{self.name}': Some inputs are still closed: "
-                f"'{tuple(inp.name for inp in self._inputs if inp.closed)}'!"
+                f"Output '{self.name}': Some child inputs are still closed: "
+                f"'{tuple(inp.name for inp in self._child_inputs if inp.closed)}'!"
             )
         return not self._closed
 
