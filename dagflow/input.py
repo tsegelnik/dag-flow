@@ -61,7 +61,7 @@ class Input:
         )
         if self.child_output and not force:
             raise RuntimeError(
-                f"The child_output is already setted to {self.child_output}!"
+                f"The child_output is already set to {self.child_output}!"
             )
         self._child_output = child_output
         child_output.parent_input = self
@@ -80,7 +80,7 @@ class Input:
         )
         if self.connected() and not force:
             raise RuntimeError(
-                f"The parent_output is already setted to {self.output}!"
+                f"The parent_output is already set to {self.output}!"
             )
         self._parent_output = parent_output
 
