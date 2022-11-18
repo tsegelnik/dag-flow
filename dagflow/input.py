@@ -240,8 +240,6 @@ class Input:
         self._closed = True
         if self._parent_output:
             self._closed = self._parent_output._close()
-        if self._child_output:
-            self._closed = self._child_output._close() and self._closed
         if self._closed:
             self.logger.debug(
                 f"Input '{self.name}': The closure completed successfully!"
