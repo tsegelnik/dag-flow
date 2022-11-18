@@ -57,25 +57,25 @@ class FunctionNode(Node):
         self._evaluated = False
         return ret
 
-    def add_input(self, name, parent_output=undefined("parent_output")):
+    def add_input(self, name, child_output=undefined("child_output")):
         if not self.closed:
-            return self._add_input(name, parent_output)
+            return self._add_input(name, child_output)
         self.logger.warning(
             f"Node '{self.name}': "
             "A modification of the closed node is restricted!"
         )
 
-    def _add_input(self, name, parent_output=undefined("parent_output")):
+    def _add_input(self, name, child_output=undefined("child_output")):
         try:
-            self.check_input(name, parent_output)
+            self.check_input(name, child_output)
         except CriticalError as exc:
             raise exc from CriticalError(
-                f"Cannot add the input ({name=}, {parent_output=}) due to "
+                f"Cannot add the input ({name=}, {child_output=}) due to "
                 "critical error!"
             )
         except Exception as exc:
             print(exc)
-        return super()._add_input(name, parent_output)
+        return super()._add_input(name, child_output)
 
     def _check_input(self) -> bool:
         return True
@@ -83,7 +83,7 @@ class FunctionNode(Node):
     def _check_eval(self) -> bool:
         return True
 
-    def check_input(self, name=None, parent_output=None) -> bool:
+    def check_input(self, name=None, child_output=None) -> bool:
         """Checks a signature of the function at the input connection stage"""
         self.logger.debug(
             f"Node '{self.name}': "

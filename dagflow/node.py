@@ -167,12 +167,12 @@ class Node(Legs):
         self._graph = graph
         self._graph.register_node(self)
 
-    def __call__(self, name, parent_output=undefined("parent_output")):
+    def __call__(self, name, child_output=undefined("child_output")):
         for inp in self.inputs:
             if inp.name == name:
                 return inp
         if not self.closed:
-            return self._add_input(name, parent_output)
+            return self._add_input(name, child_output)
         self.logger.warning(
             f"Node '{self.name}': Input '{name}' doesn't exist, "
             "and a modification of the closed node is restricted!"
@@ -184,23 +184,23 @@ class Node(Legs):
             return self._label.format(*args, **kwargs)
         return self._label
 
-    def add_input(self, name, parent_output=undefined("parent_output")):
+    def add_input(self, name, child_output=undefined("child_output")):
         if not self.closed:
-            return self._add_input(name, parent_output)
+            return self._add_input(name, child_output)
         self.logger.warning(
             f"Node '{self.name}': "
             "A modification of the closed node is restricted!"
         )
 
-    def _add_input(self, name, parent_output=undefined("parent_output")):
+    def _add_input(self, name, child_output=undefined("child_output")):
         self.logger.debug(
-            f"Node '{self.name}': Adding input '{name}' with parent_output='{parent_output}'..."
+            f"Node '{self.name}': Adding input '{name}' with child_output='{child_output}'..."
         )
         if IsIterable(name):
             return tuple(self._add_input(n) for n in name)
         if name in self.inputs:
             raise ValueError(f"Input {self.name}.{name} already exist!")
-        inp = Input(name, self, parent_output)
+        inp = Input(name, self, child_output=child_output)
         self.inputs += inp
         if self._graph:
             self._graph._add_input(inp)
@@ -218,7 +218,7 @@ class Node(Legs):
         if IsIterable(name):
             return tuple(self._add_output(n) for n in name)
         kwargs.setdefault("allocatable", self._allocatable)
-        kwargs.setdefault("typefunc", self._typefunc)
+        # kwargs.setdefault("typefunc", self._typefunc)
         if isinstance(name, Output):
             if name.name in self.outputs:
                 raise RuntimeError(

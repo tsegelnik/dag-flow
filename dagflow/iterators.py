@@ -38,5 +38,5 @@ def iter_outputs(outputs):
     return deep_iterate(outputs, "_deep_iter_outputs", "outputs")
 
 
-def iter_parent_outputs(inputs):
-    return deep_iterate(inputs, "_deep_iter_parent_outputs", "parent_outputs")
+def iter_child_outputs(inputs):
+    return deep_iterate(inputs, "_deep_iter_child_outputs", "child_outputs")

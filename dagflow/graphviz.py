@@ -75,7 +75,7 @@ else:
         def _add_edges(self, nodedag):
             for output in nodedag.outputs:
                 if output.connected():
-                    for input in output.inputs:
+                    for input in output.child_inputs:
                         self._add_edge(nodedag, output, input)
                 else:
                     self._add_open_output(nodedag, output)
@@ -130,7 +130,7 @@ else:
         def _set_style_edge(self, obj, attrin, attr, attrout):
             if isinstance(obj, Input):
                 if obj.connected():
-                    node = obj.output.node
+                    node = obj.parent_output.node
                 else:
                     node = None
                     self._set_style_node(node, attrin)

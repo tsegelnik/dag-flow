@@ -1,19 +1,20 @@
 
 from itertools import cycle
-from typing import Iterable
+from typing import Optional
 
 from numpy import zeros, ndarray
+from numpy.typing import ArrayLike
 
 from .edges import EdgeContainer
-from .exception import CriticalError
 from .shift import lshift, rshift
 from .tools import StopNesting, undefined
-
+from .types import InputT
 
 class Output:
     _name = undefined("name")
     _node = undefined("node")
-    _inputs = None
+    _child_inputs: list[InputT]
+    _parent_input: Optional[InputT] = None
     _data: ndarray = undefined("data")
     _dtype = undefined("dtype")
     _shape = undefined("shape")
@@ -22,14 +23,14 @@ class Output:
     _closed: bool = False
     _debug: bool = False
 
-    def __init__(self, name, node, **kwargs):
+    def __init__(self, name, node, *, allocatable: bool=True, data: ArrayLike=None, debug: Optional[bool]=None):
         self._name = name
         self._node = node
-        self._inputs = []
-        self._debug = kwargs.pop("debug", node.debug if node else False)
-        self._allocatable = kwargs.pop("allocatable", True)
+        self._child_inputs = []
+        self._debug = debug if debug is not None else node.debug if node else False
+        self._allocatable = allocatable
         if not self._allocatable:
-            if (data := kwargs.get("data")) is not None:
+            if data is not None:
                 self.data = data
             self._allocated = True
 
@@ -60,8 +61,16 @@ class Output:
         return self._node
 
     @property
-    def inputs(self):
-        return self._inputs
+    def child_inputs(self):
+        return self._child_inputs
+
+    @property
+    def parent_input(self):
+        return self._parent_input
+
+    @parent_input.setter
+    def parent_input(self, input):
+        self._parent_input = input
 
     @property
     def logger(self):
@@ -75,7 +84,7 @@ class Output:
     @invalid.setter
     def invalid(self, invalid):
         """Sets the validity of the following nodes"""
-        for input in self.inputs:
+        for input in self.child_inputs:
             input.invalid = invalid
 
     @property
@@ -136,13 +145,13 @@ class Output:
         )
 
     def _connect_to(self, input):
-        if input in self._inputs:
+        if input in self._child_inputs:
             raise RuntimeError(
                 f"Output '{self.name}' is already connected "
                 f"to the input '{input.name}'!"
             )
-        self._inputs.append(input)
-        input._set_output(self)
+        self._child_inputs.append(input)
+        input._set_parent_output(self)
         return input
 
     def __rshift__(self, other):
@@ -152,21 +161,21 @@ class Output:
         return lshift(self, other)
 
     def taint(self, force=False):
-        for input in self._inputs:
+        for input in self._child_inputs:
             input.taint(force)
 
     def touch(self):
         return self._node.touch()
 
     def connected(self):
-        return bool(self._inputs)
+        return bool(self._child_inputs)
 
     def _deep_iter_outputs(self, disconnected_only=False):
         if disconnected_only and self.connected():
             return iter(tuple())
         raise StopNesting(self)
 
-    def _deep_iter_parent_outputs(self):
+    def _deep_iter_child_outputs(self):
         raise StopNesting(self)
 
     def repeat(self):
@@ -208,8 +217,8 @@ class Output:
         self._closed = self._allocated
         if not self._closed:
             self.logger.warning(
-                f"Output '{self.name}': Some inputs are still open: "
-                f"'{tuple(inp.name for inp in self._inputs if inp.closed)}'!"
+                f"Output '{self.name}': Some child inputs are still open: "
+                f"'{tuple(inp.name for inp in self._child_inputs if inp.closed)}'!"
             )
         else:
             self.logger.debug(
@@ -221,11 +230,11 @@ class Output:
         self.logger.debug(f"Output '{self.name}': Closing output...")
         if self._closed:
             return True
-        self._closed = all(inp.close(**kwargs) for inp in self._inputs)
+        self._closed = all(inp.close(**kwargs) for inp in self._child_inputs)
         if not self._closed:
             self.logger.warning(
-                "Output '{self.name}': Some inputs are still open: "
-                f"'{tuple(inp.name for inp in self._inputs if inp.closed)}'!"
+                "Output '{self.name}': Some child inputs are still open: "
+                f"'{tuple(inp.name for inp in self._child_inputs if inp.closed)}'!"
             )
             return False
         self._closed = self.node.close(**kwargs)
@@ -243,11 +252,11 @@ class Output:
         self.logger.debug(f"Output '{self.name}': Opening output...")
         if not self._closed:
             return True
-        self._closed = not all(inp.open() for inp in self._inputs)
+        self._closed = not all(inp.open() for inp in self._child_inputs)
         if self._closed:
             self.logger.warning(
-                f"Output '{self.name}': Some inputs are still closed: "
-                f"'{tuple(inp.name for inp in self._inputs if inp.closed)}'!"
+                f"Output '{self.name}': Some child inputs are still closed: "
+                f"'{tuple(inp.name for inp in self._child_inputs if inp.closed)}'!"
             )
         return not self._closed
 

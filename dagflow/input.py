@@ -7,8 +7,7 @@ from .output import Output
 from .shift import lshift, rshift
 from .tools import IsIterable, StopNesting, Undefined, undefined
 
-NodeT = TypeVar('NodeT', bound='Node')
-InputT = TypeVar('InputT', bound='Input')
+from .types import NodeT, InputT
 
 class Input:
     _closed: bool = False
@@ -19,22 +18,25 @@ class Input:
     _data: Optional[ndarray] = None
     _output: Optional[Output]
     _parent_output: Optional[Output]
+    _child_output: Optional[Output]
 
     def __init__(
         self,
         name: Optional[str] = undefined("name"),
         node: Optional[NodeT] = undefined("node"),
+        *,
+        child_output: Optional[Output] = undefined("child_output"),
         parent_output: Optional[Output] = undefined("parent_output"),
-        output: Optional[Output] = undefined("output"),
-        **kwargs,
+        closed: bool=False,
+        allocatable: bool=False,
+        debug: Optional[bool]=None
     ):
         self._name = name
         self._node = node
+        self._child_output = child_output
         self._parent_output = parent_output
-        self._output = output
-        self._closed = kwargs.pop("closed", False)
-        self._debug = kwargs.pop("debug", node.debug if node else False)
-        self._allocatable = kwargs.pop("allocatable", False)
+        self._closed = closed
+        self._debug = debug if debug is not None else node.debug if node else False
         if not self._allocatable:
             self._allocated = True
 
@@ -44,9 +46,30 @@ class Input:
     def __repr__(self) -> str:
         return self.__str__()
 
-    def set_parent_output(
-        self, parent_output: Output, force: bool = False
+    def set_child_output(
+        self, child_output: Output, force: bool = False
     ) -> None:
+        if not self.closed:
+            return self._set_child_output(child_output, force)
+        self.logger.warning(
+            f"Input '{self.name}': "
+            "A modification of the closed input is restricted!"
+        )
+
+    def _set_child_output(
+        self, child_output: Output, force: bool = False
+    ) -> None:
+        self.logger.debug(
+            f"Input '{self.name}': Adding child_output '{child_output.name}'..."
+        )
+        if self.child_output and not force:
+            raise RuntimeError(
+                f"The child_output is already set to {self.child_output}!"
+            )
+        self._child_output = child_output
+        child_output.parent_input = self
+
+    def set_parent_output(self, parent_output: Output, force: bool = False) -> None:
         if not self.closed:
             return self._set_parent_output(parent_output, force)
         self.logger.warning(
@@ -54,35 +77,15 @@ class Input:
             "A modification of the closed input is restricted!"
         )
 
-    def _set_parent_output(
-        self, parent_output: Output, force: bool = False
-    ) -> None:
+    def _set_parent_output(self, parent_output: Output, force: bool = False) -> None:
         self.logger.debug(
-            f"Input '{self.name}': Adding parent_output '{parent_output.name}'..."
-        )
-        if self.parent_output and not force:
-            raise RuntimeError(
-                f"The parent_output is already setted to {self.parent_output}!"
-            )
-        self._parent_output = parent_output
-
-    def set_output(self, output: Output, force: bool = False) -> None:
-        if not self.closed:
-            return self._set_output(output, force)
-        self.logger.warning(
-            f"Input '{self.name}': "
-            "A modification of the closed input is restricted!"
-        )
-
-    def _set_output(self, output: Output, force: bool = False) -> None:
-        self.logger.debug(
-            f"Input '{self.name}': Adding output '{output.name}'..."
+            f"Input '{self.name}': Adding parent output '{parent_output.name}'..."
         )
         if self.connected() and not force:
             raise RuntimeError(
-                f"The output is already setted to {self.output}!"
+                f"The parent_output is already set to {self.output}!"
             )
-        self._output = output
+        self._parent_output = parent_output
 
     @property
     def name(self) -> str:
@@ -101,13 +104,13 @@ class Input:
         return self._node.logger
 
     @property
-    def parent_output(self) -> InputT:
-        return self._parent_output
+    def child_output(self) -> InputT:
+        return self._child_output
 
     @property
     def invalid(self) -> bool:
-        """Checks validity of the output data"""
-        return self._output.invalid
+        """Checks validity of the parent output data"""
+        return self._parent_output.invalid
 
     @property
     def closed(self) -> bool:
@@ -131,53 +134,53 @@ class Input:
         self._node.invalid = invalid
 
     @property
-    def output(self) -> Output:
-        return self._output
+    def parent_output(self) -> Output:
+        return self._parent_output
 
     @property
     def data(self):
         if not self.connected():
-            raise RuntimeError("May not read data from disconnected output!")
-        return self._output.data
+            raise RuntimeError("May not read data from disconnected parent output!")
+        return self._parent_output.data
 
     def view(self, **kwargs):
         if not self.connected():
-            raise RuntimeError("May not read data from disconnected output!")
-        return self._output.view(**kwargs)
+            raise RuntimeError("May not read data from disconnected parent output!")
+        return self._parent_output.view(**kwargs)
 
     @property
     def dtype(self):
         if not self.connected():
-            raise RuntimeError("May not read dtype from disconnected output!")
-        return self._output.dtype
+            raise RuntimeError("May not read dtype from disconnected parent output!")
+        return self._parent_output.dtype
 
     @property
     def shape(self):
         if not self.connected():
-            raise RuntimeError("May not read shape from disconnected output!")
-        return self._output.shape
+            raise RuntimeError("May not read shape from disconnected parent output!")
+        return self._parent_output.shape
 
     @property
     def tainted(self) -> bool:
-        return self._output.tainted
+        return self._parent_output.tainted
 
     def touch(self):
-        return self._output.touch()
+        return self._parent_output.touch()
 
     def taint(self, force: bool = False) -> None:
         self._node.taint(force)
 
     def connected(self) -> bool:
-        return bool(self._output)
+        return bool(self._parent_output)
 
     def _deep_iter_inputs(self, disconnected_only=False):
         if disconnected_only and self.connected():
             return iter(tuple())
         raise StopNesting(self)
 
-    def _deep_iter_parent_outputs(self):
-        if self._parent_output:
-            raise StopNesting(self._parent_output)
+    def _deep_iter_child_outputs(self):
+        if self._child_output:
+            raise StopNesting(self._child_output)
         return iter(tuple())
 
     def __lshift__(self, other):
@@ -205,8 +208,8 @@ class Input:
             return True
         self.logger.info(f"Input '{self.name}': Allocating memory...")
         self._allocated = True
-        if self._parent_output:
-            self._allocated = self._parent_output.allocate(**kwargs)
+        if self._child_output:
+            self._allocated = self._child_output.allocate(**kwargs)
             if not self._allocated:
                 self.logger.warning(
                     f"Input '{self.name}': "
@@ -215,11 +218,11 @@ class Input:
                 return False
         # important
         if self.output:
-            self._allocated = self._output.allocate(**kwargs)
+            self._allocated = self._parent_output.allocate(**kwargs)
             if not self._allocated:
                 self.logger.warning(
                     f"Input '{self.name}': "
-                    "The output memory is not allocated!"
+                    "The parent output memory is not allocated!"
                 )
         if self._allocated:
             self.logger.info(
@@ -235,10 +238,10 @@ class Input:
             )
             return self._closed
         self._closed = True
-        if self._output:
-            self._closed = self._output._close()
         if self._parent_output:
-            self._closed = self._parent_output._close() and self._closed
+            self._closed = self._parent_output._close()
+        if self._child_output:
+            self._closed = self._child_output._close() and self._closed
         if self._closed:
             self.logger.debug(
                 f"Input '{self.name}': The closure completed successfully!"
@@ -252,19 +255,19 @@ class Input:
         if self._closed:
             return True
         self._closed = True
-        if self._parent_output:
-            self._closed = self._parent_output.close(**kwargs)
+        if self._child_output:
+            self._closed = self._child_output.close(**kwargs)
             if not self._closed:
                 self.logger.warning(
                     f"Input '{self.name}': The input is still open!"
                 )
                 return False
         # important
-        if self.output:
-            self._closed = self._output.close(**kwargs)
+        if self.parent_output:
+            self._closed = self._parent_output.close(**kwargs)
             if not self._closed:
                 self.logger.warning(
-                    f"Input '{self.name}': The output is still open!"
+                    f"Input '{self.name}': The parent output is still open!"
                 )
                 return False
         self._closed = self.allocate(**kwargs)
@@ -275,8 +278,8 @@ class Input:
         if not self._closed:
             return True
         self._closed = False
-        if self._parent_output:
-            self._closed = not self._parent_output.open()
+        if self._child_output:
+            self._closed = not self._child_output.open()
             if self._closed:
                 self.logger.warning(
                     f"Input '{self.name}': The input is still closed!"
@@ -302,9 +305,9 @@ class Inputs(EdgeContainer):
                 continue
             yield input
 
-    def _deep_iter_parent_outputs(self) -> Iterator[Union[Input, Output]]:
-        for parent_output in self:
-            yield parent_output.parent_output
+    def _deep_iter_child_outputs(self) -> Iterator[Union[Input, Output]]:
+        for child_output in self:
+            yield child_output.child_output
 
     def _touch(self) -> None:
         for input in self:

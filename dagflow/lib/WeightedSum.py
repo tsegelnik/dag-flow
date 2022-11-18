@@ -40,7 +40,7 @@ class WeightedSum(FunctionNode):
         super().check_eval()
         if not self.weight:
             raise CriticalError(
-                "The `weight` or `weights` input is not setted: "
+                "The `weight` or `weights` input is not set: "
                 "use `WeightedSum.weight = smth` or "
                 "`smth >> WeightedSum('weight')`!"
             )
