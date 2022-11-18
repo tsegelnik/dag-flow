@@ -1,6 +1,6 @@
 
 from itertools import cycle
-from typing import Optional
+from typing import Optional, List
 
 from numpy import zeros, ndarray
 from numpy.typing import ArrayLike
@@ -13,7 +13,7 @@ from .types import InputT
 class Output:
     _name = undefined("name")
     _node = undefined("node")
-    _child_inputs: list[InputT]
+    _child_inputs: List[InputT]
     _parent_input: Optional[InputT] = None
     _data: ndarray = undefined("data")
     _dtype = undefined("dtype")
