@@ -218,7 +218,7 @@ class Node(Legs):
         if IsIterable(name):
             return tuple(self._add_output(n) for n in name)
         kwargs.setdefault("allocatable", self._allocatable)
-        kwargs.setdefault("typefunc", self._typefunc)
+        # kwargs.setdefault("typefunc", self._typefunc)
         if isinstance(name, Output):
             if name.name in self.outputs:
                 raise RuntimeError(

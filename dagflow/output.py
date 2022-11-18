@@ -1,17 +1,20 @@
 
 from itertools import cycle
+from typing import Optional
 
 from numpy import zeros
+from numpy.typing import ArrayLike
 
 from .edges import EdgeContainer
 from .shift import lshift, rshift
 from .tools import StopNesting, undefined
+from .types import InputT
 
 class Output:
     _name = undefined("name")
     _node = undefined("node")
-    _child_inputs = None
-    _parent_input = None
+    _child_inputs: list[InputT]
+    _parent_input: Optional[InputT] = None
     _data = undefined("data")
     _dtype = undefined("dtype")
     _shape = undefined("shape")
@@ -20,14 +23,14 @@ class Output:
     _closed: bool = False
     _debug: bool = False
 
-    def __init__(self, name, node, **kwargs):
+    def __init__(self, name, node, *, allocatable: bool=True, data: ArrayLike=None, debug: Optional[bool]=None):
         self._name = name
         self._node = node
         self._child_inputs = []
-        self._debug = kwargs.pop("debug", node.debug if node else False)
-        self._allocatable = kwargs.pop("allocatable", True)
+        self._debug = debug if debug is not None else node.debug if node else False
+        self._allocatable = allocatable
         if not self._allocatable:
-            if (data := kwargs.get("data")) is not None:
+            if data is not None:
                 self.data = data
             self._allocated = True
 

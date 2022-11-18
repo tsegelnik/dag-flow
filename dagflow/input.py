@@ -24,15 +24,16 @@ class Input:
         *,
         child_output: Optional[Output] = undefined("child_output"),
         parent_output: Optional[Output] = undefined("parent_output"),
-        **kwargs,
+        closed: bool=False,
+        allocatable: bool=False,
+        debug: Optional[bool]=None
     ):
         self._name = name
         self._node = node
         self._child_output = child_output
         self._parent_output = parent_output
-        self._closed = kwargs.pop("closed", False)
-        self._debug = kwargs.pop("debug", node.debug if node else False)
-        self._allocatable = kwargs.pop("allocatable", False)
+        self._closed = closed
+        self._debug = debug if debug is not None else node.debug if node else False
         if not self._allocatable:
             self._allocated = True
 
