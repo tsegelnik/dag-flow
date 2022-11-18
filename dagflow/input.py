@@ -15,7 +15,7 @@ class Input:
     _allocatable: bool = False
     _debug: bool = False
     _NodeT: Optional[NodeT]
-    _output: Optional[Output]
+    _parent_output: Optional[Output]
     _child_output: Optional[Output]
 
     def __init__(
@@ -24,13 +24,13 @@ class Input:
         node: Optional[NodeT] = undefined("node"),
         *,
         child_output: Optional[Output] = undefined("child_output"),
-        output: Optional[Output] = undefined("output"),
+        parent_output: Optional[Output] = undefined("parent_output"),
         **kwargs,
     ):
         self._name = name
         self._node = node
         self._child_output = child_output
-        self._output = output
+        self._parent_output = parent_output
         self._closed = kwargs.pop("closed", False)
         self._debug = kwargs.pop("debug", node.debug if node else False)
         self._allocatable = kwargs.pop("allocatable", False)
@@ -65,23 +65,23 @@ class Input:
             )
         self._child_output = child_output
 
-    def set_output(self, output: Output, force: bool = False) -> None:
+    def set_parent_output(self, parent_output: Output, force: bool = False) -> None:
         if not self.closed:
-            return self._set_output(output, force)
+            return self._set_parent_output(parent_output, force)
         self.logger.warning(
             f"Input '{self.name}': "
             "A modification of the closed input is restricted!"
         )
 
-    def _set_output(self, output: Output, force: bool = False) -> None:
+    def _set_parent_output(self, parent_output: Output, force: bool = False) -> None:
         self.logger.debug(
-            f"Input '{self.name}': Adding output '{output.name}'..."
+            f"Input '{self.name}': Adding parent output '{parent_output.name}'..."
         )
         if self.connected() and not force:
             raise RuntimeError(
-                f"The output is already setted to {self.output}!"
+                f"The parent_output is already setted to {self.output}!"
             )
-        self._output = output
+        self._parent_output = parent_output
 
     @property
     def name(self) -> str:
@@ -105,8 +105,8 @@ class Input:
 
     @property
     def invalid(self) -> bool:
-        """Checks validity of the output data"""
-        return self._output.invalid
+        """Checks validity of the parent output data"""
+        return self._parent_output.invalid
 
     @property
     def closed(self) -> bool:
@@ -130,44 +130,44 @@ class Input:
         self._node.invalid = invalid
 
     @property
-    def output(self) -> Output:
-        return self._output
+    def parent_output(self) -> Output:
+        return self._parent_output
 
     @property
     def data(self):
         if not self.connected():
-            raise RuntimeError("May not read data from disconnected output!")
-        return self._output.data
+            raise RuntimeError("May not read data from disconnected parent output!")
+        return self._parent_output.data
 
     def view(self, **kwargs):
         if not self.connected():
-            raise RuntimeError("May not read data from disconnected output!")
-        return self._output.view(**kwargs)
+            raise RuntimeError("May not read data from disconnected parent output!")
+        return self._parent_output.view(**kwargs)
 
     @property
     def dtype(self):
         if not self.connected():
-            raise RuntimeError("May not read dtype from disconnected output!")
-        return self._output.dtype
+            raise RuntimeError("May not read dtype from disconnected parent output!")
+        return self._parent_output.dtype
 
     @property
     def shape(self):
         if not self.connected():
-            raise RuntimeError("May not read shape from disconnected output!")
-        return self._output.shape
+            raise RuntimeError("May not read shape from disconnected parent output!")
+        return self._parent_output.shape
 
     @property
     def tainted(self) -> bool:
-        return self._output.tainted
+        return self._parent_output.tainted
 
     def touch(self):
-        return self._output.touch()
+        return self._parent_output.touch()
 
     def taint(self, force: bool = False) -> None:
         self._node.taint(force)
 
     def connected(self) -> bool:
-        return bool(self._output)
+        return bool(self._parent_output)
 
     def _deep_iter_inputs(self, disconnected_only=False):
         if disconnected_only and self.connected():
@@ -214,11 +214,11 @@ class Input:
                 return False
         # important
         if self.output:
-            self._allocated = self._output.allocate(**kwargs)
+            self._allocated = self._parent_output.allocate(**kwargs)
             if not self._allocated:
                 self.logger.warning(
                     f"Input '{self.name}': "
-                    "The output memory is not allocated!"
+                    "The parent output memory is not allocated!"
                 )
         if self._allocated:
             self.logger.info(
@@ -234,8 +234,8 @@ class Input:
             )
             return self._closed
         self._closed = True
-        if self._output:
-            self._closed = self._output._close()
+        if self._parent_output:
+            self._closed = self._parent_output._close()
         if self._child_output:
             self._closed = self._child_output._close() and self._closed
         if self._closed:
@@ -259,11 +259,11 @@ class Input:
                 )
                 return False
         # important
-        if self.output:
-            self._closed = self._output.close(**kwargs)
+        if self.parent_output:
+            self._closed = self._parent_output.close(**kwargs)
             if not self._closed:
                 self.logger.warning(
-                    f"Input '{self.name}': The output is still open!"
+                    f"Input '{self.name}': The parent output is still open!"
                 )
                 return False
         self._closed = self.allocate(**kwargs)

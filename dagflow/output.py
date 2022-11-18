@@ -142,7 +142,7 @@ class Output:
                 f"to the input '{input.name}'!"
             )
         self._inputs.append(input)
-        input._set_output(self)
+        input._set_parent_output(self)
         return input
 
     def __rshift__(self, other):
