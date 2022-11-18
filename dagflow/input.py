@@ -64,6 +64,7 @@ class Input:
                 f"The child_output is already setted to {self.child_output}!"
             )
         self._child_output = child_output
+        child_output.parent_input = self
 
     def set_parent_output(self, parent_output: Output, force: bool = False) -> None:
         if not self.closed:

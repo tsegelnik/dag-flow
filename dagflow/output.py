@@ -1,19 +1,17 @@
 
 from itertools import cycle
-from typing import Iterable
 
-from numpy import result_type, zeros
+from numpy import zeros
 
 from .edges import EdgeContainer
-from .exception import CriticalError
 from .shift import lshift, rshift
 from .tools import StopNesting, undefined
-
 
 class Output:
     _name = undefined("name")
     _node = undefined("node")
     _child_inputs = None
+    _parent_input = None
     _data = undefined("data")
     _dtype = undefined("dtype")
     _shape = undefined("shape")
@@ -62,6 +60,14 @@ class Output:
     @property
     def child_inputs(self):
         return self._child_inputs
+
+    @property
+    def parent_input(self):
+        return self._parent_input
+
+    @parent_input.setter
+    def parent_input(self, input):
+        self._parent_input = input
 
     @property
     def logger(self):
