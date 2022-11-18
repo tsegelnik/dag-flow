@@ -24,16 +24,22 @@ def test_View_00():
     initial >> view
     graph.close()
 
-    assert view.tainted==True
     assert initial.tainted==True
+    assert view.tainted==True
 
     result = view.outputs.view.data
     assert (result==array).all()
     assert view.tainted==False
     assert initial.tainted==False
 
-    assert initial.outputs[0]._data is view.outputs[0]._data
+    d1=initial.outputs[0]._data
+    d2=view.outputs[0]._data
+    assert (d1==d2).all()
+    d1[:]=-1
+    assert (d2==-1).all()
+
     initial.taint()
+    assert initial.tainted==True
     assert view.tainted==True
 
     savegraph(graph, "output/class_00.pdf")
