@@ -1,47 +1,65 @@
-from __future__ import print_function
-from collections import Iterable
-import itertools as I
+
+from collections.abc import Iterable
+from collections import UserDict
+from itertools import islice
+
 
 class StopNesting(Exception):
     def __init__(self, object):
         self.object = object
 
+
 def IsIterable(obj):
     return isinstance(obj, Iterable) and not isinstance(obj, str)
 
+
 def nth(iterable, n):
     "Returns the nth item or a default value"
-    if n>-1:
-        return next(I.islice(iterable, n, None))
-    else:
-        return tuple(iterable)[n]
+    return next(islice(iterable, n, None)) if n > -1 else tuple(iterable)[n]
 
-class Undefined(object):
+
+class Undefined:
     def __init__(self, what):
-        self.what=what
+        self.what = what
 
     def __str__(self):
-        return 'Undefined '+self.what
+        return f"Undefined {self.what}"
 
     def __repr__(self):
-        return 'Undefined("{what}")'.format(what=self.what)
+        return f'Undefined("{self.what}")'
 
     def __bool__(self):
-        return False
-
-    def __nonzero__(self):
-        """Python2 compatibility"""
         return False
 
     def __call__(self, *args, **kwargs):
         pass
 
-undefinedname = Undefined('name')
-undefineddata = Undefined('data')
-undefineddatatype = Undefined('datatype')
-undefinednode = Undefined('node')
-undefinedgraph = Undefined('graph')
-undefinedoutput = Undefined('output')
-undefinedleg = Undefined('leg')
-undefinedfunction = Undefined('function')
 
+class UndefinedDict(UserDict):
+    def __bool__(self):
+        return False
+
+    def __call__(self, arg):
+        if arg not in self.data:
+            self.data[arg] = Undefined(arg)
+        return self.data[arg]
+
+
+undefined = UndefinedDict(
+    {
+        key: Undefined(key)
+        for key in {
+            "name",
+            "data",
+            "datatype",
+            "node",
+            "graph",
+            "output",
+            "input",
+            "iinput",
+            "label",
+            "function",
+            "leg",
+        }
+    }
+)

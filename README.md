@@ -18,7 +18,6 @@ found in the [example](example/example.py):
 ```python
 #!/usr/bin/env python
 
-from __future__ import print_function
 from dagflow.node_deco import NodeClass
 from dagflow.graph import Graph
 from dagflow.graphviz import savegraph
@@ -60,7 +59,7 @@ with Graph() as graph:
 (in1, in2, in3) >> s
 (in4, s) >> m
 
-print('Result is:', m.outputs.result.data)
+print('Result is:', m.outputs["result"].data)
 savegraph(graph, 'output/dagflow_example.png')
 ```
 

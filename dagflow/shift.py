@@ -1,43 +1,51 @@
-from __future__ import print_function
-import itertools as I
-from dagflow import iterators, tools
+from itertools import zip_longest
 
-# Python2 compatibility
-zip_longest = getattr(I, 'zip_longest', None)
-if not zip_longest:
-    zip_longest = getattr(I, 'izip_longest')
+from .exception import ConnectionError
+from .tools import undefined
+from .iterators import iter_child_outputs, iter_inputs, iter_outputs
 
 _rshift_scope_id = 0
+
+
 def rshift_scope_id():
     global _rshift_scope_id
-    ret=_rshift_scope_id
-    _rshift_scope_id+=1
+    ret = _rshift_scope_id
+    _rshift_scope_id += 1
     return ret
 
+
 def rshift(outputs, inputs):
+    """`>>` operator"""
     scope_id = rshift_scope_id()
 
-    for i, (output, input) in enumerate(zip_longest(iterators.iter_outputs(outputs),
-                                                    iterators.iter_inputs(inputs, True),
-                                                    fillvalue=tools.undefinedleg)):
+    for output, inp in zip_longest(
+        iter_outputs(outputs),
+        iter_inputs(inputs, True),
+        fillvalue=undefined("leg"),
+    ):
         if not output:
-            raise Exception('Unable to connect mismatching lists')
-
-        if not input:
-            missing_input_handler = getattr(inputs, '_missing_input_handler', lambda *args, **kwargs: None)
-            input = missing_input_handler(scope=scope_id)
-
-            if not input:
+            raise ConnectionError("Unable to connect mismatching lists!")
+        if isinstance(output, dict):
+            if inp:
+                raise ConnectionError(
+                    f"Cannot perform a binding from dict={output} due to "
+                    f"non-empty input={inp}!"
+                )
+            for key, val in output.items():
+                val >> inputs(key)
+            continue
+        if not inp:
+            missing_input_handler = getattr(
+                inputs, "_missing_input_handler", lambda *args, **kwargs: None
+            )
+            if not (inp := missing_input_handler(scope=scope_id)):
                 break
+        output.connect_to(inp)
 
-        output._connect_to(input)
+    child_outputs = tuple(iter_child_outputs(inputs))
+    return child_outputs[0] if len(child_outputs) == 1 else child_outputs
 
-    corresponding_outputs = tuple(iterators.iter_corresponding_outputs(inputs))
-
-    if len(corresponding_outputs)==1:
-        return corresponding_outputs[0]
-
-    return corresponding_outputs
 
 def lshift(inputs, outputs):
+    """`<<` operator"""
     return rshift(outputs, inputs)

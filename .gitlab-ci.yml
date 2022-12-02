@@ -1,0 +1,17 @@
+stages:
+    - tests
+
+tests:
+    image: git.jinr.ru:5005/gna/gna-base-docker-image:latest
+    stage: tests
+
+    script:
+    - mkdir test/output
+    - pytest
+    artifacts:
+        paths:
+            - test/output
+    only:
+        - master
+        - update-to-data-preservation
+        - merge_requests
