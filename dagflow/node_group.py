@@ -1,11 +1,11 @@
-from __future__ import print_function
-from dagflow import shift
+from .shift import lshift
 
-class NodeGroup(object):
-    _nodes  = None
+
+class NodeGroup:
+    _nodes: list = None
 
     def __init__(self, *args):
-        self._nodes   = list(args)
+        self._nodes = list(args)
 
     def register_node(self, node):
         self._nodes.append(node)
@@ -19,7 +19,7 @@ class NodeGroup(object):
             node._unwrap_fcn()
 
     def print(self):
-        print('Group of {} nodes:'.format(len(self._nodes)))
+        print(f"Group of {len(self._nodes)} nodes:")
         for node in self._nodes:
             node.print()
 
@@ -27,13 +27,13 @@ class NodeGroup(object):
         """
         self << other
         """
-        return shift.lshift(self, other)
+        return lshift(self, other)
 
     def __rrshift__(self, other):
         """
         other >> self
         """
-        return shift.lshift(self, other)
+        return lshift(self, other)
 
     def __iter__(self):
         """
@@ -42,4 +42,3 @@ class NodeGroup(object):
         To be used with >>/<< operators which take only disconnected inputs
         """
         return iter(self._nodes)
-

@@ -1,51 +1,75 @@
-from __future__ import print_function
-from collections import OrderedDict, Iterable
-from dagflow.tools import IsIterable, nth
 
-class EdgeContainer(object):
-    _dict = None
-    _datatype = None
+from collections.abc import Sequence
+from .tools import IsIterable
+
+from typing import List, Dict
+
+class EdgeContainer:
+    _dict: Dict
+    _list: List
+    _dtype = None
+
     def __init__(self, iterable=None):
-        object.__init__(self)
-        self._dict = OrderedDict()
-
+        self._dict = {}
+        self._list = []
         if iterable:
-            self.__iadd__(iterable)
+            self.add(iterable)
 
-    def __iadd__(self, value):
+    def add(self, value, *, positional: bool=True, keyword: bool=True):
+        if positional==keyword==False:
+            raise RuntimeError('Edge should be at least positional or a keyword')
+
         if IsIterable(value):
             for v in value:
-                self.__iadd__(v)
+                self.add(v, positional=positional, keyword=keyword)
             return self
-
-        if self._datatype and not isinstance(value, self._datatype):
-            raise Exception('The container does not support this type of data')
-
+        if self._dtype and not isinstance(value, self._dtype):
+            raise RuntimeError(
+                f"The type {type(value)} of the data doesn't correpond "
+                f"to {self._dtype}!"
+            )
         name = value.name
         if not name:
-            raise Exception('May not add objects with undefined name')
-
+            raise RuntimeError("May not add objects with undefined name")
         if name in self._dict:
-            raise Exception('May not add duplicated items')
+            raise RuntimeError("May not add duplicated items")
 
-        self._dict[name] = value
-
+        if positional:
+            self._list.append(value)
+        if keyword:
+            self._dict[name] = value
         return self
+
+    def allocate(self) -> bool:
+        return all(edge.allocate() for edge in self._dict.values())
 
     def __getitem__(self, key):
         if isinstance(key, int):
-            return nth(self._dict.values(), key)
+            return self._list[key]
         elif isinstance(key, str):
             return self._dict[key]
         elif isinstance(key, slice):
-            return tuple(self._dict.values())[key]
-        elif isinstance(key, Iterable):
+            return self._list[key]
+        elif isinstance(key, Sequence):
             return tuple(self.__getitem__(k) for k in key)
+        raise TypeError(f"Unsupported key type: {type(key).__name__}")
 
-        raise Exception('Unsupported key type: '+type(key).__name__)
+    def get(self, key, default = None):
+        try:
+            return self.__getitem__(key)
+        except Exception:
+            return default
 
-    def __getattr__(self, name):
-        return self._dict[name]
+    def has_key(self, key: str) -> bool:
+        return key in self._dict
+
+    def get_positional(self, idx):
+        return self._list[idx]
+    iat = get_positional
+
+    def get_keyword(self, key):
+        return self._dict[key]
+    kat = get_keyword
 
     def __len__(self):
         return len(self._dict)
