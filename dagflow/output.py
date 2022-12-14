@@ -9,7 +9,6 @@ from .exception import (
     ClosedGraphError,
     InitializationError,
     AllocationError,
-    CriticalError,
     ConnectionError
 )
 from .shift import lshift, rshift
