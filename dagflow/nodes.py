@@ -1,6 +1,6 @@
+from dagflow.exception import CriticalError
 from .node import Node
-from .tools import undefined
-from .exception import CriticalError
+
 
 class FunctionNode(Node):
     """Function signature: fcn(node, inputs, outputs)
@@ -36,9 +36,19 @@ class FunctionNode(Node):
         node.fcn() # will have NO self provided as first argument
     """
 
+    fcn = None
+
+    def __init__(self, name, **kwargs):
+        super().__init__(name, **kwargs)
+        if self.fcn is None:
+            self._functions = {"default": self._fcn}
+            self.fcn = self._functions["default"]
+        else:
+            self._functions = {"default": self.fcn}
+
     def _stash_fcn(self):
-        self._fcn_chain.append(self._fcn)
-        return self._fcn
+        self._fcn_chain.append(self.fcn)
+        return self.fcn
 
     def _make_wrap(self, prev_fcn, wrap_fcn):
         def wrapped_fcn(node, inputs, outputs):
@@ -47,7 +57,7 @@ class FunctionNode(Node):
         return wrapped_fcn
 
     def _eval(self):
-        return self._fcn(self, self.inputs, self.outputs)
+        return self.fcn(self, self.inputs, self.outputs)
 
 
 class StaticNode(Node):
