@@ -52,35 +52,34 @@ def test_02(debug_graph):
     assert not arr3.closed
 
 
-# TODO: implement cross closure of several graphs
-#def test_03(debug_graph):
-#    with Graph(debug=debug_graph, close=False):
-#        arr1 = Array("arr1", arange(3, dtype="i"))  # [0, 1, 2]
-#        arr2 = Array("arr2", (3, 2, 1))
-#        arr3 = Array("unity", (1, 1, 1))
-#        sum1 = Sum("sum1")
-#        sum2 = Sum("sum2")
-#        prod = Product("product")
-#        (arr1, arr2, arr3) >> sum1  # [4, 4, 4]
-#        (arr3, sum1) >> prod  # [4, 4, 4]
-#        (arr1, prod) >> sum2  # [4, 5, 6]
-#
-#    with Graph(debug=debug_graph, close=True):
-#        arr4 = Array("arr1", arange(3, dtype="i"))  # [0, 1, 2]
-#        sum3 = Product("product")
-#        (sum2, arr4) >> sum3  # [4, 6, 8]
-#    assert arr1.closed
-#    assert arr2.closed
-#    assert arr3.closed
-#    assert arr4.closed
-#    assert sum2.closed
-#    assert sum3.closed
-#    assert (sum3.outputs["result"].data == [4, 6, 8]).all()
-#    assert sum3.open()
-#    assert not prod.closed
-#    assert not sum1.closed
-#    assert not sum2.closed
-#    assert not arr1.closed
-#    assert not arr2.closed
-#    assert not arr3.closed
-#    assert not arr4.closed
+def test_03(debug_graph):
+    with Graph(debug=debug_graph, close=False):
+        arr1 = Array("arr1", arange(3, dtype="i"))  # [0, 1, 2]
+        arr2 = Array("arr2", (3, 2, 1))
+        arr3 = Array("unity", (1, 1, 1))
+        sum1 = Sum("sum1")
+        sum2 = Sum("sum2")
+        prod = Product("product")
+        (arr1, arr2, arr3) >> sum1  # [4, 4, 4]
+        (arr3, sum1) >> prod  # [4, 4, 4]
+        (arr1, prod) >> sum2  # [4, 5, 6]
+
+    with Graph(debug=debug_graph, close=True):
+        arr4 = Array("arr1", arange(3, dtype="i"))  # [0, 1, 2]
+        sum3 = Sum("sum3")
+        (sum2, arr4) >> sum3  # [4, 7, 8]
+    assert arr1.closed
+    assert arr2.closed
+    assert arr3.closed
+    assert arr4.closed
+    assert sum2.closed
+    assert sum3.closed
+    assert (sum3.outputs["result"].data == [4, 6, 8]).all()
+    assert sum3.open()
+    assert not prod.closed
+    assert not sum1.closed
+    assert not sum2.closed
+    assert not arr1.closed
+    assert not arr2.closed
+    assert not arr3.closed
+    assert not arr4.closed

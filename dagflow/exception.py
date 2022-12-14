@@ -46,6 +46,18 @@ class AllocationError(CriticalError):
             message = "Unable to allocate memory!"
         super().__init__(message, *args, **kwargs)
 
+class ClosingError(CriticalError):
+    def __init__(self, message: Optional[str] = None, *args, **kwargs):
+        if not message:
+            message = "An exception occured during closing procedure!"
+        super().__init__(message, *args, **kwargs)
+
+class OpeningError(CriticalError):
+    def __init__(self, message: Optional[str] = None, *args, **kwargs):
+        if not message:
+            message = "An exception occured during opening procedure!"
+        super().__init__(message, *args, **kwargs)
+
 class ClosedGraphError(CriticalError):
     def __init__(self, message: Optional[str] = None, *args, **kwargs):
         if not message:

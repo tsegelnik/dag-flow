@@ -1,17 +1,18 @@
 from .exception import (
+    AllocationError,
     CriticalError,
     ClosedGraphError,
+    ClosingError,
+    OpeningError,
     DagflowError,
     ReconnectionError,
     UnclosedGraphError,
-    TypeFunctionError,
     InitializationError,
 )
 from .input import Input
 from .legs import Legs
 from .logger import Logger
 from .output import Output, SettableOutput
-from .shift import lshift
 from .tools import IsIterable, undefined
 
 
@@ -254,20 +255,22 @@ class Node(Legs):
             if name.name in self.outputs or name.node:
                 raise ReconnectionError(output=name, node=self)
             name._node = self
-            self.outputs.add(name)
-            if self._graph:
-                self._graph._add_output(name)
-            return name
+            return self.__add_output(name)
         if name in self.outputs:
             raise ReconnectionError(output=name, node=self)
         if settable:
             output = SettableOutput(name, self, **kwargs)
         else:
             output = Output(name, self, **kwargs)
-        self.outputs.add(output)
+
+        return self.__add_output(Output(name, self, **kwargs))
+
+    def __add_output(self, out):
+        self.outputs.add(out)
+
         if self._graph:
-            self._graph._add_output(output)
-        return output
+            self._graph._add_output(out)
+        return out
 
     def add_pair(self, iname, oname):
         if not self.closed:
@@ -390,54 +393,48 @@ class Node(Legs):
             "Unimplemented method: the method must be overridden!"
         )
 
-    def update_types(self) -> bool:
+    def update_types(self, recursivly: bool = True) -> bool:
         if not self._types_tainted:
             return True
         self.logger.debug(f"Node '{self.name}': Update types...")
-        for input in self.inputs:
-            input.parent_node.update_types()
+        if recursivly:
+            for input in self.inputs:
+                input.parent_node.update_types(recursivly)
         res = self._typefunc()
         self._types_tainted = False
         return res
 
-    def allocate(self):
+    def allocate(self, recursivly: bool = True):
         if self._allocated:
             return True
+        self.logger.debug(f"Node '{self.name}': Allocate memory...")
+        if recursivly and not all(
+            input.parent_node.allocate(recursivly) for input in self.inputs
+        ):
+            return False
         if not self.inputs.allocate():
-            return False
+            raise AllocationError("Cannot allocate memory for inputs!", node=self)
         if not self.outputs.allocate():
-            return False
+            raise AllocationError("Cannot allocate memory for outputs!", node=self)
         self._allocated = True
         return True
 
-    def _close(self) -> bool:
+    def close(self, recursivly: bool = True) -> bool:
         if self._closed:
             return True
         self.logger.debug(f"Node '{self.name}': Close...")
         if self.invalid:
+            raise ClosingError("Cannot close an invalid node!", node=self)
+        if recursivly and not all(
+            input.parent_node.close(recursivly) for input in self.inputs
+        ):
             return False
-            # TODO: should we raise an exception there?
-            # raise CriticalError("Unable to close invalid transformation!")
-        self._closed = self._allocated
-        self.logger.debug(
-            f"Node '{self.name}': Closing status: {self._closed}..."
-        )
-        return self._closed
-
-    def close(self, **kwargs) -> bool:
-        # TODO: implement down-up closure
-        if self._closed:
-            return True
-        self.logger.debug(f"Node '{self.name}': Close...")
-        if self.invalid:
-            return False
-            # TODO: should we raise an exception there?
-            # raise CriticalError("Unable to close invalid transformation!")
-        self.update_types()
-        self._closed = self.allocate(**kwargs)
-        self.logger.debug(
-            f"Node '{self.name}': Closing status: {self._closed}..."
-        )
+        else:
+            self._closed = True
+        if self.allocatable:
+            self._closed = self._allocated
+        if not self._closed:
+            raise ClosingError(node=self)
         return self._closed
 
     def open(self, force: bool = False) -> bool:
@@ -445,7 +442,7 @@ class Node(Legs):
             return True
         self.logger.debug(f"Node '{self.name}': Open...")
         if not all(input.parent_node.open(force) for input in self.inputs):
-            return False
+            raise OpeningError(node=self)
         self.unfreeze()
         self.taint()
         self._closed = False
