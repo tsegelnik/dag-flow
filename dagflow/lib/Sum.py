@@ -13,7 +13,7 @@ class Sum(FunctionNode):
         super().__init__(*args, **kwargs)
 
     def _fcn(self, _, inputs, outputs):
-        out = outputs.result.data
+        out = outputs["result"].data
         copyto(out, inputs[0].data)
         if len(inputs) > 1:
             for input in inputs[1:]:
@@ -22,11 +22,11 @@ class Sum(FunctionNode):
 
     def _typefunc(self) -> None:
         """A output takes this function to determine the dtype and shape"""
-        self.outputs.result._shape = self.inputs[0].shape
-        self.outputs.result._dtype = result_type(
+        self.outputs["result"]._shape = self.inputs[0].shape
+        self.outputs["result"]._dtype = result_type(
             *tuple(inp.dtype for inp in self.inputs)
         )
         self.logger.debug(
-            f"Node '{self.name}': dtype={self.outputs.result.dtype}, "
-            f"shape={self.outputs.result.shape}"
+            f"Node '{self.name}': dtype={self.outputs['result'].dtype}, "
+            f"shape={self.outputs['result'].shape}"
         )

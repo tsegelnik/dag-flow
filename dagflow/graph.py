@@ -1,4 +1,11 @@
-
+from .exception import (
+    AllocationError,
+    DagflowError,
+    TypeFunctionError,
+    UnclosedGraphError,
+    ClosedGraphError,
+    InitializationError
+)
 from .logger import Logger, get_logger
 from .node_group import NodeGroup
 from .tools import undefined
@@ -13,15 +20,17 @@ class Graph(NodeGroup):
     _context_graph = undefined("graph")
     _label = undefined("label")
     _name = "graph"
+    _close: bool = False
     _closed: bool = False
     _debug: bool = False
     _logger: Logger
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args, close: bool = False, **kwargs):
         super().__init__(*args)
         self._label = kwargs.pop("label", undefined("label"))
         self._name = kwargs.pop("name", "graph")
         self._debug = kwargs.pop("debug", False)
+        self._close = close
         # init or get default logger
         self._logger = get_logger(
             filename=kwargs.pop("logfile", None),
@@ -31,7 +40,7 @@ class Graph(NodeGroup):
             name=kwargs.pop("loggername", None),
         )
         if kwargs:
-            raise RuntimeError(f"Unparsed arguments: {kwargs}!")
+            raise InitializationError(f"Unparsed arguments: {kwargs}!")
 
     @property
     def debug(self) -> bool:
@@ -68,24 +77,18 @@ class Graph(NodeGroup):
         It is possible to pass the node class via the `nodeclass` arg
         (default: `FunctionNode`)
         """
-        from .nodes import FunctionNode
         if not self.closed:
+            from .nodes import FunctionNode
             return kwargs.pop("nodeclass", FunctionNode)(
                 name, graph=self, **kwargs
             )
-        self.logger.warning(
-            f"Graph '{self.name}': "
-            "A modification of the closed graph is restricted!"
-        )
+        raise ClosedGraphError(node=name)
 
     def add_nodes(self, nodes, **kwargs):
         """Adds nodes"""
         if not self.closed:
             return (self.add_node(node, **kwargs) for node in nodes)
-        self.logger.warning(
-            f"Graph '{self.name}': "
-            "A modification of the closed graph is restricted!"
-        )
+        raise ClosedGraphError(node=nodes)
 
     def print(self):
         print(f"Graph with {len(self._nodes)} nodes")
@@ -102,70 +105,34 @@ class Graph(NodeGroup):
 
     def __exit__(self, *args, **kwargs):
         Graph._context_graph = undefined("graph")
+        if self._close:
+            self.close()
 
     def close(self, **kwargs) -> bool:
         """Closes the graph"""
-        self.logger.debug(f"Graph '{self.name}': Closing...")
+        # TODO: implement cross-closure of several graphs
         if self._closed:
             return True
+        self.logger.debug(f"Graph '{self.name}': Closing...")
         self.logger.debug(f"Graph '{self.name}': Update types...")
-        try:
-            for node in self._nodes:
-                node.update_types(**kwargs)
-        except Exception as exc:
-            self.logger.warning(
-                f"Graph '{self.name}': Exception occured during type "
-                f"updating: {exc}!"
-            )
-            self._closed = False
-            return self._closed
+        for node in self._nodes:
+            node.update_types()
         self.logger.debug(f"Graph '{self.name}': Allocate memory...")
-        try:
-            for node in self._nodes:
-                node.allocate(**kwargs)
-        except Exception as exc:
-            self.logger.warning(
-                f"Graph '{self.name}': Some nodes are not allocated: "
-                f"'{tuple(node.name for node in self._nodes if not node.allocated)}'!"
-                f"Catched exception: {exc}"
-            )
-            self._closed = False
-            return self._closed
-        self.logger.debug(f"Graph '{self.name}': Close nodes...")
+        for node in self._nodes:
+            node.allocate(**kwargs)
+        self.logger.debug(f"Graph '{self.name}': Closing nodes...")
         self._closed = all(node._close(**kwargs) for node in self._nodes)
         if not self._closed:
-            self.logger.warning(
-                f"Graph '{self.name}': Some nodes are not closed: "
-                f"'{tuple(node.name for node in self._nodes if not node.closed)}'!"
-            )
-        else:
-            self.logger.debug(
-                f"Graph '{self.name}': The graph is closed successfully."
-            )
+            raise UnclosedGraphError("The graph is still open!")
+        self.logger.debug(f"Graph '{self.name}': The graph is closed!")
         return self._closed
 
-    # def close(self, **kwargs) -> bool:
-    #    """Closes the graph recursively"""
-    #    self.logger.debug(f"Graph '{self.name}': Closing...")
-    #    if self._closed:
-    #        return True
-    #    self._closed = all(node.close(**kwargs) for node in self._nodes)
-    #    if not self._closed:
-    #        self.logger.warning(
-    #            f"Graph '{self.name}': Some nodes are still open: "
-    #            f"'{tuple(node.name for node in self._nodes if not node.closed)}'!"
-    #        )
-    #    return self._closed
-
-    def open(self) -> bool:
+    def open(self, force: bool = False) -> bool:
         """Opens the graph recursively"""
-        self.logger.debug(f"Graph '{self.name}': Opening...")
-        if not self._closed:
+        if not self._closed and not force:
             return True
-        self._closed = not all(node.open() for node in self._nodes)
+        self.logger.debug(f"Graph '{self.name}': Opening...")
+        self._closed = not all(node.open(force) for node in self._nodes)
         if self._closed:
-            self.logger.warning(
-                f"Graph '{self.name}': Some nodes are still open: "
-                f"'{tuple(node.name for node in self._nodes if node.closed)}'!"
-            )
+            raise UnclosedGraphError("The graph is still open!")
         return not self._closed

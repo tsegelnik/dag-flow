@@ -30,7 +30,7 @@ def test_View_00():
     assert view.tainted==True
     assert initial.tainted==True
 
-    result = view.outputs.view.data
+    result = view.outputs['view'].data
     assert (result==array).all()
     assert view.tainted==False
     assert initial.tainted==False

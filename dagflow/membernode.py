@@ -81,7 +81,7 @@ class StaticMemberNode(Node):
     def _eval(self):
         self._evaluating = True
         if self._touch_inputs:
-            self.inputs._touch()
+            self.inputs.touch()
         ret = self._fcn(self._obj)
         self._evaluating = False
         return ret

@@ -1,8 +1,9 @@
 from numpy import copyto, result_type
 
-from ..exception import CriticalError, UnconnectedInput
+from ..exception import TypeFunctionError
 from ..input_extra import MissingInputAddOne
 from ..nodes import FunctionNode
+
 
 class WeightedSum(FunctionNode):
     """Weighted sum of all the inputs together"""
@@ -15,44 +16,25 @@ class WeightedSum(FunctionNode):
 
     def _typefunc(self) -> None:
         """A output takes this function to determine the dtype and shape"""
-        self.outputs.result._shape = self.inputs[0].shape
-        self.outputs.result._dtype = result_type(
+        if self.inputs.get("weight") is None:
+            raise TypeFunctionError("Cannot use WeightedSum without 'weight'!")
+        input = next(
+            (inp for inp in self.inputs if inp.name != "weight"), None
+        )
+        if input is None:
+            raise TypeFunctionError("Cannot use WeightedSum with zero arguments!")
+        self.outputs["result"]._shape = input.shape
+        self.outputs["result"]._dtype = result_type(
             *tuple(inp.dtype for inp in self.inputs)
         )
         self.logger.debug(
-            f"Node '{self.name}': dtype={self.outputs.result.dtype}, "
-            f"shape={self.outputs.result.shape}"
+            f"Node '{self.name}': dtype={self.outputs['result'].dtype}, "
+            f"shape={self.outputs['result'].shape}"
         )
-
-    @property
-    def weight(self):
-        for input in self.inputs:
-            if input.name in {"weight", "weights"}:
-                return input
-
-    def check_input(self, name, iinput=None):
-        super().check_input(name, iinput)
-        if not self.weight and name not in {"weight", "weights"}:
-            raise UnconnectedInput(self, "weight")
-        return True
-
-    def check_eval(self):
-        super().check_eval()
-        if not self.weight:
-            raise CriticalError(
-                "The `weight` or `weights` input is not setted: "
-                "use `WeightedSum.weight = smth` or "
-                "`smth >> WeightedSum('weight')`!"
-            )
-        return True
 
     def _fcn(self, _, inputs, outputs):
-        inputs = tuple(
-            input
-            for input in inputs
-            if input.name not in {"weight", "weights"}
-        )
-        return self.__fcn_iterable(self.weight.data, inputs, outputs)
+        inputs = tuple(input for input in inputs if input.name != "weight")
+        return self.__fcn_iterable(self.inputs["weight"].data, inputs, outputs)
 
     def __fcn_number(self, weight, inputs, outputs):
         out = outputs[0].data
@@ -70,17 +52,16 @@ class WeightedSum(FunctionNode):
         if len(inputs) > 1:
             for input, weight in zip(inputs[1:], weights[1:]):
                 if input is None:
-                    # Should we raise an exception or warning,
+                    # TODO: Should we raise an exception or warning,
                     # if len(weights) > len(inputs)?
                     raise RuntimeError(
                         f"The {len(weights)=} > {len(inputs)=}!"
                     )
                 if weight is None:
-                    # Should we raise an exception or warning,
+                    # TODO: Should we raise an exception or warning,
                     # if len(weights) < len(inputs)?
                     raise RuntimeError(
                         f"The {len(inputs)=} > {len(weights)=}!"
                     )
                 out += input.data * weight
         return out
-

@@ -1,9 +1,7 @@
 #!/usr/bin/env python
-
-
 from dagflow.graph import Graph
 from dagflow.graphviz import GraphDot
-from dagflow.printl import current_level, printl, set_prefix_function
+from dagflow.printl import current_level, set_prefix_function
 from dagflow.wrappers import *
 
 set_prefix_function(

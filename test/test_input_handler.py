@@ -9,17 +9,21 @@ from dagflow.graphviz import savegraph
 from dagflow.input_extra import *
 from dagflow.wrappers import *
 
+nodeargs = dict(typefunc=lambda: True, allocatable=False)
+
 
 def test_00():
     """Test default handler: fail on connect"""
     graph = Graph()
 
-    in1 = graph.add_node("n1", output="o1")
-    in2 = graph.add_node("n2", output="o1")
-    in3 = graph.add_node("n3", output="o1")
-    in4 = graph.add_node("n4", output="o1")
+    in1 = graph.add_node("n1", output="o1", **nodeargs)
+    in2 = graph.add_node("n2", output="o1", **nodeargs)
+    in3 = graph.add_node("n3", output="o1", **nodeargs)
+    in4 = graph.add_node("n4", output="o1", **nodeargs)
 
-    s = graph.add_node("add", missing_input_handler=MissingInputFail)
+    s = graph.add_node(
+        "add", missing_input_handler=MissingInputFail, **nodeargs
+    )
     graph.close()
 
     with suppress(Exception):
@@ -33,12 +37,14 @@ def test_01():
     """Test InputAdd handler: add new input on each new connect"""
     graph = Graph()
 
-    in1 = graph.add_node("n1", output="o1")
-    in2 = graph.add_node("n2", output="o1")
-    in3 = graph.add_node("n3", output="o1")
-    in4 = graph.add_node("n4", output="o1")
+    in1 = graph.add_node("n1", output="o1", **nodeargs)
+    in2 = graph.add_node("n2", output="o1", **nodeargs)
+    in3 = graph.add_node("n3", output="o1", **nodeargs)
+    in4 = graph.add_node("n4", output="o1", **nodeargs)
 
-    s = graph.add_node("add", missing_input_handler=MissingInputAdd)
+    s = graph.add_node(
+        "add", missing_input_handler=MissingInputAdd, **nodeargs
+    )
 
     (in1, in2, in3) >> s
     in4 >> s
@@ -60,12 +66,14 @@ def test_02():
     """
     graph = Graph()
 
-    in1 = graph.add_node("n1", output="o1")
-    in2 = graph.add_node("n2", output="o1")
-    in3 = graph.add_node("n3", output="o1")
-    in4 = graph.add_node("n4", output="o1")
+    in1 = graph.add_node("n1", output="o1", **nodeargs)
+    in2 = graph.add_node("n2", output="o1", **nodeargs)
+    in3 = graph.add_node("n3", output="o1", **nodeargs)
+    in4 = graph.add_node("n4", output="o1", **nodeargs)
 
-    s = graph.add_node("add", missing_input_handler=MissingInputAddPair)
+    s = graph.add_node(
+        "add", missing_input_handler=MissingInputAddPair, **nodeargs
+    )
 
     (in1, in2, in3) >> s
     in4 >> s
@@ -75,7 +83,7 @@ def test_02():
     s.print()
 
     for input, output in zip(s.inputs, s.outputs):
-        assert input.parent_output is output
+        assert input.child_output is output
     graph.close()
 
     savegraph(
@@ -92,12 +100,14 @@ def test_03():
     """
     graph = Graph()
 
-    in1 = graph.add_node("n1", output="o1")
-    in2 = graph.add_node("n2", output="o1")
-    in3 = graph.add_node("n3", output="o1")
-    in4 = graph.add_node("n4", output="o1")
+    in1 = graph.add_node("n1", output="o1", **nodeargs)
+    in2 = graph.add_node("n2", output="o1", **nodeargs)
+    in3 = graph.add_node("n3", output="o1", **nodeargs)
+    in4 = graph.add_node("n4", output="o1", **nodeargs)
 
-    s = graph.add_node("add", missing_input_handler=MissingInputAddOne)
+    s = graph.add_node(
+        "add", missing_input_handler=MissingInputAddOne, **nodeargs
+    )
 
     (in1, in2, in3) >> s
     in4 >> s
@@ -122,13 +132,15 @@ def test_04():
     """
     graph = Graph()
 
-    in1 = graph.add_node("n1", output="o1")
-    in2 = graph.add_node("n2", output="o1")
-    in3 = graph.add_node("n3", output="o1")
-    in4 = graph.add_node("n4", output="o1")
+    in1 = graph.add_node("n1", output="o1", **nodeargs)
+    in2 = graph.add_node("n2", output="o1", **nodeargs)
+    in3 = graph.add_node("n3", output="o1", **nodeargs)
+    in4 = graph.add_node("n4", output="o1", **nodeargs)
 
     s = graph.add_node(
-        "add", missing_input_handler=MissingInputAddOne(add_parent_output=True)
+        "add",
+        missing_input_handler=MissingInputAddOne(add_child_output=True),
+        **nodeargs
     )
 
     (in1, in2, in3) >> s
@@ -140,7 +152,7 @@ def test_04():
 
     output = s.outputs[0]
     for input in s.inputs:
-        assert input.parent_output is output
+        assert input.child_output is output
     graph.close()
 
     savegraph(
@@ -157,13 +169,15 @@ def test_05():
     """
     graph = Graph()
 
-    in1 = graph.add_node("n1", output="o1")
-    in2 = graph.add_node("n2", output="o1")
-    in3 = graph.add_node("n3", output="o1")
-    in4 = graph.add_node("n4", output="o1")
+    in1 = graph.add_node("n1", output="o1", **nodeargs)
+    in2 = graph.add_node("n2", output="o1", **nodeargs)
+    in3 = graph.add_node("n3", output="o1", **nodeargs)
+    in4 = graph.add_node("n4", output="o1", **nodeargs)
 
     s = graph.add_node(
-        "add", missing_input_handler=MissingInputAddEach(add_parent_output=False)
+        "add",
+        missing_input_handler=MissingInputAddEach(add_child_output=False),
+        **nodeargs
     )
 
     (in1, in2, in3) >> s
@@ -185,17 +199,19 @@ def test_06():
     """
     Test InputAddEach handler: add new input on each new connect and
     add an output for each >> group.
-    This version also sets the parent_output for each input
+    This version also sets the child_output for each input
     """
     graph = Graph()
 
-    in1 = graph.add_node("n1", output="o1")
-    in2 = graph.add_node("n2", output="o1")
-    in3 = graph.add_node("n3", output="o1")
-    in4 = graph.add_node("n4", output="o1")
+    in1 = graph.add_node("n1", output="o1", **nodeargs)
+    in2 = graph.add_node("n2", output="o1", **nodeargs)
+    in3 = graph.add_node("n3", output="o1", **nodeargs)
+    in4 = graph.add_node("n4", output="o1", **nodeargs)
 
     s = graph.add_node(
-        "add", missing_input_handler=MissingInputAddEach(add_parent_output=True)
+        "add",
+        missing_input_handler=MissingInputAddEach(add_child_output=True),
+        **nodeargs
     )
 
     (in1, in2, in3) >> s
@@ -207,9 +223,9 @@ def test_06():
 
     o1, o2 = s.outputs
     for input in s.inputs[:3]:
-        assert input.parent_output is o1
+        assert input.child_output is o1
     for input in s.inputs[3:]:
-        assert input.parent_output is o2
+        assert input.child_output is o2
     graph.close()
 
     savegraph(

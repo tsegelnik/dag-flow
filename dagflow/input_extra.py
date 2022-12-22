@@ -40,21 +40,22 @@ class MissingInputAdd(MissingInputHandler):
     """Adds an input for each output in >> operator"""
 
     input_fmt = "input_{:02d}"
+    input_kwargs: dict
 
-    def __init__(self, node=None, fmt=None):
+    def __init__(self, node=None, fmt=None, input_kwargs: dict={}):
         super().__init__(node)
+        self.input_kwargs = input_kwargs
         if fmt is not None:
             self.input_fmt = fmt
 
     def __call__(self, idx=None, scope=None, **kwargs):
+        kwargs_combined = dict(self.input_kwargs, **kwargs)
         inp = self.node._add_input(
             self.input_fmt.format(
                 idx if idx is not None else len(self.node.inputs)
             ),
-            **kwargs,
+            **kwargs_combined,
         )
-        if self.node.closed:
-            inp.close()
         return inp
 
 
@@ -74,7 +75,7 @@ class MissingInputAddPair(MissingInputAdd):
     def __call__(self, idx=None, scope=None):
         idx_out = len(self.node.outputs)
         out = self.node._add_output(self.output_fmt.format(idx_out))
-        return super().__call__(idx, parent_output=out, scope=scope)
+        return super().__call__(idx, child_output=out, scope=scope)
 
 
 class MissingInputAddOne(MissingInputAdd):
@@ -84,29 +85,28 @@ class MissingInputAddOne(MissingInputAdd):
     """
 
     output_fmt = "output_{:02d}"
-    add_parent_output = False
+    add_child_output = False
 
     def __init__(
         self,
         node=None,
-        input_fmt=None,
+        *,
         output_fmt=None,
-        add_parent_output=False,
+        add_child_output=False,
+        **kwargs
     ):
-        super().__init__(node, input_fmt)
+        super().__init__(node, **kwargs)
         if output_fmt is not None:
             self.output_fmt = output_fmt
-        self.add_parent_output = add_parent_output
+        self.add_child_output = add_child_output
 
     def __call__(self, idx=None, scope=None):
         if (idx_out := len(self.node.outputs)) == 0:
             out = self.node._add_output(self.output_fmt.format(idx_out))
-            if self.node.closed:
-                out.close()
         else:
             out = self.node.outputs[-1]
-        if self.add_parent_output:
-            return super().__call__(idx, parent_output=out, scope=scope)
+        if self.add_child_output:
+            return super().__call__(idx, child_output=out, scope=scope)
         return super().__call__(idx, scope=scope)
 
 
@@ -116,20 +116,21 @@ class MissingInputAddEach(MissingInputAdd):
     """
 
     output_fmt = "output_{:02d}"
-    add_parent_output = False
+    add_child_output = False
     scope = 0
 
     def __init__(
         self,
         node=None,
-        input_fmt=None,
+        *,
         output_fmt=None,
-        add_parent_output=False,
+        add_child_output=False,
+        **kwargs
     ):
-        super().__init__(node, input_fmt)
+        super().__init__(node, **kwargs)
         if output_fmt is not None:
             self.output_fmt = output_fmt
-        self.add_parent_output = add_parent_output
+        self.add_child_output = add_child_output
 
     def __call__(self, idx=None, scope=None):
         if scope == self.scope:
@@ -140,7 +141,7 @@ class MissingInputAddEach(MissingInputAdd):
             )
             self.scope = scope
         return (
-            super().__call__(idx, parent_output=out, scope=scope)
-            if self.add_parent_output
+            super().__call__(idx, child_output=out, scope=scope)
+            if self.add_child_output
             else super().__call__(idx, scope=scope)
         )

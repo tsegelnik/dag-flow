@@ -5,10 +5,7 @@ from .output import Output, Outputs
 from .shift import lshift, rshift
 from .tools import IsIterable, StopNesting
 
-
 class Legs:
-    __missing_input_handler = None
-
     inputs: Inputs
     outputs: Outputs
     def __init__(self, inputs=None, outputs=None, missing_input_handler=None):
@@ -30,6 +27,8 @@ class Legs:
             else:
                 sethandler = handler
                 sethandler.node = self
+        elif hasattr(self, 'missing_input_handler'):
+            sethandler = self.missing_input_handler
         else:
             sethandler = input_extra.MissingInputFail(self)
         self.__missing_input_handler = sethandler
@@ -56,19 +55,25 @@ class Legs:
             return self.outputs[okey]
         raise ValueError("Empty keys specified")
 
+    def get(self, key, default = None):
+        try:
+            return self.__getitem__(key)
+        except Exception:
+            return default
+
     def __str__(self) -> str:
-        return f"->[{len(self.inputs)}],[{len(self.outputs)}]->"
+        return f"→[{len(self.inputs)}],[{len(self.outputs)}]→"
 
     def __repr__(self) -> str:
         return self.__str__()
 
-    def _deep_iter_outputs(self):
+    def deep_iter_outputs(self):
         return iter(self.outputs)
 
-    def _deep_iter_inputs(self, disconnected_only=False):
+    def deep_iter_inputs(self, disconnected_only=False):
         return iter(self.inputs)
 
-    def _deep_iter_parent_outputs(self):
+    def deep_iter_child_outputs(self):
         raise StopNesting(self)
 
     def print(self):

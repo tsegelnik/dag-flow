@@ -14,8 +14,8 @@ def test_01():
     input2 = Input("i2", None)
     input3 = Input("i3", None)
 
-    inputs += (input1, input2)
-    inputs += input3
+    inputs.add( (input1, input2) )
+    inputs.add( input3 )
 
     print(inputs)
 
@@ -25,7 +25,7 @@ def test_01():
 
     try:
         print(inputs[3])
-    except StopIteration:
+    except IndexError:
         pass
     else:
         raise RuntimeError("fail")
@@ -34,11 +34,11 @@ def test_01():
     print(inputs["i2"])
     print(inputs[("i1", "i3")])
 
-    print(inputs.i1)
-    print(inputs.i2)
-    print(inputs.i3)
+    print(inputs["i1"])
+    print(inputs["i2"])
+    print(inputs["i3"])
     with contextlib.suppress(KeyError):
-        print(inputs.i4)
+        print(inputs["i4"])
 
 
 def test_02():
@@ -48,7 +48,7 @@ def test_02():
     output1 = Output("o1", None)
 
     try:
-        inputs += output1
+        inputs.add( output1 )
     except Exception:
         pass
     else:
