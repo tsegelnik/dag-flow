@@ -7,9 +7,11 @@ from numpy.typing import DTypeLike, NDArray
 from .edges import EdgeContainer
 from .exception import (
     ClosedGraphError,
+    CriticalError,
     InitializationError,
     AllocationError,
-    ConnectionError
+    ConnectionError,
+    UnclosedGraphError,
 )
 from .shift import lshift, rshift
 from .tools import StopNesting
@@ -117,9 +119,15 @@ class Output:
 
     @property
     def data(self):
-        if not self.evaluated:
-            self.touch()
-        return self._data
+        if self.evaluated:
+            return self._data
+        if not self.closed:
+            raise UnclosedGraphError(
+                "Unable to get the output data from unclosed graph!",
+                node=self._node,
+                output=self,
+            )
+        return self.get_data_unsafe()
 
     @data.setter
     def data(self, data):
@@ -164,6 +172,17 @@ class Output:
     @property
     def debug(self) -> bool:
         return self._debug
+
+    def get_data_unsafe(self):
+        try:
+            self.touch()
+        except Exception as exc:
+            raise CriticalError(
+                "An exception occured during touching of the parent node!",
+                node=self._node,
+                output=self,
+            ) from exc
+        return self._data
 
     def connect_to(self, input) -> InputT:
         if not self.closed and input.closed:
