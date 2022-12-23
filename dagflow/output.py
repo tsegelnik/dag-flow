@@ -276,7 +276,7 @@ class SettableOutput(Output):
 
         if tainted:
             self._data[:]=data
-            self.taint()
+            self.taint_children()
             self.node.invalidate_parents()
             self.node._tainted=False
 
