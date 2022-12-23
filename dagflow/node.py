@@ -409,7 +409,6 @@ class Node(Legs):
             raise AllocationError("Cannot allocate memory for inputs!", node=self)
         if not self.outputs.allocate():
             raise AllocationError("Cannot allocate memory for outputs!", node=self)
-        # TODO: finish post_allocate method
         self.post_allocate()
         self._allocated = True
         return True
