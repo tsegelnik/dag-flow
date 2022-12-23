@@ -1,7 +1,4 @@
 from .exception import (
-    AllocationError,
-    DagflowError,
-    TypeFunctionError,
     UnclosedGraphError,
     ClosedGraphError,
     InitializationError
@@ -121,7 +118,7 @@ class Graph(NodeGroup):
         for node in self._nodes:
             node.allocate(**kwargs)
         self.logger.debug(f"Graph '{self.name}': Closing nodes...")
-        self._closed = all(node._close(**kwargs) for node in self._nodes)
+        self._closed = all(node.close(**kwargs) for node in self._nodes)
         if not self._closed:
             raise UnclosedGraphError("The graph is still open!")
         self.logger.debug(f"Graph '{self.name}': The graph is closed!")

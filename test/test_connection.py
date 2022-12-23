@@ -19,8 +19,8 @@ def test_01():
 
 
 def test_02():
-    n1 = FunctionNode("node1")
-    n2 = FunctionNode("node2")
+    n1 = FunctionNode("node1", debug=True)
+    n2 = FunctionNode("node2", debug=True)
 
     n1.add_output("o1")
     n1.add_output("o2")
@@ -56,8 +56,8 @@ def test_04():
 
 
 def test_05():
-    n1 = FunctionNode("node1", **nodeargs)
-    n2 = FunctionNode("node2", **nodeargs)
+    n1 = FunctionNode("node1", debug=True, **nodeargs)
+    n2 = FunctionNode("node2", debug=True, **nodeargs)
 
     out1 = n1.add_output("o1")
     out2 = n1.add_output("o2")
@@ -67,12 +67,9 @@ def test_05():
 
     (out1, out2) >> n2
 
-    with raises(UnclosedGraphError):
-        final.data
-    n1.close()
-    with raises(UnclosedGraphError):
-        final.data
     n2.close()
+    assert n2.closed
+    assert n1.closed
     with raises(ClosedGraphError):
         n2.add_input("i3")
     with raises(ClosedGraphError):
@@ -81,8 +78,8 @@ def test_05():
 
 
 def test_06():
-    n1 = FunctionNode("node1", **nodeargs)
-    n2 = FunctionNode("node2", **nodeargs)
+    n1 = FunctionNode("node1", **nodeargs, debug=True)
+    n2 = FunctionNode("node2", **nodeargs, debug=True)
 
     out1 = n1._add_output("o1")
     out2 = n1._add_output("o2")
@@ -92,12 +89,11 @@ def test_06():
 
     (out1, out2) >> n2
 
-    with raises(UnclosedGraphError):
-        final.data
-    n1.close()
-    with raises(UnclosedGraphError):
-        final.data
-    n2.close()
+    n1.close(recursivly=False)
+    assert n1.closed
+    assert not n2.closed
+    n2.close(recursivly=False)
+    assert n2.closed
     with raises(ClosedGraphError):
         n2.add_input("i3")
     with raises(ClosedGraphError):
