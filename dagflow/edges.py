@@ -82,3 +82,19 @@ class EdgeContainer:
 
     def __contains__(self, name):
         return name in self._dict
+
+    def _replace(self, old, new):
+        replaced = False
+
+        for k, v in self._dict.items():
+            if old is v:
+                self._dict[k] = new
+                replaced = True
+
+        for i, v in enumerate(self._list):
+            if old is v:
+                self._list[i] = new
+                replaced = True
+
+        if not replaced:
+            raise CriticalError('Unable to replace an output/input (not found)')
