@@ -17,9 +17,13 @@ class View(FunctionNode):
         output = self.outputs[0]
         output._shape = input.shape
         output._dtype = input.dtype
-        output._data = input.parent_output._data
 
         self.logger.debug(
             f"Node '{self.name}': dtype={self.outputs[0].dtype}, "
             f"shape={self.outputs[0].shape}"
         )
+
+    def post_allocate(self) -> None:
+        input = self.inputs[0]
+        output = self.outputs[0]
+        output._data = input.parent_output._data
