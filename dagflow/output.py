@@ -299,6 +299,7 @@ class RepeatedOutput:
     def __rlshift__(self, other):
         return lshift(self, other)
 
+
 class Outputs(EdgeContainer):
     _dtype = Output
 

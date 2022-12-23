@@ -67,7 +67,7 @@ class MissingInputAddPair(MissingInputAdd):
 
     output_fmt = "output_{:02d}"
 
-    def __init__(self, node=None, input_fmt=None, output_fmt=None):
+    def __init__(self, node=None, *, input_fmt=None, output_fmt=None):
         super().__init__(node, input_fmt)
         if output_fmt is not None:
             self.output_fmt = output_fmt
