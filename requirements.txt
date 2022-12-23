@@ -1,4 +1,5 @@
-contextlib
-logging
+contextlib2
 pytest
+pytest-cov
 pygraphviz
+coverage
