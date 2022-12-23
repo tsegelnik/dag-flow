@@ -161,24 +161,18 @@ class Node(Legs):
     def invalid(self, invalid) -> None:
         if invalid:
             self.invalidate_self()
+        elif any(input.invalid for input in self.inputs):
+            return
         else:
-            if any(input.invalid for input in self.inputs):
-                    return
             self.invalidate_self(False)
         for output in self.outputs:
             output.invalid = invalid
 
     def invalidate_self(self, invalid=True) -> None:
-        if invalid:
-            self._tainted = True
-            self._frozen = False
-            self._frozen_tainted = False
-            self._invalid = True
-        else:
-            self._tainted = True
-            self._frozen = False
-            self._frozen_tainted = False
-            self._invalid = False
+        self._invalid = bool(invalid)
+        self._frozen_tainted = False
+        self._frozen = False
+        self._tainted = True
 
     def invalidate_children(self) -> None:
         for output in self.outputs:
@@ -393,22 +387,22 @@ class Node(Legs):
             "Unimplemented method: the method must be overridden!"
         )
 
-    def update_types(self, recursivly: bool = True) -> bool:
+    def update_types(self, recursive: bool = True) -> bool:
         if not self._types_tainted:
             return True
         self.logger.debug(f"Node '{self.name}': Update types...")
-        if recursivly:
+        if recursive:
             for input in self.inputs:
-                input.parent_node.update_types(recursivly)
+                input.parent_node.update_types(recursive)
         self._typefunc()
         self._types_tainted = False
 
-    def allocate(self, recursivly: bool = True):
+    def allocate(self, recursive: bool = True):
         if self._allocated:
             return True
         self.logger.debug(f"Node '{self.name}': Allocate memory...")
-        if recursivly and not all(
-            input.parent_node.allocate(recursivly) for input in self.inputs
+        if recursive and not all(
+            input.parent_node.allocate(recursive) for input in self.inputs
         ):
             return False
         if not self.inputs.allocate():
@@ -423,21 +417,18 @@ class Node(Legs):
     def post_allocate(self):
         pass
 
-    def close(self, recursivly: bool = True) -> bool:
+    def close(self, recursive: bool = True) -> bool:
         if self._closed:
             return True
         self.logger.debug(f"Node '{self.name}': Close...")
         if self.invalid:
             raise ClosingError("Cannot close an invalid node!", node=self)
-        if recursivly:
-            if not all(input.parent_node.close(recursivly) for input in self.inputs):
+        if recursive:
+            if not all(input.parent_node.close(recursive) for input in self.inputs):
                 return False
             self.update_types()
             self.allocate()
-        if self.allocatable:
-            self._closed = self._allocated
-        else:
-            self._closed = True
+        self._closed = self._allocated if self.allocatable else True
         if not self._closed:
             raise ClosingError(node=self)
         return self._closed
