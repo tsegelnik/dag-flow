@@ -373,7 +373,7 @@ class Node(Legs):
         self._tainted = True
         self._frozen = False
         for output in self.outputs:
-            output.taint_type(force)
+            output.taint_children_type(force)
 
     def print(self):
         print(

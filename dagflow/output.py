@@ -198,11 +198,7 @@ class Output:
         for input in self._child_inputs:
             input.taint(force)
 
-    def taint(self, force=False):
-        for input in self._child_inputs:
-            input.taint(force)
-
-    def taint_type(self, force=False):
+    def taint_children_type(self, force=False):
         for input in self._child_inputs:
             input.taint_type(force)
 
@@ -269,22 +265,6 @@ class Output:
         self._allocated = True
         return True
 
-class SettableOutput(Output):
-    def set(self, data: ArrayLike, check_taint: bool=False, force: bool=False) -> bool:
-        if self.node._frozen and not force:
-            return False
-
-        tainted = True
-        if check_taint:
-            tainted = (self._data!=data).any()
-
-        if tainted:
-            self._data[:]=data
-            self.taint()
-            self.node.invalidate_parents()
-            self.node._tainted=False
-
-        return tainted
 
 class RepeatedOutput:
     def __init__(self, output):
