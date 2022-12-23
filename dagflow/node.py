@@ -10,7 +10,7 @@ from .exception import (
 from .input import Input
 from .legs import Legs
 from .logger import Logger
-from .output import Output
+from .output import Output, SettableOutput
 from .shift import lshift
 from .tools import IsIterable, undefined
 
@@ -159,16 +159,35 @@ class Node(Legs):
     @invalid.setter
     def invalid(self, invalid) -> None:
         if invalid:
+            self.invalidate_self()
+        else:
+            if any(input.invalid for input in self.inputs):
+                    return
+            self.invalidate_self(False)
+        for output in self.outputs:
+            output.invalid = invalid
+
+    def invalidate_self(self, invalid=True) -> None:
+        if invalid:
             self._tainted = True
             self._frozen = False
             self._frozen_tainted = False
+            self._invalid = True
         else:
-            for input in self.inputs:
-                if input.invalid:
-                    return
-        self._invalid = invalid
+            self._tainted = True
+            self._frozen = False
+            self._frozen_tainted = False
+            self._invalid = False
+
+    def invalidate_children(self) -> None:
         for output in self.outputs:
-            output.invalid = invalid
+            output.invalid = True
+
+    def invalidate_parents(self) -> None:
+        for input in self.inputs:
+            node = input.parent_node
+            node.invalidate_self()
+            node.invalidate_parents()
 
     @property
     def graph(self):
@@ -226,7 +245,7 @@ class Node(Legs):
             return self._add_output(name, **kwargs)
         raise ClosedGraphError(node=self)
 
-    def _add_output(self, name, **kwargs):
+    def _add_output(self, name, *, settable=False, **kwargs):
         if IsIterable(name):
             return tuple(self._add_output(n) for n in name)
         self.logger.debug(f"Node '{self.name}': Add output '{name}'...")
@@ -241,7 +260,10 @@ class Node(Legs):
             return name
         if name in self.outputs:
             raise ReconnectionError(output=name, node=self)
-        output = Output(name, self, **kwargs)
+        if settable:
+            output = SettableOutput(name, self, **kwargs)
+        else:
+            output = Output(name, self, **kwargs)
         self.outputs.add(output)
         if self._graph:
             self._graph._add_output(output)
@@ -334,9 +356,12 @@ class Node(Legs):
             return
         self._tainted = True
         ret = self.touch() if self._immediate else None
-        for output in self.outputs:
-            output.taint(force)
+        self.taint_children(force)
         return ret
+
+    def taint_children(self, force=False):
+        for output in self.outputs:
+            output.taint_children(force)
 
     def taint_type(self, force=False):
         self.logger.debug(f"Node '{self.name}': Taint types...")
@@ -348,7 +373,7 @@ class Node(Legs):
         self._tainted = True
         self._frozen = False
         for output in self.outputs:
-            output.taint_type(force)
+            output.taint_children_type(force)
 
     def print(self):
         print(
