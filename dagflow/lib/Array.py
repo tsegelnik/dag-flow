@@ -3,7 +3,6 @@ from numpy import array
 from ..nodes import StaticNode
 from numpy.typing import ArrayLike
 
-
 class Array(StaticNode):
     """Creates a node with a single data output with predefined array"""
 
