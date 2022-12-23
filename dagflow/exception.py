@@ -64,7 +64,6 @@ class ClosedGraphError(CriticalError):
             message = "Unable to modify a closed graph!"
         super().__init__(message, *args, **kwargs)
 
-
 class UnclosedGraphError(CriticalError):
     def __init__(self, message : Optional[str]=None, *args, **kwargs):
         if not message:

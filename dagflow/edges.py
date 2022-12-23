@@ -79,7 +79,7 @@ class EdgeContainer:
         return self._dict.keys()
 
     def __iter__(self):
-        return iter(self._dict.values())
+        return iter(self._list)
 
     def __contains__(self, name):
         return name in self._dict
