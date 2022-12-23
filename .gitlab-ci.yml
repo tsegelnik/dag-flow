@@ -14,6 +14,7 @@ tests:
             - test/output
         reports:
             coverage_report:
+                coverage_format: cobertura
                 path: cov.xml
     only:
         - master
