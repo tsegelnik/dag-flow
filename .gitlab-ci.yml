@@ -12,6 +12,9 @@ tests:
     artifacts:
         paths:
             - test/output
+        reports:
+            coverage_report:
+                path: cov.xml
     only:
         - master
         - update-to-data-preservation
