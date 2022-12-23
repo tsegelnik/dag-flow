@@ -19,8 +19,4 @@ class Array(StaticNode):
         return self._data
 
     def _typefunc(self) -> None:
-        """A output takes this function to determine the dtype and shape"""
-        self.logger.debug(
-            f"Node '{self.name}': dtype={self.outputs['array'].dtype}, "
-            f"shape={self.outputs['array'].shape}"
-        )
+        pass

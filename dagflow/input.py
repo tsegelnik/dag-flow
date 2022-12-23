@@ -237,10 +237,7 @@ class Input:
         """
         return lshift(self, other)
 
-    def allocate(self, *, recursive=True, **kwargs) -> bool:
-        if recursive and self.parent_node and not self.parent_node.allocate():
-            return False
-
+    def allocate(self, **kwargs) -> bool:
         if not self._allocatable or self._allocated:
             return True
 

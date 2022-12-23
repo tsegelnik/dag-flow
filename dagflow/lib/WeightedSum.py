@@ -38,10 +38,6 @@ class WeightedSum(FunctionNode):
         self.outputs["result"]._dtype = result_type(
             *tuple(inp.dtype for inp in self.inputs)
         )
-        self.logger.debug(
-            f"Node '{self.name}': dtype={self.outputs['result'].dtype}, "
-            f"shape={self.outputs['result'].shape}, function={self._fcn.__name__}"
-        )
 
     def _fcn(self, _, inputs, outputs):
         inputs = tuple(input for input in inputs if input.name != "weight")

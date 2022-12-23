@@ -127,7 +127,14 @@ class Output:
                 node=self._node,
                 output=self,
             )
-        return self.get_data_unsafe()
+        try:
+            return self.get_data_unsafe()
+        except Exception as exc:
+            raise CriticalError(
+                "An exception occured during touching of the parent node!",
+                node=self._node,
+                output=self,
+            ) from exc
 
     @data.setter
     def data(self, data):
@@ -174,14 +181,7 @@ class Output:
         return self._debug
 
     def get_data_unsafe(self):
-        try:
-            self.touch()
-        except Exception as exc:
-            raise CriticalError(
-                "An exception occured during touching of the parent node!",
-                node=self._node,
-                output=self,
-            ) from exc
+        self.touch()
         return self._data
 
     def connect_to(self, input) -> InputT:
