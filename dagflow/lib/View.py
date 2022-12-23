@@ -5,8 +5,8 @@ class View(FunctionNode):
 
     def __init__(self, name, outname="view", **kwargs):
         super().__init__(name, **kwargs)
-        self._add_input('input')
         output = self._add_output(outname, allocatable=False)
+        self._add_input('input', child_output=output)
 
     def _fcn(self, _, inputs, outputs):
         return self.inputs[0].data

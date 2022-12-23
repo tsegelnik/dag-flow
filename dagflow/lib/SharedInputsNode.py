@@ -10,14 +10,11 @@ class SharedInputsNode(FunctionNode):
     """Creates a node with the same shared data array allocated on the inputs"""
 
     _data: NDArray
-
     def __init__(self, name: str, outname: str = "output", **kwargs):
         super().__init__(name, **kwargs)
         self._add_output(outname, allocatable=False)
 
-    def missing_input_handler(
-        self, idx: Optional[int] = None, scope: Optional[int] = None
-    ):
+    def missing_input_handler(self, idx: Optional[int] = None, scope: Optional[int] = None):
         icount = len(self.inputs)
         idx = idx if idx is not None else icount
         iname = "input_{:02d}".format(idx)
