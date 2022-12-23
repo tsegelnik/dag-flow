@@ -198,11 +198,7 @@ class Output:
         for input in self._child_inputs:
             input.taint(force)
 
-    def taint(self, force=False):
-        for input in self._child_inputs:
-            input.taint(force)
-
-    def taint_type(self, force=False):
+    def taint_children_type(self, force=False):
         for input in self._child_inputs:
             input.taint_type(force)
 
@@ -280,7 +276,7 @@ class SettableOutput(Output):
 
         if tainted:
             self._data[:]=data
-            self.taint()
+            self.taint_children()
             self.node.invalidate_parents()
             self.node._tainted=False
 
