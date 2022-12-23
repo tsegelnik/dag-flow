@@ -2,7 +2,7 @@ from itertools import cycle
 from typing import List, Optional, Tuple
 
 from numpy import zeros
-from numpy.typing import DTypeLike, NDArray
+from numpy.typing import ArrayLike, DTypeLike, NDArray
 
 from .edges import EdgeContainer
 from .exception import (
