@@ -72,7 +72,8 @@ class EdgeContainer:
     kat = get_keyword
 
     def __len__(self):
-        return len(self._dict)
+        """Returns a number of the positional arguments"""
+        return len(self._list)
 
     def __dir__(self):
         return self._dict.keys()
