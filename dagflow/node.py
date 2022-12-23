@@ -457,7 +457,7 @@ class Node(Legs):
     # Accessors
     #
     def get_data(self, key):
-        return self.outputs[key].data()
+        return self.outputs[key].data
 
     def get_input_data(self, key):
         return self.inputs[key].data()
