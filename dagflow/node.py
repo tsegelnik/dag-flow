@@ -263,7 +263,7 @@ class Node(Legs):
         else:
             output = Output(name, self, **kwargs)
 
-        return self.__add_output(Output(name, self, **kwargs))
+        return self.__add_output(output)
 
     def __add_output(self, out):
         self.outputs.add(out)
@@ -400,9 +400,8 @@ class Node(Legs):
         if recursivly:
             for input in self.inputs:
                 input.parent_node.update_types(recursivly)
-        res = self._typefunc()
+        self._typefunc()
         self._types_tainted = False
-        return res
 
     def allocate(self, recursivly: bool = True):
         if self._allocated:
@@ -430,14 +429,15 @@ class Node(Legs):
         self.logger.debug(f"Node '{self.name}': Close...")
         if self.invalid:
             raise ClosingError("Cannot close an invalid node!", node=self)
-        if recursivly and not all(
-            input.parent_node.close(recursivly) for input in self.inputs
-        ):
-            return False
-        else:
-            self._closed = True
+        if recursivly:
+            if not all(input.parent_node.close(recursivly) for input in self.inputs):
+                return False
+            self.update_types()
+            self.allocate()
         if self.allocatable:
             self._closed = self._allocated
+        else:
+            self._closed = True
         if not self._closed:
             raise ClosingError(node=self)
         return self._closed
