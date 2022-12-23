@@ -84,10 +84,17 @@ class EdgeContainer:
         return name in self._dict
 
     def _replace(self, old, new):
-	# TODO: check positionals as well
+        replaced = False
+
         for k, v in self._dict.items():
             if old is v:
                 self._dict[k] = new
-                break
-        else:
+                replaced = True
+
+        for i, v in enumerate(self._list):
+            if old is v:
+                self._list[i] = new
+                replaced = True
+
+        if not replaced:
             raise CriticalError('Unable to replace an output/input (not found)')
