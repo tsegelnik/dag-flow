@@ -1,41 +1,70 @@
-
 from itertools import cycle
-from typing import Optional, List
+from typing import List, Optional, Tuple
 
-from numpy import zeros, ndarray
-from numpy.typing import ArrayLike
+from numpy import zeros
+from numpy.typing import ArrayLike, DTypeLike, NDArray
 
 from .edges import EdgeContainer
+from .exception import (
+    ClosedGraphError,
+    InitializationError,
+    AllocationError,
+    CriticalError,
+    ConnectionError
+)
 from .shift import lshift, rshift
-from .tools import StopNesting, undefined
-from .types import InputT
+from .tools import StopNesting
+from .types import InputT, NodeT
+
 
 class Output:
-    _name = undefined("name")
-    _node = undefined("node")
+    _data: Optional[NDArray] = None
+    _dtype: Optional[DTypeLike] = None
+    _shape: Optional[Tuple[int, ...]] = None
+    _owns_data: bool = False
+
+    _node: Optional[NodeT]
+    _name: Optional[str]
+
     _child_inputs: List[InputT]
     _parent_input: Optional[InputT] = None
-    _data: ndarray = undefined("data")
-    _dtype = undefined("dtype")
-    _shape = undefined("shape")
+
     _allocatable: bool = True
     _allocated: bool = False
-    _closed: bool = False
     _debug: bool = False
 
-    def __init__(self, name, node, *, allocatable: bool=True, data: ArrayLike=None, debug: Optional[bool]=None):
+    def __init__(
+        self,
+        name: Optional[str],
+        node: Optional[NodeT],
+        *,
+        debug: Optional[bool] = None,
+        allocatable: bool = True,
+        owns_data: bool = True,
+        data: Optional[NDArray] = None,
+        dtype: Optional[DTypeLike] = None,
+        shape: Optional[Tuple[int, ...]] = None,
+    ):
         self._name = name
         self._node = node
         self._child_inputs = []
-        self._debug = debug if debug is not None else node.debug if node else False
+        self._debug = (
+            debug if debug is not None else node.debug if node else False
+        )
         self._allocatable = allocatable
-        if not self._allocatable:
-            if data is not None:
-                self.data = data
-            self._allocated = True
+        self._dtype = dtype
+        self._shape = shape
+        if data is not None and (
+            allocatable or dtype is not None or shape is not None
+        ):
+            raise InitializationError(output=self, node=node)
+
+        if data is not None:
+            self.data = data
+            self._owns_data = owns_data
 
     def __str__(self):
-        return f"|-> {self._name}"
+        return f"●→ {self._name}" if self.owns_data else f"○→ {self._name}"
 
     def __repr__(self):
         return self.__str__()
@@ -94,16 +123,28 @@ class Output:
         return self._data
 
     @data.setter
-    def data(self, val):
-        if self._data is undefined("data"):
-            self._data = val
-            self._dtype = val.dtype
-            self._shape = val.shape
-            self._allocated = True
-        else:
-            self.logger.warning(
-                f"Output '{self.name}': The data is already set!"
+    def data(self, data):
+        if self.closed:
+            raise ClosedGraphError(
+                "Unable to set output data.", node=self._node, output=self
             )
+        if self._data is not None:
+            raise AllocationError(
+                "Output already has data.", node=self._node, output=self
+            )
+
+        self._data = data
+        self._dtype = data.dtype
+        self._shape = data.shape
+        self._allocated = True
+
+    @property
+    def owns_data(self):
+        return self._owns_data
+
+    @property
+    def closed(self):
+        return self.node.closed if self.node else False
 
     @property
     def evaluated(self):
@@ -122,34 +163,27 @@ class Output:
         return self._node.tainted
 
     @property
-    def closed(self) -> bool:
-        return self._closed
-
-    @property
     def debug(self) -> bool:
         return self._debug
 
-    def view(self, **kwargs):
-        if self._allocated:
-            return self.data.view(**kwargs)
-        self.logger.warning(
-            f"Output '{self.name}': The output memory is not allocated."
-        )
-
-    def connect_to(self, input):
-        if not self.closed:
-            return self._connect_to(input)
-        self.logger.warning(
-            f"Output '{self.name}': "
-            "A modification of the closed output is restricted!"
-        )
-
-    def _connect_to(self, input):
-        if input in self._child_inputs:
-            raise RuntimeError(
-                f"Output '{self.name}' is already connected "
-                f"to the input '{input.name}'!"
+    def connect_to(self, input) -> InputT:
+        if not self.closed and input.closed:
+            raise ConnectionError(
+                "Cannot connect an output to a closed input!",
+                node=self.node,
+                output=self,
+                input=input,
             )
+        if self.closed and input.allocatable:
+            raise ConnectionError(
+                "Cannot connect a closed output to an allocatable input!",
+                node=self.node,
+                output=self,
+                input=input,
+            )
+        return self._connect_to(input)
+
+    def _connect_to(self, input) -> InputT:
         self._child_inputs.append(input)
         input._set_parent_output(self)
         return input
@@ -160,9 +194,13 @@ class Output:
     def __rlshift__(self, other):
         return lshift(self, other)
 
-    def taint(self, force=False):
+    def taint_children(self, force=False):
         for input in self._child_inputs:
             input.taint(force)
+
+    def taint_children_type(self, force=False):
+        for input in self._child_inputs:
+            input.taint_type(force)
 
     def touch(self):
         return self._node.touch()
@@ -170,106 +208,83 @@ class Output:
     def connected(self):
         return bool(self._child_inputs)
 
-    def _deep_iter_outputs(self, disconnected_only=False):
+    def deep_iter_outputs(self, disconnected_only=False):
         if disconnected_only and self.connected():
             return iter(tuple())
         raise StopNesting(self)
 
-    def _deep_iter_child_outputs(self):
+    def deep_iter_child_outputs(self):
         raise StopNesting(self)
 
     def repeat(self):
         return RepeatedOutput(self)
 
     def allocate(self, **kwargs):
-        if not self._allocatable:
-            self.logger.debug(
-                f"Output '{self.name}': "
-                f"The output is not allocatable: data={self._data}!"
+        if not self._allocatable or self._allocated:
+            return True
+
+        if len(self._child_inputs) == 1:
+            input = self._child_inputs[0]
+            input.allocate(recursive=False)
+            if input.allocated:
+                idata = input._own_data
+                if idata.shape != self.shape or idata.dtype != self.dtype:
+                    raise AllocationError(
+                        "Input's data shape/type is inconsistent",
+                        node=self._node,
+                        output=self,
+                        input=input,
+                    )
+
+                self.data = idata
+                return True
+        elif any(
+            input.allocated or input.allocatable
+            for input in self._child_inputs
+        ):
+            raise AllocationError(
+                "Output has multiple allocatable/allocated child inputs",
+                node=self._node,
+                output=self,
             )
-            return self._allocated
-        if self._allocated:
-            self.logger.debug(
-                f"Output '{self.name}': "
-                f"The output memory is already allocated: data={self._data}!"
+
+        if self.shape is None or self.dtype is None:
+            raise AllocationError(
+                "No shape/type information provided for the Output",
+                node=self._node,
+                output=self,
             )
-            return self._allocated
-        self.logger.info(f"Output '{self.name}': Allocate the memory...")
         try:
-            # NOTE: may be troubles with multidimensional arrays!
             self._data = zeros(self.shape, self.dtype, **kwargs)
-            self.logger.info(
-                f"Output '{self.name}': The memory is successfully allocated!"
-            )
-            self._allocated = True
         except Exception as exc:
-            self.logger.error(
-                f"Output '{self.name}': The output memory is not allocated "
-                f"due to the exception: {exc}!"
-            )
-            self._allocated = False
-        return self._allocated
+            raise AllocationError(
+                f"Output: {exc.args[0]}", node=self._node, output=self
+            ) from exc
 
-    def _close(self, **kwargs) -> bool:
-        self.logger.debug(f"Output '{self.name}': Closing output...")
-        if self._closed:
-            return True
-        self._closed = self._allocated
-        if not self._closed:
-            self.logger.warning(
-                f"Output '{self.name}': Some child inputs are still open: "
-                f"'{tuple(inp.name for inp in self._child_inputs if inp.closed)}'!"
-            )
-        else:
-            self.logger.debug(
-                f"Output '{self.name}': The closure completed successfully!"
-            )
-        return self.closed
+        self._owns_data = True
+        self._allocated = True
+        return True
 
-    def close(self, **kwargs) -> bool:
-        self.logger.debug(f"Output '{self.name}': Closing output...")
-        if self._closed:
-            return True
-        self._closed = all(inp.close(**kwargs) for inp in self._child_inputs)
-        if not self._closed:
-            self.logger.warning(
-                "Output '{self.name}': Some child inputs are still open: "
-                f"'{tuple(inp.name for inp in self._child_inputs if inp.closed)}'!"
-            )
+class SettableOutput(Output):
+    def set(self, data: ArrayLike, check_taint: bool=False, force: bool=False) -> bool:
+        if self.node._frozen and not force:
             return False
-        self._closed = self.node.close(**kwargs)
-        if not self._closed:
-            self.logger.warning(
-                f"Output '{self.name}': "
-                f"The node '{self.node}' is still open!"
-            )
-            return False
-        if self.allocatable:
-            self.allocate(**kwargs)
-        return self.closed
 
-    def open(self) -> bool:
-        self.logger.debug(f"Output '{self.name}': Opening output...")
-        if not self._closed:
-            return True
-        self._closed = not all(inp.open() for inp in self._child_inputs)
-        if self._closed:
-            self.logger.warning(
-                f"Output '{self.name}': Some child inputs are still closed: "
-                f"'{tuple(inp.name for inp in self._child_inputs if inp.closed)}'!"
-            )
-        return not self._closed
+        tainted = True
+        if check_taint:
+            tainted = (self._data!=data).any()
 
+        if tainted:
+            self._data[:]=data
+            self.taint()
+            self.node.invalidate_parents()
+            self.node._tainted=False
+
+        return tainted
 
 class RepeatedOutput:
-    _closed: bool = False
-
     def __init__(self, output):
         self._output = output
-
-    @property
-    def closed(self) -> bool:
-        return self._closed
 
     def __iter__(self):
         return cycle((self._output,))
@@ -280,26 +295,6 @@ class RepeatedOutput:
     def __rlshift__(self, other):
         return lshift(self, other)
 
-    def close(self) -> bool:
-        if self._closed:
-            return True
-        self._closed = self._output.close()
-        if not self._closed:
-            self.logger.warning(
-                f"Output '{self.name}': The output is still open!"
-            )
-        return self._closed
-
-    def open(self) -> bool:
-        if not self._closed:
-            return True
-        self._closed = not self._output.open()
-        if self._closed:
-            self.logger.warning(
-                f"Output '{self.name}': The output is still closed!"
-            )
-        return not self._closed
-
 
 class Outputs(EdgeContainer):
     _dtype = Output
@@ -308,19 +303,7 @@ class Outputs(EdgeContainer):
         super().__init__(iterable)
 
     def __str__(self) -> str:
-        return f"|[{tuple(obj.name for obj in self)}]->"
+        return f"○[{tuple(obj.name for obj in self)}]→"
 
     def __repr__(self) -> str:
         return self.__str__()
-
-    def close(self) -> bool:
-        if self._closed:
-            return True
-        self._closed = all(out.close() for out in self)
-        return self._closed
-
-    def open(self) -> bool:
-        if not self._closed:
-            return True
-        self._closed = not all(out.open() for out in self)
-        return not self._closed

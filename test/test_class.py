@@ -21,8 +21,9 @@ def test_00():
     Use one-line code for connecting the nodes
     """
     array = arange(5)
+    names = "n1", "n2", "n3", "n4"
     with Graph(debug=debug) as graph:
-        initials = [Array(name, array) for name in ("n1", "n2", "n3", "n4")]
+        initials = [Array(name, array) for name in names]
         s = Sum("add")
         m = Product("mul")
 
@@ -31,7 +32,10 @@ def test_00():
     graph._wrap_fcns(dataprinter, printer)
     graph.close()
 
-    result = m.outputs.result.data
+    s.print()
+    m.print()
+
+    result = m.outputs["result"].data
     printl(result)
 
     savegraph(graph, "output/class_00.pdf")

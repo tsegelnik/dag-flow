@@ -7,7 +7,7 @@ from dagflow.graph import Graph
 from dagflow.graphviz import savegraph
 from dagflow.input_extra import MissingInputAddEach
 from dagflow.lib import Array, Product, Sum, WeightedSum
-from dagflow.node import FunctionNode
+from dagflow.nodes import FunctionNode
 
 array = arange(3, dtype="d")
 debug = False
@@ -54,7 +54,7 @@ with Graph(debug=debug) as graph:
     (in4, s) >> m
     graph.close()
 
-    print("Result:", m.outputs.result.data)
+    print("Result:", m.outputs["result"].data)
     savegraph(graph, "dagflow_example_1a.png")
 
 # Check random generated Array, Sum and Product
@@ -69,7 +69,7 @@ with Graph(debug=debug) as graph:
     (in4, s) >> m
     graph.close()
 
-    print("Result:", m.outputs.result.data)
+    print("Result:", m.outputs["result"].data)
     savegraph(graph, "dagflow_example_1b.png")
 
 # Check predefined Array, two Sum's and Product
@@ -86,7 +86,7 @@ with Graph(debug=debug) as graph:
     (s, s2) >> m
     graph.close()
 
-    print("Result:", m.outputs.result.data)
+    print("Result:", m.outputs["result"].data)
     savegraph(graph, "dagflow_example_2.png")
 
 # Check predefined Array, Sum, WeightedSum and Product
@@ -109,7 +109,7 @@ with Graph(debug=debug) as graph:
     (s, ws) >> m  # [0,2,4] * [0,5,10] = [0,10,40]
     graph.close()
 
-    print("Result:", m.outputs.result.data)
+    print("Result:", m.outputs["result"].data)
     savegraph(graph, "dagflow_example_3.png")
 
 
