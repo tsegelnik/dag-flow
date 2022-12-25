@@ -13,37 +13,37 @@ class WeightedSum(FunctionNode):
             "missing_input_handler", MissingInputAddOne(output_fmt="result")
         )
         super().__init__(*args, **kwargs)
+        self._add_input("weight", positional=False)
         self._functions.update(
-            {"number": self.__fcn_number, "iterable": self.__fcn_iterable}
+            {"number": self._fcn_number, "iterable": self._fcn_iterable}
         )
 
     def _typefunc(self) -> None:
         """A output takes this function to determine the dtype and shape"""
-        weight = self.inputs.get("weight")
-        if weight is None:
-            raise TypeFunctionError("Cannot use WeightedSum without 'weight'!")
-        input = next(
-            (inp for inp in self.inputs if inp.name != "weight"), None
-        )
-        if input is None:
+        weight = self.inputs["weight"]
+        if len(self.inputs) == 0:
             raise TypeFunctionError(
                 "Cannot use WeightedSum with zero arguments!"
             )
-        if weight.shape[0] == 0:
-            raise TypeFunctionError("Cannot use WeightedSum with empty 'weight'!")
-        self.fcn = self._functions.get(
-            "number" if weight.shape[0] == 1 else "iterable"
-        )
-        self.outputs["result"]._shape = input.shape
+        shape = weight.shape[0]
+        if shape == 0:
+            raise TypeFunctionError(
+                "Cannot use WeightedSum with empty 'weight'!"
+            )
+        elif shape == 1:
+            self.fcn = self._functions["number"]
+        else:
+            self.fcn = self._functions.get("iterable")
+        self.outputs["result"]._shape = self.inputs[0].shape
         self.outputs["result"]._dtype = result_type(
             *tuple(inp.dtype for inp in self.inputs)
         )
 
-    def _fcn(self, _, inputs, outputs):
-        inputs = tuple(input for input in inputs if input.name != "weight")
-        return self.fcn(_, inputs, outputs)
-
-    def __fcn_number(self, _, inputs, outputs):
+    def _fcn_number(self, _, inputs, outputs):
+        """
+        The function for one weight for all inputs:
+        `len(weight) == 1`
+        """
         out = outputs[0].data
         weight = self.inputs["weight"].data
         copyto(out, inputs[0].data.copy())
@@ -52,23 +52,15 @@ class WeightedSum(FunctionNode):
                 out += input.data
         return out * weight
 
-    def __fcn_iterable(self, _, inputs, outputs):
+    def _fcn_iterable(self, _, inputs, outputs):
+        """
+        The function for one weight for every input:
+        `len(weight) == len(inputs)`
+        """
         out = outputs[0].data
         weights = self.inputs["weight"].data
         copyto(out, inputs[0].data * weights[0])
         if len(inputs) > 1:
             for input, weight in zip(inputs[1:], weights[1:]):
-                if input is None:
-                    # TODO: Should we raise an exception or warning,
-                    # if len(weights) > len(inputs)?
-                    raise RuntimeError(
-                        f"The {len(weights)=} > {len(inputs)=}!"
-                    )
-                if weight is None:
-                    # TODO: Should we raise an exception or warning,
-                    # if len(weights) < len(inputs)?
-                    raise RuntimeError(
-                        f"The {len(inputs)=} > {len(weights)=}!"
-                    )
                 out += input.data * weight
         return out

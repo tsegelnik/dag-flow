@@ -32,7 +32,7 @@ of the input, instead of `KeyError`
 - [x] Update naming for the second order `input` and `output`: `parent`, `child`
 - [x] `iinput` is a meta data, do not use in allocation and closure;
 use `Node` to do this stuff; do not use second order `input` and `output`
-- [ ] Loops scheme:
+- [x] Loops scheme:
   1) Close:
       - Typing:
         - Update types
@@ -43,8 +43,8 @@ use `Node` to do this stuff; do not use second order `input` and `output`
         - Inputs
         - Outputs
   3) See <https://hackmd.io/mMNrlOp7Q7i9wkVFvP4W4Q>
-- [ ] `Tainted`
-- [ ] Fix decorators
+- [x] `Tainted`
+- [x] Fix decorators
 
 ## Transformations
 
@@ -53,9 +53,17 @@ use `Node` to do this stuff; do not use second order `input` and `output`
 - [x] Implementing of some simple transformations with `args` and `kwargs`:
 `WeightedSum` with `weight`, ...
 - [x] Check the style of the implementation
-- [ ] Update the inputs checks before evaluation
-- [ ] Concatenation
+- [x] Update the inputs checks before evaluation
+- [x] Concatenation
+- [x] Update `WeightedSum`
+- [ ] Implement `Integrator`
 
 ## Tests
 
 - [x] Test the graph workflow with transformations
+- [x] Test of open and closure of the several graphs
+
+## Questions and suggestions
+
+- [] Should we use only `numpy.ndarray` or also `numpy.number` for single element?
+- [] Should we implement `zero`, `unity` objects with automatic dimension?

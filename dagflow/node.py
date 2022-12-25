@@ -202,15 +202,14 @@ class Node(Legs):
     #
     def __call__(self, name, child_output=undefined("child_output")):
         self.logger.debug(f"Node '{self.name}': Get input '{name}'...")
-        for inp in self.inputs:
-            if inp.name != name:
-                continue
-            if inp.connected:
-                raise ReconnectionError(input=inp, node=self)
-            return inp
-        if not self.closed:
+        inp = self.inputs.get(name, None)
+        if inp is None:
+            if self.closed:
+                raise ClosedGraphError(node=self)
             return self._add_input(name, child_output=child_output)
-        raise ClosedGraphError(node=self)
+        elif inp.connected and (output := inp.parent_output):
+            raise ReconnectionError(input=inp, node=self, output=output)
+        return inp
 
     def label(self, *args, **kwargs):
         if self._label:
@@ -218,19 +217,21 @@ class Node(Legs):
             return self._label.format(*args, **kwargs)
         return self._label
 
-    def add_input(self, name, child_output=undefined("child_output")):
+    def add_input(self, name, **kwargs):
         if not self.closed:
-            return self._add_input(name, child_output=child_output)
+            return self._add_input(name, **kwargs)
         raise ClosedGraphError(node=self)
 
     def _add_input(self, name, **kwargs):
         if IsIterable(name):
-            return tuple(self._add_input(n) for n in name)
+            return tuple(self._add_input(n, **kwargs) for n in name)
         self.logger.debug(f"Node '{self.name}': Add input '{name}'...")
         if name in self.inputs:
             raise ReconnectionError(input=name, node=self)
+        positional = kwargs.pop("positional", True)
+        keyword = kwargs.pop("keyword", True)
         inp = Input(name, self, **kwargs)
-        self.inputs.add(inp)
+        self.inputs.add(inp, positional=positional, keyword=keyword)
         if self._graph:
             self._graph._add_input(inp)
         return inp
@@ -242,26 +243,35 @@ class Node(Legs):
 
     def _add_output(self, name, *, settable=False, **kwargs):
         if IsIterable(name):
-            return tuple(self._add_output(n) for n in name)
+            return tuple(
+                self._add_output(n, settable=settable, **kwargs) for n in name
+            )
         self.logger.debug(f"Node '{self.name}': Add output '{name}'...")
         kwargs.setdefault("allocatable", self._allocatable)
         if isinstance(name, Output):
             if name.name in self.outputs or name.node:
                 raise ReconnectionError(output=name, node=self)
             name._node = self
-            return self.__add_output(name)
+            return self.__add_output(
+                name,
+                positional=kwargs.get("positional", True),
+                keyword=kwargs.get("keyword", True),
+            )
         if name in self.outputs:
             raise ReconnectionError(output=name, node=self)
-        if settable:
-            output = SettableOutput(name, self, **kwargs)
-        else:
-            output = Output(name, self, **kwargs)
+        output = (
+            SettableOutput(name, self, **kwargs)
+            if settable
+            else Output(name, self, **kwargs)
+        )
+        return self.__add_output(
+            output,
+            positional=kwargs.get("positional", True),
+            keyword=kwargs.get("keyword", True),
+        )
 
-        return self.__add_output(output)
-
-    def __add_output(self, out):
-        self.outputs.add(out)
-
+    def __add_output(self, out, positional: bool = True, keyword: bool = True):
+        self.outputs.add(out, positional=positional, keyword=keyword)
         if self._graph:
             self._graph._add_output(out)
         return out
@@ -406,9 +416,13 @@ class Node(Legs):
         ):
             return False
         if not self.inputs.allocate():
-            raise AllocationError("Cannot allocate memory for inputs!", node=self)
+            raise AllocationError(
+                "Cannot allocate memory for inputs!", node=self
+            )
         if not self.outputs.allocate():
-            raise AllocationError("Cannot allocate memory for outputs!", node=self)
+            raise AllocationError(
+                "Cannot allocate memory for outputs!", node=self
+            )
         self.post_allocate()
         self._allocated = True
         return True
@@ -423,7 +437,9 @@ class Node(Legs):
         if self.invalid:
             raise ClosingError("Cannot close an invalid node!", node=self)
         if recursive:
-            if not all(input.parent_node.close(recursive) for input in self.inputs):
+            if not all(
+                input.parent_node.close(recursive) for input in self.inputs
+            ):
                 return False
             self.update_types()
             self.allocate()
