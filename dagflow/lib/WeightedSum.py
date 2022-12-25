@@ -29,10 +29,10 @@ class WeightedSum(FunctionNode):
             raise TypeFunctionError(
                 "Cannot use WeightedSum with zero arguments!"
             )
-        if len(weight.parent_node._data) == 0:
+        if weight.shape[0] == 0:
             raise TypeFunctionError("Cannot use WeightedSum with empty 'weight'!")
         self.fcn = self._functions.get(
-            "number" if len(weight.parent_node._data) == 1 else "iterable"
+            "number" if weight.shape[0] == 1 else "iterable"
         )
         self.outputs["result"]._shape = input.shape
         self.outputs["result"]._dtype = result_type(
@@ -58,7 +58,6 @@ class WeightedSum(FunctionNode):
         copyto(out, inputs[0].data * weights[0])
         if len(inputs) > 1:
             for input, weight in zip(inputs[1:], weights[1:]):
-                print(f"{weight=}, {input=}")
                 if input is None:
                     # TODO: Should we raise an exception or warning,
                     # if len(weights) > len(inputs)?
