@@ -50,7 +50,8 @@ class WeightedSum(FunctionNode):
         if len(inputs) > 1:
             for input in inputs[1:]:
                 out += input.data
-        return out * weight
+        out *= weight
+        return out
 
     def _fcn_iterable(self, _, inputs, outputs):
         """
