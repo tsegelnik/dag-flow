@@ -31,7 +31,7 @@ class Node(Legs):
     _closed: bool = False
     _allocatable: bool = True
     _allocated: bool = False
-    _evaluated: bool = False
+    _evaluating: bool = False
 
     _types_tainted: bool = True
 
@@ -138,8 +138,8 @@ class Node(Legs):
         return self._debug
 
     @property
-    def evaluated(self) -> bool:
-        return self._evaluated
+    def evaluating(self) -> bool:
+        return self._evaluating
 
     @property
     def allocatable(self) -> bool:
@@ -327,13 +327,13 @@ class Node(Legs):
     def eval(self):
         if not self._closed:
             raise UnclosedGraphError("Cannot evaluate the node!", node=self)
-        self._evaluated = True
+        self._evaluating = True
         try:
             ret = self._eval()
             self.logger.debug(f"Node '{self.name}': Evaluated return={ret}")
         except Exception as exc:
             raise exc
-        self._evaluated = False
+        self._evaluating = False
         return ret
 
     def freeze(self):

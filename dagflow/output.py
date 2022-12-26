@@ -119,7 +119,7 @@ class Output:
 
     @property
     def data(self):
-        if self.evaluated:
+        if self.node.evaluating:
             return self._data
         if not self.closed:
             raise UnclosedGraphError(
@@ -159,10 +159,6 @@ class Output:
     @property
     def closed(self):
         return self.node.closed if self.node else False
-
-    @property
-    def evaluated(self):
-        return self.node.evaluated if self.node else False
 
     @property
     def dtype(self):

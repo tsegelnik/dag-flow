@@ -70,11 +70,11 @@ class StaticNode(Node):
         super().__init__(*args, **kwargs)
 
     def _eval(self):
-        self._evaluated = True
+        self._evaluating = True
         if self._touch_inputs:
             self.inputs.touch()
         ret = self._fcn()
-        self._evaluated = False
+        self._evaluating = False
         return ret
 
     def _stash_fcn(self):
