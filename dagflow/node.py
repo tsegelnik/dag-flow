@@ -29,7 +29,6 @@ class Node(Legs):
     _frozen_tainted: bool = False
     _invalid: bool = False
     _closed: bool = False
-    _allocatable: bool = True
     _allocated: bool = False
     _being_evaluated: bool = False
 
@@ -77,13 +76,9 @@ class Node(Legs):
                 formatstr=kwargs.pop("logformat", None),
                 name=kwargs.pop("loggername", None),
             )
-        for opt in {"immediate", "auto_freeze", "frozen", "allocatable"}:
+        for opt in {"immediate", "auto_freeze", "frozen"}:
             if (value := kwargs.pop(opt, None)) is not None:
                 setattr(self, f"_{opt}", bool(value))
-        if input := kwargs.pop("input", None):
-            self._add_input(input)
-        if output := kwargs.pop("output", None):
-            self._add_output(output)
         if kwargs:
             raise InitializationError(f"Unparsed arguments: {kwargs}!")
 
@@ -140,10 +135,6 @@ class Node(Legs):
     @property
     def being_evaluated(self) -> bool:
         return self._being_evaluated
-
-    @property
-    def allocatable(self) -> bool:
-        return self._allocatable
 
     @property
     def allocated(self) -> bool:
@@ -247,7 +238,6 @@ class Node(Legs):
                 self._add_output(n, settable=settable, **kwargs) for n in name
             )
         self.logger.debug(f"Node '{self.name}': Add output '{name}'...")
-        kwargs.setdefault("allocatable", self._allocatable)
         if isinstance(name, Output):
             if name.name in self.outputs or name.node:
                 raise ReconnectionError(output=name, node=self)
@@ -276,14 +266,14 @@ class Node(Legs):
             self._graph._add_output(out)
         return out
 
-    def add_pair(self, iname, oname):
+    def add_pair(self, iname, oname, **kwargs):
         if not self.closed:
-            return self._add_pair(iname, oname)
+            return self._add_pair(iname, oname, **kwargs)
         raise ClosedGraphError(node=self)
 
-    def _add_pair(self, iname, oname):
-        output = self._add_output(oname)
-        input = self._add_input(iname, child_output=output)
+    def _add_pair(self, iname, oname, input_kws={}, output_kws={}):
+        output = self._add_output(oname, **output_kws)
+        input = self._add_input(iname, child_output=output, **input_kws)
         return input, output
 
     def _wrap_fcn(self, wrap_fcn, *other_fcns):
@@ -414,6 +404,7 @@ class Node(Legs):
         if recursive and not all(
             input.parent_node.allocate(recursive) for input in self.inputs
         ):
+            self._allocated = True
             return False
         if not self.inputs.allocate():
             raise AllocationError(
@@ -441,9 +432,9 @@ class Node(Legs):
                 input.parent_node.close(recursive) for input in self.inputs
             ):
                 return False
-            self.update_types()
-            self.allocate()
-        self._closed = self._allocated if self.allocatable else True
+        self.update_types(recursive=recursive)
+        self.allocate(recursive=recursive)
+        self._closed = self._allocated
         if not self._closed:
             raise ClosingError(node=self)
         return self._closed
