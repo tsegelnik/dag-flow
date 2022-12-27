@@ -11,7 +11,7 @@ class VariableArray(Array):
     def __init__(self, name, arr, *, outname="array", **kwargs):
         super(Array, self).__init__(name, **kwargs)
         self._output = self._add_output(
-            outname, allocatable=False, data=array(arr, copy=True), settable=True
+            outname, data=array(arr, copy=True), settable=True
         )
         self.close()
         self._data = self._output._data
