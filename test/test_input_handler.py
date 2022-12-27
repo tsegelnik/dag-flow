@@ -1,5 +1,4 @@
 #!/usr/bin/env python
-
 """Test missing input handlers"""
 
 from contextlib import suppress
@@ -21,7 +20,7 @@ def test_00():
     in3 = graph.add_node("n3", **nodeargs)
     in4 = graph.add_node("n4", **nodeargs)
     for node in (in1, in2, in3, in4):
-        node.add_output('o1', allocatable=False)
+        node.add_output("o1", allocatable=False)
 
     s = graph.add_node(
         "add", missing_input_handler=MissingInputFail, **nodeargs
@@ -44,10 +43,14 @@ def test_01():
     in3 = graph.add_node("n3", **nodeargs)
     in4 = graph.add_node("n4", **nodeargs)
     for node in (in1, in2, in3, in4):
-        node.add_output('o1', allocatable=False)
+        node.add_output("o1", allocatable=False)
 
     s = graph.add_node(
-        "add", missing_input_handler=MissingInputAdd(output_kws={'allocatable': False}), **nodeargs
+        "add",
+        missing_input_handler=MissingInputAdd(
+            output_kws={"allocatable": False}
+        ),
+        **nodeargs
     )
 
     (in1, in2, in3) >> s
@@ -75,10 +78,14 @@ def test_02():
     in3 = graph.add_node("n3", **nodeargs)
     in4 = graph.add_node("n4", **nodeargs)
     for node in (in1, in2, in3, in4):
-        node.add_output('o1', allocatable=False)
+        node.add_output("o1", allocatable=False)
 
     s = graph.add_node(
-        "add", missing_input_handler=MissingInputAddPair(output_kws={'allocatable': False}), **nodeargs
+        "add",
+        missing_input_handler=MissingInputAddPair(
+            output_kws={"allocatable": False}
+        ),
+        **nodeargs
     )
 
     (in1, in2, in3) >> s
@@ -111,10 +118,14 @@ def test_03():
     in3 = graph.add_node("n3", **nodeargs)
     in4 = graph.add_node("n4", **nodeargs)
     for node in (in1, in2, in3, in4):
-        node.add_output('o1', allocatable=False)
+        node.add_output("o1", allocatable=False)
 
     s = graph.add_node(
-        "add", missing_input_handler=MissingInputAddOne(output_kws={'allocatable': False}), **nodeargs
+        "add",
+        missing_input_handler=MissingInputAddOne(
+            output_kws={"allocatable": False}
+        ),
+        **nodeargs
     )
 
     (in1, in2, in3) >> s
@@ -145,11 +156,13 @@ def test_04():
     in3 = graph.add_node("n3", **nodeargs)
     in4 = graph.add_node("n4", **nodeargs)
     for node in (in1, in2, in3, in4):
-        node.add_output('o1', allocatable=False)
+        node.add_output("o1", allocatable=False)
 
     s = graph.add_node(
         "add",
-        missing_input_handler=MissingInputAddOne(add_child_output=True, output_kws={'allocatable': False}),
+        missing_input_handler=MissingInputAddOne(
+            add_child_output=True, output_kws={"allocatable": False}
+        ),
         **nodeargs
     )
 
@@ -184,11 +197,13 @@ def test_05():
     in3 = graph.add_node("n3", **nodeargs)
     in4 = graph.add_node("n4", **nodeargs)
     for node in (in1, in2, in3, in4):
-        node.add_output('o1', allocatable=False)
+        node.add_output("o1", allocatable=False)
 
     s = graph.add_node(
         "add",
-        missing_input_handler=MissingInputAddEach(add_child_output=False, output_kws={'allocatable': False}),
+        missing_input_handler=MissingInputAddEach(
+            add_child_output=False, output_kws={"allocatable": False}
+        ),
         **nodeargs
     )
 
@@ -220,11 +235,13 @@ def test_06():
     in3 = graph.add_node("n3", **nodeargs)
     in4 = graph.add_node("n4", **nodeargs)
     for node in (in1, in2, in3, in4):
-        node.add_output('o1', allocatable=False)
+        node.add_output("o1", allocatable=False)
 
     s = graph.add_node(
         "add",
-        missing_input_handler=MissingInputAddEach(add_child_output=True, output_kws={'allocatable': False}),
+        missing_input_handler=MissingInputAddEach(
+            add_child_output=True, output_kws={"allocatable": False}
+        ),
         **nodeargs
     )
 

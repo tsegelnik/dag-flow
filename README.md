@@ -1,5 +1,12 @@
 # Summary
 
+[![python](https://img.shields.io/badge/python-3.10-purple.svg)](https://www.python.org/)
+[![pipeline](https://git.jinr.ru/dag-computing/dag-flow/badges/master/pipeline.svg)](https://git.jinr.ru/dag-computing/dag-flow/commits/master)
+[![coverage report](https://git.jinr.ru/dag-computing/dag-flow/badges/master/coverage.svg)](https://git.jinr.ru/dag-computing/dag-flow/-/commits/master)
+<!--- Uncomment here after adding docs!
+[![pages](https://img.shields.io/badge/pages-link-white.svg)](http://dag-computing.pages.jinr.ru/dag-flow)
+-->
+
 DAGFlow is python implementation of dataflow programming with lazy graph evaluation.
 
 Main goals:
