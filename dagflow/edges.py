@@ -1,5 +1,6 @@
-
 from collections.abc import Sequence
+
+from .exception import CriticalError
 from .tools import IsIterable
 
 from typing import List, Dict
