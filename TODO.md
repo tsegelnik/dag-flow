@@ -65,5 +65,6 @@ use `Node` to do this stuff; do not use second order `input` and `output`
 
 ## Questions and suggestions
 
-- [] Should we use only `numpy.ndarray` or also `numpy.number` for single element?
+- [x] Should we use only `numpy.ndarray` or also `numpy.number` for single element:
+  1) only `numpy.ndarray`!
 - [] Should we implement `zero`, `unity` objects with automatic dimension?

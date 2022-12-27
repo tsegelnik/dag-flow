@@ -21,19 +21,25 @@ class WeightedSum(FunctionNode):
     def _typefunc(self) -> None:
         """A output takes this function to determine the dtype and shape"""
         weight = self.inputs["weight"]
-        if len(self.inputs) == 0:
-            raise TypeFunctionError(
-                "Cannot use WeightedSum with zero arguments!"
-            )
         shape = weight.shape[0]
+        leninp = len(self.inputs)
+        if leninp == 0:
+            raise TypeFunctionError(
+                "Cannot use WeightedSum with zero inputs!"
+            )
         if shape == 0:
             raise TypeFunctionError(
                 "Cannot use WeightedSum with empty 'weight'!"
             )
         elif shape == 1:
             self.fcn = self._functions["number"]
+        elif shape == leninp:
+            self.fcn = self._functions["iterable"]
         else:
-            self.fcn = self._functions.get("iterable")
+            raise TypeFunctionError(
+                f"The number of weights (={shape}) must coinside "
+                f"with the number of inputs (={leninp})!"
+            )
         self.outputs["result"]._shape = self.inputs[0].shape
         self.outputs["result"]._dtype = result_type(
             *tuple(inp.dtype for inp in self.inputs)
