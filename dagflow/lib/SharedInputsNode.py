@@ -50,4 +50,4 @@ class SharedInputsNode(FunctionNode):
         for input in self.inputs:
             input.own_data = self._data
 
-        self.outputs[0].data = self._data
+        self.outputs[0]._set_data(self._data, owns_data=True)

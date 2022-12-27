@@ -117,7 +117,7 @@ else:
                 attr["color"] = "gray"
             elif node.invalid:
                 attr["color"] = "black"
-            elif node.evaluating:
+            elif node.being_evaluated:
                 attr["color"] = "gold"
             elif node.tainted:
                 attr["color"] = "red"
