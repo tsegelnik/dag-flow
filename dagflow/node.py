@@ -452,7 +452,11 @@ class Node(Legs):
         if not self._closed and not force:
             return True
         self.logger.debug(f"Node '{self.name}': Open...")
-        if not all(input.parent_node.open(force) for input in self.inputs):
+        if not all(
+            input.node.open(force)
+            for output in self.outputs
+            for input in output.child_inputs
+        ):
             raise OpeningError(node=self)
         self.unfreeze()
         self.taint()
