@@ -271,7 +271,11 @@ class Node(Legs):
             return self._add_pair(iname, oname, **kwargs)
         raise ClosedGraphError(node=self)
 
-    def _add_pair(self, iname, oname, input_kws={}, output_kws={}):
+    def _add_pair(self, iname, oname, input_kws=None, output_kws=None):
+        if input_kws is None:
+            input_kws = {}
+        if output_kws is None:
+            output_kws = {}
         output = self._add_output(oname, **output_kws)
         input = self._add_input(iname, child_output=output, **input_kws)
         return input, output
@@ -426,11 +430,10 @@ class Node(Legs):
         self.logger.debug(f"Node '{self.name}': Close...")
         if self.invalid:
             raise ClosingError("Cannot close an invalid node!", node=self)
-        if recursive:
-            if not all(
-                input.parent_node.close(recursive) for input in self.inputs
-            ):
-                return False
+        if recursive and not all(
+            input.parent_node.close(recursive) for input in self.inputs
+        ):
+            return False
         self.update_types(recursive=recursive)
         self.allocate(recursive=recursive)
         self._closed = self._allocated
