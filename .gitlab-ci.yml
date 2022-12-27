@@ -17,7 +17,7 @@ tests:
         reports:
             coverage_report:
                 coverage_format: cobertura
-                path: cov.xml
+                path: coverage.xml
     only:
         - master
         - update-to-data-preservation
