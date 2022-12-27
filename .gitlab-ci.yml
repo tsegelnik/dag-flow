@@ -7,8 +7,9 @@ tests:
 
     script:
     - python3 -m pip install -r requirements.txt
-    - mkdir test/output
-    - pytest
+    - coverage run -m pytest
+    - coverage report
+    - coverage xml
     coverage: '/(?i)total.*? (100(?:\.0+)?\%|[1-9]?\d(?:\.\d+)?\%)$/'
     artifacts:
         paths:
