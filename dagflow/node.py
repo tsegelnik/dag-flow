@@ -404,7 +404,6 @@ class Node(Legs):
         if recursive and not all(
             input.parent_node.allocate(recursive) for input in self.inputs
         ):
-            self._allocated = True
             return False
         self.pre_allocate()
         if not self.inputs.allocate():
