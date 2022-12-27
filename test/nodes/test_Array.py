@@ -10,12 +10,23 @@ debug = False
 
 def test_Array_00():
     array = arange(12.0).reshape(3,4)
-    with Graph(debug=debug) as graph:
-        arr = Array('array', array)
-    graph.close()
+    with Graph(close=True) as graph:
+        arr1 = Array('array', array, mode='store')
+        arr2 = Array('array', array, mode='fill')
 
-    assert arr.tainted==True
+    assert arr1.tainted==True
+    assert arr2.tainted==True
 
-    result = arr.outputs[0].data
-    assert (result==array).all()
-    assert arr.tainted==False
+    out1 = arr1.outputs['array']
+    out2 = arr2.outputs['array']
+
+    assert (out1._data==array).all()
+    assert (out2._data==0.0).all()
+
+    result1 = arr1.get_data(0)
+    result2 = arr2.get_data(0)
+
+    assert (result1==array).all()
+    assert (result2==array).all()
+    assert arr1.tainted==False
+    assert arr2.tainted==False
