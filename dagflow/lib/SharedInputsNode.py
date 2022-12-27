@@ -19,12 +19,11 @@ class SharedInputsNode(FunctionNode):
         idx = idx if idx is not None else icount
         iname = "input_{:02d}".format(idx)
 
-        kwargs = {"child_output": self.outputs[0]}
-        return (
-            self._add_input(iname, allocatable=False, **kwargs)
-            if icount > 0
-            else self._add_input(iname, allocatable=True, **kwargs)
-        )
+        kwargs = {
+            "child_output": self.outputs[0],
+            "allocatable": True
+        }
+        return self._add_input(iname, **kwargs)
 
     def _fcn(self, _, inputs, outputs) -> None:
         self.inputs.touch()

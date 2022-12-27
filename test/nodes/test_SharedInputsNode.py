@@ -7,7 +7,6 @@ from dagflow.lib.Array import Array
 from dagflow.lib.Sum import Sum
 from dagflow.graphviz import savegraph
 
-
 def test_SharedInputsNode_00(debug_graph):
     array = arange(12.0).reshape(3, 4)
     with Graph(debug=debug_graph, close=True) as graph:

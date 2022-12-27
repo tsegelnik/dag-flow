@@ -34,6 +34,8 @@ class Output:
     _owns_data: bool = False
     _debug: bool = False
 
+    _allocating_input: Optional[InputT] = None
+
     def __init__(
         self,
         name: Optional[str],
@@ -144,6 +146,12 @@ class Output:
             raise AllocationError(
                 "Output already has data.", node=self._node, output=self
             )
+        if owns_data and self._allocating_input:
+            raise AllocationError(
+                "Output is connected to allocating input, may not own data",
+                node=self._node,
+                output=self
+            )
 
         self._data = data
         self._dtype = data.dtype
@@ -197,6 +205,20 @@ class Output:
         return self._connect_to(input)
 
     def _connect_to(self, input) -> InputT:
+        if input.allocatable:
+            if self._allocating_input:
+                raise AllocationError(
+                    "Output has multiple allocatable/allocated child inputs",
+                    node=self._node,
+                    output=self
+                )
+            if self._owns_data:
+                raise AllocationError(
+                    "Output owns the data and may not connect to allocating inputs",
+                    node=self._node,
+                    output=self
+                )
+            self._allocating_input = input
         self._child_inputs.append(input)
         input._set_parent_output(self)
         return input
@@ -236,8 +258,8 @@ class Output:
         if not self._allocatable or self._allocated:
             return True
 
-        if len(self._child_inputs) == 1:
-            input = self._child_inputs[0]
+        if self._allocating_input:
+            input = self._allocating_input
             input.allocate(recursive=False)
             if input.allocated:
                 idata = input._own_data
@@ -251,15 +273,6 @@ class Output:
 
                 self._set_data(idata, owns_data=False)
                 return True
-        elif any(
-            input.allocated or input.allocatable
-            for input in self._child_inputs
-        ):
-            raise AllocationError(
-                "Output has multiple allocatable/allocated child inputs",
-                node=self._node,
-                output=self,
-            )
 
         if self.shape is None or self.dtype is None:
             raise AllocationError(
