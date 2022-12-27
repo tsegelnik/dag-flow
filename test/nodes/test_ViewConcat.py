@@ -18,8 +18,10 @@ def test_ViewConcat_00():
     array2 = np.ones(shape=10, dtype='d')
     array3 = np.zeros(shape=12, dtype='d')-1
     array = np.concatenate((array1, array2, array3))
+    arrays = (array1, array2, array3)
+    n1, n2, n3 = (a.size for a in arrays)
     with Graph(debug=debug, close=True) as graph:
-        inputs = [Array('array', array) for array in (array1, array2, array3)]
+        inputs = [Array('array', array, mode='fill') for array in arrays]
         concat = ViewConcat("concat")
 
         inputs >> concat
@@ -30,18 +32,24 @@ def test_ViewConcat_00():
     assert concat.tainted==True
 
     result = concat.outputs['concat'].data
-    # assert (result==array).all()
-    # assert view.tainted==False
-    # assert initial.tainted==False
-    #
-    # d1=initial.outputs[0]._data
-    # d2=view.outputs[0]._data
-    # assert (d1==d2).all()
-    # d1[:]=-1
-    # assert (d2==-1).all()
-    #
-    # initial.taint()
-    # assert initial.tainted==True
-    # assert view.tainted==True
+    assert (result==array).all()
+    assert concat.tainted==False
+    assert all(i.tainted==False for i in inputs)
+
+    data1, data2, data3 = (i.get_data(0) for i in inputs)
+    datac = concat.get_data(0)
+    assert all(data1==datac[:data1.size])
+    assert all(data2==datac[n1:n1+data2.size])
+    assert all(data3==datac[n1+n2:n1+n2+data3.size])
+
+    data1[2]=-1
+    data2[:]=-1
+    data3[::2]=-2
+    assert all(data1==datac[:data1.size])
+    assert all(data2==datac[n1:n1+data2.size])
+    assert all(data3==datac[n1+n2:n1+n2+data3.size])
+
+    inputs[1].taint()
+    assert concat.tainted==True
 
     savegraph(graph, "output/test_ViewConcat_00.pdf")
