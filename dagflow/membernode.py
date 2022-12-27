@@ -1,4 +1,3 @@
-
 from .graph import Graph
 from .node import Node
 from .tools import undefined
@@ -42,9 +41,9 @@ class MemberNode(Node):
         super().__init__(*args, **kwargs)
 
     def _eval(self):
-        self._evaluating = True
+        self._being_evaluated = True
         ret = self._fcn(self._obj, self, self.inputs, self.outputs)
-        self._evaluating = False
+        self._being_evaluated = False
         return ret
 
     @property
@@ -65,6 +64,7 @@ class MemberNode(Node):
     def _make_wrap(self, prev_fcn, wrap_fcn):
         def wrapped_fcn(master, node, inputs, outputs):
             wrap_fcn(prev_fcn, node, inputs, outputs)
+
         return wrapped_fcn
 
 
@@ -76,14 +76,14 @@ class StaticMemberNode(Node):
 
     def __init__(self, *args, **kwargs):
         self._touch_inputs = kwargs.pop("touch_inputs", True)
-        super().__init__( *args, **kwargs)
+        super().__init__(*args, **kwargs)
 
     def _eval(self):
-        self._evaluating = True
+        self._being_evaluated = True
         if self._touch_inputs:
             self.inputs.touch()
         ret = self._fcn(self._obj)
-        self._evaluating = False
+        self._being_evaluated = False
         return ret
 
     @property
@@ -102,4 +102,5 @@ class StaticMemberNode(Node):
     def _make_wrap(self, prev_fcn, wrap_fcn):
         def wrapped_fcn(master):
             wrap_fcn(prev_fcn, self, self.inputs, self.outputs)
+
         return wrapped_fcn

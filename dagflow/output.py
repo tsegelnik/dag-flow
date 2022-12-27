@@ -119,7 +119,7 @@ class Output:
 
     @property
     def data(self):
-        if self.node.evaluating:
+        if self.node.being_evaluated:
             return self._data
         if not self.closed:
             raise UnclosedGraphError(
