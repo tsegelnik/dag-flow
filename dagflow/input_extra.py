@@ -1,3 +1,4 @@
+from typing import Optional
 
 
 class MissingInputHandler:
@@ -40,23 +41,39 @@ class MissingInputAdd(MissingInputHandler):
     """Adds an input for each output in >> operator"""
 
     input_fmt = "input_{:02d}"
-    input_kwargs: dict
+    input_kws: dict
+    output_fmt = "output_{:02d}"
+    output_kws: dict
 
-    def __init__(self, node=None, fmt=None, input_kwargs: dict={}):
+    def __init__(
+        self,
+        node=None,
+        *,
+        input_fmt: Optional[str] = None,
+        input_kws: Optional[dict] = None,
+        output_fmt: Optional[str] = None,
+        output_kws: Optional[dict] = None,
+    ):
+        if input_kws is None:
+            input_kws = {}
+        if output_kws is None:
+            output_kws = {}
         super().__init__(node)
-        self.input_kwargs = input_kwargs
-        if fmt is not None:
-            self.input_fmt = fmt
+        self.input_kws = input_kws
+        self.output_kws = output_kws
+        if input_fmt is not None:
+            self.input_fmt = input_fmt
+        if output_fmt is not None:
+            self.output_fmt = output_fmt
 
     def __call__(self, idx=None, scope=None, **kwargs):
-        kwargs_combined = dict(self.input_kwargs, **kwargs)
-        inp = self.node._add_input(
+        kwargs_combined = dict(self.input_kws, **kwargs)
+        return self.node._add_input(
             self.input_fmt.format(
                 idx if idx is not None else len(self.node.inputs)
             ),
             **kwargs_combined,
         )
-        return inp
 
 
 class MissingInputAddPair(MissingInputAdd):
@@ -65,16 +82,14 @@ class MissingInputAddPair(MissingInputAdd):
     Adds an output for each new input
     """
 
-    output_fmt = "output_{:02d}"
-
-    def __init__(self, node=None, *, input_fmt=None, output_fmt=None):
-        super().__init__(node, input_fmt)
-        if output_fmt is not None:
-            self.output_fmt = output_fmt
+    def __init__(self, node=None, **kwargs):
+        super().__init__(node, **kwargs)
 
     def __call__(self, idx=None, scope=None):
         idx_out = len(self.node.outputs)
-        out = self.node._add_output(self.output_fmt.format(idx_out))
+        out = self.node._add_output(
+            self.output_fmt.format(idx_out), **self.output_kws
+        )
         return super().__call__(idx, child_output=out, scope=scope)
 
 
@@ -84,25 +99,17 @@ class MissingInputAddOne(MissingInputAdd):
     Adds only one output if needed
     """
 
-    output_fmt = "output_{:02d}"
     add_child_output = False
 
-    def __init__(
-        self,
-        node=None,
-        *,
-        output_fmt=None,
-        add_child_output=False,
-        **kwargs
-    ):
+    def __init__(self, node=None, *, add_child_output: bool = False, **kwargs):
         super().__init__(node, **kwargs)
-        if output_fmt is not None:
-            self.output_fmt = output_fmt
         self.add_child_output = add_child_output
 
     def __call__(self, idx=None, scope=None):
         if (idx_out := len(self.node.outputs)) == 0:
-            out = self.node._add_output(self.output_fmt.format(idx_out))
+            out = self.node._add_output(
+                self.output_fmt.format(idx_out), **self.output_kws
+            )
         else:
             out = self.node.outputs[-1]
         if self.add_child_output:
@@ -115,21 +122,11 @@ class MissingInputAddEach(MissingInputAdd):
     Adds an output for each block (for each >> operation)
     """
 
-    output_fmt = "output_{:02d}"
     add_child_output = False
     scope = 0
 
-    def __init__(
-        self,
-        node=None,
-        *,
-        output_fmt=None,
-        add_child_output=False,
-        **kwargs
-    ):
+    def __init__(self, node=None, *, add_child_output=False, **kwargs):
         super().__init__(node, **kwargs)
-        if output_fmt is not None:
-            self.output_fmt = output_fmt
         self.add_child_output = add_child_output
 
     def __call__(self, idx=None, scope=None):
@@ -137,11 +134,10 @@ class MissingInputAddEach(MissingInputAdd):
             out = self.node.outputs[-1]
         else:
             out = self.node._add_output(
-                self.output_fmt.format(len(self.node.outputs))
+                self.output_fmt.format(len(self.node.outputs)),
+                **self.output_kws,
             )
             self.scope = scope
-        return (
-            super().__call__(idx, child_output=out, scope=scope)
-            if self.add_child_output
-            else super().__call__(idx, scope=scope)
-        )
+        if self.add_child_output:
+            return super().__call__(idx, child_output=out, scope=scope)
+        return super().__call__(idx, scope=scope)

@@ -4,12 +4,10 @@ from dagflow.graphviz import GraphDot
 from dagflow.printl import current_level, set_prefix_function
 from dagflow.wrappers import *
 
-set_prefix_function(
-    lambda: "{:<2d} ".format(current_level()),
-)
+set_prefix_function(lambda: "{:<2d} ".format(current_level()))
 
 counter = 0
-nodeargs = dict(typefunc=lambda: True, allocatable=False)
+nodeargs = dict(typefunc=lambda: True)
 
 
 def test_graph_big_01():
@@ -45,18 +43,22 @@ def test_graph_big_01():
 
     g._wrap_fcns(toucher, printer, plotter)
 
-    A1._add_output("o1")
-    A2._add_output("o1")
-    P._add_output("o1")
-    A3._add_pair("i1", "o1")
-    B._add_pair(("i1", "i2", "i3", "i4"), ("o1", "o2"))
-    C1._add_output("o1")
-    C2._add_output("o1")
-    D._add_pair("i1", "o1")
-    D._add_pair("i2", "o2")
-    H._add_pair("i1", "o1")
-    _, other = F._add_pair("i1", "o1")
-    _, final = E._add_pair("i1", "o1")
+    A1._add_output("o1", allocatable=False)
+    A2._add_output("o1", allocatable=False)
+    P._add_output("o1", allocatable=False)
+    A3._add_pair("i1", "o1", output_kws={"allocatable": False})
+    B._add_pair(
+        ("i1", "i2", "i3", "i4"),
+        ("o1", "o2"),
+        output_kws={"allocatable": False},
+    )
+    C1._add_output("o1", allocatable=False)
+    C2._add_output("o1", allocatable=False)
+    D._add_pair("i1", "o1", output_kws={"allocatable": False})
+    D._add_pair("i2", "o2", output_kws={"allocatable": False})
+    H._add_pair("i1", "o1", output_kws={"allocatable": False})
+    _, other = F._add_pair("i1", "o1", output_kws={"allocatable": False})
+    _, final = E._add_pair("i1", "o1", output_kws={"allocatable": False})
 
     (A1, A2, (P >> A3), D[:1]) >> B >> (E, H)
     ((C1, C2) >> D[:, 1]) >> F

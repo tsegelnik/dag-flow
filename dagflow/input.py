@@ -151,12 +151,6 @@ class Input:
 
     @property
     def parent_node(self) -> NodeT:
-        if not self.connected():
-            raise ConnectionError(
-                "May not read data from disconnected parent output!",
-                input=self,
-                node=self.node,
-            )
         return self._parent_output.node
 
     @property
@@ -195,32 +189,14 @@ class Input:
 
     @property
     def data(self):
-        if not self.connected():
-            raise ConnectionError(
-                "May not read data from disconnected parent output!",
-                input=self,
-                node=self.node,
-            )
-        return self._parent_output.data
+        return self._parent_output.get_data_unsafe()
 
     @property
     def dtype(self):
-        if not self.connected():
-            raise ConnectionError(
-                "May not read dtype from disconnected parent output!",
-                input=self,
-                node=self.node,
-            )
         return self._parent_output.dtype
 
     @property
     def shape(self):
-        if not self.connected():
-            raise ConnectionError(
-                "May not read shape from disconnected parent output!",
-                input=self,
-                node=self.node,
-            )
         return self._parent_output.shape
 
     @property
@@ -261,10 +237,7 @@ class Input:
         """
         return lshift(self, other)
 
-    def allocate(self, *, recursive=True, **kwargs) -> bool:
-        if recursive and self.parent_node and not self.parent_node.allocate():
-            return False
-
+    def allocate(self, **kwargs) -> bool:
         if not self._allocatable or self._allocated:
             return True
 

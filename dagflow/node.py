@@ -1,17 +1,18 @@
 from .exception import (
+    AllocationError,
     CriticalError,
     ClosedGraphError,
+    ClosingError,
+    OpeningError,
     DagflowError,
     ReconnectionError,
     UnclosedGraphError,
-    TypeFunctionError,
     InitializationError,
 )
 from .input import Input
 from .legs import Legs
 from .logger import Logger
 from .output import Output, SettableOutput
-from .shift import lshift
 from .tools import IsIterable, undefined
 
 
@@ -28,9 +29,8 @@ class Node(Legs):
     _frozen_tainted: bool = False
     _invalid: bool = False
     _closed: bool = False
-    _allocatable: bool = True
     _allocated: bool = False
-    _evaluated: bool = False
+    _being_evaluated: bool = False
 
     _types_tainted: bool = True
 
@@ -76,13 +76,9 @@ class Node(Legs):
                 formatstr=kwargs.pop("logformat", None),
                 name=kwargs.pop("loggername", None),
             )
-        for opt in {"immediate", "auto_freeze", "frozen", "allocatable"}:
+        for opt in {"immediate", "auto_freeze", "frozen"}:
             if (value := kwargs.pop(opt, None)) is not None:
                 setattr(self, f"_{opt}", bool(value))
-        if input := kwargs.pop("input", None):
-            self._add_input(input)
-        if output := kwargs.pop("output", None):
-            self._add_output(output)
         if kwargs:
             raise InitializationError(f"Unparsed arguments: {kwargs}!")
 
@@ -137,12 +133,8 @@ class Node(Legs):
         return self._debug
 
     @property
-    def evaluated(self) -> bool:
-        return self._evaluated
-
-    @property
-    def allocatable(self) -> bool:
-        return self._allocatable
+    def being_evaluated(self) -> bool:
+        return self._being_evaluated
 
     @property
     def allocated(self) -> bool:
@@ -160,24 +152,18 @@ class Node(Legs):
     def invalid(self, invalid) -> None:
         if invalid:
             self.invalidate_self()
+        elif any(input.invalid for input in self.inputs):
+            return
         else:
-            if any(input.invalid for input in self.inputs):
-                    return
             self.invalidate_self(False)
         for output in self.outputs:
             output.invalid = invalid
 
     def invalidate_self(self, invalid=True) -> None:
-        if invalid:
-            self._tainted = True
-            self._frozen = False
-            self._frozen_tainted = False
-            self._invalid = True
-        else:
-            self._tainted = True
-            self._frozen = False
-            self._frozen_tainted = False
-            self._invalid = False
+        self._invalid = bool(invalid)
+        self._frozen_tainted = False
+        self._frozen = False
+        self._tainted = True
 
     def invalidate_children(self) -> None:
         for output in self.outputs:
@@ -207,15 +193,14 @@ class Node(Legs):
     #
     def __call__(self, name, child_output=undefined("child_output")):
         self.logger.debug(f"Node '{self.name}': Get input '{name}'...")
-        for inp in self.inputs:
-            if inp.name != name:
-                continue
-            if inp.connected:
-                raise ReconnectionError(input=inp, node=self)
-            return inp
-        if not self.closed:
+        inp = self.inputs.get(name, None)
+        if inp is None:
+            if self.closed:
+                raise ClosedGraphError(node=self)
             return self._add_input(name, child_output=child_output)
-        raise ClosedGraphError(node=self)
+        elif inp.connected and (output := inp.parent_output):
+            raise ReconnectionError(input=inp, node=self, output=output)
+        return inp
 
     def label(self, *args, **kwargs):
         if self._label:
@@ -223,19 +208,21 @@ class Node(Legs):
             return self._label.format(*args, **kwargs)
         return self._label
 
-    def add_input(self, name, child_output=undefined("child_output")):
+    def add_input(self, name, **kwargs):
         if not self.closed:
-            return self._add_input(name, child_output=child_output)
+            return self._add_input(name, **kwargs)
         raise ClosedGraphError(node=self)
 
     def _add_input(self, name, **kwargs):
         if IsIterable(name):
-            return tuple(self._add_input(n) for n in name)
+            return tuple(self._add_input(n, **kwargs) for n in name)
         self.logger.debug(f"Node '{self.name}': Add input '{name}'...")
         if name in self.inputs:
             raise ReconnectionError(input=name, node=self)
+        positional = kwargs.pop("positional", True)
+        keyword = kwargs.pop("keyword", True)
         inp = Input(name, self, **kwargs)
-        self.inputs.add(inp)
+        self.inputs.add(inp, positional=positional, keyword=keyword)
         if self._graph:
             self._graph._add_input(inp)
         return inp
@@ -247,36 +234,50 @@ class Node(Legs):
 
     def _add_output(self, name, *, settable=False, **kwargs):
         if IsIterable(name):
-            return tuple(self._add_output(n) for n in name)
+            return tuple(
+                self._add_output(n, settable=settable, **kwargs) for n in name
+            )
         self.logger.debug(f"Node '{self.name}': Add output '{name}'...")
-        kwargs.setdefault("allocatable", self._allocatable)
         if isinstance(name, Output):
             if name.name in self.outputs or name.node:
                 raise ReconnectionError(output=name, node=self)
             name._node = self
-            self.outputs.add(name)
-            if self._graph:
-                self._graph._add_output(name)
-            return name
+            return self.__add_output(
+                name,
+                positional=kwargs.get("positional", True),
+                keyword=kwargs.get("keyword", True),
+            )
         if name in self.outputs:
             raise ReconnectionError(output=name, node=self)
-        if settable:
-            output = SettableOutput(name, self, **kwargs)
-        else:
-            output = Output(name, self, **kwargs)
-        self.outputs.add(output)
-        if self._graph:
-            self._graph._add_output(output)
-        return output
+        output = (
+            SettableOutput(name, self, **kwargs)
+            if settable
+            else Output(name, self, **kwargs)
+        )
+        return self.__add_output(
+            output,
+            positional=kwargs.get("positional", True),
+            keyword=kwargs.get("keyword", True),
+        )
 
-    def add_pair(self, iname, oname):
+    def __add_output(self, out, positional: bool = True, keyword: bool = True):
+        self.outputs.add(out, positional=positional, keyword=keyword)
+        if self._graph:
+            self._graph._add_output(out)
+        return out
+
+    def add_pair(self, iname, oname, **kwargs):
         if not self.closed:
-            return self._add_pair(iname, oname)
+            return self._add_pair(iname, oname, **kwargs)
         raise ClosedGraphError(node=self)
 
-    def _add_pair(self, iname, oname):
-        output = self._add_output(oname)
-        input = self._add_input(iname, child_output=output)
+    def _add_pair(self, iname, oname, input_kws=None, output_kws=None):
+        if input_kws is None:
+            input_kws = {}
+        if output_kws is None:
+            output_kws = {}
+        output = self._add_output(oname, **output_kws)
+        input = self._add_input(iname, child_output=output, **input_kws)
         return input, output
 
     def _wrap_fcn(self, wrap_fcn, *other_fcns):
@@ -320,13 +321,13 @@ class Node(Legs):
     def eval(self):
         if not self._closed:
             raise UnclosedGraphError("Cannot evaluate the node!", node=self)
-        self._evaluated = True
+        self._being_evaluated = True
         try:
             ret = self._eval()
             self.logger.debug(f"Node '{self.name}': Evaluated return={ret}")
         except Exception as exc:
             raise exc
-        self._evaluated = False
+        self._being_evaluated = False
         return ret
 
     def freeze(self):
@@ -390,62 +391,66 @@ class Node(Legs):
             "Unimplemented method: the method must be overridden!"
         )
 
-    def update_types(self) -> bool:
+    def update_types(self, recursive: bool = True) -> bool:
         if not self._types_tainted:
             return True
         self.logger.debug(f"Node '{self.name}': Update types...")
-        for input in self.inputs:
-            input.parent_node.update_types()
-        res = self._typefunc()
+        if recursive:
+            for input in self.inputs:
+                input.parent_node.update_types(recursive)
+        self._typefunc()
         self._types_tainted = False
-        return res
 
-    def allocate(self):
+    def allocate(self, recursive: bool = True):
         if self._allocated:
             return True
+        self.logger.debug(f"Node '{self.name}': Allocate memory...")
+        if recursive and not all(
+            input.parent_node.allocate(recursive) for input in self.inputs
+        ):
+            return False
         if not self.inputs.allocate():
-            return False
+            raise AllocationError(
+                "Cannot allocate memory for inputs!", node=self
+            )
         if not self.outputs.allocate():
-            return False
+            raise AllocationError(
+                "Cannot allocate memory for outputs!", node=self
+            )
+        self.post_allocate()
         self._allocated = True
         return True
 
-    def _close(self) -> bool:
-        if self._closed:
-            return True
-        self.logger.debug(f"Node '{self.name}': Close...")
-        if self.invalid:
-            return False
-            # TODO: should we raise an exception there?
-            # raise CriticalError("Unable to close invalid transformation!")
-        self._closed = self._allocated
-        self.logger.debug(
-            f"Node '{self.name}': Closing status: {self._closed}..."
-        )
-        return self._closed
+    def post_allocate(self):
+        pass
 
-    def close(self, **kwargs) -> bool:
-        # TODO: implement down-up closure
+    def close(self, recursive: bool = True) -> bool:
         if self._closed:
             return True
         self.logger.debug(f"Node '{self.name}': Close...")
         if self.invalid:
+            raise ClosingError("Cannot close an invalid node!", node=self)
+        if recursive and not all(
+            input.parent_node.close(recursive) for input in self.inputs
+        ):
             return False
-            # TODO: should we raise an exception there?
-            # raise CriticalError("Unable to close invalid transformation!")
-        self.update_types()
-        self._closed = self.allocate(**kwargs)
-        self.logger.debug(
-            f"Node '{self.name}': Closing status: {self._closed}..."
-        )
+        self.update_types(recursive=recursive)
+        self.allocate(recursive=recursive)
+        self._closed = self._allocated
+        if not self._closed:
+            raise ClosingError(node=self)
         return self._closed
 
     def open(self, force: bool = False) -> bool:
         if not self._closed and not force:
             return True
         self.logger.debug(f"Node '{self.name}': Open...")
-        if not all(input.parent_node.open(force) for input in self.inputs):
-            return False
+        if not all(
+            input.node.open(force)
+            for output in self.outputs
+            for input in output.child_inputs
+        ):
+            raise OpeningError(node=self)
         self.unfreeze()
         self.taint()
         self._closed = False
@@ -455,7 +460,7 @@ class Node(Legs):
     # Accessors
     #
     def get_data(self, key):
-        return self.outputs[key].data()
+        return self.outputs[key].data
 
     def get_input_data(self, key):
         return self.inputs[key].data()

@@ -7,10 +7,11 @@ from numpy.typing import ArrayLike, DTypeLike, NDArray
 from .edges import EdgeContainer
 from .exception import (
     ClosedGraphError,
+    CriticalError,
     InitializationError,
     AllocationError,
-    CriticalError,
-    ConnectionError
+    ConnectionError,
+    UnclosedGraphError,
 )
 from .shift import lshift, rshift
 from .tools import StopNesting
@@ -21,7 +22,6 @@ class Output:
     _data: Optional[NDArray] = None
     _dtype: Optional[DTypeLike] = None
     _shape: Optional[Tuple[int, ...]] = None
-    _owns_data: bool = False
 
     _node: Optional[NodeT]
     _name: Optional[str]
@@ -31,6 +31,7 @@ class Output:
 
     _allocatable: bool = True
     _allocated: bool = False
+    _owns_data: bool = False
     _debug: bool = False
 
     def __init__(
@@ -39,8 +40,7 @@ class Output:
         node: Optional[NodeT],
         *,
         debug: Optional[bool] = None,
-        allocatable: bool = True,
-        owns_data: bool = True,
+        allocatable: Optional[bool] = None,
         data: Optional[NDArray] = None,
         dtype: Optional[DTypeLike] = None,
         shape: Optional[Tuple[int, ...]] = None,
@@ -51,17 +51,17 @@ class Output:
         self._debug = (
             debug if debug is not None else node.debug if node else False
         )
-        self._allocatable = allocatable
         self._dtype = dtype
         self._shape = shape
-        if data is not None and (
-            allocatable or dtype is not None or shape is not None
-        ):
-            raise InitializationError(output=self, node=node)
 
-        if data is not None:
-            self.data = data
-            self._owns_data = owns_data
+        if data is None:
+            self._allocatable = True if allocatable is None else allocatable
+        else:
+            self._allocatable = False
+            self._set_data(data, owns_data=True)
+
+            if allocatable or dtype is not None or shape is not None:
+                raise InitializationError(output=self, node=node)
 
     def __str__(self):
         return f"●→ {self._name}" if self.owns_data else f"○→ {self._name}"
@@ -118,12 +118,24 @@ class Output:
 
     @property
     def data(self):
-        if not self.evaluated:
-            self.touch()
-        return self._data
+        if self.node.being_evaluated:
+            return self._data
+        if not self.closed:
+            raise UnclosedGraphError(
+                "Unable to get the output data from unclosed graph!",
+                node=self._node,
+                output=self,
+            )
+        try:
+            return self.get_data_unsafe()
+        except Exception as exc:
+            raise CriticalError(
+                "An exception occured during touching of the parent node!",
+                node=self._node,
+                output=self,
+            ) from exc
 
-    @data.setter
-    def data(self, data):
+    def _set_data(self, data, owns_data: bool):
         if self.closed:
             raise ClosedGraphError(
                 "Unable to set output data.", node=self._node, output=self
@@ -137,6 +149,7 @@ class Output:
         self._dtype = data.dtype
         self._shape = data.shape
         self._allocated = True
+        self._owns_data = owns_data
 
     @property
     def owns_data(self):
@@ -145,10 +158,6 @@ class Output:
     @property
     def closed(self):
         return self.node.closed if self.node else False
-
-    @property
-    def evaluated(self):
-        return self.node.evaluated if self.node else False
 
     @property
     def dtype(self):
@@ -165,6 +174,10 @@ class Output:
     @property
     def debug(self) -> bool:
         return self._debug
+
+    def get_data_unsafe(self):
+        self.touch()
+        return self._data
 
     def connect_to(self, input) -> InputT:
         if not self.closed and input.closed:
@@ -236,7 +249,7 @@ class Output:
                         input=input,
                     )
 
-                self.data = idata
+                self._set_data(idata, owns_data=False)
                 return True
         elif any(
             input.allocated or input.allocatable
@@ -255,14 +268,13 @@ class Output:
                 output=self,
             )
         try:
-            self._data = zeros(self.shape, self.dtype, **kwargs)
+            data = zeros(self.shape, self.dtype, **kwargs)
+            self._set_data(data, owns_data=True)
         except Exception as exc:
             raise AllocationError(
                 f"Output: {exc.args[0]}", node=self._node, output=self
             ) from exc
 
-        self._owns_data = True
-        self._allocated = True
         return True
 
 class SettableOutput(Output):
