@@ -8,7 +8,7 @@ from dagflow.output import Output
 from dagflow.wrappers import *
 from pytest import raises
 
-nodeargs = {"typefunc": lambda: True, "allocatable": False}
+nodeargs = {"typefunc": lambda: True}
 
 
 def test_01():
@@ -59,10 +59,10 @@ def test_05():
     n1 = FunctionNode("node1", debug=True, **nodeargs)
     n2 = FunctionNode("node2", debug=True, **nodeargs)
 
-    out1 = n1.add_output("o1")
-    out2 = n1.add_output("o2")
+    out1 = n1.add_output("o1", allocatable=False)
+    out2 = n1.add_output("o2", allocatable=False)
 
-    _, final = n2.add_pair("i1", "o1")
+    _, final = n2.add_pair("i1", "o1", output_kws={"allocatable": False})
     n2.add_input("i2")
 
     (out1, out2) >> n2
@@ -81,10 +81,10 @@ def test_06():
     n1 = FunctionNode("node1", **nodeargs, debug=True)
     n2 = FunctionNode("node2", **nodeargs, debug=True)
 
-    out1 = n1._add_output("o1")
-    out2 = n1._add_output("o2")
+    out1 = n1._add_output("o1", allocatable=False)
+    out2 = n1._add_output("o2", allocatable=False)
 
-    _, final = n2._add_pair("i1", "o1")
+    _, final = n2._add_pair("i1", "o1", output_kws={"allocatable": False})
     n2._add_input("i2")
 
     (out1, out2) >> n2
@@ -107,10 +107,10 @@ def test_07():
     n2 = g.add_node("node2", **nodeargs)
     g._wrap_fcns(toucher, printer)
 
-    out1 = n1._add_output("o1")
-    out2 = n1._add_output("o2")
+    out1 = n1._add_output("o1", allocatable=False)
+    out2 = n1._add_output("o2", allocatable=False)
 
-    _, final = n2._add_pair("i1", "o1")
+    _, final = n2._add_pair("i1", "o1", output_kws={"allocatable": False})
     n2._add_input("i2")
 
     (out1, out2) >> n2
@@ -132,13 +132,13 @@ def test_08():
     n3 = g.add_node("node3", **nodeargs)
     g._wrap_fcns(toucher, printer)
 
-    out1 = n1._add_output("o1")
-    out2 = n1._add_output("o2")
+    out1 = n1._add_output("o1", allocatable=False)
+    out2 = n1._add_output("o2", allocatable=False)
 
-    _, out3 = n2._add_pair("i1", "o1")
+    _, out3 = n2._add_pair("i1", "o1", output_kws={"allocatable": False})
     n2._add_input("i2")
 
-    _, final = n3._add_pair("i1", "o1")
+    _, final = n3._add_pair("i1", "o1", output_kws={"allocatable": False})
 
     (out1, out2) >> n2
     out3 >> n3
