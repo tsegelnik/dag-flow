@@ -26,4 +26,4 @@ class View(FunctionNode):
     def post_allocate(self) -> None:
         input = self.inputs[0]
         output = self.outputs[0]
-        output._data = input.parent_output._data
+        output._set_data(input.parent_output._data, owns_data=False)

@@ -42,4 +42,4 @@ def test_View_00():
     assert initial.tainted==True
     assert view.tainted==True
 
-    savegraph(graph, "output/class_00.pdf")
+    savegraph(graph, "output/test_View_00.png")
