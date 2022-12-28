@@ -409,7 +409,6 @@ class Node(Legs):
             input.parent_node.allocate(recursive) for input in self.inputs
         ):
             return False
-        self.pre_allocate()
         if not self.inputs.allocate():
             raise AllocationError(
                 "Cannot allocate memory for inputs!", node=self
@@ -422,10 +421,7 @@ class Node(Legs):
         self._allocated = True
         return True
 
-    def pre_allocate(self) -> None:
-        pass
-
-    def post_allocate(self) -> None:
+    def post_allocate(self):
         pass
 
     def close(self, recursive: bool = True) -> bool:

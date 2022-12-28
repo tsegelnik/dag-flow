@@ -35,8 +35,6 @@ class Output:
 
     _debug: bool = False
 
-    _allocating_input: Optional[InputT] = None
-
     def __init__(
         self,
         name: Optional[str],
