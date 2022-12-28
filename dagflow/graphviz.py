@@ -1,5 +1,6 @@
 from .input import Input
 from .output import Output
+from .edges import EdgeContainer
 from .printl import printl
 
 try:
@@ -17,16 +18,38 @@ else:
         _graph = None
         _node_id_map: dict
 
-        def __init__(self, dag, **kwargs):
-            kwargs.setdefault("fontsize", 10)
-            kwargs.setdefault("labelfontsize", 10)
-            kwargs.setdefault("rankdir", "LR")
+        def __init__(
+            self,
+            dag,
+            graphattr: dict={},
+            edgeattr: dict={},
+            nodeattr: dict={},
+            **kwargs
+        ):
+            graphattr = dict(graphattr)
+            graphattr.setdefault("rankdir", "LR")
+
+            edgeattr = dict(edgeattr)
+            edgeattr.setdefault("fontsize", 10)
+            edgeattr.setdefault("labelfontsize", 9)
+            edgeattr.setdefault("labeldistance", 1.2)
+
+            nodeattr = dict(nodeattr)
+
             self._node_id_map = {}
             self._nodes = {}
             self._nodes_open_input = {}
             self._nodes_open_output = {}
             self._edges = {}
             self._graph = G.AGraph(directed=True, strict=False, **kwargs)
+
+            if graphattr:
+                self._graph.graph_attr.update(graphattr)
+            if edgeattr:
+                self._graph.edge_attr.update(edgeattr)
+            if nodeattr:
+                self._graph.node_attr.update(nodeattr)
+
             if label := kwargs.pop("label", dag.label()):
                 self.set_label(label)
             self._transform(dag)
@@ -99,11 +122,28 @@ else:
             self._nodes_open_output[output] = nodeout
             self._edges[output] = (nodein, edge, nodeout)
 
+        def _get_index(self, leg, styledict: dict, target: str):
+            if isinstance(leg, Input):
+                container = leg.node.inputs
+            else:
+                container = leg.node.outputs
+            if len(container)<2:
+                return
+
+            try:
+                idx = container.index(leg)
+            except ValueError:
+                pass
+            else:
+                styledict[target] = str(idx)
+
         def _add_edge(self, nodedag, output, input):
             styledict = {}
 
             source = self.get_id(nodedag)
             target = self.get_id(input.node)
+            self._get_index(output, styledict, 'taillabel')
+            self._get_index(input, styledict, 'headlabel')
             self._graph.add_edge(source, target, **styledict)
 
             nodein = self._graph.get_node(source)
@@ -144,7 +184,7 @@ else:
             self._set_style_node(node, attr)
 
             if isinstance(obj, Input):
-                allocated_on_input = obj.own_data is not None
+                allocated_on_input = obj.owns_data
                 allocated_on_output = obj.parent_output.owns_data
             elif isinstance(obj, Output):
                 allocated_on_input = False
