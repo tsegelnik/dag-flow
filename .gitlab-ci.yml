@@ -7,8 +7,9 @@ tests:
 
     script:
     - python3 -m pip install -r requirements.txt
-    - mkdir test/output
-    - pytest
+    - coverage run --source=. -m pytest
+    - coverage report
+    - coverage xml
     coverage: '/(?i)total.*? (100(?:\.0+)?\%|[1-9]?\d(?:\.\d+)?\%)$/'
     artifacts:
         paths:
@@ -16,7 +17,7 @@ tests:
         reports:
             coverage_report:
                 coverage_format: cobertura
-                path: cov.xml
+                path: coverage.xml
     only:
         - master
         - update-to-data-preservation

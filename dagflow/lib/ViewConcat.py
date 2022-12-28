@@ -51,7 +51,8 @@ class ViewConcat(FunctionNode):
 
         for offset, input in zip(self._offsets, self.inputs):
             size = input.shape[0]
-            input.own_data = data[offset:offset+size]
+            idata = data[offset:offset+size]
+            input.set_own_data(idata, owns_data=False)
 
 
 

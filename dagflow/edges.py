@@ -71,6 +71,9 @@ class EdgeContainer:
         return self._pos_edges[idx]
     iat = get_positional
 
+    def index(self, positional):
+        return self._pos_edges.index(positional)
+
     def get_keyword(self, key):
         return self._kw_edges[key]
     kat = get_keyword

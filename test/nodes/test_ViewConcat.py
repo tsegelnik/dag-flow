@@ -52,4 +52,5 @@ def test_ViewConcat_00():
     inputs[1].taint()
     assert concat.tainted==True
 
-    savegraph(graph, "output/test_ViewConcat_00.pdf")
+    concat.touch()
+    savegraph(graph, "output/test_ViewConcat_00.png")

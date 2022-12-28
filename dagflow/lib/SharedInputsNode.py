@@ -21,7 +21,7 @@ class SharedInputsNode(FunctionNode):
 
         kwargs = {
             "child_output": self.outputs[0],
-            "allocatable": True
+            "allocatable": True,
         }
         return self._add_input(iname, **kwargs)
 
@@ -47,6 +47,6 @@ class SharedInputsNode(FunctionNode):
 
         self._data = zeros(shape=shape, dtype=dtype)
         for input in self.inputs:
-            input.own_data = self._data
+            input.set_own_data(self._data, owns_data=False)
 
         self.outputs[0]._set_data(self._data, owns_data=True)

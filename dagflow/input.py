@@ -27,8 +27,8 @@ class Input:
     _parent_output: Optional[Output]
     _child_output: Optional[Output]
 
-    _allocated: bool = False
     _allocatable: bool = False
+    _owns_data: bool = False
 
     _debug: bool = False
 
@@ -62,12 +62,12 @@ class Input:
         self._own_dtype = dtype
         self._own_shape = shape
         if data is not None:
-            self.own_data = data
+            self.set_own_data(data, owns_data=True)
 
     def __str__(self) -> str:
         return (
             f"→○ {self._name}"
-            if self._own_data is None
+            if self._owns_data is None
             else f"→● {self._name}"
         )
 
@@ -78,8 +78,11 @@ class Input:
     def own_data(self):
         return self._own_data
 
-    @own_data.setter
-    def own_data(self, data):
+    @property
+    def owns_data(self) -> bool:
+        return self._owns_data
+
+    def set_own_data(self, data, *, owns_data: bool):
         if self.closed:
             raise ClosedGraphError(
                 "Unable to set input data.", node=self._node, input=self
@@ -90,9 +93,9 @@ class Input:
             )
 
         self._own_data = data
+        self._owns_data = owns_data
         self._own_dtype = data.dtype
         self._own_shape = data.shape
-        self._allocated = True
 
     @property
     def closed(self):
@@ -167,8 +170,8 @@ class Input:
         return self._parent_output.invalid
 
     @property
-    def allocated(self) -> bool:
-        return self._allocated
+    def has_data(self) -> bool:
+        return self._own_data is not None
 
     @property
     def allocatable(self) -> bool:
@@ -238,7 +241,7 @@ class Input:
         return lshift(self, other)
 
     def allocate(self, **kwargs) -> bool:
-        if not self._allocatable or self._allocated:
+        if not self._allocatable or self.has_data:
             return True
 
         if self._own_shape is None or self._own_dtype is None:
@@ -254,7 +257,6 @@ class Input:
                 f"Input: {exc.args[0]}", node=self._node, input=self
             ) from exc
 
-        self._allocated = True
         return True
 
 

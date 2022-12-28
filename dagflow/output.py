@@ -28,10 +28,11 @@ class Output:
 
     _child_inputs: List[InputT]
     _parent_input: Optional[InputT] = None
+    _allocating_input: Optional[InputT] = None
 
     _allocatable: bool = True
-    _allocated: bool = False
     _owns_data: bool = False
+
     _debug: bool = False
 
     _allocating_input: Optional[InputT] = None
@@ -84,8 +85,8 @@ class Output:
         return self._allocatable
 
     @property
-    def allocated(self):
-        return self._allocated
+    def has_data(self) -> bool:
+        return self._data is not None
 
     @property
     def node(self):
@@ -137,7 +138,7 @@ class Output:
                 output=self,
             ) from exc
 
-    def _set_data(self, data, owns_data: bool):
+    def _set_data(self, data, *, owns_data: bool):
         if self.closed:
             raise ClosedGraphError(
                 "Unable to set output data.", node=self._node, output=self
@@ -156,7 +157,6 @@ class Output:
         self._data = data
         self._dtype = data.dtype
         self._shape = data.shape
-        self._allocated = True
         self._owns_data = owns_data
 
     @property
@@ -255,13 +255,13 @@ class Output:
         return RepeatedOutput(self)
 
     def allocate(self, **kwargs):
-        if not self._allocatable or self._allocated:
+        if not self._allocatable or self.has_data:
             return True
 
         if self._allocating_input:
             input = self._allocating_input
             input.allocate(recursive=False)
-            if input.allocated:
+            if input.has_data:
                 idata = input._own_data
                 if idata.shape != self.shape or idata.dtype != self.dtype:
                     raise AllocationError(
