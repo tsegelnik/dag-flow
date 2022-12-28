@@ -459,7 +459,7 @@ class Node(Legs):
     #
     # Accessors
     #
-    def get_data(self, key):
+    def get_data(self, key=0):
         return self.outputs[key].data
 
     def get_input_data(self, key):
