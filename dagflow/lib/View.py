@@ -1,4 +1,5 @@
 from ..nodes import FunctionNode
+from ..exception import AllocationError
 
 class View(FunctionNode):
     """Creates a node with a single data output which is a view on the input"""
@@ -26,4 +27,10 @@ class View(FunctionNode):
     def post_allocate(self) -> None:
         input = self.inputs[0]
         output = self.outputs[0]
+        if output._allocating_input:
+            raise AllocationError(
+                "Output is a view and may not connect to allocating inputs",
+                node=self,
+                output=output
+            )
         output._set_data(input.parent_output._data, owns_data=False)
