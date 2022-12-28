@@ -79,4 +79,6 @@ def test_SharedInputsNode_00(debug_graph):
     assert (output_sum.data == 2).all()
     assert (output_sum2.data == 2).all()
 
+    view.touch()
+
     savegraph(graph, "output/test_SharedInputsNode_00.png")
