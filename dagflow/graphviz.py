@@ -28,6 +28,7 @@ else:
         ):
             graphattr = dict(graphattr)
             graphattr.setdefault("rankdir", "LR")
+            graphattr.setdefault("dpi", 300)
 
             edgeattr = dict(edgeattr)
             edgeattr.setdefault("fontsize", 10)
@@ -127,7 +128,7 @@ else:
                 container = leg.node.inputs
             else:
                 container = leg.node.outputs
-            if len(container)<2:
+            if container.len_all()<2:
                 return
 
             try:
