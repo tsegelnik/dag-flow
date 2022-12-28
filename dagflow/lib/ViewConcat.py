@@ -1,4 +1,4 @@
-from typing import Optional
+from typing import Optional, List
 import numpy as np
 
 from ..nodes import FunctionNode
@@ -9,7 +9,7 @@ class ViewConcat(FunctionNode):
     """Creates a node with a single data output which is a concatenated memory of the inputs"""
 
     _output: Output
-    _offsets: list[int]
+    _offsets: List[int]
     def __init__(self, name, outname="concat", **kwargs):
         super().__init__(name, **kwargs)
         self._output = self._add_output(outname, allocatable=False)
