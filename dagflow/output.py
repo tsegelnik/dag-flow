@@ -32,6 +32,7 @@ class Output:
 
     _allocatable: bool = True
     _owns_data: bool = False
+    _forbid_reallocation: bool = False
 
     _debug: bool = False
 
@@ -45,6 +46,7 @@ class Output:
         data: Optional[NDArray] = None,
         dtype: Optional[DTypeLike] = None,
         shape: Optional[Tuple[int, ...]] = None,
+        forbid_reallocation: bool = False
     ):
         self._name = name
         self._node = node
@@ -54,6 +56,7 @@ class Output:
         )
         self._dtype = dtype
         self._shape = shape
+        self._forbid_reallocation = forbid_reallocation
 
         if data is None:
             self._allocatable = True if allocatable is None else allocatable
@@ -136,18 +139,27 @@ class Output:
                 output=self,
             ) from exc
 
-    def _set_data(self, data, *, owns_data: bool):
+    def _set_data(self, data, *, owns_data: bool, forbid_reallocation: Optional[bool]=None):
         if self.closed:
             raise ClosedGraphError(
                 "Unable to set output data.", node=self._node, output=self
             )
         if self._data is not None:
+            # TODO: this will fail during reallocation
             raise AllocationError(
                 "Output already has data.", node=self._node, output=self
             )
-        if owns_data and self._allocating_input:
+        if owns_data:
+            forbid_reallocation = True
+        else:
+            if forbid_reallocation is None:
+                forbid_reallocation = owns_data
+        self._forbid_reallocation |= forbid_reallocation
+        print(self.node.name, self._forbid_reallocation)
+
+        if self._forbid_reallocation and self._allocating_input:
             raise AllocationError(
-                "Output is connected to allocating input, may not own data",
+                "Output is connected to allocating input, but reallocation is forbidden",
                 node=self._node,
                 output=self
             )
@@ -156,10 +168,15 @@ class Output:
         self._dtype = data.dtype
         self._shape = data.shape
         self._owns_data = owns_data
+        self._forbid_reallocation = forbid_reallocation
 
     @property
     def owns_data(self):
         return self._owns_data
+
+    @property
+    def forbid_reallocation(self):
+        return self._forbid_reallocation
 
     @property
     def closed(self):
@@ -205,14 +222,14 @@ class Output:
     def _connect_to(self, input) -> InputT:
         if input.allocatable:
             if self._allocating_input:
-                raise AllocationError(
+                raise ConnectionError(
                     "Output has multiple allocatable/allocated child inputs",
                     node=self._node,
                     output=self
                 )
-            if self._owns_data:
-                raise AllocationError(
-                    "Output owns the data and may not connect to allocating inputs",
+            if self._forbid_reallocation:
+                raise ConnectionError(
+                    "Output forbids reallocation and may not connect to allocating inputs",
                     node=self._node,
                     output=self
                 )
