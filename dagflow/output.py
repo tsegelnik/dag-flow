@@ -154,10 +154,9 @@ class Output:
         else:
             if forbid_reallocation is None:
                 forbid_reallocation = owns_buffer
-        self._forbid_reallocation |= forbid_reallocation
-        print(self.node.name, self._forbid_reallocation)
 
-        if self._forbid_reallocation and self._allocating_input:
+        forbid_reallocation |= self._forbid_reallocation
+        if forbid_reallocation and self._allocating_input:
             raise AllocationError(
                 "Output is connected to allocating input, but reallocation is forbidden",
                 node=self._node,
