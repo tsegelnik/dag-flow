@@ -285,6 +285,7 @@ class Output:
                         input=input,
                     )
 
+                idata[:] = self._data
                 self._set_data(idata, owns_buffer=False)
                 return True
 
