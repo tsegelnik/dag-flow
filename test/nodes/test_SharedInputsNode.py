@@ -81,22 +81,26 @@ def test_SharedInputsNode_01():
         initial >> sharedinput
         initial2 >> sharedinput
 
-        sharedinput >> sharedinput2
+        with raises(ConnectionError):
+            sharedinput >> sharedinput2
 
     savegraph(graph, "output/test_SharedInputsNode_01.png")
-
-    with raises(AllocationError):
-        graph.close()
 
 def test_SharedInputsNode_02():
     array = arange(12.0).reshape(3, 4)
     with Graph(close=False) as graph:
-        initial = Array("array 1", array, mode='fill')
+        initial = Array("array 1", array, mode='store')
         sharedinput = SharedInputsNode("shared input")
+        sharedinput2 = SharedInputsNode("shared input 2")
         view = View("view")
 
-        initial >> view
+        with raises(ConnectionError):
+            initial >> sharedinput
+
         with raises(ConnectionError):
             view >> sharedinput
+
+        with raises(ConnectionError):
+            sharedinput >> sharedinput2
 
     savegraph(graph, "output/test_SharedInputsNode_02.png")
