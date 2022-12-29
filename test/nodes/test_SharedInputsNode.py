@@ -5,7 +5,7 @@ from dagflow.graph import Graph
 from dagflow.lib.SharedInputsNode import SharedInputsNode
 from dagflow.lib.View import View
 from dagflow.lib.Array import Array
-from dagflow.exception import AllocationError
+from dagflow.exception import ConnectionError, AllocationError
 from dagflow.graphviz import savegraph
 from pytest import raises
 
@@ -90,14 +90,12 @@ def test_SharedInputsNode_01():
 
 def test_SharedInputsNode_02():
     array = arange(12.0).reshape(3, 4)
-    with Graph() as graph:
+    with Graph(close=False) as graph:
         initial = Array("array 1", array, mode='fill')
         sharedinput = SharedInputsNode("shared input")
         view = View("view")
 
-        initial >> view >> sharedinput
-
-    savegraph(graph, "output/test_SharedInputsNode_02.png")
-    with raises(AllocationError):
-        graph.close()
+        initial >> view
+        with raises(ConnectionError):
+            view >> sharedinput
 

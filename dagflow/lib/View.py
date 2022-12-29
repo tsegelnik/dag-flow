@@ -6,7 +6,7 @@ class View(FunctionNode):
 
     def __init__(self, name, outname="view", **kwargs):
         super().__init__(name, **kwargs)
-        output = self._add_output(outname, allocatable=False)
+        output = self._add_output(outname, allocatable=False, forbid_reallocation=True)
         self._add_input('input', child_output=output)
 
     def _fcn(self, _, inputs, outputs):
@@ -27,10 +27,4 @@ class View(FunctionNode):
     def post_allocate(self) -> None:
         input = self.inputs[0]
         output = self.outputs[0]
-        if output._allocating_input:
-            raise AllocationError(
-                "Output is a view and may not connect to allocating inputs",
-                node=self,
-                output=output
-            )
-        output._set_data(input.parent_output._data, owns_data=False)
+        output._set_data(input.parent_output._data, owns_data=False, forbid_reallocation=True)
