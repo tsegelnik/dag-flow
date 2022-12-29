@@ -186,7 +186,10 @@ else:
 
             if isinstance(obj, Input):
                 allocated_on_input = obj.owns_buffer
-                allocated_on_output = obj.parent_output.owns_buffer
+                try:
+                    allocated_on_output = obj.parent_output.owns_buffer
+                except AttributeError:
+                    allocated_on_output = True
             elif isinstance(obj, Output):
                 allocated_on_input = False
                 allocated_on_output = obj.owns_buffer
