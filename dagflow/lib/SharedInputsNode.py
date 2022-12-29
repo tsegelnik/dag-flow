@@ -5,14 +5,13 @@ from numpy import zeros
 from ..nodes import FunctionNode
 from ..exception import TypeFunctionError
 
-
 class SharedInputsNode(FunctionNode):
     """Creates a node with the same shared data array allocated on the inputs"""
 
     _data: NDArray
     def __init__(self, name: str, outname: str = "output", **kwargs):
         super().__init__(name, **kwargs)
-        self._add_output(outname, allocatable=False)
+        self._add_output(outname, allocatable=False, forbid_reallocation=True)
 
     def missing_input_handler(self, idx: Optional[int] = None, scope: Optional[int] = None):
         icount = len(self.inputs)
@@ -46,7 +45,7 @@ class SharedInputsNode(FunctionNode):
                 )
 
         self._data = zeros(shape=shape, dtype=dtype)
-        for input in self.inputs:
-            input.set_own_data(self._data, owns_buffer=False)
+        for i, input in enumerate(self.inputs):
+            input.set_own_data(self._data, owns_buffer=(i==0))
 
-        self.outputs[0]._set_data(self._data, owns_buffer=True)
+        self.outputs[0]._set_data(self._data, owns_buffer=False, forbid_reallocation=True)

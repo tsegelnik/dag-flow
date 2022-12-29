@@ -12,7 +12,7 @@ class ViewConcat(FunctionNode):
     _offsets: List[int]
     def __init__(self, name, outname="concat", **kwargs):
         super().__init__(name, **kwargs)
-        self._output = self._add_output(outname, allocatable=False)
+        self._output = self._add_output(outname, allocatable=False, forbid_reallocation=True)
         self._offsets = []
 
     def missing_input_handler(self, idx: Optional[int] = None, scope: Optional[int] = None):

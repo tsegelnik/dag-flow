@@ -99,3 +99,4 @@ def test_SharedInputsNode_02():
         with raises(ConnectionError):
             view >> sharedinput
 
+    savegraph(graph, "output/test_SharedInputsNode_02.png")
