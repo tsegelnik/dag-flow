@@ -28,7 +28,7 @@ class Input:
     _child_output: Optional[Output]
 
     _allocatable: bool = False
-    _owns_data: bool = False
+    _owns_buffer: bool = False
 
     _debug: bool = False
 
@@ -62,12 +62,12 @@ class Input:
         self._own_dtype = dtype
         self._own_shape = shape
         if data is not None:
-            self.set_own_data(data, owns_data=True)
+            self.set_own_data(data, owns_buffer=True)
 
     def __str__(self) -> str:
         return (
             f"→○ {self._name}"
-            if self._owns_data is None
+            if self._owns_buffer is None
             else f"→● {self._name}"
         )
 
@@ -79,10 +79,10 @@ class Input:
         return self._own_data
 
     @property
-    def owns_data(self) -> bool:
-        return self._owns_data
+    def owns_buffer(self) -> bool:
+        return self._owns_buffer
 
-    def set_own_data(self, data, *, owns_data: bool):
+    def set_own_data(self, data, *, owns_buffer: bool):
         if self.closed:
             raise ClosedGraphError(
                 "Unable to set input data.", node=self._node, input=self
@@ -93,7 +93,7 @@ class Input:
             )
 
         self._own_data = data
-        self._owns_data = owns_data
+        self._owns_buffer = owns_buffer
         self._own_dtype = data.dtype
         self._own_shape = data.shape
 

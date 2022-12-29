@@ -47,12 +47,12 @@ class ViewConcat(FunctionNode):
         output._dtype = cdtype
         output._shape = (size,)
         data = np.zeros(shape=size, dtype=cdtype)
-        output._set_data(data, owns_data=True)
+        output._set_data(data, owns_buffer=True)
 
         for offset, input in zip(self._offsets, self.inputs):
             size = input.shape[0]
             idata = data[offset:offset+size]
-            input.set_own_data(idata, owns_data=False)
+            input.set_own_data(idata, owns_buffer=False)
 
 
 

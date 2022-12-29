@@ -31,7 +31,7 @@ class Output:
     _allocating_input: Optional[InputT] = None
 
     _allocatable: bool = True
-    _owns_data: bool = False
+    _owns_buffer: bool = False
     _forbid_reallocation: bool = False
 
     _debug: bool = False
@@ -62,13 +62,13 @@ class Output:
             self._allocatable = True if allocatable is None else allocatable
         else:
             self._allocatable = False
-            self._set_data(data, owns_data=True)
+            self._set_data(data, owns_buffer=True)
 
             if allocatable or dtype is not None or shape is not None:
                 raise InitializationError(output=self, node=node)
 
     def __str__(self):
-        return f"●→ {self._name}" if self.owns_data else f"○→ {self._name}"
+        return f"●→ {self._name}" if self.owns_buffer else f"○→ {self._name}"
 
     def __repr__(self):
         return self.__str__()
@@ -139,7 +139,7 @@ class Output:
                 output=self,
             ) from exc
 
-    def _set_data(self, data, *, owns_data: bool, forbid_reallocation: Optional[bool]=None):
+    def _set_data(self, data, *, owns_buffer: bool, forbid_reallocation: Optional[bool]=None):
         if self.closed:
             raise ClosedGraphError(
                 "Unable to set output data.", node=self._node, output=self
@@ -149,11 +149,11 @@ class Output:
             raise AllocationError(
                 "Output already has data.", node=self._node, output=self
             )
-        if owns_data:
+        if owns_buffer:
             forbid_reallocation = True
         else:
             if forbid_reallocation is None:
-                forbid_reallocation = owns_data
+                forbid_reallocation = owns_buffer
         self._forbid_reallocation |= forbid_reallocation
         print(self.node.name, self._forbid_reallocation)
 
@@ -167,12 +167,12 @@ class Output:
         self._data = data
         self._dtype = data.dtype
         self._shape = data.shape
-        self._owns_data = owns_data
+        self._owns_buffer = owns_buffer
         self._forbid_reallocation = forbid_reallocation
 
     @property
-    def owns_data(self):
-        return self._owns_data
+    def owns_buffer(self):
+        return self._owns_buffer
 
     @property
     def forbid_reallocation(self):
@@ -286,7 +286,7 @@ class Output:
                         input=input,
                     )
 
-                self._set_data(idata, owns_data=False)
+                self._set_data(idata, owns_buffer=False)
                 return True
 
         if self.shape is None or self.dtype is None:
@@ -297,7 +297,7 @@ class Output:
             )
         try:
             data = zeros(self.shape, self.dtype, **kwargs)
-            self._set_data(data, owns_data=True)
+            self._set_data(data, owns_buffer=True)
         except Exception as exc:
             raise AllocationError(
                 f"Output: {exc.args[0]}", node=self._node, output=self

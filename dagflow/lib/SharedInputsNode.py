@@ -47,6 +47,6 @@ class SharedInputsNode(FunctionNode):
 
         self._data = zeros(shape=shape, dtype=dtype)
         for input in self.inputs:
-            input.set_own_data(self._data, owns_data=False)
+            input.set_own_data(self._data, owns_buffer=False)
 
-        self.outputs[0]._set_data(self._data, owns_data=True)
+        self.outputs[0]._set_data(self._data, owns_buffer=True)
