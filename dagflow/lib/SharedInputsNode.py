@@ -28,13 +28,14 @@ class SharedInputsNode(FunctionNode):
         self.inputs.touch()
 
     def _typefunc(self) -> None:
-        dtype, shape = None, None
-
-        for input in self.inputs[:1]:
+        try:
+            input=self.inputs[0]
             dtype, shape = input.dtype, input.shape
-
-        if dtype is None or shape is None:
-            raise TypeFunctionError("Input data is undefined", node=self)
+        except IndexError:
+            raise TypeFunctionError("No inputs defined", node=self)
+        else:
+            if dtype is None or shape is None:
+                raise TypeFunctionError("Input data is undefined", node=self)
 
         for input in self.inputs[1:]:
             if input.dtype != dtype or input.shape != shape:

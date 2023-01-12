@@ -48,11 +48,9 @@ class EdgeContainer:
         return all(edge.allocate() for edge in self._all_edges.values())
 
     def __getitem__(self, key):
-        if isinstance(key, int):
-            return self._pos_edges[key]
-        elif isinstance(key, str):
+        if isinstance(key, str):
             return self._kw_edges[key]
-        elif isinstance(key, slice):
+        elif isinstance(key, (int, slice)):
             return self._pos_edges[key]
         elif isinstance(key, Sequence):
             return tuple(self.__getitem__(k) for k in key)
