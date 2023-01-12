@@ -73,3 +73,15 @@ def check_input_dtype(
             node=node,
             input=input,
         )
+
+
+def check_inputs_equivalence(node: NodeT):
+    """Checking the equivalence of the dtype and shape of all the inputs"""
+    dtype, shape = node.inputs[0].dtype, node.inputs[0].shape
+    for input in node.inputs[1:]:
+        if input.dtype != dtype or input.shape != shape:
+            raise TypeFunctionError(
+                f"Input data {input.dtype} [{input.shape}] is inconsistent with {dtype} [{shape}]",
+                node=node,
+                input=input,
+            )
