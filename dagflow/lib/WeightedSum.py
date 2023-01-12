@@ -4,7 +4,7 @@ from ..exception import TypeFunctionError
 from ..input_extra import MissingInputAddOne
 from ..nodes import FunctionNode
 from ..typefunctions import (
-    check_nonzero_inputs,
+    check_has_inputs,
     eval_output_dtype,
     copy_input_shape_to_output,
 )
@@ -25,7 +25,7 @@ class WeightedSum(FunctionNode):
 
     def _typefunc(self) -> None:
         """A output takes this function to determine the dtype and shape"""
-        check_nonzero_inputs(self)
+        check_has_inputs(self)
         weight = self.inputs["weight"]
         shape = weight.shape[0]
         leninp = len(self.inputs)
