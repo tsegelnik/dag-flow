@@ -1,7 +1,13 @@
-from numpy import copyto, result_type
+from numpy import copyto
 
 from ..input_extra import MissingInputAddOne
 from ..nodes import FunctionNode
+from ..typefunctions import (
+    check_nonzero_inputs,
+    eval_output_dtype,
+    copy_input_shape_to_output,
+)
+
 
 class Sum(FunctionNode):
     """Sum of all the inputs together"""
@@ -22,7 +28,6 @@ class Sum(FunctionNode):
 
     def _typefunc(self) -> None:
         """A output takes this function to determine the dtype and shape"""
-        self.outputs["result"]._shape = self.inputs[0].shape
-        self.outputs["result"]._dtype = result_type(
-            *tuple(inp.dtype for inp in self.inputs)
-        )
+        check_nonzero_inputs(self)
+        copy_input_shape_to_output(self, 0, "result")
+        eval_output_dtype(self, "result")
