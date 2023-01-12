@@ -1,5 +1,4 @@
 from ..nodes import FunctionNode
-from ..exception import AllocationError
 
 class View(FunctionNode):
     """Creates a node with a single data output which is a view on the input"""
@@ -18,11 +17,6 @@ class View(FunctionNode):
         output = self.outputs[0]
         output._shape = input.shape
         output._dtype = input.dtype
-
-        self.logger.debug(
-            f"Node '{self.name}': dtype={self.outputs[0].dtype}, "
-            f"shape={self.outputs[0].shape}"
-        )
 
     def post_allocate(self) -> None:
         input = self.inputs[0]

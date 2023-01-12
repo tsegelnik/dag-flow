@@ -5,7 +5,7 @@ from dagflow.graph import Graph
 from dagflow.lib.SharedInputsNode import SharedInputsNode
 from dagflow.lib.View import View
 from dagflow.lib.Array import Array
-from dagflow.exception import ConnectionError, AllocationError
+from dagflow.exception import ConnectionError
 from dagflow.graphviz import savegraph
 from pytest import raises
 

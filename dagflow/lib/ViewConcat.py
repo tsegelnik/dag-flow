@@ -1,5 +1,5 @@
 from typing import Optional, List
-import numpy as np
+from numpy import zeros
 
 from ..nodes import FunctionNode
 from ..output import Output
@@ -46,7 +46,7 @@ class ViewConcat(FunctionNode):
         output = self.outputs[0]
         output._dtype = cdtype
         output._shape = (size,)
-        data = np.zeros(shape=size, dtype=cdtype)
+        data = zeros(shape=size, dtype=cdtype)
         output._set_data(data, owns_buffer=True)
 
         for offset, input in zip(self._offsets, self.inputs):

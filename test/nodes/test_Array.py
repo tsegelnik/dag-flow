@@ -10,7 +10,7 @@ debug = False
 
 def test_Array_00():
     array = arange(12.0).reshape(3,4)
-    with Graph(close=True) as graph:
+    with Graph(close=True):
         arr1 = Array('array', array, mode='store')
         arr2 = Array('array', array, mode='fill')
 

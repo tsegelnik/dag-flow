@@ -151,9 +151,8 @@ class Output:
             )
         if owns_buffer:
             forbid_reallocation = True
-        else:
-            if forbid_reallocation is None:
-                forbid_reallocation = owns_buffer
+        elif forbid_reallocation is None:
+            forbid_reallocation = owns_buffer
 
         forbid_reallocation |= self._forbid_reallocation
         if forbid_reallocation and self._allocating_input:

@@ -1,6 +1,5 @@
 from .input import Input
 from .output import Output
-from .edges import EdgeContainer
 from .printl import printl
 
 try:
@@ -67,8 +66,7 @@ else:
             name = type(object).__name__
             omap = self._node_id_map.setdefault(name, {})
             onum = omap.setdefault(object, len(omap))
-            oid = f"{name}_{onum}{suffix}"
-            return oid
+            return f"{name}_{onum}{suffix}"
 
         def _add_node(self, nodedag):
             styledict = {"shape": "Mrecord"}
