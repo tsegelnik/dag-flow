@@ -51,3 +51,4 @@ UltiSnips/*
 tags
 *.pyc
 *.o
+coverage.json

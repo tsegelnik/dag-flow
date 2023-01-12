@@ -100,8 +100,11 @@ class Graph(NodeGroup):
         Graph._context_graph = self
         return self
 
-    def __exit__(self, *args, **kwargs):
+    def __exit__(self, exc_type, exc_val, exc_tb):
         Graph._context_graph = undefined("graph")
+        if exc_val is not None:
+            raise exc_val
+
         if self._close:
             self.close()
 

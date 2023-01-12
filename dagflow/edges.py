@@ -48,11 +48,9 @@ class EdgeContainer:
         return all(edge.allocate() for edge in self._all_edges.values())
 
     def __getitem__(self, key):
-        if isinstance(key, int):
-            return self._pos_edges[key]
-        elif isinstance(key, str):
+        if isinstance(key, str):
             return self._kw_edges[key]
-        elif isinstance(key, slice):
+        elif isinstance(key, (int, slice)):
             return self._pos_edges[key]
         elif isinstance(key, Sequence):
             return tuple(self.__getitem__(k) for k in key)
@@ -67,17 +65,31 @@ class EdgeContainer:
     def has_key(self, key: str) -> bool:
         return key in self._kw_edges
 
-    def get_positional(self, idx):
+    def get_pos(self, idx: int):
+        """Get positional leg"""
         return self._pos_edges[idx]
-    iat = get_positional
+    iat = get_pos
 
-    def get_keyword(self, key):
+    def index(self, arg):
+        return self._pos_edges.index(arg)
+
+    def get_kw(self, key: str):
+        """Return keyword leg"""
         return self._kw_edges[key]
-    kat = get_keyword
+    kat = get_kw
 
-    def __len__(self):
-        """Returns a number of the positional arguments"""
+    def len_pos(self) -> int:
+        """Returns a number of the positional legs"""
         return len(self._pos_edges)
+    __len__ = len_pos
+
+    def len_kw(self) -> int:
+        """Returns a number of the keyword legs"""
+        return len(self._kw_edges)
+
+    def len_all(self) -> int:
+        """Returns a number of the all legs"""
+        return len(self._all_edges)
 
     def __dir__(self):
         return self._kw_edges.keys()

@@ -28,10 +28,12 @@ class Output:
 
     _child_inputs: List[InputT]
     _parent_input: Optional[InputT] = None
+    _allocating_input: Optional[InputT] = None
 
     _allocatable: bool = True
-    _allocated: bool = False
-    _owns_data: bool = False
+    _owns_buffer: bool = False
+    _forbid_reallocation: bool = False
+
     _debug: bool = False
 
     def __init__(
@@ -44,6 +46,7 @@ class Output:
         data: Optional[NDArray] = None,
         dtype: Optional[DTypeLike] = None,
         shape: Optional[Tuple[int, ...]] = None,
+        forbid_reallocation: bool = False
     ):
         self._name = name
         self._node = node
@@ -53,18 +56,19 @@ class Output:
         )
         self._dtype = dtype
         self._shape = shape
+        self._forbid_reallocation = forbid_reallocation
 
         if data is None:
             self._allocatable = True if allocatable is None else allocatable
         else:
             self._allocatable = False
-            self._set_data(data, owns_data=True)
+            self._set_data(data, owns_buffer=True)
 
             if allocatable or dtype is not None or shape is not None:
                 raise InitializationError(output=self, node=node)
 
     def __str__(self):
-        return f"●→ {self._name}" if self.owns_data else f"○→ {self._name}"
+        return f"●→ {self._name}" if self.owns_buffer else f"○→ {self._name}"
 
     def __repr__(self):
         return self.__str__()
@@ -82,8 +86,8 @@ class Output:
         return self._allocatable
 
     @property
-    def allocated(self):
-        return self._allocated
+    def has_data(self) -> bool:
+        return self._data is not None
 
     @property
     def node(self):
@@ -135,25 +139,42 @@ class Output:
                 output=self,
             ) from exc
 
-    def _set_data(self, data, owns_data: bool):
+    def _set_data(self, data, *, owns_buffer: bool, forbid_reallocation: Optional[bool]=None):
         if self.closed:
             raise ClosedGraphError(
                 "Unable to set output data.", node=self._node, output=self
             )
         if self._data is not None:
+            # TODO: this will fail during reallocation
             raise AllocationError(
                 "Output already has data.", node=self._node, output=self
+            )
+        if owns_buffer:
+            forbid_reallocation = True
+        elif forbid_reallocation is None:
+            forbid_reallocation = owns_buffer
+
+        forbid_reallocation |= self._forbid_reallocation
+        if forbid_reallocation and self._allocating_input:
+            raise AllocationError(
+                "Output is connected to allocating input, but reallocation is forbidden",
+                node=self._node,
+                output=self
             )
 
         self._data = data
         self._dtype = data.dtype
         self._shape = data.shape
-        self._allocated = True
-        self._owns_data = owns_data
+        self._owns_buffer = owns_buffer
+        self._forbid_reallocation = forbid_reallocation
 
     @property
-    def owns_data(self):
-        return self._owns_data
+    def owns_buffer(self):
+        return self._owns_buffer
+
+    @property
+    def forbid_reallocation(self):
+        return self._forbid_reallocation
 
     @property
     def closed(self):
@@ -197,6 +218,20 @@ class Output:
         return self._connect_to(input)
 
     def _connect_to(self, input) -> InputT:
+        if input.allocatable:
+            if self._allocating_input:
+                raise ConnectionError(
+                    "Output has multiple allocatable/allocated child inputs",
+                    node=self._node,
+                    output=self
+                )
+            if self._forbid_reallocation:
+                raise ConnectionError(
+                    "Output forbids reallocation and may not connect to allocating inputs",
+                    node=self._node,
+                    output=self
+                )
+            self._allocating_input = input
         self._child_inputs.append(input)
         input._set_parent_output(self)
         return input
@@ -233,13 +268,13 @@ class Output:
         return RepeatedOutput(self)
 
     def allocate(self, **kwargs):
-        if not self._allocatable or self._allocated:
+        if not self._allocatable or self.has_data:
             return True
 
-        if len(self._child_inputs) == 1:
-            input = self._child_inputs[0]
+        if self._allocating_input:
+            input = self._allocating_input
             input.allocate(recursive=False)
-            if input.allocated:
+            if input.has_data:
                 idata = input._own_data
                 if idata.shape != self.shape or idata.dtype != self.dtype:
                     raise AllocationError(
@@ -249,17 +284,9 @@ class Output:
                         input=input,
                     )
 
-                self._set_data(idata, owns_data=False)
+                idata[:] = self._data
+                self._set_data(idata, owns_buffer=False)
                 return True
-        elif any(
-            input.allocated or input.allocatable
-            for input in self._child_inputs
-        ):
-            raise AllocationError(
-                "Output has multiple allocatable/allocated child inputs",
-                node=self._node,
-                output=self,
-            )
 
         if self.shape is None or self.dtype is None:
             raise AllocationError(
@@ -269,7 +296,7 @@ class Output:
             )
         try:
             data = zeros(self.shape, self.dtype, **kwargs)
-            self._set_data(data, owns_data=True)
+            self._set_data(data, owns_buffer=True)
         except Exception as exc:
             raise AllocationError(
                 f"Output: {exc.args[0]}", node=self._node, output=self
