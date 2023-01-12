@@ -10,7 +10,7 @@ from .types import NodeT
 def check_has_inputs(node: NodeT) -> None:
     """Checking if the node has inputs"""
     if len(node.inputs) == 0:
-        raise TypeFunctionError(f"Cannot use '{node.name}' with zero inputs!")
+        raise TypeFunctionError("Cannot use node with zero inputs!", node=node)
 
 
 def eval_output_dtype(
@@ -43,4 +43,33 @@ def copy_input_shape_to_output(
 def combine_inputs_shape_to_output(
     node: NodeT, outputkey: Union[str, int, slice, Sequence] = "result"
 ) -> None:
+    """Combine all the inputs shape and setting for the output"""
     node.outputs[outputkey]._shape = tuple(inp.shape for inp in node.inputs)
+
+
+def check_input_dimension(
+    node: NodeT, inputkey: Union[str, int, slice, Sequence], ndim: int
+):
+    """Checking the dimension of the input"""
+    input = node.inputs[inputkey]
+    dim = len(input.shape)
+    if dim != ndim:
+        raise TypeFunctionError(
+            f"The node supports only {ndim}d inputs, but given {dim}d!",
+            node=node,
+            input=input,
+        )
+
+
+def check_input_dtype(
+    node: NodeT, inputkey: Union[str, int, slice, Sequence], dtype
+):
+    """Checking the dimension of the input"""
+    input = node.inputs[inputkey]
+    dtt = input.dtype
+    if dtt != dtype:
+        raise TypeFunctionError(
+            f"The node supports only input types {dtype}, but given {dtt}!",
+            node=node,
+            input=input,
+        )

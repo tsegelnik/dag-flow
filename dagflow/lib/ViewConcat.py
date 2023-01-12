@@ -1,9 +1,11 @@
-from typing import Optional, List
+from typing import List, Optional
+
 from numpy import zeros
 
+from ..exception import TypeFunctionError
 from ..nodes import FunctionNode
 from ..output import Output
-from ..exception import TypeFunctionError
+from ..typefunctions import check_input_dimension, check_input_dtype
 
 
 class ViewConcat(FunctionNode):
@@ -38,23 +40,11 @@ class ViewConcat(FunctionNode):
         size = 0
         self._offsets = []
         cdtype = self.inputs[0].dtype
-        for input in self.inputs:
-            shape = input.shape
-            if len(shape) > 1:
-                raise TypeFunctionError(
-                    "ViewConcat supports only 1d inputs",
-                    node=self,
-                    input=input,
-                )
-            if input.dtype != cdtype:
-                raise TypeFunctionError(
-                    "ViewConcat got inconsistent types: {cdtype} and {dtype}",
-                    node=self,
-                    input=input,
-                )
-
+        for i in range(len(self.inputs)):
+            check_input_dimension(self, i, 1)
+            check_input_dtype(self, i, cdtype)
             self._offsets.append(size)
-            size += shape[0]
+            size += self.inputs[i].shape[0]
 
         output = self.outputs[0]
         output._dtype = cdtype
