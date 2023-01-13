@@ -3,6 +3,8 @@ from typing import Union
 
 from numpy import result_type
 
+from dagflow.tools import IsIterable
+
 from .exception import TypeFunctionError
 from .types import NodeT
 
@@ -52,6 +54,8 @@ def check_input_dimension(
 ):
     """Checking the dimension of the input"""
     input = node.inputs[inputkey]
+    if IsIterable(input):
+        return (check_input_dimension(node, inp, ndim) for inp in input)
     dim = len(input.shape)
     if dim != ndim:
         raise TypeFunctionError(
@@ -66,6 +70,8 @@ def check_input_dtype(
 ):
     """Checking the dimension of the input"""
     input = node.inputs[inputkey]
+    if IsIterable(input):
+        return (check_input_dtype(node, inp, dtype) for inp in input)
     dtt = input.dtype
     if dtt != dtype:
         raise TypeFunctionError(

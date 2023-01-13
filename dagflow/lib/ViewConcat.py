@@ -2,7 +2,6 @@ from typing import List, Optional
 
 from numpy import zeros
 
-from ..exception import TypeFunctionError
 from ..nodes import FunctionNode
 from ..output import Output
 from ..typefunctions import check_input_dimension, check_input_dtype
@@ -40,11 +39,11 @@ class ViewConcat(FunctionNode):
         size = 0
         self._offsets = []
         cdtype = self.inputs[0].dtype
-        for i in range(len(self.inputs)):
-            check_input_dimension(self, i, 1)
-            check_input_dtype(self, i, cdtype)
+        check_input_dtype(self, slice(None), cdtype)
+        check_input_dimension(self, slice(None), 1)
+        for input in self.inputs:
             self._offsets.append(size)
-            size += self.inputs[i].shape[0]
+            size += input.shape[0]
 
         output = self.outputs[0]
         output._dtype = cdtype
