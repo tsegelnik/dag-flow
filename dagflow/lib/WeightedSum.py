@@ -1,8 +1,13 @@
-from numpy import copyto, result_type
+from numpy import copyto
 
 from ..exception import TypeFunctionError
 from ..input_extra import MissingInputAddOne
 from ..nodes import FunctionNode
+from ..typefunctions import (
+    check_has_inputs,
+    eval_output_dtype,
+    copy_input_shape_to_output,
+)
 
 
 class WeightedSum(FunctionNode):
@@ -20,13 +25,10 @@ class WeightedSum(FunctionNode):
 
     def _typefunc(self) -> None:
         """A output takes this function to determine the dtype and shape"""
+        check_has_inputs(self)
         weight = self.inputs["weight"]
         shape = weight.shape[0]
         leninp = len(self.inputs)
-        if leninp == 0:
-            raise TypeFunctionError(
-                "Cannot use WeightedSum with zero inputs!"
-            )
         if shape == 0:
             raise TypeFunctionError(
                 "Cannot use WeightedSum with empty 'weight'!"
@@ -37,13 +39,11 @@ class WeightedSum(FunctionNode):
             self.fcn = self._functions["iterable"]
         else:
             raise TypeFunctionError(
-                f"The number of weights (={shape}) must coinside "
+                f"The number of weights (={shape}) must coincide "
                 f"with the number of inputs (={leninp})!"
             )
-        self.outputs["result"]._shape = self.inputs[0].shape
-        self.outputs["result"]._dtype = result_type(
-            *tuple(inp.dtype for inp in self.inputs)
-        )
+        copy_input_shape_to_output(self, 0, "result")
+        eval_output_dtype(self, "result")
 
     def _fcn_number(self, _, inputs, outputs):
         """

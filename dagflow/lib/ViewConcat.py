@@ -1,21 +1,28 @@
-from typing import Optional, List
+from typing import List, Optional
+
 from numpy import zeros
 
 from ..nodes import FunctionNode
 from ..output import Output
-from ..exception import TypeFunctionError
+from ..typefunctions import check_input_dimension, check_input_dtype
+
 
 class ViewConcat(FunctionNode):
     """Creates a node with a single data output which is a concatenated memory of the inputs"""
 
     _output: Output
     _offsets: List[int]
+
     def __init__(self, name, outname="concat", **kwargs):
         super().__init__(name, **kwargs)
-        self._output = self._add_output(outname, allocatable=False, forbid_reallocation=True)
+        self._output = self._add_output(
+            outname, allocatable=False, forbid_reallocation=True
+        )
         self._offsets = []
 
-    def missing_input_handler(self, idx: Optional[int] = None, scope: Optional[int] = None):
+    def missing_input_handler(
+        self, idx: Optional[int] = None, scope: Optional[int] = None
+    ):
         icount = len(self.inputs)
         idx = idx if idx is not None else icount
         iname = "input_{:02d}".format(idx)
@@ -29,19 +36,14 @@ class ViewConcat(FunctionNode):
 
     def _typefunc(self) -> None:
         """A output takes this function to determine the dtype and shape"""
-
         size = 0
         self._offsets = []
         cdtype = self.inputs[0].dtype
+        check_input_dtype(self, slice(None), cdtype)
+        check_input_dimension(self, slice(None), 1)
         for input in self.inputs:
-            shape = input.shape
-            if len(shape)>1:
-                raise TypeFunctionError("ViewConcat supports only 1d inputs", node=self, input=input)
-            if input.dtype!=cdtype:
-                raise TypeFunctionError("ViewConcat got inconsistent types: {cdtype} and {dtype}", node=self, input=input)
-
             self._offsets.append(size)
-            size+=shape[0]
+            size += input.shape[0]
 
         output = self.outputs[0]
         output._dtype = cdtype
@@ -51,8 +53,5 @@ class ViewConcat(FunctionNode):
 
         for offset, input in zip(self._offsets, self.inputs):
             size = input.shape[0]
-            idata = data[offset:offset+size]
+            idata = data[offset : offset + size]
             input.set_own_data(idata, owns_buffer=False)
-
-
-

@@ -1,6 +1,6 @@
 # Update to Daya Bay data preservation
 
-## Graph `<-> dagflow`
+## Common tasks
 
 - [x] Input renaming: `output -> input`, `corresponding_output -> output`
 - [x] Automatic creation of outputs is **restricted**
@@ -45,6 +45,8 @@ use `Node` to do this stuff; do not use second order `input` and `output`
   3) See <https://hackmd.io/mMNrlOp7Q7i9wkVFvP4W4Q>
 - [x] `Tainted`
 - [x] Fix decorators
+- [x] Move common checks in `typefunc` into standalone module
+- [ ] Update wrapping
 
 ## Transformations
 
