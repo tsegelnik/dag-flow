@@ -67,6 +67,9 @@ def test_SharedInputsNode_00(debug_graph=False):
     assert (output_array.data == 1).all()
     assert (output_array2.data == 1).all()
     assert (output_array3.data == 1).all()
+    assert initial.tainted == False
+    assert initial2.tainted == False
+    assert initial3.tainted == False
 
     initial2._data[:] = 2
     initial2.taint()
@@ -80,6 +83,9 @@ def test_SharedInputsNode_00(debug_graph=False):
     assert (output_array.data == 2).all()
     assert (output_array2.data == 2).all()
     assert (output_array3.data == 2).all()
+    assert initial.tainted == False
+    assert initial2.tainted == False
+    assert initial3.tainted == False
 
     view.touch()
     savegraph(graph, "output/test_SharedInputsNode_00.png")
