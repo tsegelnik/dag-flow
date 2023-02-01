@@ -14,7 +14,8 @@ from .legs import Legs
 from .logger import Logger
 from .output import Output, SettableOutput
 from .tools import IsIterable, undefined
-
+from .types import NodeT
+from typing import Optional
 
 class Node(Legs):
     _name = undefined("name")
@@ -348,7 +349,7 @@ class Node(Legs):
             self._frozen_tainted = False
             self.taint(force=True)
 
-    def taint(self, force: bool = False):
+    def taint(self, caller: Optional[NodeT] = None, force: bool = False):
         self.logger.debug(f"Node '{self.name}': Taint...")
         if self._tainted and not force:
             return
@@ -356,6 +357,7 @@ class Node(Legs):
             self._frozen_tainted = True
             return
         self._tainted = True
+        self._on_taint(caller)
         ret = self.touch() if self._immediate else None
         self.taint_children(force)
         return ret
@@ -364,7 +366,7 @@ class Node(Legs):
         for output in self.outputs:
             output.taint_children(force)
 
-    def taint_type(self, force=False):
+    def taint_type(self, force: bool = False):
         self.logger.debug(f"Node '{self.name}': Taint types...")
         if self._closed:
             raise ClosedGraphError("Unable to taint type", node=self)
@@ -390,6 +392,10 @@ class Node(Legs):
         raise DagflowError(
             "Unimplemented method: the method must be overridden!"
         )
+
+    def _on_taint(self, caller: NodeT):
+        """A node method to be called on taint"""
+        pass
 
     def update_types(self, recursive: bool = True) -> bool:
         if not self._types_tainted:

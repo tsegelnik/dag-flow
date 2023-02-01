@@ -242,13 +242,13 @@ class Output:
     def __rlshift__(self, other):
         return lshift(self, other)
 
-    def taint_children(self, force=False):
+    def taint_children(self, force: bool = False):
         for input in self._child_inputs:
-            input.taint(force)
+            input.taint(caller=self.node, force=force)
 
-    def taint_children_type(self, force=False):
+    def taint_children_type(self, force: bool = False):
         for input in self._child_inputs:
-            input.taint_type(force)
+            input.taint_type(force=force)
 
     def touch(self):
         return self._node.touch()
