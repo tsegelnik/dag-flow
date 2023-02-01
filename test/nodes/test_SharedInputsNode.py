@@ -14,20 +14,24 @@ def test_SharedInputsNode_00(debug_graph=False):
     with Graph(debug=debug_graph, close=True) as graph:
         initial = Array("array 1", array, mode='fill')
         initial2 = Array("array 2", array, mode='fill')
+        initial3 = Array("array 3", array, mode='fill')
         sharedinput = SharedInputsNode("shared input")
         view = View("view")
 
         initial >> sharedinput
         initial2 >> sharedinput >> view
+        initial3 >> sharedinput
 
     output_array = initial.outputs[0]
     output_array2 = initial2.outputs[0]
+    output_array3 = initial3.outputs[0]
     input_sharedinput = sharedinput.inputs[0]
     output_sharedinput = sharedinput.outputs[0]
     output_view = view.outputs[0]
 
     assert output_array.allocatable == True
     assert output_array2.allocatable == True
+    assert output_array3.allocatable == True
     assert output_sharedinput.allocatable == False
     assert input_sharedinput.allocatable == True
     assert output_view.allocatable == False
@@ -38,6 +42,7 @@ def test_SharedInputsNode_00(debug_graph=False):
 
     assert initial.tainted == True
     assert initial2.tainted == True
+    assert initial3.tainted == True
     assert sharedinput.tainted == True
     assert view.tainted == True
 
@@ -46,6 +51,7 @@ def test_SharedInputsNode_00(debug_graph=False):
 
     assert initial.tainted == False
     assert initial2.tainted == False
+    assert initial3.tainted == False
     assert sharedinput.tainted == False
     assert view.tainted == False
 
@@ -53,19 +59,27 @@ def test_SharedInputsNode_00(debug_graph=False):
     initial.taint()
     assert initial.tainted == True
     assert initial2.tainted == False
+    assert initial3.tainted == False
     assert sharedinput.tainted == True
     assert view.tainted == True
     assert (output_sharedinput.data == 1).all()
     assert (output_view.data == 1).all()
+    assert (output_array.data == 1).all()
+    assert (output_array2.data == 1).all()
+    assert (output_array3.data == 1).all()
 
     initial2._data[:] = 2
     initial2.taint()
     assert initial.tainted == False
     assert initial2.tainted == True
+    assert initial3.tainted == False
     assert sharedinput.tainted == True
     assert view.tainted == True
     assert (output_sharedinput.data == 2).all()
     assert (output_view.data == 2).all()
+    assert (output_array.data == 2).all()
+    assert (output_array2.data == 2).all()
+    assert (output_array3.data == 2).all()
 
     view.touch()
     savegraph(graph, "output/test_SharedInputsNode_00.png")
