@@ -4,7 +4,6 @@ from ..typefunctions import (
     copy_input_shape_to_output,
 )
 
-
 class View(FunctionNode):
     """Creates a node with a single data output which is a view on the input"""
 

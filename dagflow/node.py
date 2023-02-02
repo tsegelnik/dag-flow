@@ -12,7 +12,7 @@ from .exception import (
 from .input import Input
 from .legs import Legs
 from .logger import Logger
-from .output import Output, SettableOutput
+from .output import Output
 from .tools import IsIterable, undefined
 from .types import NodeT
 from typing import Optional
@@ -233,10 +233,10 @@ class Node(Legs):
             return self._add_output(name, **kwargs)
         raise ClosedGraphError(node=self)
 
-    def _add_output(self, name, *, settable=False, **kwargs):
+    def _add_output(self, name, **kwargs):
         if IsIterable(name):
             return tuple(
-                self._add_output(n, settable=settable, **kwargs) for n in name
+                self._add_output(n, **kwargs) for n in name
             )
         self.logger.debug(f"Node '{self.name}': Add output '{name}'...")
         if isinstance(name, Output):
@@ -250,13 +250,9 @@ class Node(Legs):
             )
         if name in self.outputs:
             raise ReconnectionError(output=name, node=self)
-        output = (
-            SettableOutput(name, self, **kwargs)
-            if settable
-            else Output(name, self, **kwargs)
-        )
+
         return self.__add_output(
-            output,
+            Output(name, self, **kwargs),
             positional=kwargs.get("positional", True),
             keyword=kwargs.get("keyword", True),
         )

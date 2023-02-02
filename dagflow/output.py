@@ -318,7 +318,6 @@ class Output:
 
         return True
 
-class SettableOutput(Output):
     def set(self, data: ArrayLike, check_taint: bool=False, force: bool=False) -> bool:
         if self.node._frozen and not force:
             return False

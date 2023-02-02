@@ -4,6 +4,7 @@ from ..nodes import FunctionNode
 from ..output import Output
 from numpy.typing import NDArray
 from ..exception import InitializationError
+from numpy.typing import ArrayLike
 
 class Array(FunctionNode):
     """Creates a node with a single data output with predefined array"""
@@ -25,9 +26,6 @@ class Array(FunctionNode):
         else:
             raise InitializationError(f'Array: invalid mode "{mode}"', node=self)
 
-        self._init_fcn()
-
-    def _init_fcn(self):
         self._functions.update({
                 "store": self._fcn_store,
                 "store_weak": self._fcn_store,
@@ -51,3 +49,6 @@ class Array(FunctionNode):
             return
 
         self._data = self._output._data
+
+    def set(self, data: ArrayLike, check_taint: bool=False) -> bool:
+        return self._output.set(data, check_taint)
