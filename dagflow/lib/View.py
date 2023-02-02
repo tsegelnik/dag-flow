@@ -23,7 +23,7 @@ class View(FunctionNode):
         copy_input_dtype_to_output(self, 0, 0)
         copy_input_shape_to_output(self, 0, 0)
 
-    def post_allocate(self) -> None:
+    def _post_allocate(self) -> None:
         input = self.inputs[0]
         output = self.outputs[0]
         output._set_data(

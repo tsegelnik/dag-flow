@@ -397,6 +397,9 @@ class Node(Legs):
         """A node method to be called on taint"""
         pass
 
+    def _post_allocate(self):
+        pass
+
     def update_types(self, recursive: bool = True) -> bool:
         if not self._types_tainted:
             return True
@@ -423,12 +426,9 @@ class Node(Legs):
             raise AllocationError(
                 "Cannot allocate memory for outputs!", node=self
             )
-        self.post_allocate()
+        self._post_allocate()
         self._allocated = True
         return True
-
-    def post_allocate(self):
-        pass
 
     def close(self, recursive: bool = True) -> bool:
         if self._closed:
