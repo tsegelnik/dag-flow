@@ -55,4 +55,4 @@ class SharedInputsNode(FunctionNode):
         for parent in self._parent_nodes:
             if parent is caller:
                 continue
-            # parent.taint(self)
+            parent.taint(self)

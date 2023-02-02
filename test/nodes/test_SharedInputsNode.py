@@ -12,9 +12,9 @@ from pytest import raises
 def test_SharedInputsNode_00(debug_graph=False):
     array = arange(12.0).reshape(3, 4)
     with Graph(debug=debug_graph, close=True) as graph:
-        initial = Array("array 1", array, mode='fill')
-        initial2 = Array("array 2", array, mode='fill')
-        initial3 = Array("array 3", array, mode='fill')
+        initial = Array("array 1", array, mode='store_weak')
+        initial2 = Array("array 2", array, mode='store_weak')
+        initial3 = Array("array 3", array, mode='store_weak')
         sharedinput = SharedInputsNode("shared input")
         view = View("view")
 
@@ -58,8 +58,8 @@ def test_SharedInputsNode_00(debug_graph=False):
     initial._data[:] = 1
     initial.taint()
     assert initial.tainted == True
-    assert initial2.tainted == False
-    assert initial3.tainted == False
+    assert initial2.tainted == True
+    assert initial3.tainted == True
     assert sharedinput.tainted == True
     assert view.tainted == True
     assert (output_sharedinput.data == 1).all()
@@ -73,9 +73,9 @@ def test_SharedInputsNode_00(debug_graph=False):
 
     initial2._data[:] = 2
     initial2.taint()
-    assert initial.tainted == False
+    assert initial.tainted == True
     assert initial2.tainted == True
-    assert initial3.tainted == False
+    assert initial3.tainted == True
     assert sharedinput.tainted == True
     assert view.tainted == True
     assert (output_sharedinput.data == 2).all()
@@ -93,8 +93,8 @@ def test_SharedInputsNode_00(debug_graph=False):
 def test_SharedInputsNode_01():
     array = arange(12.0).reshape(3, 4)
     with Graph() as graph:
-        initial = Array("array 1", array, mode='fill')
-        initial2 = Array("array 2", array, mode='fill')
+        initial = Array("array 1", array, mode='store_weak')
+        initial2 = Array("array 2", array, mode='store_weak')
         sharedinput = SharedInputsNode("shared input")
         sharedinput2 = SharedInputsNode("shared input 2")
 
