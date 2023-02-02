@@ -3,7 +3,7 @@ from collections.abc import Sequence
 from .exception import CriticalError
 from .tools import IsIterable
 
-from typing import List, Dict
+from typing import List, Dict, Union
 
 class EdgeContainer:
     _kw_edges: Dict
@@ -96,6 +96,28 @@ class EdgeContainer:
 
     def __iter__(self):
         return iter(self._pos_edges)
+
+    def iter_data(self):
+        for edge in self._pos_edges:
+            yield edge.data
+
+    def iter(self, key: Union[int, str, slice, Sequence]):
+        if isinstance(key, int):
+            yield self._pos_edges[key]
+        elif isinstance(key, str):
+            yield self._kw_edges[key]
+        elif isinstance(key, slice):
+            yield from self._pos_edges[key]
+        elif isinstance(key, Sequence):
+            for subkey in key:
+                if isinstance(key, int):
+                    yield self._pos_edges[key]
+                elif isinstance(key, str):
+                    yield self._kw_edges[key]
+                else:
+                    raise CriticalError(f'Invalid subkey type {type(subkey).__name__}')
+        else:
+            raise CriticalError(f'Invalid key type {type(key).__name__}')
 
     def __contains__(self, name):
         return name in self._kw_edges

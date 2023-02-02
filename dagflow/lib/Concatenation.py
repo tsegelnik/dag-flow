@@ -19,8 +19,8 @@ class Concatenation(FunctionNode):
     def _typefunc(self) -> None:
         """A output takes this function to determine the dtype and shape"""
         check_has_inputs(self)
-        combine_inputs_shape_to_output(self, "result")
-        eval_output_dtype(self, "result")
+        combine_inputs_shape_to_output(self, slice(None), "result")
+        eval_output_dtype(self, slice(None), "result")
 
     def _fcn(self, _, inputs, outputs):
         res = outputs["result"].data

@@ -43,7 +43,7 @@ class WeightedSum(FunctionNode):
                 f"with the number of inputs (={leninp})!"
             )
         copy_input_shape_to_output(self, 0, "result")
-        eval_output_dtype(self, "result")
+        eval_output_dtype(self, slice(None), "result")
 
     def _fcn_number(self, _, inputs, outputs):
         """

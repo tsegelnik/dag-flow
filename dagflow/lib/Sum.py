@@ -30,4 +30,4 @@ class Sum(FunctionNode):
         """A output takes this function to determine the dtype and shape"""
         check_has_inputs(self)
         copy_input_shape_to_output(self, 0, "result")
-        eval_output_dtype(self, "result")
+        eval_output_dtype(self, slice(None), "result")
