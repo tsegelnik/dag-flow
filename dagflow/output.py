@@ -44,6 +44,7 @@ class Output:
         debug: Optional[bool] = None,
         allocatable: Optional[bool] = None,
         data: Optional[NDArray] = None,
+        owns_buffer: Optional[bool] = None,
         dtype: Optional[DTypeLike] = None,
         shape: Optional[Tuple[int, ...]] = None,
         forbid_reallocation: bool = False
@@ -61,8 +62,10 @@ class Output:
         if data is None:
             self._allocatable = True if allocatable is None else allocatable
         else:
-            self._allocatable = False
-            self._set_data(data, owns_buffer=True)
+            if owns_buffer is None:
+                owns_buffer = True
+            self._allocatable = not owns_buffer
+            self._set_data(data, owns_buffer=owns_buffer)
 
             if allocatable or dtype is not None or shape is not None:
                 raise InitializationError(output=self, node=node)
@@ -139,12 +142,19 @@ class Output:
                 output=self,
             ) from exc
 
-    def _set_data(self, data, *, owns_buffer: bool, forbid_reallocation: Optional[bool]=None):
+    def _set_data(
+        self,
+        data,
+        *,
+        owns_buffer: bool,
+        override: bool = False,
+        forbid_reallocation: Optional[bool]=None
+    ):
         if self.closed:
             raise ClosedGraphError(
                 "Unable to set output data.", node=self._node, output=self
             )
-        if self._data is not None:
+        if self._data is not None and not override:
             # TODO: this will fail during reallocation
             raise AllocationError(
                 "Output already has data.", node=self._node, output=self
@@ -268,7 +278,7 @@ class Output:
         return RepeatedOutput(self)
 
     def allocate(self, **kwargs):
-        if not self._allocatable or self.has_data:
+        if not self._allocatable:
             return True
 
         if self._allocating_input:
@@ -284,9 +294,13 @@ class Output:
                         input=input,
                     )
 
-                idata[:] = self._data
-                self._set_data(idata, owns_buffer=False)
+                if self._data is not idata:
+                    idata[:] = self._data
+                    self._set_data(idata, owns_buffer=False, override=True)
                 return True
+
+        if self.has_data:
+            return True
 
         if self.shape is None or self.dtype is None:
             raise AllocationError(

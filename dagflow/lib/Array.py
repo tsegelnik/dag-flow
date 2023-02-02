@@ -18,16 +18,22 @@ class Array(FunctionNode):
 
         if mode=='store':
             self._output = self._add_output(outname, data=self._data)
+        elif mode=='store_weak':
+            self._output = self._add_output(outname, data=self._data, owns_buffer=False)
         elif mode=='fill':
             self._output = self._add_output(outname, dtype=self._data.dtype, shape=self._data.shape)
         else:
             raise InitializationError(f'Array: invalid mode "{mode}"', node=self)
 
+        self._init_fcn()
+
+    def _init_fcn(self):
         self._functions.update({
                 "store": self._fcn_store,
+                "store_weak": self._fcn_store,
                 "fill": self._fcn_fill
                 })
-        self.fcn = self._functions[mode]
+        self.fcn = self._functions[self._mode]
 
     def _fcn_store(self, *args):
         return self._data
@@ -39,3 +45,9 @@ class Array(FunctionNode):
 
     def _typefunc(self) -> None:
         pass
+
+    def _post_allocate(self) -> None:
+        if self._mode=='fill':
+            return
+
+        self._data = self._output._data
