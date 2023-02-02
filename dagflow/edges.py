@@ -115,9 +115,9 @@ class EdgeContainer:
                 elif isinstance(key, str):
                     yield self._kw_edges[key]
                 else:
-                    raise CriticalError('Invalid subkey type {}'.format(type(subkey).__name__))
+                    raise CriticalError(f'Invalid subkey type {type(subkey).__name__}')
         else:
-            raise CriticalError('Invalid key type {}'.format(type(key).__name__))
+            raise CriticalError(f'Invalid key type {type(key).__name__}')
 
     def __contains__(self, name):
         return name in self._kw_edges
