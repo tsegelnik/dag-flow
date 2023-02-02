@@ -97,6 +97,10 @@ class EdgeContainer:
     def __iter__(self):
         return iter(self._pos_edges)
 
+    def iter_data(self):
+        for edge in self._pos_edges:
+            yield edge.data
+
     def __contains__(self, name):
         return name in self._kw_edges
 
