@@ -3,7 +3,7 @@ from typing import Optional, Union
 class SimpleFormatter():
     _base: str
     _numfmt: str
-    def __init__(self, base: str, numfmt: str = '_{02d}'):
+    def __init__(self, base: str, numfmt: str = '_{:02d}'):
         self._base = base
         self._numfmt = numfmt
 
