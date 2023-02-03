@@ -5,19 +5,23 @@ from dagflow.graph import Graph
 from dagflow.lib.Array import Array
 from dagflow.lib.Cholesky import Cholesky
 import numpy as np
+import scipy
 from pytest import raises
 from dagflow.graphviz import savegraph
 
-def test_Cholesky_00():
+import pytest
+
+@pytest.mark.parametrize("dtype", ('d', 'f'))
+def test_Cholesky_00(dtype):
     inV = np.array([
         [10, 2,   1],
         [ 2, 12,  3],
         [ 1,  3, 13],
-        ], dtype='d')
+        ], dtype=dtype)
     inV2 = inV@inV
     inD = np.diag(inV)
-    inL2d1 = np.linalg.cholesky(inV)
-    inL2d2 = np.linalg.cholesky(inV2)
+    inL2d1 = scipy.linalg.cholesky(inV, lower=True)
+    inL2d2 = scipy.linalg.cholesky(inV2, lower=True)
     inL1d = np.sqrt(inD)
 
     with Graph(close=True) as graph:
@@ -47,7 +51,7 @@ def test_Cholesky_00():
     assert np.allclose(inL2d2, result2d2, atol=0, rtol=0)
     assert np.allclose(inL1d, result1d, atol=0, rtol=0)
 
-    savegraph(graph, "output/test_Cholesky_00.png")
+    savegraph(graph, f"output/test_Cholesky_00_{dtype}.png")
 
 def test_Cholesky_01_typefunctions():
     inV = np.array([
