@@ -2,8 +2,7 @@ from collections.abc import Sequence
 from typing import Union
 
 from numpy import result_type
-
-from dagflow.tools import IsIterable
+from itertools import repeat
 
 from .exception import TypeFunctionError
 from .types import NodeT
@@ -52,12 +51,10 @@ def copy_input_to_output(
         return
 
     if len(inputs)==1:
-        input0 = inputs[0]
-        for output in outputs:
-            cpy(input0, output)
-    else:
-        for input, output in zip(inputs, outputs):
-            cpy(input, output)
+        inputs = repeat(inputs[0], len(outputs))
+
+    for input, output in zip(inputs, outputs, strict=True):
+        cpy(input, output)
 
 
 def copy_input_dtype_to_output(
@@ -67,15 +64,13 @@ def copy_input_dtype_to_output(
 ) -> None:
     """Coping input dtype and setting for the output"""
     inputs = tuple(node.inputs.iter(inputkey))
-    outputs = node.outputs.iter(outputkey)
+    outputs = tuple(node.outputs.iter(outputkey))
 
     if len(inputs)==1:
-        dtype = inputs[0].dtype
-        for output in outputs:
-            output._dtype = dtype
-    else:
-        for input, output in zip(inputs, outputs):
-            output._dtype = input.dtype
+        inputs = repeat(inputs[0], len(outputs))
+
+    for input, output in zip(inputs, outputs, strict=True):
+        output._dtype = input.dtype
 
 
 def copy_input_shape_to_output(
@@ -85,15 +80,13 @@ def copy_input_shape_to_output(
 ) -> None:
     """Coping input shape and setting for the output"""
     inputs = tuple(node.inputs.iter(inputkey))
-    outputs = node.outputs.iter(outputkey)
+    outputs = tuple(node.outputs.iter(outputkey))
 
     if len(inputs)==1:
-        shape = inputs[0].shape
-        for output in outputs:
-            output._shape = shape
-    else:
-        for input, output in zip(inputs, outputs):
-            output._shape = input.shape
+        inputs = repeat(inputs[0], len(outputs))
+
+    for input, output in zip(inputs, outputs, strict=True):
+        output._shape = input.shape
 
 
 def combine_inputs_shape_to_output(
@@ -172,7 +165,6 @@ def check_input_dtype(
                 input=input,
             )
 
-
 def check_inputs_equivalence(
     node: NodeT,
     inputkey: Union[str, int, slice, Sequence] = slice(None)
@@ -186,6 +178,33 @@ def check_inputs_equivalence(
         if input.dtype != dtype or input.shape != shape:
             raise TypeFunctionError(
                 f"Input data {input.dtype} [{input.shape}] is inconsistent with {dtype} [{shape}]",
+                node=node,
+                input=input,
+            )
+
+def check_inputs_multiplicable_mat(
+    node: NodeT,
+    inputkey1: Union[str, int, slice, Sequence],
+    inputkey2: Union[str, int, slice, Sequence]
+):
+    """Checking that inputs from key1 and key2 may be multiplied (matrix)"""
+    inputs1 = tuple(node.inputs.iter(inputkey1))
+    inputs2 = tuple(node.inputs.iter(inputkey2))
+
+    len1, len2 = len(inputs1), len(inputs2)
+    if len1==len2:
+        pass
+    elif len1==1:
+        inputs1 = repeat(inputs1[0], len2)
+    elif len2==1:
+        inputs2 = repeat(inputs2[0], len1)
+
+    for input1, input2 in zip(inputs1, inputs2, strict=True):
+        shape1 = input1.shape
+        shape2 = input2.shape
+        if shape1[-1]!=shape2[0]:
+            raise TypeFunctionError(
+                f"Inputs {shape1} and {shape2} are not multiplicable",
                 node=node,
                 input=input,
             )
