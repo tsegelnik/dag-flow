@@ -1,6 +1,7 @@
 from .input import Input
 from .output import Output
 from .printl import printl
+from .types import NodeT
 
 try:
     import pygraphviz as G
@@ -62,18 +63,53 @@ else:
                 self._add_edges(nodedag)
             self.update_style()
 
-        def get_id(self, object, suffix=""):
+        def get_id(self, object, suffix: str="") -> str:
             name = type(object).__name__
             omap = self._node_id_map.setdefault(name, {})
             onum = omap.setdefault(object, len(omap))
             return f"{name}_{onum}{suffix}"
 
+        def get_label(self, node: NodeT) -> str:
+            text = node.label() or node.name
+            try:
+                out0 = node.outputs[0]
+            except IndexError:
+                shape0 = '?'
+                dtype0 = '?'
+            else:
+                shape0 = out0.shape
+                if shape0 is None:
+                    shape0 = '?'
+                elif len(shape0)==1:
+                    shape0=str(shape0[0])
+                else:
+                    shape0=str(shape0)[1:-1]
+
+                dtype0 = out0.dtype
+                if dtype0 is None:
+                    dtype0 = '?'
+                else:
+                    dtype0 = dtype0.char
+
+            npos = len(node.outputs)
+            nall = node.outputs.len_all()
+            if nall==npos:
+                if npos>1:
+                    nout = f' N{npos}'
+                else:
+                    nout = ''
+            else:
+                nout=f' N{npos}/{nall}'
+
+            return f"{{[{shape0}]{dtype0}{nout} | {text}}}"
+
         def _add_node(self, nodedag):
-            styledict = {"shape": "Mrecord"}
+            styledict = {
+                "shape": "Mrecord",
+                "label": self.get_label(nodedag)
+            }
             target = self.get_id(nodedag)
-            self._graph.add_node(
-                target, label=nodedag.label() or nodedag.name, **styledict
-            )
+            self._graph.add_node(target, **styledict)
             nodedot = self._graph.get_node(target)
             self._nodes[nodedag] = nodedot
 
@@ -109,6 +145,7 @@ else:
             styledict = {}
             source = self.get_id(nodedag)
             target = self.get_id(output, "_out")
+            self._get_index(output, styledict, 'taillabel')
 
             self._graph.add_node(target, label="", shape="none", **styledict)
             self._graph.add_edge(
