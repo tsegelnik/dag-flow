@@ -49,7 +49,7 @@ class NormalizeCorrelatedVars(FunctionNode):
         central = inputs["central"].data
         for input, output in zip(inputs.iter_data(), outputs.iter_data()):
             matmul(L, input, out=output)
-            add(output, central, out= output)
+            add(output, central, out=output)
 
     def _fcn_forward_1d(self, _, inputs, outputs):
         inputs.touch()
@@ -65,7 +65,7 @@ class NormalizeCorrelatedVars(FunctionNode):
         central = inputs["central"].data
         for input, output in zip(inputs.iter_data(), outputs.iter_data()):
             multiply(Ldiag, input, out=output)
-            add(output, central, out= output)
+            add(output, central, out=output)
 
     def _typefunc(self) -> None:
         check_has_inputs(self)
