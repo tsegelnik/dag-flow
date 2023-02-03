@@ -91,9 +91,6 @@ class EdgeContainer:
         """Returns a number of the all legs"""
         return len(self._all_edges)
 
-    def __dir__(self):
-        return self._kw_edges.keys()
-
     def __iter__(self):
         return iter(self._pos_edges)
 
@@ -110,10 +107,12 @@ class EdgeContainer:
             yield from self._pos_edges[key]
         elif isinstance(key, Sequence):
             for subkey in key:
-                if isinstance(key, int):
-                    yield self._pos_edges[key]
-                elif isinstance(key, str):
-                    yield self._kw_edges[key]
+                if isinstance(subkey, int):
+                    yield self._pos_edges[subkey]
+                elif isinstance(subkey, str):
+                    yield self._kw_edges[subkey]
+                elif isinstance(subkey, slice):
+                    yield from self._pos_edges[subkey]
                 else:
                     raise CriticalError(f'Invalid subkey type {type(subkey).__name__}')
         else:
