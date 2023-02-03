@@ -114,7 +114,7 @@ def check_input_dimension(
     ndim: int
 ):
     """Checking the dimension of the input"""
-    for input in node.inputs[inputkey]:
+    for input in node.inputs.iter(inputkey):
         dim = len(input.shape)
         if dim != ndim:
             raise TypeFunctionError(
@@ -128,7 +128,7 @@ def check_input_square(
     inputkey: Union[str, int, slice, Sequence],
 ):
     """Checking input is a square matrix"""
-    for input in node.inputs[inputkey]:
+    for input in node.inputs.iter(inputkey):
         shape = input.shape
         dim = len(shape)
         if dim != 2 or shape[0] != shape[1]:
@@ -138,13 +138,32 @@ def check_input_square(
                 input=input,
             )
 
+def check_input_square_or_diag(
+    node: NodeT,
+    inputkey: Union[str, int, slice, Sequence],
+) -> int:
+    """Check if input is a square matrix or diagonal (1d) of a square matrix.
+    Returns the maximal dimension."""
+    dim_max = 0
+    for input in node.inputs.iter(inputkey):
+        shape = input.shape
+        dim = len(shape)
+        dim_max = max(dim, dim_max)
+        if (dim == 2 and shape[0] != shape[1]) and dim != 1:
+            raise TypeFunctionError(
+                f"The node supports only square inputs (or 1d as diagonal). Got {shape}!",
+                node=node,
+                input=input,
+            )
+    return dim_max
+
 def check_input_dtype(
     node: NodeT,
     inputkey: Union[str, int, slice, Sequence],
     dtype
 ):
     """Checking the dimension of the input"""
-    for input in node.inputs[inputkey]:
+    for input in node.inputs.iter(inputkey):
         dtt = input.dtype
         if dtt != dtype:
             raise TypeFunctionError(
