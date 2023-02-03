@@ -6,6 +6,7 @@ from dagflow.lib.Array import Array
 from dagflow.lib.Cholesky import Cholesky
 import numpy as np
 from pytest import raises
+from dagflow.graphviz import savegraph
 
 def test_Cholesky_00():
     inV = np.array([
@@ -13,21 +14,40 @@ def test_Cholesky_00():
         [ 2, 12,  3],
         [ 1,  3, 13],
         ], dtype='d')
-    inL = np.linalg.cholesky(inV)
+    inV2 = inV@inV
+    inD = np.diag(inV)
+    inL2d1 = np.linalg.cholesky(inV)
+    inL2d2 = np.linalg.cholesky(inV2)
+    inL1d = np.sqrt(inD)
 
-    with Graph(close=True):
-        V = Array('V', inV, mode='store')
-        chol = Cholesky('Cholesky')
-        V >> chol
+    with Graph(close=True) as graph:
+        V1 = Array('V1', inV, mode='store')
+        V2 = Array('V2', inV2, mode='store')
+        D = Array('D', (inD), mode='store')
+        chol2d = Cholesky('Cholesky 2d')
+        chol1d = Cholesky('Cholesky 1d')
+        (V1, V2) >> chol2d
+        D >> chol1d
 
-    assert V.tainted==True
-    assert chol.tainted==True
+    assert V1.tainted==True
+    assert V2.tainted==True
+    assert chol2d.tainted==True
+    assert chol1d.tainted==True
 
-    result = chol.get_data(0)
-    assert V.tainted==False
-    assert chol.tainted==False
+    result2d1 = chol2d.get_data(0)
+    result2d2 = chol2d.get_data(1)
+    result1d = chol1d.get_data(0)
+    assert V1.tainted==False
+    assert V2.tainted==False
+    assert D.tainted==False
+    assert chol2d.tainted==False
+    assert chol1d.tainted==False
 
-    assert np.allclose(inL, result, atol=0, rtol=0)
+    assert np.allclose(inL2d1, result2d1, atol=0, rtol=0)
+    assert np.allclose(inL2d2, result2d2, atol=0, rtol=0)
+    assert np.allclose(inL1d, result1d, atol=0, rtol=0)
+
+    savegraph(graph, "output/test_Cholesky_00.png")
 
 def test_Cholesky_01_typefunctions():
     inV = np.array([
