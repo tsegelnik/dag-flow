@@ -13,11 +13,7 @@ import pytest
 
 @pytest.mark.parametrize("dtype", ('d', 'f'))
 def test_Cholesky_00(dtype):
-    inV = np.array([
-        [10, 2,   1],
-        [ 2, 12,  3],
-        [ 1,  3, 13],
-        ], dtype=dtype)
+    inV = np.array([[10, 2,   1], [ 2, 12,  3], [ 1,  3, 13]], dtype=dtype)
     inV2 = inV@inV
     inD = np.diag(inV)
     inL2d1 = scipy.linalg.cholesky(inV, lower=True)
