@@ -1,5 +1,6 @@
 from numba import jit
 from numpy import multiply, zeros
+from numpy.typing import NDArray
 
 from ..exception import InitializationError
 from ..input_extra import MissingInputAddEach
@@ -8,7 +9,11 @@ from ..typefunctions import check_has_inputs, check_input_dimension
 
 
 @jit(nopython=True)
-def _integrate1d(data, weighted, orders):
+def _integrate1d(data: NDArray, weighted: NDArray, orders: NDArray):
+    """
+    Summing up `weighted` within `orders` and puts the result into `data`.
+    The 1-dimensional version.
+    """
     iprev = 0
     for i, order in enumerate(orders):
         inext = iprev + order
@@ -17,7 +22,20 @@ def _integrate1d(data, weighted, orders):
 
 
 @jit(nopython=True)
-def _integrate2d(data, weighted, orders):
+def _integrate2d(data: NDArray, weighted: NDArray, orders: NDArray):
+    """
+    Summing up `weighted` within `orders` and puts the result into `data`
+    The 2-dimensional version, so all the arrays must be 2d.
+
+    .. note:: `Numba`_ doesn't like arrays of elements with different size,
+        so arguments must have the elements with the same size.
+        This happens due to typing: arrays with elements of different sizes
+        have `dtype=object`, but `Numba`_ doesn't like the `object` type
+        and works only with numeric and sequence types (including `Numpy`_ types)
+
+    .. _Numba: https://numba.pydata.org
+    .. _Numpy: https://numpy.org
+    """
     shape = data.shape
     iprev = 0
     for i, orderx in enumerate(orders[0][: shape[0]]):
@@ -43,12 +61,13 @@ class Integrator(FunctionNode):
     and must have only the lists with the same length (`orders` too).
 
     Note that the `Integrator` preallocates temporary buffer.
+    For the integration algorithm the `Numba`_ package is used.
 
-    .. note:: `Numba`_ doesn't like , so the inputs (including `orders`)
-        must have the elements with the same size.
+    .. note:: `Numba`_ doesn't like arrays of elements with different size,
+        so the inputs (including `orders`) must have the elements with the same size.
         This happens due to typing: arrays with elements of different sizes
         have `dtype=object`, but `Numba`_ doesn't like the `object` type
-        and works only with numeric types (including `Numpy`_ types)
+        and works only with numeric and sequence types (including `Numpy`_ types)
 
     .. _Numba: https://numba.pydata.org
     .. _Numpy: https://numpy.org
@@ -68,29 +87,35 @@ class Integrator(FunctionNode):
         super().__init__(*args, **kwargs)
         self._add_input("weights", positional=False)
         self._add_input("orders", positional=False)
-        self._functions.update({"1d": self._fcn_1d, "2d": self._fcn_2d})
 
     @property
     def mode(self):
+        """The integration mode: `1d` or `2d`"""
         return self._mode
 
     @property
     def precision(self):
+        """The integration precision"""
         return self._precision
 
     def _typefunc(self) -> None:
-        """The function to determine the dtype and shape"""
+        """
+        The function to determine the dtype and shape.
+        Checks inputs dimension within `Integrator.mode`,
+        selects an integration algorithm, determines dtype and shape for outputs
+        """
         check_has_inputs(self)
         check_input_dimension(
             self, slice(None), 1 if self._mode == "1d" else 2
         )
-        self.fcn = self._functions[self._mode]
+        # NOTE: should we check the `orders` input correctness?
+        self.__integrate = _integrate1d if self._mode == "1d" else _integrate2d
         for output, input in zip(self.outputs, self.inputs):
             output._dtype = self._precision
             output._shape = input.shape
 
     def post_allocate(self):
-        """Find the longest input and allocate the `buffer`"""
+        """Finds the longest input and allocates the `buffer`"""
         shape = self.inputs[0].shape
         dtype = self.inputs[0].dtype
         if len(self.inputs) > 1:
@@ -104,20 +129,16 @@ class Integrator(FunctionNode):
                         break
         self.__buffer = zeros(shape, dtype)
 
-    def _fcn_1d(self, _, inputs, outputs):
+    def _fcn(self, _, inputs, outputs):
+        """
+        Integrates inputs within `weights` and `orders` inputs.
+        The integration algorithm is selected in `Integrator._typefunc`
+        within `Integrator.mode`
+        """
         weights = inputs["weights"].data
         orders = inputs["orders"].data
         for input, output in zip(inputs.iter_data(), outputs.iter_data()):
             multiply(input, weights, out=self.__buffer)
-            _integrate1d(output, self.__buffer, orders)
-        if self.debug:
-            return [outputs.iter_data()]
-
-    def _fcn_2d(self, _, inputs, outputs):
-        weights = inputs["weights"].data
-        orders = inputs["orders"].data
-        for input, output in zip(inputs.iter_data(), outputs.iter_data()):
-            multiply(input, weights, out=self.__buffer)
-            _integrate2d(output, self.__buffer, orders)
+            self.__integrate(output, self.__buffer, orders)
         if self.debug:
             return [outputs.iter_data()]
