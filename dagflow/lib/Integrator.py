@@ -16,16 +16,14 @@ def _integrate1d(data, weighted, orders):
         iprev = inext
 
 
-# TODO: Numby doesn't like this.
-# I think there is a problem with `orders`
-# because of `dtype=object` due to non-equal shape
-#@jit(nopython=True)
+@jit(nopython=True)
 def _integrate2d(data, weighted, orders):
+    shape = data.shape
     iprev = 0
-    for i, orderx in enumerate(orders[0]):
+    for i, orderx in enumerate(orders[0][: shape[0]]):
         inext = iprev + orderx
         jprev = 0
-        for j, ordery in enumerate(orders[1]):
+        for j, ordery in enumerate(orders[1][: shape[1]]):
             jnext = jprev + ordery
             data[i, j] = weighted[iprev:inext, jprev:jnext].sum()
             jprev = jnext
@@ -41,9 +39,19 @@ class Integrator(FunctionNode):
     The `Integrator` has two modes: `1d` and `2d`.
     The mode is chosen by `mode` kwarg.
 
-    For `2d` integration arrays are like `array([...], [...])`.
+    For `2d` integration arrays should be like `array([...], [...])`
+    and must have only the lists with the same length (`orders` too).
 
     Note that the `Integrator` preallocates temporary buffer.
+
+    .. note:: `Numba`_ doesn't like , so the inputs (including `orders`)
+        must have the elements with the same size.
+        This happens due to typing: arrays with elements of different sizes
+        have `dtype=object`, but `Numba`_ doesn't like the `object` type
+        and works only with numeric types (including `Numpy`_ types)
+
+    .. _Numba: https://numba.pydata.org
+    .. _Numpy: https://numpy.org
     """
 
     def __init__(self, *args, **kwargs):
