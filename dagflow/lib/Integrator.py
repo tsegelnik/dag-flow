@@ -139,10 +139,9 @@ class Integrator(FunctionNode):
             output._shape = input.shape
 
     def post_allocate(self):
-        """Finds the longest input and allocates the `buffer`"""
-        self.__buffer = zeros(
-            max(prod(input.shape) for input in self.inputs), self._precision
-        )
+        """Allocates the `buffer` within `weights`"""
+        weights = self.inputs["weights"]
+        self.__buffer = zeros(shape=weights.shape, dtype=weights.dtype)
 
     def _fcn(self, _, inputs, outputs):
         """
@@ -153,8 +152,7 @@ class Integrator(FunctionNode):
         weights = inputs["weights"].data
         orders = inputs["orders"].data
         for input, output in zip(inputs.iter_data(), outputs.iter_data()):
-            view = self.__buffer.reshape(output.shape)
-            multiply(input, weights, out=view)
-            self.__integrate(output, view, orders)
+            multiply(input, weights, out=self.__buffer)
+            self.__integrate(output, self.__buffer, orders)
         if self.debug:
             return [outputs.iter_data()]
