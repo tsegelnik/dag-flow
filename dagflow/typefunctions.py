@@ -51,15 +51,21 @@ def copy_input_to_output(
     outputs = tuple(node.outputs.iter(outputkey))
 
     if dtype and shape:
+
         def cpy(input, output):
             output._dtype = input.dtype
             output._shape = input.shape
+
     elif dtype:
+
         def cpy(input, output):
             output._dtype = input.dtype
+
     elif shape:
+
         def cpy(input, output):
             output._shape = input.shape
+
     else:
         return
 
@@ -117,12 +123,15 @@ def combine_inputs_shape_to_output(
 def check_input_dimension(
     node: NodeT,
     inputkey: Union[str, int, slice, Sequence],
-    ndim: int
+    ndim: int,
+    strict: bool = True,
 ):
     """Checking the dimension of the input"""
     for input in node.inputs.iter(inputkey):
         dim = len(input.shape)
-        if dim != ndim:
+        if ndim != dim or (
+            not strict and ndim != dim - 1 and input.shape[0] != 1
+        ):
             raise TypeFunctionError(
                 f"The node supports only {ndim}d inputs. Got {dim}d!",
                 node=node,

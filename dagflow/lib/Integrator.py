@@ -1,8 +1,8 @@
 from numba import jit
-from numpy import multiply, zeros
+from numpy import prod, multiply, zeros
 from numpy.typing import NDArray
 
-from ..exception import InitializationError
+from ..exception import TypeFunctionError
 from ..input_extra import MissingInputAddEach
 from ..nodes import FunctionNode
 from ..typefunctions import check_has_inputs, check_input_dimension
@@ -55,7 +55,7 @@ class Integrator(FunctionNode):
     The `precision` of integration can be chosen by `precision` kwarg.
 
     The `Integrator` has two modes: `1d` and `2d`.
-    The mode is chosen by `mode` kwarg.
+    The mode is chosen by *automaticly* in the type function.
 
     For `2d` integration arrays should be like `array([...], [...])`
     and must have only the lists with the same length (`orders` too).
@@ -73,25 +73,14 @@ class Integrator(FunctionNode):
     .. _Numpy: https://numpy.org
     """
 
+    # TODO: design methods for 0d orders
+
     def __init__(self, *args, **kwargs):
         kwargs.setdefault("missing_input_handler", MissingInputAddEach())
-        if (mode := kwargs.pop("mode", None)) is None:
-            self._mode = "1d"
-        elif mode not in {"1d", "2d"}:
-            raise InitializationError(
-                f"Mode must be '1d' or '2d', but given {mode}", node=self
-            )
-        else:
-            self._mode = mode
         self._precision = kwargs.pop("precision", "d")
         super().__init__(*args, **kwargs)
         self._add_input("weights", positional=False)
         self._add_input("orders", positional=False)
-
-    @property
-    def mode(self):
-        """The integration mode: `1d` or `2d`"""
-        return self._mode
 
     @property
     def precision(self):
@@ -101,33 +90,59 @@ class Integrator(FunctionNode):
     def _typefunc(self) -> None:
         """
         The function to determine the dtype and shape.
-        Checks inputs dimension within `Integrator.mode`,
-        selects an integration algorithm, determines dtype and shape for outputs
+        Checks inputs dimension and, selects an integration algorithm,
+        determines dtype and shape for outputs
         """
         check_has_inputs(self)
-        check_input_dimension(
-            self, slice(None), 1 if self._mode == "1d" else 2
-        )
-        # NOTE: should we check the `orders` input correctness?
-        self.__integrate = _integrate1d if self._mode == "1d" else _integrate2d
+        ndim = len(self.inputs[0].shape)
+        if ndim > 2:
+            raise TypeFunctionError(
+                "The Integrator works only within 1d and 2d mode!", node=self
+            )
+        check_input_dimension(self, slice(None), ndim)
+        self.__integrate = _integrate1d if ndim == 1 else _integrate2d
+        orders = self.inputs["orders"]
+        try:
+            check_input_dimension(self, ("orders",), ndim)
+        except TypeFunctionError as exc:
+            try:
+                check_input_dimension(self, ("orders",), 0)
+            except Exception as exc:
+                raise TypeFunctionError(
+                    f"The `orders` input must have {ndim=} or 0, but given {len(orders.shape)}",
+                    node=self,
+                    input=orders,
+                ) from exc
+        if orders.shape[0] != 1:
+            if ndim == 1:
+                if sum(orders.data) > self.inputs[0].shape[0]:
+                    raise TypeFunctionError(
+                        "Orders must be consistent with inputs lenght!",
+                        node=self,
+                        input=orders,
+                    )
+            elif any(
+                sum(orders.data[i]) > n
+                for i, n in enumerate(self.inputs[0].shape)
+            ):
+                raise TypeFunctionError(
+                    "Orders must be consistent with inputs lenght!",
+                    node=self,
+                    input=orders,
+                )
+        else:
+            # TODO: design checks for ndim - 1 integration
+            # for example, `orders.shape(1,5)` for 1d integration of `data.shape(4,5)`
+            pass
         for output, input in zip(self.outputs, self.inputs):
             output._dtype = self._precision
             output._shape = input.shape
 
     def post_allocate(self):
         """Finds the longest input and allocates the `buffer`"""
-        shape = self.inputs[0].shape
-        dtype = self.inputs[0].dtype
-        if len(self.inputs) > 1:
-            for input in self.inputs[1:]:
-                for i, j in zip(input.shape, shape):
-                    if i > j:
-                        shape = input.shape
-                        dtype = input.dtype
-                        break
-                    elif i < j:
-                        break
-        self.__buffer = zeros(shape, dtype)
+        self.__buffer = zeros(
+            max(prod(input.shape) for input in self.inputs), self._precision
+        )
 
     def _fcn(self, _, inputs, outputs):
         """
@@ -138,7 +153,8 @@ class Integrator(FunctionNode):
         weights = inputs["weights"].data
         orders = inputs["orders"].data
         for input, output in zip(inputs.iter_data(), outputs.iter_data()):
-            multiply(input, weights, out=self.__buffer)
-            self.__integrate(output, self.__buffer, orders)
+            view = self.__buffer.reshape(output.shape)
+            multiply(input, weights, out=view)
+            self.__integrate(output, view, orders)
         if self.debug:
             return [outputs.iter_data()]
