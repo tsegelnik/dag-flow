@@ -7,6 +7,19 @@ from itertools import repeat
 from .exception import TypeFunctionError
 from .types import NodeT
 
+try:
+    zip((), (), strict=True)
+except TypeError:
+    # provide a replacement of strict zip from Python 3.1
+    # to be deprecated at some point
+    from itertools import zip_longest
+    def zip(*iterables, strict: bool=False):
+        sentinel = object()
+        for combo in zip_longest(*iterables, fillvalue=sentinel):
+            if strict and sentinel in combo:
+                raise ValueError('Iterables have different lengths')
+            yield combo
+
 def check_has_inputs(node: NodeT) -> None:
     """Checking if the node has inputs"""
     if len(node.inputs) == 0:
