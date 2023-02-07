@@ -33,6 +33,9 @@ class Array(FunctionNode):
                 })
         self.fcn = self._functions[self._mode]
 
+        if mode=='store':
+            self.close()
+
     def _fcn_store(self, *args):
         return self._data
 
