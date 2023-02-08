@@ -123,15 +123,12 @@ def combine_inputs_shape_to_output(
 def check_input_dimension(
     node: NodeT,
     inputkey: Union[str, int, slice, Sequence],
-    ndim: int,
-    strict: bool = True,
+    ndim: int
 ):
     """Checking the dimension of the input"""
     for input in node.inputs.iter(inputkey):
         dim = len(input.shape)
-        if ndim != dim or (
-            not strict and ndim != dim - 1 and input.shape[0] != 1
-        ):
+        if ndim != dim:
             raise TypeFunctionError(
                 f"The node supports only {ndim}d inputs. Got {dim}d!",
                 node=node,
