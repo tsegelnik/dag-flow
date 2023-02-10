@@ -207,25 +207,26 @@ else:
             self._edges[input] = (nodein, edge, nodeout)
 
         def _set_style_node(self, node, attr):
-            if not node:
+            if node is None:
                 attr["color"] = "gray"
-            elif node.invalid:
-                attr["color"] = "black"
-            elif node.being_evaluated:
-                attr["color"] = "gold"
-            elif node.tainted:
-                attr["color"] = "red"
-            elif node.frozen_tainted:
-                attr["color"] = "blue"
-            elif node.frozen:
-                attr["color"] = "cyan"
-            elif node.immediate:
-                attr["color"] = "green"
             else:
-                attr["color"] = "forestgreen"
+                if node.invalid:
+                    attr["color"] = "black"
+                elif node.being_evaluated:
+                    attr["color"] = "gold"
+                elif node.tainted:
+                    attr["color"] = "red"
+                elif node.frozen_tainted:
+                    attr["color"] = "blue"
+                elif node.frozen:
+                    attr["color"] = "cyan"
+                elif node.immediate:
+                    attr["color"] = "green"
+                else:
+                    attr["color"] = "forestgreen"
 
-            if node.exception is not None:
-                attr["color"] = "magenta"
+                if node.exception is not None:
+                    attr["color"] = "magenta"
 
         def _set_style_edge(self, obj, attrin, attr, attrout):
             if isinstance(obj, Input):
