@@ -19,6 +19,7 @@ from typing import Optional
 
 class Node(Legs):
     _name = undefined("name")
+    _mark: Optional[str] = None
     _label = undefined("label")
     _graph = undefined("graph")
     _fcn = undefined("function")
@@ -96,6 +97,10 @@ class Node(Legs):
     @name.setter
     def name(self, name):
         self._name = name
+
+    @property
+    def mark(self):
+        return self._mark
 
     @property
     def logger(self) -> Logger:

@@ -3,6 +3,9 @@ from .output import Output
 from .printl import printl
 from .types import NodeT
 
+from collections.abc import Sequence
+from typing import Union
+
 try:
     import pygraphviz as G
 except ImportError:
@@ -80,10 +83,7 @@ else:
                 shape0 = out0.shape
                 if shape0 is None:
                     shape0 = '?'
-                elif len(shape0)==1:
-                    shape0=str(shape0[0])
-                else:
-                    shape0=str(shape0)[1:-1]
+                shape0="x".join(str(s) for s in shape0)
 
                 dtype0 = out0.dtype
                 if dtype0 is None:
@@ -101,7 +101,20 @@ else:
             else:
                 nout=f' N{npos}/{nall}'
 
-            return f"{{[{shape0}]{dtype0}{nout} | {text}}}"
+            iosummary = f"[{shape0}]{dtype0}{nout}"
+            if node.mark is not None:
+                left = (iosummary, node.mark)
+            else:
+                left = iosummary
+
+            return self._combine_labels((left, text))
+
+        def _combine_labels(self, labels: Union[Sequence,str]) -> str:
+            if isinstance(labels, str):
+                return labels
+
+            slabels = [self._combine_labels(l) for l in labels]
+            return f"{{{'|'.join(slabels)}}}"
 
         def _add_node(self, nodedag):
             styledict = {
