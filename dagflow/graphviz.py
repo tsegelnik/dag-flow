@@ -107,7 +107,12 @@ else:
             else:
                 left = iosummary
 
-            return self._combine_labels((left, text))
+            if node.exception is not None:
+                right = (text, node.exception)
+            else:
+                right = text
+
+            return self._combine_labels((left, right))
 
         def _combine_labels(self, labels: Union[Sequence,str]) -> str:
             if isinstance(labels, str):
@@ -218,6 +223,9 @@ else:
                 attr["color"] = "green"
             else:
                 attr["color"] = "forestgreen"
+
+            if node.exception is not None:
+                attr["color"] = "magenta"
 
         def _set_style_edge(self, obj, attrin, attr, attrout):
             if isinstance(obj, Input):

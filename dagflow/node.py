@@ -24,6 +24,7 @@ class Node(Legs):
     _graph = undefined("graph")
     _fcn = undefined("function")
     _fcn_chain = None
+    _exception: Optional[str] = None
 
     # Taintflag and status
     _tainted: bool = True
@@ -101,6 +102,10 @@ class Node(Legs):
     @property
     def mark(self):
         return self._mark
+
+    @property
+    def exception(self):
+        return self._exception
 
     @property
     def logger(self) -> Logger:
