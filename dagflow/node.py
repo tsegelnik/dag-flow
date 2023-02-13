@@ -12,9 +12,10 @@ from .exception import (
 from .input import Input
 from .legs import Legs
 from .logger import Logger
-from .output import Output, SettableOutput
+from .output import Output
 from .tools import IsIterable, undefined
-
+from .types import NodeT
+from typing import Optional
 
 class Node(Legs):
     _name = undefined("name")
@@ -232,10 +233,10 @@ class Node(Legs):
             return self._add_output(name, **kwargs)
         raise ClosedGraphError(node=self)
 
-    def _add_output(self, name, *, settable=False, **kwargs):
+    def _add_output(self, name, **kwargs):
         if IsIterable(name):
             return tuple(
-                self._add_output(n, settable=settable, **kwargs) for n in name
+                self._add_output(n, **kwargs) for n in name
             )
         self.logger.debug(f"Node '{self.name}': Add output '{name}'...")
         if isinstance(name, Output):
@@ -249,13 +250,9 @@ class Node(Legs):
             )
         if name in self.outputs:
             raise ReconnectionError(output=name, node=self)
-        output = (
-            SettableOutput(name, self, **kwargs)
-            if settable
-            else Output(name, self, **kwargs)
-        )
+
         return self.__add_output(
-            output,
+            Output(name, self, **kwargs),
             positional=kwargs.get("positional", True),
             keyword=kwargs.get("keyword", True),
         )
@@ -348,7 +345,7 @@ class Node(Legs):
             self._frozen_tainted = False
             self.taint(force=True)
 
-    def taint(self, force: bool = False):
+    def taint(self, caller: Optional[NodeT] = None, force: bool = False):
         self.logger.debug(f"Node '{self.name}': Taint...")
         if self._tainted and not force:
             return
@@ -356,6 +353,7 @@ class Node(Legs):
             self._frozen_tainted = True
             return
         self._tainted = True
+        self._on_taint(caller)
         ret = self.touch() if self._immediate else None
         self.taint_children(force)
         return ret
@@ -364,7 +362,7 @@ class Node(Legs):
         for output in self.outputs:
             output.taint_children(force)
 
-    def taint_type(self, force=False):
+    def taint_type(self, force: bool = False):
         self.logger.debug(f"Node '{self.name}': Taint types...")
         if self._closed:
             raise ClosedGraphError("Unable to taint type", node=self)
@@ -390,6 +388,13 @@ class Node(Legs):
         raise DagflowError(
             "Unimplemented method: the method must be overridden!"
         )
+
+    def _on_taint(self, caller: NodeT):
+        """A node method to be called on taint"""
+        pass
+
+    def _post_allocate(self):
+        pass
 
     def update_types(self, recursive: bool = True) -> bool:
         if not self._types_tainted:
@@ -417,12 +422,9 @@ class Node(Legs):
             raise AllocationError(
                 "Cannot allocate memory for outputs!", node=self
             )
-        self.post_allocate()
+        self._post_allocate()
         self._allocated = True
         return True
-
-    def post_allocate(self):
-        pass
 
     def close(self, recursive: bool = True) -> bool:
         if self._closed:

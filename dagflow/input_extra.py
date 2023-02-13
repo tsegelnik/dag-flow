@@ -1,4 +1,24 @@
-from typing import Optional
+from typing import Optional, Union
+
+class SimpleFormatter():
+    _base: str
+    _numfmt: str
+    def __init__(self, base: str, numfmt: str = '_{:02d}'):
+        self._base = base
+        self._numfmt = numfmt
+
+    @staticmethod
+    def from_string(string: str):
+        if '{' in string:
+             return string
+
+        return SimpleFormatter(string)
+
+    def format(self, num: int) -> str:
+        if num>0:
+            return self._base+self._numfmt.format(num)
+
+        return self._base
 
 
 class MissingInputHandler:
@@ -40,18 +60,18 @@ class MissingInputFail(MissingInputHandler):
 class MissingInputAdd(MissingInputHandler):
     """Adds an input for each output in >> operator"""
 
-    input_fmt = "input_{:02d}"
+    input_fmt: Union[str,SimpleFormatter] = SimpleFormatter("input", "_{:02d}")
     input_kws: dict
-    output_fmt = "output_{:02d}"
+    output_fmt: Union[str,SimpleFormatter] = SimpleFormatter("output", "_{:02d}")
     output_kws: dict
 
     def __init__(
         self,
         node=None,
         *,
-        input_fmt: Optional[str] = None,
+        input_fmt: Optional[Union[str,SimpleFormatter]] = None,
         input_kws: Optional[dict] = None,
-        output_fmt: Optional[str] = None,
+        output_fmt: Optional[Union[str,SimpleFormatter]] = None,
         output_kws: Optional[dict] = None,
     ):
         if input_kws is None:
@@ -62,9 +82,9 @@ class MissingInputAdd(MissingInputHandler):
         self.input_kws = input_kws
         self.output_kws = output_kws
         if input_fmt is not None:
-            self.input_fmt = input_fmt
+            self.input_fmt = SimpleFormatter.from_string(input_fmt)
         if output_fmt is not None:
-            self.output_fmt = output_fmt
+            self.output_fmt = SimpleFormatter.from_string(output_fmt)
 
     def __call__(self, idx=None, scope=None, **kwargs):
         kwargs_combined = dict(self.input_kws, **kwargs)
