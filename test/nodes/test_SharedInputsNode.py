@@ -9,9 +9,16 @@ from dagflow.exception import ConnectionError
 from dagflow.graphviz import savegraph
 from pytest import raises
 
-def test_SharedInputsNode_00(debug_graph=False):
+import pytest
+
+debug_graph=True
+
+@pytest.mark.parametrize('closemode', ['graph', 'recursive'])
+def test_SharedInputsNode_00(closemode):
+    closegraph = closemode=='graph'
+
     array = arange(12.0).reshape(3, 4)
-    with Graph(debug=debug_graph, close=True) as graph:
+    with Graph(debug=debug_graph, close=closegraph) as graph:
         initial = Array("array 1", array, mode='store_weak')
         initial2 = Array("array 2", array, mode='store_weak')
         initial3 = Array("array 3", array, mode='store_weak')
@@ -21,6 +28,9 @@ def test_SharedInputsNode_00(debug_graph=False):
         initial >> sharedinput
         initial2 >> sharedinput >> view
         initial3 >> sharedinput
+
+    if not closegraph:
+        view.close()
 
     output_array = initial.outputs[0]
     output_array2 = initial2.outputs[0]

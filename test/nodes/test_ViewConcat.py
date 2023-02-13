@@ -11,23 +11,33 @@ from dagflow.lib.SharedInputsNode import SharedInputsNode
 from dagflow.lib.Array import Array
 from dagflow.exception import ConnectionError
 
-def test_ViewConcat_00():
+import pytest
+
+debug = False
+
+@pytest.mark.parametrize('closemode', ['graph', 'recursive'])
+def test_ViewConcat_00(closemode):
     """Create four nodes: sum up three of them, multiply the result by the fourth
     Use graph context to create the graph.
     Use one-line code for connecting the nodes
     """
+    closegraph = closemode=='graph'
+
     array1 = np.arange(5.0)
     array2 = np.ones(shape=10, dtype='d')
     array3 = np.zeros(shape=12, dtype='d')-1
     array = np.concatenate((array1, array2, array3))
     arrays = (array1, array2, array3)
     n1, n2, _ = (a.size for a in arrays)
-    with Graph(close=True) as graph:
+    with Graph(debug=debug, close=closegraph) as graph:
         inputs = [Array('array', array, mode='fill') for array in arrays]
         concat = ViewConcat("concat")
         view = View("view")
 
         inputs >> concat >> view
+
+    if not closegraph:
+        view.close()
 
     graph.print()
 
