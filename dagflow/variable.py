@@ -3,8 +3,11 @@
 from .node import Node, Output
 from .exception import InitializationError
 from .lib.NormalizeCorrelatedVars import NormalizeCorrelatedVars
+from .lib.SharedInputsNode import SharedInputsNode
 from .lib.Cholesky import Cholesky
+from .lib.Array import Array
 
+from numpy import zeros_like
 from typing import Optional
 
 class Parameters(object):
@@ -18,10 +21,11 @@ class Parameters(object):
 class GaussianParameters(Parameters):
     central: Output
     sigma: Output
-    value_norm: Output
+    normvalue: Output
 
     _central_node: Node
     _sigma_node: Node
+    _normvalue_node: Node
 
     _cholesky_node: Optional[Node] = None
     _covariance_node: Optional[Node] = None
@@ -51,16 +55,47 @@ class GaussianParameters(Parameters):
         self.central = self._central_node.outputs[0]
         self.sigma = self._sigma_node.outputs[0]
 
-        self._forward_node = NormalizeCorrelatedVars(f"Normalize var {value.name}", mode='forward')
-        self._backward_node = NormalizeCorrelatedVars(f"Unnormalize var {value.name}", mode='backward')
+        self._normvalue_node = Array(
+            f'Normalized {value.name}',
+            zeros_like(self.central._data),
+            mark = f'norm({value.mark})',
+            mode='store_weak'
+        )
 
+        #
+        # Correlated → normalized
+        #
+        self._forward_node = NormalizeCorrelatedVars(f"Normalize {value.name}", mode='forward', immediate=True)
         self.central >> self._forward_node.inputs['central']
         self.sigma >> self._forward_node.inputs['matrix']
         self.value >> self._forward_node
+        self.normvalue = self._normvalue_node.outputs[0]
 
-        self.value_norm = self._forward_node.outputs[0]
-
+        #
+        # Normalized → correlated
+        #
+        self._backward_node = NormalizeCorrelatedVars(f"Unnormalize {value.name}", mode='backward', immediate=True)
         self.central >> self._backward_node.inputs['central']
         self.sigma >> self._backward_node.inputs['matrix']
-        self.value_norm >> self._backward_node
+        self._normvalue_node >> self._backward_node
+
+        #
+        # Shared nodes
+        #
+        self._common_value_node = SharedInputsNode(f'{value.name} (mid)')
+        self._common_normvalue_node = SharedInputsNode(f'Normalized {value.name} (mid)')
+
+        self.value >> self._common_value_node
+        self._backward_node >> self._common_value_node
+
+        self._normvalue_node >> self._common_normvalue_node
+        self._forward_node >> self._common_normvalue_node
+
+        # self._common_normvalue_node.update_types(recursive=True)
+        # self._common_value_node.update_types(recursive=True)
+        # self._common_normvalue_node.allocate(recursive=True)
+        # self._common_value_node.allocate(recursive=True)
+        self._common_normvalue_node.close(together=[self._common_value_node])
+        self._common_normvalue_node.touch()
+        self._common_value_node.touch()
 
