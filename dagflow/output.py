@@ -295,7 +295,8 @@ class Output:
                     )
 
                 if self._data is not idata:
-                    idata[:] = self._data
+                    if self._data is not None:
+                        idata[:] = self._data
                     self._set_data(idata, owns_buffer=False, override=True)
                 return True
 
