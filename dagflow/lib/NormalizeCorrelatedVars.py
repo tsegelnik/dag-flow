@@ -1,7 +1,7 @@
 from ..input_extra import MissingInputAddPair
 from ..nodes import FunctionNode
 from ..typefunctions import (
-    check_has_inputs,
+    check_has_input,
     check_input_square_or_diag,
     copy_input_to_output,
     check_input_dimension,
@@ -68,7 +68,7 @@ class NormalizeCorrelatedVars(FunctionNode):
             add(output, central, out=output)
 
     def _typefunc(self) -> None:
-        check_has_inputs(self)
+        check_has_input(self)
         ndim = check_input_square_or_diag(self, 'matrix')
         check_input_dimension(self, 'central', 1)
         check_inputs_equivalence(self, ('central', slice(None)))

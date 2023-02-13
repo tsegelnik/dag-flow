@@ -13,35 +13,39 @@ except TypeError:
     # provide a replacement of strict zip from Python 3.1
     # to be deprecated at some point
     from itertools import zip_longest
-    def zip(*iterables, strict: bool=False):
+
+    def zip(*iterables, strict: bool = False):
         sentinel = object()
         for combo in zip_longest(*iterables, fillvalue=sentinel):
             if strict and sentinel in combo:
-                raise ValueError('Iterables have different lengths')
+                raise ValueError("Iterables have different lengths")
             yield combo
 
+
 def check_has_input(
-    node: NodeT, inputkey: Union[str, int, slice, Sequence]
+    node: NodeT, inputkey: Union[str, int, slice, Sequence, None] = None
 ) -> None:
-    """Checking if the node has a certain input"""
-    try:
-        node.inputs[inputkey]
-    except Exception as exc:
-        raise TypeFunctionError(
-            f"The node must have the input '{inputkey}'!", node=node
-        ) from exc
-
-
-def check_has_inputs(node: NodeT) -> None:
     """Checking if the node has inputs"""
-    if len(node.inputs) == 0:
-        raise TypeFunctionError("Cannot use node with zero inputs!", node=node)
+    if inputkey is None or inputkey == slice(None):
+        try:
+            node.inputs[0]
+        except Exception as exc:
+            raise TypeFunctionError(
+                "The node must have at lease one input!", node=node
+            ) from exc
+    else:
+        try:
+            node.inputs[inputkey]
+        except Exception as exc:
+            raise TypeFunctionError(
+                f"The node must have the input '{inputkey}'!", node=node
+            ) from exc
 
 
 def eval_output_dtype(
     node: NodeT,
     inputkey: Union[str, int, slice, Sequence] = slice(None),
-    outputkey: Union[str, int, slice, Sequence] = slice(None)
+    outputkey: Union[str, int, slice, Sequence] = slice(None),
 ) -> None:
     """Automatic calculation and setting dtype for the output"""
     inputs = node.inputs.iter(inputkey)
@@ -56,7 +60,8 @@ def copy_input_to_output(
     node: NodeT,
     inputkey: Union[str, int, slice, Sequence] = 0,
     outputkey: Union[str, int, slice, Sequence] = slice(None),
-    dtype: bool = True, shape: bool = True
+    dtype: bool = True,
+    shape: bool = True,
 ) -> None:
     """Coping input dtype and setting for the output"""
     inputs = tuple(node.inputs.iter(inputkey))
@@ -81,7 +86,7 @@ def copy_input_to_output(
     else:
         return
 
-    if len(inputs)==1:
+    if len(inputs) == 1:
         inputs = repeat(inputs[0], len(outputs))
 
     for input, output in zip(inputs, outputs, strict=True):
@@ -91,13 +96,13 @@ def copy_input_to_output(
 def copy_input_dtype_to_output(
     node: NodeT,
     inputkey: Union[str, int, slice, Sequence] = 0,
-    outputkey: Union[str, int, slice, Sequence] = slice(None)
+    outputkey: Union[str, int, slice, Sequence] = slice(None),
 ) -> None:
     """Coping input dtype and setting for the output"""
     inputs = tuple(node.inputs.iter(inputkey))
     outputs = tuple(node.outputs.iter(outputkey))
 
-    if len(inputs)==1:
+    if len(inputs) == 1:
         inputs = repeat(inputs[0], len(outputs))
 
     for input, output in zip(inputs, outputs, strict=True):
@@ -107,13 +112,13 @@ def copy_input_dtype_to_output(
 def copy_input_shape_to_output(
     node: NodeT,
     inputkey: Union[str, int] = 0,
-    outputkey: Union[str, int, slice, Sequence] = slice(None)
+    outputkey: Union[str, int, slice, Sequence] = slice(None),
 ) -> None:
     """Coping input shape and setting for the output"""
     inputs = tuple(node.inputs.iter(inputkey))
     outputs = tuple(node.outputs.iter(outputkey))
 
-    if len(inputs)==1:
+    if len(inputs) == 1:
         inputs = repeat(inputs[0], len(outputs))
 
     for input, output in zip(inputs, outputs, strict=True):
@@ -123,7 +128,7 @@ def copy_input_shape_to_output(
 def combine_inputs_shape_to_output(
     node: NodeT,
     inputkey: Union[str, int, slice, Sequence] = slice(None),
-    outputkey: Union[str, int, slice, Sequence] = slice(None)
+    outputkey: Union[str, int, slice, Sequence] = slice(None),
 ) -> None:
     """Combine all the inputs shape and setting for the output"""
     inputs = node.inputs.iter(inputkey)
@@ -133,9 +138,7 @@ def combine_inputs_shape_to_output(
 
 
 def check_input_dimension(
-    node: NodeT,
-    inputkey: Union[str, int, slice, Sequence],
-    ndim: int
+    node: NodeT, inputkey: Union[str, int, slice, Sequence], ndim: int
 ):
     """Checking the dimension of the input"""
     for input in node.inputs.iter(inputkey):
@@ -146,6 +149,7 @@ def check_input_dimension(
                 node=node,
                 input=input,
             )
+
 
 def check_input_square(
     node: NodeT,
@@ -161,6 +165,7 @@ def check_input_square(
                 node=node,
                 input=input,
             )
+
 
 def check_input_square_or_diag(
     node: NodeT,
@@ -181,12 +186,25 @@ def check_input_square_or_diag(
             )
     return dim_max
 
-def check_input_dtype(
-    node: NodeT,
-    inputkey: Union[str, int, slice, Sequence],
-    dtype
+
+def check_input_shape(
+    node: NodeT, inputkey: Union[str, int, slice, Sequence], shape: tuple
 ):
-    """Checking the dimension of the input"""
+    """Checking the shape equivalence for inputs"""
+    for input in node.inputs.iter(inputkey):
+        sshape = input.shape
+        if sshape != shape:
+            raise TypeFunctionError(
+                f"The node supports only inputs with shape={shape}. Got {sshape}!",
+                node=node,
+                input=input,
+            )
+
+
+def check_input_dtype(
+    node: NodeT, inputkey: Union[str, int, slice, Sequence], dtype
+):
+    """Checking the dtype equivalence for inputs"""
     for input in node.inputs.iter(inputkey):
         dtt = input.dtype
         if dtt != dtype:
@@ -196,9 +214,9 @@ def check_input_dtype(
                 input=input,
             )
 
+
 def check_inputs_equivalence(
-    node: NodeT,
-    inputkey: Union[str, int, slice, Sequence] = slice(None)
+    node: NodeT, inputkey: Union[str, int, slice, Sequence] = slice(None)
 ):
     """Checking the equivalence of the dtype and shape of all the inputs"""
     inputs = tuple(node.inputs.iter(inputkey))
@@ -213,27 +231,28 @@ def check_inputs_equivalence(
                 input=input,
             )
 
+
 def check_inputs_multiplicable_mat(
     node: NodeT,
     inputkey1: Union[str, int, slice, Sequence],
-    inputkey2: Union[str, int, slice, Sequence]
+    inputkey2: Union[str, int, slice, Sequence],
 ):
     """Checking that inputs from key1 and key2 may be multiplied (matrix)"""
     inputs1 = tuple(node.inputs.iter(inputkey1))
     inputs2 = tuple(node.inputs.iter(inputkey2))
 
     len1, len2 = len(inputs1), len(inputs2)
-    if len1==len2:
+    if len1 == len2:
         pass
-    elif len1==1:
+    elif len1 == 1:
         inputs1 = repeat(inputs1[0], len2)
-    elif len2==1:
+    elif len2 == 1:
         inputs2 = repeat(inputs2[0], len1)
 
     for input1, input2 in zip(inputs1, inputs2, strict=True):
         shape1 = input1.shape
         shape2 = input2.shape
-        if shape1[-1]!=shape2[0]:
+        if shape1[-1] != shape2[0]:
             raise TypeFunctionError(
                 f"Inputs {shape1} and {shape2} are not multiplicable",
                 node=node,

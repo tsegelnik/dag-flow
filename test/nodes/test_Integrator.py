@@ -85,6 +85,7 @@ def test_Integrator_04(debug_graph):
     assert (integrator.outputs[1].data == [[0, 0, 0], [2, 6, 12]]).all()
 
 
+# test wrong orders: sum(orders) != shape
 def test_Integrator_05(debug_graph):
     arr = [1.0, 2.0, 3.0]
     with Graph(debug=debug_graph):
@@ -99,6 +100,7 @@ def test_Integrator_05(debug_graph):
         integrator.close()
 
 
+# test wrong orders: sum(orders[i]) != shape[i]
 def test_Integrator_06(debug_graph):
     arr = [1.0, 2.0, 3.0]
     with Graph(debug=debug_graph):
@@ -111,3 +113,35 @@ def test_Integrator_06(debug_graph):
         orders >> integrator("orders")
     with raises(TypeFunctionError):
         integrator.close()
+
+
+# test wrong orders due to shape ambiguity:
+# sum(orders) is right but orders are wrong
+def test_Integrator_07(debug_graph):
+    unity = [1.0, 1.0, 1.0]
+    with Graph(debug=debug_graph, close=False):
+        arr1 = Array("array", [unity, unity])
+        weights = Array("weights", [unity, unity])
+        orders = Array("orders", [[1, 0, 1], [1, 1, 1]])
+        integrator = Integrator("integrator")
+        arr1 >> integrator
+        weights >> integrator("weights")
+        orders >> integrator("orders")
+    with raises(TypeFunctionError):
+        integrator.close()
+
+
+# test wrong shape
+def test_Integrator_08(debug_graph):
+    with Graph(debug=debug_graph, close=False):
+        arr1 = Array("array", [[1.0, 1.0, 1.0], [1.0, 1.0, 1.0]])
+        arr2 = Array("array", [[1., 2., 3., 4.], [1., 2., 3., 4.]])
+        weights = Array("weights", [[1.0, 1.0, 1.0], [1.0, 1.0, 1.0]])
+        orders = Array("orders", [[0, 2, 0], [1, 1, 1]])
+        integrator = Integrator("integrator")
+        arr1 >> integrator
+        arr2 >> integrator
+        weights >> integrator("weights")
+        orders >> integrator("orders")
+    with raises(TypeFunctionError):
+       integrator.close()

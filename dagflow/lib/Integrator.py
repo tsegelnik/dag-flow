@@ -1,5 +1,5 @@
 from numba import jit
-from numpy import multiply, zeros, floating, issubdtype, integer
+from numpy import floating, integer, issubdtype, multiply, zeros
 from numpy.typing import NDArray
 
 from ..exception import TypeFunctionError
@@ -7,9 +7,9 @@ from ..input_extra import MissingInputAddEach
 from ..nodes import FunctionNode
 from ..typefunctions import (
     check_has_input,
-    check_has_inputs,
     check_input_dimension,
     check_input_dtype,
+    check_input_shape,
 )
 
 
@@ -90,7 +90,7 @@ class Integrator(FunctionNode):
         Checks inputs dimension and, selects an integration algorithm,
         determines dtype and shape for outputs
         """
-        check_has_inputs(self)
+        check_has_input(self)
         check_has_input(self, ("orders", "weights"))
         input0 = self.inputs[0]
         ndim = len(input0.shape)
@@ -98,8 +98,10 @@ class Integrator(FunctionNode):
             raise TypeFunctionError(
                 "The Integrator works only within 1d and 2d mode!", node=self
             )
-        check_input_dimension(self, slice(None), ndim)
-        check_input_dimension(self, ("orders", "weights"), ndim)
+        check_input_dimension(self, (slice(None), "orders", "weights"), ndim)
+        check_input_shape(
+            self, (slice(None), "orders", "weights"), input0.shape
+        )
         orders = self.inputs["orders"]
         if not issubdtype(orders.dtype, integer):
             raise TypeFunctionError(
@@ -114,8 +116,7 @@ class Integrator(FunctionNode):
                 f"precision, but given '{dtype}'!",
                 node=self,
             )
-        check_input_dtype(self, slice(None), dtype)
-        check_input_dtype(self, ("weights",), dtype)
+        check_input_dtype(self, (slice(None), "weights"), dtype)
         if ndim == 1:
             self.__integrate = _integrate1d
             if sum(orders.data) != input0.shape[0]:
@@ -128,7 +129,8 @@ class Integrator(FunctionNode):
         else:
             self.__integrate = _integrate2d
             if any(
-                sum(orders.data[i]) != n for i, n in enumerate(input0.shape)
+                sum(orders.data[i, 0 : input0.shape[i]]) != n
+                for i, n in enumerate(input0.shape)
             ):
                 raise TypeFunctionError(
                     "Orders must be consistent with inputs lenght, "
