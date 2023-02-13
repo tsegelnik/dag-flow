@@ -2,9 +2,8 @@ from numpy import array
 
 from ..nodes import FunctionNode
 from ..output import Output
-from numpy.typing import NDArray
 from ..exception import InitializationError
-from numpy.typing import ArrayLike
+from numpy.typing import ArrayLike, NDArray
 
 class Array(FunctionNode):
     """Creates a node with a single data output with predefined array"""
