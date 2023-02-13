@@ -94,6 +94,9 @@ class EdgeContainer:
     def __iter__(self):
         return iter(self._pos_edges)
 
+    def iter_all(self):
+        return iter(self._all_edges.values())
+
     def iter_data(self):
         for edge in self._pos_edges:
             yield edge.data
@@ -119,7 +122,7 @@ class EdgeContainer:
             raise CriticalError(f'Invalid key type {type(key).__name__}')
 
     def __contains__(self, name):
-        return name in self._kw_edges
+        return name in self._all_edges
 
     def _replace(self, old, new):
         replaced = False
