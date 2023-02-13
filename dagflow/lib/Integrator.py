@@ -20,14 +20,10 @@ def _integrate1d(data: NDArray, weighted: NDArray, orders: NDArray):
     The 1-dimensional version.
     """
     iprev = 0
-    i = 0
-    for order in orders:
-        if order == 0:
-            continue
+    for i, order in enumerate(orders):
         inext = iprev + order
         data[i] = weighted[iprev:inext].sum()
         iprev = inext
-        i += 1
 
 
 @jit(nopython=True)
@@ -45,23 +41,16 @@ def _integrate2d(data: NDArray, weighted: NDArray, orders: NDArray):
     .. _Numba: https://numba.pydata.org
     .. _Numpy: https://numpy.org
     """
+    shape = data.shape
     iprev = 0
-    i = 0
-    for orderx in orders[0]:
-        if orderx == 0:
-            continue
+    for i, orderx in enumerate(orders[0][: shape[0]]):
         inext = iprev + orderx
         jprev = 0
-        j = 0
-        for ordery in orders[1]:
-            if ordery == 0:
-                continue
+        for j, ordery in enumerate(orders[1][: shape[1]]):
             jnext = jprev + ordery
             data[i, j] = weighted[iprev:inext, jprev:jnext].sum()
             jprev = jnext
-            j += 1
         iprev = inext
-        i += 1
 
 
 class Integrator(FunctionNode):
@@ -103,7 +92,8 @@ class Integrator(FunctionNode):
         """
         check_has_inputs(self)
         check_has_input(self, ("orders", "weights"))
-        ndim = len(self.inputs[0].shape)
+        input0 = self.inputs[0]
+        ndim = len(input0.shape)
         if ndim > 2:
             raise TypeFunctionError(
                 "The Integrator works only within 1d and 2d mode!", node=self
@@ -117,7 +107,7 @@ class Integrator(FunctionNode):
                 node=self,
                 input=orders,
             )
-        dtype = self.inputs[0].dtype
+        dtype = input0.dtype
         if not issubdtype(dtype, floating):
             raise TypeFunctionError(
                 "The Integrator works only within `float` or `double` "
@@ -126,35 +116,31 @@ class Integrator(FunctionNode):
             )
         check_input_dtype(self, slice(None), dtype)
         check_input_dtype(self, ("weights",), dtype)
-        self.__integrate = _integrate1d if ndim == 1 else _integrate2d
         if ndim == 1:
-            if sum(orders.data) > self.inputs[0].shape[0]:
+            self.__integrate = _integrate1d
+            if sum(orders.data) != input0.shape[0]:
                 raise TypeFunctionError(
                     "Orders must be consistent with inputs lenght, "
-                    f"but given {orders.data=} and {self.inputs[0].shape=}!",
+                    f"but given {orders.data=} and {input0.shape=}!",
                     node=self,
                     input=orders,
                 )
-        elif any(
-            sum(orders.data[i]) > n for i, n in enumerate(self.inputs[0].shape)
-        ):
-            raise TypeFunctionError(
-                "Orders must be consistent with inputs lenght, "
-                f"but given {orders.data=} and {self.inputs[0].shape=}!",
-                node=self,
-                input=orders,
-            )
-        if ndim == 1:
-            newshape = orders.data[orders.data != 0].shape
         else:
-            ordersx = orders.data[0]
-            ordersy = orders.data[1]
-            newshape = (ordersx[ordersx != 0].size, ordersy[ordersy != 0].size)
+            self.__integrate = _integrate2d
+            if any(
+                sum(orders.data[i]) != n for i, n in enumerate(input0.shape)
+            ):
+                raise TypeFunctionError(
+                    "Orders must be consistent with inputs lenght, "
+                    f"but given {orders.data=} and {input0.shape=}!",
+                    node=self,
+                    input=orders,
+                )
         for output in self.outputs:
             output._dtype = dtype
-            output._shape = newshape
+            output._shape = input0.shape
 
-    def post_allocate(self):
+    def _post_allocate(self):
         """Allocates the `buffer` within `weights`"""
         weights = self.inputs["weights"]
         self.__buffer = zeros(shape=weights.shape, dtype=weights.dtype)

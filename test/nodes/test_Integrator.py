@@ -11,18 +11,33 @@ def test_Integrator_00(debug_graph):
     with Graph(debug=debug_graph, close=True):
         arr1 = Array("array", [1.0, 2.0, 3.0])
         arr2 = Array("array", [3.0, 2.0, 1.0])
-        weights = Array("weights", [1.0, 1.0, 1.0])
-        orders = Array("orders", [1, 0, 1])
+        weights = Array("weights", [2.0, 2.0, 2.0])
+        orders = Array("orders", [1, 1, 1])
         integrator = Integrator("integrator")
         arr1 >> integrator
         arr2 >> integrator
         weights >> integrator("weights")
         orders >> integrator("orders")
-    assert (integrator.outputs[0].data == [1, 2]).all()
-    assert (integrator.outputs[1].data == [3, 2]).all()
+    assert (integrator.outputs[0].data == [2, 4, 6]).all()
+    assert (integrator.outputs[1].data == [6, 4, 2]).all()
 
 
 def test_Integrator_01(debug_graph):
+    with Graph(debug=debug_graph, close=True):
+        arr1 = Array("array", [1.0, 2.0, 3.0])
+        arr2 = Array("array", [3.0, 2.0, 1.0])
+        weights = Array("weights", [2.0, 2.0, 2.0])
+        orders = Array("orders", [2, 0, 1])
+        integrator = Integrator("integrator")
+        arr1 >> integrator
+        arr2 >> integrator
+        weights >> integrator("weights")
+        orders >> integrator("orders")
+    assert (integrator.outputs[0].data == [6, 0, 6]).all()
+    assert (integrator.outputs[1].data == [10, 0, 2]).all()
+
+
+def test_Integrator_02(debug_graph):
     arr123 = [1.0, 2.0, 3.0]
     with Graph(debug=debug_graph, close=True):
         arr1 = Array("array", [[1.0, 1.0, 1.0], [1.0, 1.0, 1.0]])
@@ -38,36 +53,20 @@ def test_Integrator_01(debug_graph):
     assert (integrator.outputs[1].data == [[1, 2, 3], [1, 4, 9]]).all()
 
 
-def test_Integrator_02(debug_graph):
-    arr123 = [1.0, 2.0, 3.0]
-    with Graph(debug=debug_graph, close=True):
-        arr1 = Array("array", [[1.0, 1.0, 1.0], [1.0, 1.0, 1.0]])
-        arr2 = Array("array", [arr123, arr123])
-        weights = Array("weights", [[1.0, 1.0, 1.0], arr123])
-        orders = Array("orders", [[1, 1, 0], [1, 0, 2]])
-        integrator = Integrator("integrator")
-        arr1 >> integrator
-        arr2 >> integrator
-        weights >> integrator("weights")
-        orders >> integrator("orders")
-    assert (integrator.outputs[0].data == [[1, 2], [1, 5]]).all()
-    assert (integrator.outputs[1].data == [[1, 5], [1, 13]]).all()
-
-
 def test_Integrator_03(debug_graph):
     arr123 = [1.0, 2.0, 3.0]
     with Graph(debug=debug_graph, close=True):
         arr1 = Array("array", [[1.0, 1.0, 1.0], [1.0, 1.0, 1.0]])
         arr2 = Array("array", [arr123, arr123])
         weights = Array("weights", [[1.0, 1.0, 1.0], arr123])
-        orders = Array("orders", [[1, 1, 0], [1, 0, 0]])
+        orders = Array("orders", [[1, 1, 0], [1, 2, 0]])
         integrator = Integrator("integrator")
         arr1 >> integrator
         arr2 >> integrator
         weights >> integrator("weights")
         orders >> integrator("orders")
-    assert (integrator.outputs[0].data == [[1], [1]]).all()
-    assert (integrator.outputs[1].data == [[1], [1]]).all()
+    assert (integrator.outputs[0].data == [[1, 2, 0], [1, 5, 0]]).all()
+    assert (integrator.outputs[1].data == [[1, 5, 0], [1, 13, 0]]).all()
 
 
 def test_Integrator_04(debug_graph):
@@ -76,14 +75,14 @@ def test_Integrator_04(debug_graph):
         arr1 = Array("array", [[1.0, 1.0, 1.0], [1.0, 1.0, 1.0]])
         arr2 = Array("array", [arr123, arr123])
         weights = Array("weights", [[1.0, 1.0, 1.0], arr123])
-        orders = Array("orders", [[1, 0, 0], [1, 2, 0]])
+        orders = Array("orders", [[0, 2, 0], [1, 1, 1]])
         integrator = Integrator("integrator")
         arr1 >> integrator
         arr2 >> integrator
         weights >> integrator("weights")
         orders >> integrator("orders")
-    assert (integrator.outputs[0].data == [[1, 2]]).all()
-    assert (integrator.outputs[1].data == [[1, 5]]).all()
+    assert (integrator.outputs[0].data == [[0, 0, 0], [2, 3, 4]]).all()
+    assert (integrator.outputs[1].data == [[0, 0, 0], [2, 6, 12]]).all()
 
 
 def test_Integrator_05(debug_graph):

@@ -20,6 +20,18 @@ except TypeError:
                 raise ValueError('Iterables have different lengths')
             yield combo
 
+def check_has_input(
+    node: NodeT, inputkey: Union[str, int, slice, Sequence]
+) -> None:
+    """Checking if the node has a certain input"""
+    try:
+        node.inputs[inputkey]
+    except Exception as exc:
+        raise TypeFunctionError(
+            f"The node must have the input '{inputkey}'!", node=node
+        ) from exc
+
+
 def check_has_inputs(node: NodeT) -> None:
     """Checking if the node has inputs"""
     if len(node.inputs) == 0:
