@@ -136,13 +136,13 @@ else:
                     right.append('cought exception')
                 else:
                     if self.show_data:
-                        right.append(str(data))
+                        right.append(str(data).replace('\n', '\\n'))
                     if self.show_data_summary:
                         sm = data.sum()
                         sm2 = square(data).sum()
                         mn = data.min()
                         mx = data.max()
-                        right.append(f'Σ={sm:.2g} Σ²={sm2:.2g} min={mn:.2g} max={mx:.2g}: {tainted}')
+                        right.append((f'Σ={sm:.2g}', f'Σ²={sm2:.2g}', f'min={mn:.2g}', f'max={mx:.2}', f'{tainted}'))
 
             if node.exception is not None:
                 right.append(node.exception)
