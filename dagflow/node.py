@@ -15,7 +15,7 @@ from .logger import Logger
 from .output import Output
 from .tools import IsIterable, undefined
 from .types import NodeT
-from typing import Optional
+from typing import Optional, List
 
 class Node(Legs):
     _name = undefined("name")
@@ -441,18 +441,23 @@ class Node(Legs):
         self._allocated = True
         return True
 
-    def close(self, recursive: bool = True) -> bool:
+    def close(self, recursive: bool = True, together: List[NodeT] = []) -> bool:
         if self._closed:
             return True
         if self.invalid:
             raise ClosingError("Cannot close an invalid node!", node=self)
         self.logger.debug(f"Node '{self.name}': Trigger recursive close")
-        self.update_types(recursive=recursive)
-        self.allocate(recursive=recursive)
+        for node in [self]+together:
+            node.update_types(recursive=recursive)
+        for node in [self]+together:
+            node.allocate(recursive=recursive)
         if recursive and not all(
             input.parent_node.close(recursive) for input in self.inputs.iter_all()
         ):
             return False
+        for node in together:
+            if not node.close(recursive=recursive):
+                return False
         self.logger.debug(f"Node '{self.name}': Close")
         self._closed = self._allocated
         if not self._closed:
