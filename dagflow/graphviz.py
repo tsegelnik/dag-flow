@@ -3,6 +3,7 @@ from .output import Output
 from .printl import printl
 from .types import NodeT
 
+from numpy import square
 from collections.abc import Sequence
 from typing import Union
 
@@ -21,22 +22,29 @@ else:
         _graph = None
         _node_id_map: dict
 
-        show_type: bool = True
-        show_mark: bool = True
-        show_label: bool = True
-        show_data: bool = False
+        show_type: bool
+        show_mark: bool
+        show_label: bool
+        show_data: bool
+        show_data_summary: bool
 
         def __init__(
             self,
             dag,
             graphattr: dict={}, edgeattr: dict={}, nodeattr: dict={},
+            show_type: bool = True,
+            show_mark: bool = True,
+            show_label: bool = True,
+            show_data: bool = False,
+            show_data_summary: bool = False,
             **kwargs
         ):
-            for opt in ('type', 'mark', 'label', 'data'):
-                opt = f'show_{opt}'
-                flag = kwargs.pop(opt, None)
-                if flag is not None:
-                    setattr(self, opt, flag)
+            self.show_type = show_type
+            self.show_mark = show_mark
+            self.show_label = show_label
+            self.show_data = show_data
+            self.show_data_summary = show_data_summary
+
             graphattr = dict(graphattr)
             graphattr.setdefault("rankdir", "LR")
             graphattr.setdefault("dpi", 300)
@@ -117,12 +125,25 @@ else:
                 left.append(node.mark)
             if self.show_label:
                 right.append(text)
-            if self.show_data:
+            if self.show_data or self.show_data_summary:
+                data = None
+                tainted = out0.tainted and 'tainted' or 'updated'
                 try:
                     data = out0.data
                 except:
-                    data = 'cought exception'
-                right.append(str(data))
+                    pass
+                if data is None:
+                    right.append('cought exception')
+                else:
+                    if self.show_data:
+                        right.append(str(data))
+                    if self.show_data_summary:
+                        sm = data.sum()
+                        sm2 = square(data).sum()
+                        mn = data.min()
+                        mx = data.max()
+                        right.append(f'Σ={sm:.2g} Σ²={sm2:.2g} min={mn:.2g} max={mx:.2g}: {tainted}')
+
             if node.exception is not None:
                 right.append(node.exception)
 
