@@ -21,14 +21,22 @@ else:
         _graph = None
         _node_id_map: dict
 
+        show_type: bool = True
+        show_mark: bool = True
+        show_label: bool = True
+        show_data: bool = False
+
         def __init__(
             self,
             dag,
-            graphattr: dict={},
-            edgeattr: dict={},
-            nodeattr: dict={},
+            graphattr: dict={}, edgeattr: dict={}, nodeattr: dict={},
             **kwargs
         ):
+            for opt in ('type', 'mark', 'label', 'data'):
+                opt = f'show_{opt}'
+                flag = kwargs.pop(opt, None)
+                if flag is not None:
+                    setattr(self, opt, flag)
             graphattr = dict(graphattr)
             graphattr.setdefault("rankdir", "LR")
             graphattr.setdefault("dpi", 300)
@@ -101,16 +109,22 @@ else:
             else:
                 nout=f' N{npos}/{nall}'
 
-            iosummary = f"[{shape0}]{dtype0}{nout}"
-            if node.mark is not None:
-                left = (iosummary, node.mark)
-            else:
-                left = iosummary
-
+            left, right = [], []
+            info_type = f"[{shape0}]{dtype0}{nout}"
+            if self.show_type:
+                left.append(info_type)
+            if self.show_mark and node.mark is not None:
+                left.append(node.mark)
+            if self.show_label:
+                right.append(text)
+            if self.show_data:
+                try:
+                    data = out0.data
+                except:
+                    data = 'cought exception'
+                right.append(str(data))
             if node.exception is not None:
-                right = (text, node.exception)
-            else:
-                right = text
+                right.append(node.exception)
 
             return self._combine_labels((left, right))
 
