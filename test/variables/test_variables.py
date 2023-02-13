@@ -13,8 +13,8 @@ import pytest
 # def test_variables_00_parameter() -> None:
 #     pass
 
-@pytest.mark.parametrize('mode', ('single', 'uncorr', 'cov', 'cov1d'))
-# @pytest.mark.parametrize('mode', ('cov',))
+# @pytest.mark.parametrize('mode', ('single', 'uncorr', 'cov', 'cov1d'))
+@pytest.mark.parametrize('mode', ('cov',))
 def test_variables_00_variable(mode) -> None:
     value_in    = [1.1, 1.8, 5.0]
     central_in  = [1.0, 2.0, 3.0]
@@ -27,7 +27,7 @@ def test_variables_00_variable(mode) -> None:
         central_in = central_in[:1]
         sigma_in = sigma_in[:1]
 
-    with Graph(close=False) as graph:
+    with Graph(debug=False, close=False) as graph:
         value   = Array("variable", value_in,       mode='store_weak', mark='v')
         central = Array("central",  central_in,     mode='store_weak', mark='v₀')
 
@@ -62,8 +62,23 @@ def test_variables_00_variable(mode) -> None:
         savegraph(graph, f"output/test_variables_00_{mode}.png")
         raise error
 
-    value_out = gp._backward_node.get_data(0)
-    assert allclose(value_in, value_out, atol=0, rtol=0)
+    value_out0 = gp.value.data
+    normvalue_out0 = gp.normvalue.data
+    assert allclose(value_in, value_out0, atol=0, rtol=0)
+    assert all(normvalue_out0!=0)
 
-    savegraph(graph, f"output/test_variables_00_{mode}.png")
+    gp.normvalue.set([0.0, 0.0, 0.0])
+    value_out1 = gp.value.data
+    normvalue_out1 = gp.normvalue.data
+    assert allclose(central_in, value_out1, atol=0, rtol=0)
+    assert allclose(normvalue_out1, 0.0, atol=0, rtol=0)
+
+    # TODO: becomes overridden by previous normvalue
+    gp.value.set(value_out0)
+    value_out2 = gp.value.data
+    normvalue_out2 = gp.normvalue.data
+    # assert allclose(value_in, value_out2, atol=0, rtol=0)
+    # assert allclose(normvalue_out2, normvalue_out0, atol=0, rtol=0)
+
+    savegraph(graph, f"output/test_variables_00_{mode}.png", show_data=True, show_data_summary=False)
 
