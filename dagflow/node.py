@@ -163,7 +163,7 @@ class Node(Legs):
     def invalid(self, invalid) -> None:
         if invalid:
             self.invalidate_self()
-        elif any(input.invalid for input in self.inputs):
+        elif any(input.invalid for input in self.inputs.iter_all()):
             return
         else:
             self.invalidate_self(False)
@@ -181,7 +181,7 @@ class Node(Legs):
             output.invalid = True
 
     def invalidate_parents(self) -> None:
-        for input in self.inputs:
+        for input in self.inputs.iter_all():
             node = input.parent_node
             node.invalidate_self()
             node.invalidate_parents()
@@ -203,7 +203,7 @@ class Node(Legs):
     # Methods
     #
     def __call__(self, name, child_output=undefined("child_output")):
-        self.logger.debug(f"Node '{self.name}': Get input '{name}'...")
+        self.logger.debug(f"Node '{self.name}': Get input '{name}'")
         inp = self.inputs.get(name, None)
         if inp is None:
             if self.closed:
@@ -227,7 +227,7 @@ class Node(Legs):
     def _add_input(self, name, **kwargs):
         if IsIterable(name):
             return tuple(self._add_input(n, **kwargs) for n in name)
-        self.logger.debug(f"Node '{self.name}': Add input '{name}'...")
+        self.logger.debug(f"Node '{self.name}': Add input '{name}'")
         if name in self.inputs:
             raise ReconnectionError(input=name, node=self)
         positional = kwargs.pop("positional", True)
@@ -248,7 +248,7 @@ class Node(Legs):
             return tuple(
                 self._add_output(n, **kwargs) for n in name
             )
-        self.logger.debug(f"Node '{self.name}': Add output '{name}'...")
+        self.logger.debug(f"Node '{self.name}': Add output '{name}'")
         if isinstance(name, Output):
             if name.name in self.outputs or name.node:
                 raise ReconnectionError(output=name, node=self)
@@ -313,7 +313,7 @@ class Node(Legs):
             return
         if not self._tainted and not force:
             return
-        self.logger.debug(f"Node '{self.name}': Touch...")
+        self.logger.debug(f"Node '{self.name}': Touch")
         ret = self.eval()
         self._tainted = False  # self._always_tainted
         if self._auto_freeze:
@@ -340,7 +340,7 @@ class Node(Legs):
     def freeze(self):
         if self._frozen:
             return
-        self.logger.debug(f"Node '{self.name}': Freeze...")
+        self.logger.debug(f"Node '{self.name}': Freeze")
         if self._tainted:
             raise CriticalError("Unable to freeze tainted node!", node=self)
         self._frozen = True
@@ -349,7 +349,7 @@ class Node(Legs):
     def unfreeze(self, force: bool = False):
         if not self._frozen and not force:
             return
-        self.logger.debug(f"Node '{self.name}': Unfreeze...")
+        self.logger.debug(f"Node '{self.name}': Unfreeze")
         self._frozen = False
         if self._frozen_tainted:
             self._frozen_tainted = False
@@ -409,29 +409,34 @@ class Node(Legs):
     def update_types(self, recursive: bool = True) -> bool:
         if not self._types_tainted:
             return True
-        self.logger.debug(f"Node '{self.name}': Update types...")
         if recursive:
-            for input in self.inputs:
+            self.logger.debug(f"Node '{self.name}': Trigger recursive update types...")
+            for input in self.inputs.iter_all():
                 input.parent_node.update_types(recursive)
+        self.logger.debug(f"Node '{self.name}': Update types...")
         self._typefunc()
         self._types_tainted = False
 
     def allocate(self, recursive: bool = True):
         if self._allocated:
             return True
-        self.logger.debug(f"Node '{self.name}': Allocate memory...")
-        if recursive and not all(
-            input.parent_node.allocate(recursive) for input in self.inputs
-        ):
-            return False
+        if recursive:
+            self.logger.debug(f"Node '{self.name}': Trigger recursive memory allocation...")
+            if not all(
+                input.parent_node.allocate(recursive) for input in self.inputs.iter_all()
+            ):
+                return False
+        self.logger.debug(f"Node '{self.name}': Allocate memory on inputs")
         if not self.inputs.allocate():
             raise AllocationError(
                 "Cannot allocate memory for inputs!", node=self
             )
+        self.logger.debug(f"Node '{self.name}': Allocate memory on outputs")
         if not self.outputs.allocate():
             raise AllocationError(
                 "Cannot allocate memory for outputs!", node=self
             )
+        self.logger.debug(f"Node '{self.name}': Post allocate")
         self._post_allocate()
         self._allocated = True
         return True
@@ -439,15 +444,16 @@ class Node(Legs):
     def close(self, recursive: bool = True) -> bool:
         if self._closed:
             return True
-        self.logger.debug(f"Node '{self.name}': Close...")
         if self.invalid:
             raise ClosingError("Cannot close an invalid node!", node=self)
-        if recursive and not all(
-            input.parent_node.close(recursive) for input in self.inputs
-        ):
-            return False
+        self.logger.debug(f"Node '{self.name}': Trigger recursive close")
         self.update_types(recursive=recursive)
         self.allocate(recursive=recursive)
+        if recursive and not all(
+            input.parent_node.close(recursive) for input in self.inputs.iter_all()
+        ):
+            return False
+        self.logger.debug(f"Node '{self.name}': Close")
         self._closed = self._allocated
         if not self._closed:
             raise ClosingError(node=self)
@@ -456,7 +462,7 @@ class Node(Legs):
     def open(self, force: bool = False) -> bool:
         if not self._closed and not force:
             return True
-        self.logger.debug(f"Node '{self.name}': Open...")
+        self.logger.debug(f"Node '{self.name}': Open")
         if not all(
             input.node.open(force)
             for output in self.outputs
