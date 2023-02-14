@@ -2,8 +2,7 @@
 
 from .node import Node, Output
 from .exception import InitializationError
-from .lib.NormalizeCorrelatedVars import NormalizeCorrelatedVars
-from .lib.SharedInputsNode import SharedInputsNode
+from .lib.NormalizeCorrelatedVars2 import NormalizeCorrelatedVars2
 from .lib.Cholesky import Cholesky
 from .lib.Array import Array
 
@@ -65,37 +64,10 @@ class GaussianParameters(Parameters):
         #
         # Correlated → normalized
         #
-        self._forward_node = NormalizeCorrelatedVars(f"Normalize {value.name}", mode='forward', immediate=True)
-        self.central >> self._forward_node.inputs['central']
-        self.sigma >> self._forward_node.inputs['matrix']
-        self.value >> self._forward_node
-        self.normvalue = self._normvalue_node.outputs[0]
-
+        # self._norm_node = NormalizeCorrelatedVars2(f"Normalize {value.name}")
+        # self.central >> self._forward_node.inputs['central']
+        # self.sigma >> self._forward_node.inputs['matrix']
+        # (self.value, self._normvalue_node) >> self._forward_node
         #
-        # Normalized → correlated
-        #
-        self._backward_node = NormalizeCorrelatedVars(f"Unnormalize {value.name}", mode='backward', immediate=True)
-        self.central >> self._backward_node.inputs['central']
-        self.sigma >> self._backward_node.inputs['matrix']
-        self._normvalue_node >> self._backward_node
-
-        #
-        # Shared nodes
-        #
-        self._common_value_node = SharedInputsNode(f'{value.name} (mid)')
-        self._common_normvalue_node = SharedInputsNode(f'Normalized {value.name} (mid)')
-
-        self.value >> self._common_value_node
-        self._backward_node >> self._common_value_node
-
-        self._normvalue_node >> self._common_normvalue_node
-        self._forward_node >> self._common_normvalue_node
-
-        # self._common_normvalue_node.update_types(recursive=True)
-        # self._common_value_node.update_types(recursive=True)
-        # self._common_normvalue_node.allocate(recursive=True)
-        # self._common_value_node.allocate(recursive=True)
-        self._common_normvalue_node.close(together=[self._common_value_node])
-        self._common_normvalue_node.touch()
-        self._common_value_node.touch()
+        # self.normvalue = self._normvalue_node.outputs[0]
 

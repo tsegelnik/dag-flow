@@ -7,7 +7,7 @@ from dagflow.graph import Graph
 from dagflow.graphviz import savegraph
 from dagflow.lib.ViewConcat import ViewConcat
 from dagflow.lib.View import View
-from dagflow.lib.SharedInputsNode import SharedInputsNode
+from dagflow.lib.NormalizeCorrelatedVars2 import NormalizeCorrelatedVars2
 from dagflow.lib.Array import Array
 from dagflow.exception import ConnectionError
 
@@ -82,16 +82,16 @@ def test_ViewConcat_01():
         concat = ViewConcat("concat")
         concat2 = ViewConcat("concat 2")
         view = View('view')
-        sharedinput = SharedInputsNode('shared inputs')
+        normnode = NormalizeCorrelatedVars2('normvars')
 
         with raises(ConnectionError):
             view >> concat
 
         with raises(ConnectionError):
-            sharedinput >> concat
+            normnode.outputs[0] >> concat
 
         with raises(ConnectionError):
-            concat >> sharedinput
+            concat >> normnode.inputs[0]
 
         with raises(ConnectionError):
             concat >> concat2

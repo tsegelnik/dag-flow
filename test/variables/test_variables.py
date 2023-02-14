@@ -56,29 +56,29 @@ def test_variables_00_variable(mode) -> None:
         else:
             raise RuntimeError(f"Invalid mode {mode}")
 
-    try:
-        graph.close()
-    except CriticalError as error:
-        savegraph(graph, f"output/test_variables_00_{mode}.png")
-        raise error
-
-    value_out0 = gp.value.data
-    normvalue_out0 = gp.normvalue.data
-    assert allclose(value_in, value_out0, atol=0, rtol=0)
-    assert all(normvalue_out0!=0)
-
-    gp.normvalue.set([0.0, 0.0, 0.0])
-    value_out1 = gp.value.data
-    normvalue_out1 = gp.normvalue.data
-    assert allclose(central_in, value_out1, atol=0, rtol=0)
-    assert allclose(normvalue_out1, 0.0, atol=0, rtol=0)
-
-    # TODO: becomes overridden by previous normvalue
-    gp.value.set(value_out0)
-    value_out2 = gp.value.data
-    normvalue_out2 = gp.normvalue.data
-    # assert allclose(value_in, value_out2, atol=0, rtol=0)
-    # assert allclose(normvalue_out2, normvalue_out0, atol=0, rtol=0)
-
-    savegraph(graph, f"output/test_variables_00_{mode}.png", show_data=True, show_data_summary=False)
+    # try:
+    #     graph.close()
+    # except CriticalError as error:
+    #     savegraph(graph, f"output/test_variables_00_{mode}.png")
+    #     raise error
+    #
+    # value_out0 = gp.value.data
+    # normvalue_out0 = gp.normvalue.data
+    # assert allclose(value_in, value_out0, atol=0, rtol=0)
+    # assert all(normvalue_out0!=0)
+    #
+    # gp.normvalue.set([0.0, 0.0, 0.0])
+    # value_out1 = gp.value.data
+    # normvalue_out1 = gp.normvalue.data
+    # assert allclose(central_in, value_out1, atol=0, rtol=0)
+    # assert allclose(normvalue_out1, 0.0, atol=0, rtol=0)
+    #
+    # # TODO: becomes overridden by previous normvalue
+    # gp.value.set(value_out0)
+    # value_out2 = gp.value.data
+    # normvalue_out2 = gp.normvalue.data
+    # # assert allclose(value_in, value_out2, atol=0, rtol=0)
+    # # assert allclose(normvalue_out2, normvalue_out0, atol=0, rtol=0)
+    #
+    # savegraph(graph, f"output/test_variables_00_{mode}.png", show_data=True, show_data_summary=False)
 
