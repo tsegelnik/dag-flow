@@ -10,7 +10,7 @@ from dagflow.lib.Array import Array
 from dagflow.lib.NormalizeCorrelatedVars2 import NormalizeCorrelatedVars2
 from dagflow.lib.Cholesky import Cholesky
 
-from numpy import array, arange, allclose, sqrt, full_like
+from numpy import array, arange, allclose, sqrt, full_like, zeros_like, ones_like
 from scipy.linalg import solve_triangular, cholesky
 
 import pytest
@@ -96,36 +96,64 @@ def test_NormalizeCorrelatedVars2_00(dtype):
     assert allclose(inVec, back_matrix, atol=1.e-14, rtol=0)
     assert allclose(inVec, back_diag, atol=0, rtol=0)
 
-    normvalue1d.set((0.0, 0.0, 0.0))
-    normvalue2d.set((0.0, 0.0, 0.0))
+    inZeros = zeros_like(inVec)
+    normvalue1d.set(inZeros)
+    normvalue2d.set(inZeros)
+    back_matrix = norm2d.get_data(0)
+    back_diag = norm1d.get_data(0)
+    norm_matrix = norm2d.get_data(1)
+    norm_diag = norm1d.get_data(1)
+    assert allclose(inZeros, norm_matrix, atol=0, rtol=0)
+    assert allclose(inZeros, norm_diag, atol=0, rtol=0)
+    assert allclose(inCentral, back_matrix, atol=1.e-14, rtol=0)
+    assert allclose(inCentral, back_diag, atol=0, rtol=0)
+
+    inOnes = ones_like(inVec)
+    normvalue1d.set(inOnes)
+    normvalue2d.set(inOnes)
+    back_matrix = norm2d.get_data(0)
+    back_diag = norm1d.get_data(0)
+    norm_matrix = norm2d.get_data(1)
+    norm_diag = norm1d.get_data(1)
+    checkDiag = inCentral + inLd
+    checkMatrix = inCentral + inL@inOnes
+    assert allclose(inOnes, norm_matrix, atol=0, rtol=0)
+    assert allclose(inOnes, norm_diag, atol=0, rtol=0)
+    assert allclose(checkMatrix, back_matrix, atol=1.e-14, rtol=0)
+    assert allclose(checkDiag, back_diag, atol=0, rtol=0)
 
     savegraph(graph, f"output/test_NormalizeCorrelatedVars2_00_{dtype}.png", show=['all'])
 
-# def test_NormalizeCorrelatedVars2_01(dtype='d'):
-#     inVec = arange(4.0, dtype=dtype)*100.0
-#     inV = array([[10, 2,   1], [ 2, 12,  3], [ 1,  3, 13]], dtype=dtype)
-#     inD = inV.diagonal()
-#     inL = cholesky(inV, lower=True)
-#     inLd = sqrt(inD)
-#     with Graph() as graph1:
-#         diag = Array('diag', inD)
-#         vec = Array('vec', inVec)
-#         norm1d = NormalizeCorrelatedVars2('norm1d')
-#
-#         vec  >> norm1d.inputs['central']
-#         diag >> norm1d.inputs['matrix']
-#
-#     with Graph() as graph2:
-#         matrix = Array('matrix', inV)
-#         vec = Array('vec', inVec)
-#         norm2d = NormalizeCorrelatedVars2('norm2d')
-#
-#         vec >> norm2d.inputs['central']
-#         matrix >> norm2d.inputs['matrix']
-#
-#     with raises(TypeFunctionError):
-#         graph1.close()
-#
-#     with raises(TypeFunctionError):
-#         graph2.close()
+def test_NormalizeCorrelatedVars2_01(dtype='d'):
+    inVec = arange(4.0, dtype=dtype)*100.0
+    inNorm = full_like(inVec, -100)
+    inV = array([[10, 2,   1], [ 2, 12,  3], [ 1,  3, 13]], dtype=dtype)
+    inD = inV.diagonal()
+    with Graph() as graph1:
+        diag = Array('diag', inD)
+        vec = Array('vec', inVec, mode='store_weak')
+        nvec = Array('vec', inNorm, mode='store_weak')
+        norm1d = NormalizeCorrelatedVars2('norm1d')
+
+        vec  >> norm1d.inputs['central']
+        diag >> norm1d.inputs['matrix']
+
+        (vec, nvec) >> norm1d
+
+    with Graph() as graph2:
+        matrix = Array('matrix', inV)
+        vec = Array('vec', inVec, mode='store_weak')
+        nvec = Array('vec', inNorm, mode='store_weak')
+        norm2d = NormalizeCorrelatedVars2('norm2d')
+
+        vec >> norm2d.inputs['central']
+        matrix >> norm2d.inputs['matrix']
+
+        (vec, nvec) >> norm2d
+
+    with raises(TypeFunctionError):
+        graph1.close()
+
+    with raises(TypeFunctionError):
+        graph2.close()
 
