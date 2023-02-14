@@ -144,7 +144,7 @@ else:
                         sm2 = square(data).sum()
                         mn = data.min()
                         mx = data.max()
-                        right.append((f'Σ={sm:.2g}', f'Σ²={sm2:.2g}', f'min={mn:.2g}', f'max={mx:.2}', f'{tainted}'))
+                        right.append((f'Σ={sm:.2g}', f'Σ²={sm2:.2g}', f'min={mn:.2g}', f'max={mx:.2g}', f'{tainted}'))
 
             if node.exception is not None:
                 right.append(node.exception)
