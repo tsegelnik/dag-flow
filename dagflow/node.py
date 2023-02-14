@@ -278,11 +278,7 @@ class Node(Legs):
             return self._add_pair(iname, oname, **kwargs)
         raise ClosedGraphError(node=self)
 
-    def _add_pair(self, iname, oname, input_kws=None, output_kws=None):
-        if input_kws is None:
-            input_kws = {}
-        if output_kws is None:
-            output_kws = {}
+    def _add_pair(self, iname, oname, input_kws={}, output_kws={}):
         output = self._add_output(oname, **output_kws)
         input = self._add_input(iname, child_output=output, **input_kws)
         return input, output
@@ -355,7 +351,7 @@ class Node(Legs):
             self._frozen_tainted = False
             self.taint(force=True)
 
-    def taint(self, caller: Optional[NodeT] = None, force: bool = False):
+    def taint(self, *, caller: Optional[Input] = None, force: bool = False):
         self.logger.debug(f"Node '{self.name}': Taint...")
         if self._tainted and not force:
             return
@@ -365,12 +361,12 @@ class Node(Legs):
         self._tainted = True
         self._on_taint(caller)
         ret = self.touch() if self._immediate else None
-        self.taint_children(force)
+        self.taint_children(force=force)
         return ret
 
-    def taint_children(self, force=False):
+    def taint_children(self, **kwargs):
         for output in self.outputs:
-            output.taint_children(force)
+            output.taint_children(**kwargs)
 
     def taint_type(self, force: bool = False):
         self.logger.debug(f"Node '{self.name}': Taint types...")
@@ -399,7 +395,7 @@ class Node(Legs):
             "Unimplemented method: the method must be overridden!"
         )
 
-    def _on_taint(self, caller: NodeT):
+    def _on_taint(self, caller: Input):
         """A node method to be called on taint"""
         pass
 
