@@ -5,7 +5,7 @@ from .types import NodeT
 
 from numpy import square
 from collections.abc import Sequence
-from typing import Union
+from typing import Union, Set
 
 try:
     import pygraphviz as G
@@ -22,28 +22,18 @@ else:
         _graph = None
         _node_id_map: dict
 
-        show_type: bool
-        show_mark: bool
-        show_label: bool
-        show_data: bool
-        show_data_summary: bool
-
+        _show: Set[str]
         def __init__(
             self,
             dag,
             graphattr: dict={}, edgeattr: dict={}, nodeattr: dict={},
-            show_type: bool = True,
-            show_mark: bool = True,
-            show_label: bool = True,
-            show_data: bool = False,
-            show_data_summary: bool = False,
+            show: Sequence[str] = ['type', 'mark', 'label'],
             **kwargs
         ):
-            self.show_type = show_type
-            self.show_mark = show_mark
-            self.show_label = show_label
-            self.show_data = show_data
-            self.show_data_summary = show_data_summary
+            if 'all' in show:
+                self._show = {'type', 'mark', 'label', 'status', 'data', 'data_summary'}
+            else:
+                self._show = set(show)
 
             graphattr = dict(graphattr)
             graphattr.setdefault("rankdir", "LR")
@@ -119,13 +109,25 @@ else:
 
             left, right = [], []
             info_type = f"[{shape0}]{dtype0}{nout}"
-            if self.show_type:
+            if 'type' in self._show:
                 left.append(info_type)
-            if self.show_mark and node.mark is not None:
+            if 'mark' in self._show and node.mark is not None:
                 left.append(node.mark)
-            if self.show_label:
+            if 'label' in self._show:
                 right.append(text)
-            if self.show_data or self.show_data_summary:
+            if 'status' in self._show:
+                status = []
+                if node.types_tainted: status.append('types_tainted')
+                if node.tainted: status.append('tainted')
+                if node.frozen: status.append('frozen')
+                if node.frozen_tainted: status.append('frozen_tainted')
+                if node.invalid: status.append('invalid')
+                if not node.closed: status.append('open')
+                right.append(status)
+
+            show_data = 'data' in self._show
+            show_data_summary = 'data_summary' in self._show
+            if show_data or show_data_summary:
                 data = None
                 tainted = out0.tainted and 'tainted' or 'updated'
                 try:
@@ -135,9 +137,9 @@ else:
                 if data is None:
                     right.append('cought exception')
                 else:
-                    if self.show_data:
+                    if show_data:
                         right.append(str(data).replace('\n', '\\n'))
-                    if self.show_data_summary:
+                    if show_data_summary:
                         sm = data.sum()
                         sm2 = square(data).sum()
                         mn = data.min()
