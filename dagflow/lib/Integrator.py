@@ -2,7 +2,7 @@ from numba import jit
 from numpy import floating, integer, issubdtype, multiply, zeros
 from numpy.typing import NDArray
 
-from ..exception import TypeFunctionError
+from ..exception import InitializationError, TypeFunctionError
 from ..input_extra import MissingInputAddEach
 from ..nodes import FunctionNode
 from ..typefunctions import (
@@ -14,39 +14,31 @@ from ..typefunctions import (
 
 
 @jit(nopython=True)
-def _integrate1d(data: NDArray, weighted: NDArray, orders: NDArray):
+def _integrate1d(data: NDArray, weighted: NDArray, ordersX: NDArray):
     """
-    Summing up `weighted` within `orders` and puts the result into `data`.
-    The 1-dimensional version.
+    Summing up `weighted` within `ordersX` and puts the result into `data`.
+    The 1-dimensional version of integration.
     """
     iprev = 0
-    for i, order in enumerate(orders):
+    for i, order in enumerate(ordersX):
         inext = iprev + order
         data[i] = weighted[iprev:inext].sum()
         iprev = inext
 
 
 @jit(nopython=True)
-def _integrate2d(data: NDArray, weighted: NDArray, orders: NDArray):
+def _integrate2d(
+    data: NDArray, weighted: NDArray, ordersX: NDArray, ordersY: NDArray
+):
     """
-    Summing up `weighted` within `orders` and puts the result into `data`
-    The 2-dimensional version, so all the arrays must be 2d.
-
-    .. note:: `Numba`_ doesn't like arrays of elements with different size,
-        so arguments must have the elements with the same size.
-        This happens due to typing: arrays with elements of different sizes
-        have `dtype=object`, but `Numba`_ doesn't like the `object` type
-        and works only with numeric and sequence types (including `Numpy`_ types)
-
-    .. _Numba: https://numba.pydata.org
-    .. _Numpy: https://numpy.org
+    Summing up `weighted` within `ordersX` and `ordersY` and then
+    puts the result into `data`. The 2-dimensional version of integration.
     """
-    shape = data.shape
     iprev = 0
-    for i, orderx in enumerate(orders[0][: shape[0]]):
+    for i, orderx in enumerate(ordersX):
         inext = iprev + orderx
         jprev = 0
-        for j, ordery in enumerate(orders[1][: shape[1]]):
+        for j, ordery in enumerate(ordersY):
             jnext = jprev + ordery
             data[i, j] = weighted[iprev:inext, jprev:jnext].sum()
             jprev = jnext
@@ -56,33 +48,42 @@ def _integrate2d(data: NDArray, weighted: NDArray, orders: NDArray):
 class Integrator(FunctionNode):
     """
     The `Integrator` node performs integration (summation)
-    of every input within the `weight` and `orders` inputs.
+    of every input within the `weight`, `ordersX` and `ordersY` (for `2d` mode).
 
     The `Integrator` has two modes: `1d` and `2d`.
-    The `mode` and `precision=dtype` of integration are chosen *automaticly*
-    in the type function.
+    The `mode` must be set in the constructor, while `precision=dtype`
+    of integration is chosen *automaticly* in the type function.
 
-    For `2d` integration arrays should be like `array([...], [...])`
-    and must have only the lists with the same length (`orders` too).
+    For `2d` integration the `ordersY` input must be connected.
 
     Note that the `Integrator` preallocates temporary buffer.
     For the integration algorithm the `Numba`_ package is used.
 
-    .. note:: `Numba`_ doesn't like arrays of elements with different size,
-        so the inputs (including `orders`) must have the elements with the same size.
-        This happens due to typing: arrays with elements of different sizes
-        have `dtype=object`, but `Numba`_ doesn't like the `object` type
-        and works only with numeric and sequence types (including `Numpy`_ types)
-
     .. _Numba: https://numba.pydata.org
-    .. _Numpy: https://numpy.org
     """
 
     def __init__(self, *args, **kwargs):
         kwargs.setdefault("missing_input_handler", MissingInputAddEach())
+        self._mode = kwargs.pop("mode", None)
         super().__init__(*args, **kwargs)
+        if self._mode is None:
+            raise InitializationError(
+                "Argument `mode` must be passed!", node=self
+            )
+        elif self._mode not in {"1d", "2d"}:
+            raise InitializationError(
+                f"Argument `mode` must be '1d' or '2d', but given '{self._mode}'!",
+                node=self,
+            )
+        else:
+            self._add_input("ordersY", positional=False)
         self._add_input("weights", positional=False)
-        self._add_input("orders", positional=False)
+        self._add_input("ordersX", positional=False)
+        self._functions.update({"1d": self._fcn_1d, "2d": self._fcn_2d})
+
+    @property
+    def mode(self) -> str:
+        return self._mode
 
     def _typefunc(self) -> None:
         """
@@ -91,23 +92,23 @@ class Integrator(FunctionNode):
         determines dtype and shape for outputs
         """
         check_has_input(self)
-        check_has_input(self, ("orders", "weights"))
+        check_has_input(self, ("ordersX", "weights"))
         input0 = self.inputs[0]
         ndim = len(input0.shape)
-        if ndim > 2:
+        if ndim != int(self.mode[:1]):
             raise TypeFunctionError(
-                "The Integrator works only within 1d and 2d mode!", node=self
-            )
-        check_input_dimension(self, (slice(None), "orders", "weights"), ndim)
-        check_input_shape(
-            self, (slice(None), "orders", "weights"), input0.shape
-        )
-        orders = self.inputs["orders"]
-        if not issubdtype(orders.dtype, integer):
-            raise TypeFunctionError(
-                "The `orders` must be array of integers , but given '{dtype}'!",
+                f"The Integrator works only with {self.mode} inputs, but one has ndim={ndim}!",
                 node=self,
-                input=orders,
+            )
+        check_input_dimension(self, (slice(None), "weights"), ndim)
+        check_input_dimension(self, "ordersX", 1)
+        check_input_shape(self, (slice(None), "weights"), input0.shape)
+        ordersX = self.inputs["ordersX"]
+        if not issubdtype(ordersX.dtype, integer):
+            raise TypeFunctionError(
+                "The `ordersX` must be array of integers, but given '{ordersX.dtype}'!",
+                node=self,
+                input=ordersX,
             )
         dtype = input0.dtype
         if not issubdtype(dtype, floating):
@@ -117,27 +118,31 @@ class Integrator(FunctionNode):
                 node=self,
             )
         check_input_dtype(self, (slice(None), "weights"), dtype)
-        if ndim == 1:
-            self.__integrate = _integrate1d
-            if sum(orders.data) != input0.shape[0]:
+        if sum(ordersX.data) != input0.shape[0]:
+            raise TypeFunctionError(
+                "ordersX must be consistent with inputs shape, "
+                f"but given {ordersX.data=} and {input0.shape=}!",
+                node=self,
+                input=ordersX,
+            )
+        if self.mode == "2d":
+            check_has_input(self, "ordersY")
+            check_input_dimension(self, "ordersY", 1)
+            ordersY = self.inputs["ordersY"]
+            if not issubdtype(ordersY.dtype, integer):
                 raise TypeFunctionError(
-                    "Orders must be consistent with inputs lenght, "
-                    f"but given {orders.data=} and {input0.shape=}!",
+                    "The `ordersY` must be array of integers, but given '{ordersY.dtype}'!",
                     node=self,
-                    input=orders,
+                    input=ordersY,
                 )
-        else:
-            self.__integrate = _integrate2d
-            if any(
-                sum(orders.data[i, 0 : input0.shape[i]]) != n
-                for i, n in enumerate(input0.shape)
-            ):
+            if sum(ordersY.data) != input0.shape[1]:
                 raise TypeFunctionError(
-                    "Orders must be consistent with inputs lenght, "
-                    f"but given {orders.data=} and {input0.shape=}!",
+                    "ordersY must be consistent with inputs shape, "
+                    f"but given {ordersY.data=} and {input0.shape=}!",
                     node=self,
-                    input=orders,
+                    input=ordersX,
                 )
+        self.fcn = self._functions[self.mode]
         for output in self.outputs:
             output._dtype = dtype
             output._shape = input0.shape
@@ -147,16 +152,23 @@ class Integrator(FunctionNode):
         weights = self.inputs["weights"]
         self.__buffer = zeros(shape=weights.shape, dtype=weights.dtype)
 
-    def _fcn(self, _, inputs, outputs):
-        """
-        Integrates inputs within `weights` and `orders` inputs.
-        The integration algorithm is selected in `Integrator._typefunc`
-        within `Integrator.mode`
-        """
+    def _fcn_1d(self, _, inputs, outputs):
+        """1d version of integration function"""
         weights = inputs["weights"].data
-        orders = inputs["orders"].data
+        ordersX = inputs["ordersX"].data
         for input, output in zip(inputs.iter_data(), outputs.iter_data()):
             multiply(input, weights, out=self.__buffer)
-            self.__integrate(output, self.__buffer, orders)
+            _integrate1d(output, self.__buffer, ordersX)
+        if self.debug:
+            return [outputs.iter_data()]
+
+    def _fcn_2d(self, _, inputs, outputs):
+        """2d version of integration function"""
+        weights = inputs["weights"].data
+        ordersX = inputs["ordersX"].data
+        ordersY = inputs["ordersY"].data
+        for input, output in zip(inputs.iter_data(), outputs.iter_data()):
+            multiply(input, weights, out=self.__buffer)
+            _integrate2d(output, self.__buffer, ordersX, ordersY)
         if self.debug:
             return [outputs.iter_data()]
