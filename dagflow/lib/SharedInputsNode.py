@@ -4,7 +4,7 @@ from numpy import zeros
 from numpy.typing import NDArray
 
 from ..nodes import FunctionNode, Node
-from ..typefunctions import check_has_inputs, check_inputs_equivalence
+from ..typefunctions import check_has_input, check_inputs_equivalence
 
 
 class SharedInputsNode(FunctionNode):
@@ -34,7 +34,7 @@ class SharedInputsNode(FunctionNode):
         self.inputs.touch()
 
     def _typefunc(self) -> None:
-        check_has_inputs(self)
+        check_has_input(self)
         check_inputs_equivalence(self)
 
         self._parent_nodes = []

@@ -59,7 +59,6 @@ class Node(Legs):
         self.graph = kwargs.pop("graph", None)
         if not self.graph:
             from .graph import Graph
-
             self.graph = Graph.current()
         self._debug = kwargs.pop(
             "debug", self.graph.debug if self.graph else False
@@ -71,7 +70,6 @@ class Node(Legs):
             self._logger = logger
         else:
             from .logger import get_logger
-
             self._logger = get_logger(
                 filename=kwargs.pop("logfile", None),
                 debug=self.debug,
