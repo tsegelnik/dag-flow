@@ -1,3 +1,5 @@
+from typing import Literal
+
 from numba import jit
 from numpy import floating, integer, issubdtype, multiply, zeros
 from numpy.typing import NDArray
@@ -62,20 +64,16 @@ class Integrator(FunctionNode):
     .. _Numba: https://numba.pydata.org
     """
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args, mode: Literal["1d", "2d"], **kwargs):
         kwargs.setdefault("missing_input_handler", MissingInputAddEach())
-        self._mode = kwargs.pop("mode", None)
         super().__init__(*args, **kwargs)
-        if self._mode is None:
+        if mode not in {"1d", "2d"}:
             raise InitializationError(
-                "Argument `mode` must be passed!", node=self
-            )
-        elif self._mode not in {"1d", "2d"}:
-            raise InitializationError(
-                f"Argument `mode` must be '1d' or '2d', but given '{self._mode}'!",
+                f"Argument `mode` must be '1d' or '2d', but given '{mode}'!",
                 node=self,
             )
-        else:
+        self._mode = mode
+        if self._mode == "2d":
             self._add_input("ordersY", positional=False)
         self._add_input("weights", positional=False)
         self._add_input("ordersX", positional=False)
