@@ -1,7 +1,7 @@
 from ..input_extra import MissingInputAddOne
 from ..nodes import FunctionNode
 from ..typefunctions import (
-    check_has_input,
+    check_has_inputs,
     combine_inputs_shape_to_output,
     eval_output_dtype,
 )
@@ -18,7 +18,7 @@ class Concatenation(FunctionNode):
 
     def _typefunc(self) -> None:
         """A output takes this function to determine the dtype and shape"""
-        check_has_input(self)
+        check_has_inputs(self)
         combine_inputs_shape_to_output(self, slice(None), "result")
         eval_output_dtype(self, slice(None), "result")
 

@@ -8,7 +8,7 @@ from ..exception import InitializationError, TypeFunctionError
 from ..input_extra import MissingInputAddEach
 from ..nodes import FunctionNode
 from ..typefunctions import (
-    check_has_input,
+    check_has_inputs,
     check_input_dimension,
     check_input_dtype,
     check_input_shape,
@@ -89,8 +89,8 @@ class Integrator(FunctionNode):
         Checks inputs dimension and, selects an integration algorithm,
         determines dtype and shape for outputs
         """
-        check_has_input(self)
-        check_has_input(self, ("ordersX", "weights"))
+        check_has_inputs(self)
+        check_has_inputs(self, ("ordersX", "weights"))
         input0 = self.inputs[0]
         ndim = len(input0.shape)
         if ndim != int(self.mode[:1]):
@@ -124,7 +124,7 @@ class Integrator(FunctionNode):
                 input=ordersX,
             )
         if self.mode == "2d":
-            check_has_input(self, "ordersY")
+            check_has_inputs(self, "ordersY")
             check_input_dimension(self, "ordersY", 1)
             ordersY = self.inputs["ordersY"]
             if not issubdtype(ordersY.dtype, integer):

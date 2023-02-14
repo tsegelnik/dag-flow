@@ -22,7 +22,7 @@ except TypeError:
             yield combo
 
 
-def check_has_input(
+def check_has_inputs(
     node: NodeT, inputkey: Union[str, int, slice, Sequence, None] = None
 ) -> None:
     """Checking if the node has inputs"""
