@@ -27,7 +27,7 @@ else:
             self,
             dag,
             graphattr: dict={}, edgeattr: dict={}, nodeattr: dict={},
-            show: Sequence[str] = ['type', 'mark', 'label'],
+            show: Sequence = ['type', 'mark', 'label'],
             **kwargs
         ):
             if 'all' in show:
