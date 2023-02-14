@@ -150,7 +150,7 @@ class MissingInputAddEach(MissingInputAdd):
         self.add_child_output = add_child_output
 
     def __call__(self, idx=None, scope=None):
-        if scope == self.scope:
+        if scope == self.scope != 0:
             out = self.node.outputs[-1]
         else:
             out = self.node._add_output(

@@ -134,6 +134,7 @@ class Output:
                 output=self,
             )
         try:
+            self.touch()
             return self.get_data_unsafe()
         except Exception as exc:
             raise CriticalError(
@@ -207,7 +208,6 @@ class Output:
         return self._debug
 
     def get_data_unsafe(self):
-        self.touch()
         return self._data
 
     def connect_to(self, input) -> InputT:

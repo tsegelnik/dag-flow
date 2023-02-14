@@ -1,7 +1,7 @@
 from ..input_extra import MissingInputAddPair
 from ..nodes import FunctionNode
 from ..typefunctions import (
-    check_has_inputs,
+    check_has_input,
     copy_input_to_output,
     check_input_square_or_diag
 )
@@ -46,7 +46,7 @@ class Cholesky(FunctionNode):
             sqrt(input, out=output)
 
     def _typefunc(self) -> None:
-        check_has_inputs(self)
+        check_has_input(self)
         ndim = check_input_square_or_diag(self, slice(None))
         copy_input_to_output(self, slice(None), slice(None))
 

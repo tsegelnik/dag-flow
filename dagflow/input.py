@@ -192,6 +192,10 @@ class Input:
 
     @property
     def data(self):
+        # NOTE: if the node is being evaluated, we must touch the node
+        #       (trigger deep evaluation), else we get the data directly
+        if self.node.being_evaluated:
+            return self._parent_output.data
         return self._parent_output.get_data_unsafe()
 
     @property
