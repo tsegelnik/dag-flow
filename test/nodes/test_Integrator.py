@@ -91,8 +91,32 @@ def test_Integrator_04(debug_graph):
     assert (integrator.outputs[1].data == [[0, 0, 0], [2, 6, 12]]).all()
 
 
-# test wrong ordersX: sum(ordersX) != shape
 def test_Integrator_05(debug_graph):
+    unity = [1.0, 1.0, 1.0]
+    with Graph(debug=debug_graph, close=True):
+        arr1 = Array(
+            "array", [[1.0, 0.0, 0.0], [0.0, 1.0, 0.0], [0.0, 0.0, 1.0]]
+        )
+        arr2 = Array("array", [unity, unity, unity])
+        weights = Array("weights", [unity, unity, unity])
+        ordersX = Array("ordersX", [1, 1, 1])
+        ordersY = Array("ordersY", [1, 0, 2])
+        integrator = Integrator("integrator", mode="2d")
+        arr1 >> integrator
+        arr2 >> integrator
+        weights >> integrator("weights")
+        ordersX >> integrator("ordersX")
+        ordersY >> integrator("ordersY")
+    assert (
+        integrator.outputs[0].data == [[1, 0, 0], [0, 0, 1], [0, 0, 1]]
+    ).all()
+    assert (
+        integrator.outputs[1].data == [[1, 0, 2], [1, 0, 2], [1, 0, 2]]
+    ).all()
+
+
+# test wrong ordersX: sum(ordersX) != shape
+def test_Integrator_06(debug_graph):
     arr = [1.0, 2.0, 3.0]
     with Graph(debug=debug_graph):
         arr1 = Array("array", arr)
@@ -107,7 +131,7 @@ def test_Integrator_05(debug_graph):
 
 
 # test wrong ordersX: sum(ordersX[i]) != shape[i]
-def test_Integrator_06(debug_graph):
+def test_Integrator_07(debug_graph):
     arr = [1.0, 2.0, 3.0]
     with Graph(debug=debug_graph):
         arr1 = Array("array", [arr, arr])
@@ -124,10 +148,10 @@ def test_Integrator_06(debug_graph):
 
 
 # test wrong shape
-def test_Integrator_07(debug_graph):
+def test_Integrator_08(debug_graph):
     with Graph(debug=debug_graph, close=False):
         arr1 = Array("array", [[1.0, 1.0, 1.0], [1.0, 1.0, 1.0]])
-        arr2 = Array("array", [[1., 2., 3., 4.], [1., 2., 3., 4.]])
+        arr2 = Array("array", [[1.0, 2.0, 3.0, 4.0], [1.0, 2.0, 3.0, 4.0]])
         weights = Array("weights", [[1.0, 1.0, 1.0], [1.0, 1.0, 1.0]])
         ordersX = Array("ordersX", [0, 2])
         ordersY = Array("ordersY", [1, 1, 1, 3])
@@ -138,4 +162,4 @@ def test_Integrator_07(debug_graph):
         ordersX >> integrator("ordersX")
         ordersY >> integrator("ordersY")
     with raises(TypeFunctionError):
-       integrator.close()
+        integrator.close()
