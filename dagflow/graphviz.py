@@ -27,10 +27,10 @@ else:
             self,
             dag,
             graphattr: dict={}, edgeattr: dict={}, nodeattr: dict={},
-            show: Sequence = ['type', 'mark', 'label'],
+            show: Union[Sequence,str] = ['type', 'mark', 'label'],
             **kwargs
         ):
-            if 'all' in show:
+            if show=='all' or 'all' in show:
                 self._show = {'type', 'mark', 'label', 'status', 'data', 'data_summary'}
             else:
                 self._show = set(show)
@@ -138,7 +138,7 @@ else:
                     right.append('cought exception')
                 else:
                     if show_data:
-                        right.append(str(data).replace('\n', '\\n'))
+                        right.append(str(data).replace('\n', '\\l')+'\\l')
                     if show_data_summary:
                         sm = data.sum()
                         sm2 = square(data).sum()
