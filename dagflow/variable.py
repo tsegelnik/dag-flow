@@ -1,10 +1,12 @@
 # from numpy import array, copyto, result_type
 
+from dagflow.lib import CovmatrixFromCormatrix
 from .node import Node, Output
 from .exception import InitializationError
 from .lib.NormalizeCorrelatedVars2 import NormalizeCorrelatedVars2
 from .lib.Cholesky import Cholesky
 from .lib.Array import Array
+from .lib.CovmatrixFromCormatrix import CovmatrixFromCormatrix
 
 from numpy import zeros_like
 from typing import Optional
@@ -28,18 +30,32 @@ class GaussianParameters(Parameters):
 
     _cholesky_node: Optional[Node] = None
     _covariance_node: Optional[Node] = None
+    _correlation_node: Optional[Node] = None
+    _sigma_total_node: Optional[Node] = None
 
     _forward_node: Node
     _backward_node: Node
 
-    def __init__(self, value: Node, central: Node, *, sigma: Node=None, covariance: Node=None):
+    def __init__(self, value: Node, central: Node, *, sigma: Node=None, covariance: Node=None, correlation: Node=None):
         super().__init__(value)
         self._central_node = central
 
         if sigma is not None and covariance is not None:
             raise InitializationError('GaussianParameters: got both "sigma" and "covariance" as arguments')
+        if correlation is not None and sigma is None:
+            raise InitializationError('GaussianParameters: got "correlation", but no "sigma" as arguments')
 
-        if sigma is not None:
+        if correlation is not None:
+            self._correlation_node = correlation
+            self._covariance_node = CovmatrixFromCormatrix(f"V({value.name})")
+            self._cholesky_node = Cholesky(f"L({value.name})")
+            self._sigma_total_node = sigma
+            self._sigma_node = self._cholesky_node
+
+            self._sigma_total_node >> self._covariance_node.inputs['sigma']
+            correlation >> self._covariance_node
+            self._covariance_node >> self._cholesky_node
+        elif sigma is not None:
             self._sigma_node = sigma
         elif covariance is not None:
             self._cholesky_node = Cholesky(f"L({value.name})")

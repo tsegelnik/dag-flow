@@ -14,7 +14,7 @@ import pytest
 #     pass
 
 # @pytest.mark.parametrize('mode', ('single', 'uncorr', 'cov', 'cov1d'))
-@pytest.mark.parametrize('mode', ('cov',))
+@pytest.mark.parametrize('mode', ('cor',))
 def test_variables_00_variable(mode) -> None:
     value_in    = [1.1, 1.8, 5.0]
     central_in  = [1.0, 2.0, 3.0]
@@ -28,11 +28,13 @@ def test_variables_00_variable(mode) -> None:
         sigma_in = sigma_in[:1]
 
     with Graph(debug=False, close=False) as graph:
-        value   = Array("variable", value_in,       mode='store_weak', mark='v')
-        central = Array("central",  central_in,     mode='store_weak', mark='v₀')
+        value   = Array("variable", value_in, mode='store_weak', mark='v')
+        central = Array("central",  central_in, mark='v₀')
+
+        if mode in ('single', 'uncorr', 'cor'):
+            sigma = Array("sigma", sigma_in, mark='σ')
 
         if mode in ('single', 'uncorr'):
-            sigma   = Array("central",  sigma_in, mode='store_weak', mark='σ')
             gp = GaussianParameters(value, central, sigma=sigma)
         elif mode=='cov':
             covariance = Array("covariance", [
@@ -40,19 +42,18 @@ def test_variables_00_variable(mode) -> None:
                     [corrs_in[0]*sigma_in[0]*sigma_in[1], variance_in[1],                      corrs_in[2]*sigma_in[1]*sigma_in[2]],
                     [corrs_in[1]*sigma_in[0]*sigma_in[2], corrs_in[2]*sigma_in[1]*sigma_in[2], variance_in[2]]
                                 ],
-                               mark='V',
-                               mode='store_weak')
+                               mark='V')
             gp = GaussianParameters(value, central, covariance=covariance)
         elif mode=='cov1d':
-            covariance = Array("covariance", variance_in, mark='diag(V)', mode='store_weak')
+            covariance = Array("covariance", variance_in, mark='diag(V)')
             gp = GaussianParameters(value, central, covariance=covariance)
-        # elif mode=='cor':
-        #     correlation = Array("correlation", [
-        #         [1.0,         corrs_in[0], corrs_in[1]],
-        #         [corrs_in[0], 1.0,         corrs_in[2]],
-        #         [corrs_in[1], corrs_in[2], 1.0],
-        #         ], mark='C', mode='store_weak')
-        #     gp = GaussianParameters(value, central, correlation=correlation)
+        elif mode=='cor':
+            correlation = Array("correlation", [
+                [1.0,         corrs_in[0], corrs_in[1]],
+                [corrs_in[0], 1.0,         corrs_in[2]],
+                [corrs_in[1], corrs_in[2], 1.0],
+                ], mark='C')
+            gp = GaussianParameters(value, central, sigma=sigma, correlation=correlation)
         else:
             raise RuntimeError(f"Invalid mode {mode}")
 
