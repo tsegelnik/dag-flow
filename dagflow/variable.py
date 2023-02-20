@@ -60,14 +60,14 @@ class GaussianParameters(Parameters):
             mark = f'norm({value.mark})',
             mode='store_weak'
         )
+        self.normvalue = self._normvalue_node.outputs[0]
 
-        #
-        # Correlated → normalized
-        #
-        # self._norm_node = NormalizeCorrelatedVars2(f"Normalize {value.name}")
-        # self.central >> self._forward_node.inputs['central']
-        # self.sigma >> self._forward_node.inputs['matrix']
-        # (self.value, self._normvalue_node) >> self._forward_node
-        #
-        # self.normvalue = self._normvalue_node.outputs[0]
+        self._norm_node = NormalizeCorrelatedVars2(f"Normalize {value.name}", immediate=True)
+        self.central >> self._norm_node.inputs['central']
+        self.sigma >> self._norm_node.inputs['matrix']
+        (self.value, self.normvalue) >> self._norm_node
+
+        self._norm_node.close(recursive=True)
+        self._norm_node.touch()
+
 
