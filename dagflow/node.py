@@ -232,6 +232,7 @@ class Node(Legs):
         keyword = kwargs.pop("keyword", True)
         inp = Input(name, self, **kwargs)
         self.inputs.add(inp, positional=positional, keyword=keyword)
+
         if self._graph:
             self._graph._add_input(inp)
         return inp
@@ -241,7 +242,7 @@ class Node(Legs):
             return self._add_output(name, **kwargs)
         raise ClosedGraphError(node=self)
 
-    def _add_output(self, name, **kwargs):
+    def _add_output(self, name, *, keyword: bool=True, positional: bool=True, **kwargs):
         if IsIterable(name):
             return tuple(
                 self._add_output(n, **kwargs) for n in name
@@ -253,16 +254,16 @@ class Node(Legs):
             name._node = self
             return self.__add_output(
                 name,
-                positional=kwargs.get("positional", True),
-                keyword=kwargs.get("keyword", True),
+                positional=positional,
+                keyword=keyword
             )
         if name in self.outputs:
             raise ReconnectionError(output=name, node=self)
 
         return self.__add_output(
             Output(name, self, **kwargs),
-            positional=kwargs.get("positional", True),
-            keyword=kwargs.get("keyword", True),
+            positional=positional,
+            keyword=keyword
         )
 
     def __add_output(self, out, positional: bool = True, keyword: bool = True):
