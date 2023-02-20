@@ -122,6 +122,20 @@ def test_NormalizeCorrelatedVars2_00(dtype):
     assert allclose(checkMatrix, back_matrix, atol=1.e-14, rtol=0)
     assert allclose(checkDiag, back_diag, atol=0, rtol=0)
 
+    norm2d._immediate = True
+    norm1d._immediate = True
+    value1d.set(inCentral)
+    value2d.set(inCentral)
+    norm_matrix = norm2d.outputs[1]._data
+    norm_diag = norm1d.outputs[1]._data
+    back_matrix = norm2d.outputs[0]._data
+    back_diag = norm1d.outputs[0]._data
+    assert allclose(inZeros, norm_matrix, atol=0, rtol=0)
+    assert allclose(inZeros, norm_diag, atol=0, rtol=0)
+    assert allclose(inCentral, back_matrix, atol=1.e-14, rtol=0)
+    assert allclose(inCentral, back_diag, atol=0, rtol=0)
+
+
     savegraph(graph, f"output/test_NormalizeCorrelatedVars2_00_{dtype}.png", show=['all'])
 
 def test_NormalizeCorrelatedVars2_01(dtype='d'):
