@@ -13,19 +13,20 @@ import pytest
 # def test_variables_00_parameter() -> None:
 #     pass
 
-# @pytest.mark.parametrize('mode', ('single', 'uncorr', 'cov', 'cov1d'))
-@pytest.mark.parametrize('mode', ('cor',))
+@pytest.mark.parametrize('mode', ('single', 'uncorr', 'cov', 'cov1d'))
 def test_variables_00_variable(mode) -> None:
     value_in    = [1.1, 1.8, 5.0]
     central_in  = [1.0, 2.0, 3.0]
     sigma_in    = [1.0, 0.5, 2.0]
     corrs_in    = [-0.1, 0.5, -0.9] # 01, 02, 12
     variance_in = square(sigma_in)
+    zeros_in    = [0.0, 0.0, 0.0]
 
     if mode=='single':
         value_in = value_in[:1]
         central_in = central_in[:1]
         sigma_in = sigma_in[:1]
+        zeros_in = zeros_in[:1]
 
     with Graph(debug=False, close=False) as graph:
         value   = Array("variable", value_in, mode='store_weak', mark='v')
@@ -68,7 +69,7 @@ def test_variables_00_variable(mode) -> None:
     assert allclose(value_in, value_out0, atol=0, rtol=0)
     assert all(normvalue_out0!=0)
 
-    gp.normvalue.set([0.0, 0.0, 0.0])
+    gp.normvalue.set(zeros_in)
     value_out1 = gp.value.data
     normvalue_out1 = gp.normvalue.data
     assert allclose(central_in, value_out1, atol=0, rtol=0)
