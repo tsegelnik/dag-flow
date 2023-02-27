@@ -188,7 +188,6 @@ def check_input_square_or_diag(
             )
     return dim_max
 
-
 def check_input_shape(
     node: NodeT, inputkey: Union[str, int, slice, Sequence], shape: tuple
 ):
@@ -232,6 +231,30 @@ def check_inputs_equivalence(
                 node=node,
                 input=input,
             )
+
+def check_inputs_square_or_diag(
+    node: NodeT,
+    inputkey: Union[str, int, slice, Sequence] = AllPositionals,
+) -> int:
+    """Check if inputs are square matrices or diagonals (1d) of a square matrices of the same size.
+    Returns the maximal dimension."""
+    inputs = tuple(node.inputs.iter(inputkey))
+
+    dim_max = 0
+    shape0 = inputs[0].shape[0]
+
+    for input in inputs:
+        shape = input.shape
+        dim = len(shape)
+        dim_max = max(dim, dim_max)
+        if shape0 != shape[0] and (dim == 2 and shape[0] != shape[1]) and dim != 1:
+            raise TypeFunctionError(
+                f"The node supports only square inputs (or 1d as diagonal) of size {shape0}x{shape0}. Got {shape}!",
+                node=node,
+                input=input,
+            )
+    return dim_max
+
 
 def check_inputs_same_dtype(
     node: NodeT, inputkey: Union[str, int, slice, Sequence] = AllPositionals
