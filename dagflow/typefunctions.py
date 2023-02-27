@@ -7,6 +7,8 @@ from itertools import repeat
 from .exception import TypeFunctionError
 from .types import NodeT
 
+AllPositionals = slice(None)
+
 try:
     zip((), (), strict=True)
 except TypeError:
@@ -26,7 +28,7 @@ def check_has_inputs(
     node: NodeT, inputkey: Union[str, int, slice, Sequence, None] = None
 ) -> None:
     """Checking if the node has inputs"""
-    if inputkey is None or inputkey == slice(None):
+    if inputkey is None or inputkey == AllPositionals:
         try:
             node.inputs[0]
         except Exception as exc:
@@ -44,8 +46,8 @@ def check_has_inputs(
 
 def eval_output_dtype(
     node: NodeT,
-    inputkey: Union[str, int, slice, Sequence] = slice(None),
-    outputkey: Union[str, int, slice, Sequence] = slice(None),
+    inputkey: Union[str, int, slice, Sequence] = AllPositionals,
+    outputkey: Union[str, int, slice, Sequence] = AllPositionals,
 ) -> None:
     """Automatic calculation and setting dtype for the output"""
     inputs = node.inputs.iter(inputkey)
@@ -59,7 +61,7 @@ def eval_output_dtype(
 def copy_input_to_output(
     node: NodeT,
     inputkey: Union[str, int, slice, Sequence] = 0,
-    outputkey: Union[str, int, slice, Sequence] = slice(None),
+    outputkey: Union[str, int, slice, Sequence] = AllPositionals,
     dtype: bool = True,
     shape: bool = True,
 ) -> None:
@@ -96,7 +98,7 @@ def copy_input_to_output(
 def copy_input_dtype_to_output(
     node: NodeT,
     inputkey: Union[str, int, slice, Sequence] = 0,
-    outputkey: Union[str, int, slice, Sequence] = slice(None),
+    outputkey: Union[str, int, slice, Sequence] = AllPositionals,
 ) -> None:
     """Coping input dtype and setting for the output"""
     inputs = tuple(node.inputs.iter(inputkey))
@@ -112,7 +114,7 @@ def copy_input_dtype_to_output(
 def copy_input_shape_to_output(
     node: NodeT,
     inputkey: Union[str, int] = 0,
-    outputkey: Union[str, int, slice, Sequence] = slice(None),
+    outputkey: Union[str, int, slice, Sequence] = AllPositionals,
 ) -> None:
     """Coping input shape and setting for the output"""
     inputs = tuple(node.inputs.iter(inputkey))
@@ -127,8 +129,8 @@ def copy_input_shape_to_output(
 
 def combine_inputs_shape_to_output(
     node: NodeT,
-    inputkey: Union[str, int, slice, Sequence] = slice(None),
-    outputkey: Union[str, int, slice, Sequence] = slice(None),
+    inputkey: Union[str, int, slice, Sequence] = AllPositionals,
+    outputkey: Union[str, int, slice, Sequence] = AllPositionals,
 ) -> None:
     """Combine all the inputs shape and setting for the output"""
     inputs = node.inputs.iter(inputkey)
@@ -216,7 +218,7 @@ def check_input_dtype(
 
 
 def check_inputs_equivalence(
-    node: NodeT, inputkey: Union[str, int, slice, Sequence] = slice(None)
+    node: NodeT, inputkey: Union[str, int, slice, Sequence] = AllPositionals
 ):
     """Checking the equivalence of the dtype and shape of all the inputs"""
     inputs = tuple(node.inputs.iter(inputkey))
