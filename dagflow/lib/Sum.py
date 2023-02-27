@@ -1,4 +1,4 @@
-from numpy import copyto
+from numpy import copyto, add
 
 from ..input_extra import MissingInputAddOne
 from ..nodes import FunctionNode
@@ -24,7 +24,7 @@ class Sum(FunctionNode):
         copyto(out, inputs[0].data)
         if len(inputs) > 1:
             for input in inputs[1:]:
-                out += input.data
+                add(out, input.data, out=out)
         return out
 
     def _typefunc(self) -> None:
