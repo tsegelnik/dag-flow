@@ -233,6 +233,22 @@ def check_inputs_equivalence(
                 input=input,
             )
 
+def check_inputs_same_dtype(
+    node: NodeT, inputkey: Union[str, int, slice, Sequence] = AllPositionals
+):
+    """Checking dtypes of all the inputs are same"""
+    inputs = tuple(node.inputs.iter(inputkey))
+    input0, inputs = inputs[0], inputs[1:]
+
+    dtype = input0.dtype
+    for input in inputs:
+        if input.dtype != dtype:
+            raise TypeFunctionError(
+                f"Input data {input.dtype} is inconsistent with {dtype}",
+                node=node,
+                input=input,
+            )
+
 
 def check_inputs_multiplicable_mat(
     node: NodeT,
