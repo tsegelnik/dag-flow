@@ -1,5 +1,3 @@
-# from numpy import array, copyto, result_type
-
 from dagflow.lib import CovmatrixFromCormatrix
 from .node import Node, Output
 from .exception import InitializationError

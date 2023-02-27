@@ -7,7 +7,6 @@ from .exception import (
     ClosedGraphError,
     ReconnectionError,
     AllocationError,
-    ConnectionError,
     InitializationError,
 )
 from .output import Output

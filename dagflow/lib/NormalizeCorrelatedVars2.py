@@ -1,4 +1,3 @@
-from ..input_extra import MissingInputAddPair
 from ..nodes import FunctionNode
 from ..node import Input, Output
 from ..typefunctions import (
@@ -9,7 +8,6 @@ from ..typefunctions import (
     check_inputs_equivalence,
     check_inputs_multiplicable_mat
 )
-from ..exception import InitializationError
 
 from scipy.linalg import solve_triangular
 from numpy import matmul, subtract, divide, multiply, add, zeros
