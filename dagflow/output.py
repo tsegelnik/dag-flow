@@ -252,13 +252,13 @@ class Output:
     def __rlshift__(self, other):
         return lshift(self, other)
 
-    def taint_children(self, force: bool = False):
+    def taint_children(self, **kwargs) -> None:
         for input in self._child_inputs:
-            input.taint(caller=self.node, force=force)
+            input.taint(**kwargs)
 
-    def taint_children_type(self, force: bool = False):
+    def taint_children_type(self, **kwargs) -> None:
         for input in self._child_inputs:
-            input.taint_type(force=force)
+            input.taint_type(**kwargs)
 
     def touch(self):
         return self._node.touch()
@@ -295,7 +295,8 @@ class Output:
                     )
 
                 if self._data is not idata:
-                    idata[:] = self._data
+                    if self._data is not None:
+                        idata[:] = self._data
                     self._set_data(idata, owns_buffer=False, override=True)
                 return True
 

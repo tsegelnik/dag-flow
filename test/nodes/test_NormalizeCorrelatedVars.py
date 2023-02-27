@@ -5,11 +5,9 @@ from dagflow.exception import TypeFunctionError
 
 from dagflow.graph import Graph
 from dagflow.graphviz import savegraph
-from dagflow.lib.View import View
 from dagflow.lib.Array import Array
 from dagflow.lib.NormalizeCorrelatedVars import NormalizeCorrelatedVars
 from dagflow.lib.Cholesky import Cholesky
-from dagflow.wrappers import *
 
 from numpy import array, arange, allclose, sqrt
 from scipy.linalg import solve_triangular, cholesky
@@ -103,8 +101,6 @@ def test_NormalizeCorrelatedVars_01(dtype='d'):
     inVec = arange(4.0, dtype=dtype)*100.0
     inV = array([[10, 2,   1], [ 2, 12,  3], [ 1,  3, 13]], dtype=dtype)
     inD = inV.diagonal()
-    inL = cholesky(inV, lower=True)
-    inLd = sqrt(inD)
     with Graph() as graph1:
         diag = Array('diag', inD)
         vec = Array('vec', inVec)

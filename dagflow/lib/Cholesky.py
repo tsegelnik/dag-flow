@@ -11,6 +11,7 @@ from numpy import sqrt
 class Cholesky(FunctionNode):
     """Compute the Cholesky decomposition of a matrix V=LL̃ᵀ
     1d input is considered to be a diagonal of square matrix"""
+    _mark: str = 'V→L'
     def __init__(self, *args, **kwargs):
         kwargs.setdefault(
                 "missing_input_handler", MissingInputAddPair(input_fmt='matrix', output_fmt='L')
@@ -52,6 +53,8 @@ class Cholesky(FunctionNode):
 
         if ndim==2:
             self.fcn = self._functions["square"]
+            self._mark = 'V→L'
         else:
             self.fcn = self._functions["diagonal"]
+            self._mark = 'sqrt(Vᵢ)'
 

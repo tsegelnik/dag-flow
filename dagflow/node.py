@@ -15,14 +15,16 @@ from .logger import Logger
 from .output import Output
 from .tools import IsIterable, undefined
 from .types import NodeT
-from typing import Optional
+from typing import Optional, List, Tuple, Union
 
 class Node(Legs):
     _name = undefined("name")
+    _mark: Optional[str] = None
     _label = undefined("label")
     _graph = undefined("graph")
     _fcn = undefined("function")
     _fcn_chain = None
+    _exception: Optional[str] = None
 
     # Taintflag and status
     _tainted: bool = True
@@ -94,6 +96,14 @@ class Node(Legs):
     @name.setter
     def name(self, name):
         self._name = name
+
+    @property
+    def mark(self):
+        return self._mark
+
+    @property
+    def exception(self):
+        return self._exception
 
     @property
     def logger(self) -> Logger:
@@ -207,12 +217,12 @@ class Node(Legs):
             return self._label.format(*args, **kwargs)
         return self._label
 
-    def add_input(self, name, **kwargs):
+    def add_input(self, name, **kwargs) -> Union[Input, Tuple[Input]]:
         if not self.closed:
             return self._add_input(name, **kwargs)
         raise ClosedGraphError(node=self)
 
-    def _add_input(self, name, **kwargs):
+    def _add_input(self, name, **kwargs) -> Union[Input, Tuple[Input]]:
         if IsIterable(name):
             return tuple(self._add_input(n, **kwargs) for n in name)
         self.logger.debug(f"Node '{self.name}': Add input '{name}'")
@@ -222,16 +232,17 @@ class Node(Legs):
         keyword = kwargs.pop("keyword", True)
         inp = Input(name, self, **kwargs)
         self.inputs.add(inp, positional=positional, keyword=keyword)
+
         if self._graph:
             self._graph._add_input(inp)
         return inp
 
-    def add_output(self, name, **kwargs):
+    def add_output(self, name, **kwargs) -> Union[Output, Tuple[Output]]:
         if not self.closed:
             return self._add_output(name, **kwargs)
         raise ClosedGraphError(node=self)
 
-    def _add_output(self, name, **kwargs):
+    def _add_output(self, name, *, keyword: bool=True, positional: bool=True, **kwargs) -> Union[Output, Tuple[Output]]:
         if IsIterable(name):
             return tuple(
                 self._add_output(n, **kwargs) for n in name
@@ -243,34 +254,32 @@ class Node(Legs):
             name._node = self
             return self.__add_output(
                 name,
-                positional=kwargs.get("positional", True),
-                keyword=kwargs.get("keyword", True),
+                positional=positional,
+                keyword=keyword
             )
         if name in self.outputs:
             raise ReconnectionError(output=name, node=self)
 
         return self.__add_output(
             Output(name, self, **kwargs),
-            positional=kwargs.get("positional", True),
-            keyword=kwargs.get("keyword", True),
+            positional=positional,
+            keyword=keyword
         )
 
-    def __add_output(self, out, positional: bool = True, keyword: bool = True):
+    def __add_output(self, out, positional: bool = True, keyword: bool = True) -> Union[Output, Tuple[Output]]:
         self.outputs.add(out, positional=positional, keyword=keyword)
         if self._graph:
             self._graph._add_output(out)
         return out
 
-    def add_pair(self, iname, oname, **kwargs):
+    def add_pair(self, iname: str, oname: str, **kwargs) -> Tuple[Input, Output]:
         if not self.closed:
             return self._add_pair(iname, oname, **kwargs)
         raise ClosedGraphError(node=self)
 
-    def _add_pair(self, iname, oname, input_kws=None, output_kws=None):
-        if input_kws is None:
-            input_kws = {}
-        if output_kws is None:
-            output_kws = {}
+    def _add_pair(self, iname: str, oname: str, input_kws: Optional[dict]=None, output_kws: Optional[dict]=None) -> Tuple[Input, Output]:
+        input_kws = input_kws or {}
+        output_kws = output_kws or {}
         output = self._add_output(oname, **output_kws)
         input = self._add_input(iname, child_output=output, **input_kws)
         return input, output
@@ -343,7 +352,7 @@ class Node(Legs):
             self._frozen_tainted = False
             self.taint(force=True)
 
-    def taint(self, caller: Optional[NodeT] = None, force: bool = False):
+    def taint(self, *, caller: Optional[Input] = None, force: bool = False):
         self.logger.debug(f"Node '{self.name}': Taint...")
         if self._tainted and not force:
             return
@@ -353,12 +362,12 @@ class Node(Legs):
         self._tainted = True
         self._on_taint(caller)
         ret = self.touch() if self._immediate else None
-        self.taint_children(force)
+        self.taint_children(force=force)
         return ret
 
-    def taint_children(self, force=False):
+    def taint_children(self, **kwargs):
         for output in self.outputs:
-            output.taint_children(force)
+            output.taint_children(**kwargs)
 
     def taint_type(self, force: bool = False):
         self.logger.debug(f"Node '{self.name}': Taint types...")
@@ -387,7 +396,7 @@ class Node(Legs):
             "Unimplemented method: the method must be overridden!"
         )
 
-    def _on_taint(self, caller: NodeT):
+    def _on_taint(self, caller: Input):
         """A node method to be called on taint"""
         pass
 
@@ -429,18 +438,23 @@ class Node(Legs):
         self._allocated = True
         return True
 
-    def close(self, recursive: bool = True) -> bool:
+    def close(self, recursive: bool = True, together: List[NodeT] = []) -> bool:
         if self._closed:
             return True
         if self.invalid:
             raise ClosingError("Cannot close an invalid node!", node=self)
         self.logger.debug(f"Node '{self.name}': Trigger recursive close")
-        self.update_types(recursive=recursive)
-        self.allocate(recursive=recursive)
+        for node in [self]+together:
+            node.update_types(recursive=recursive)
+        for node in [self]+together:
+            node.allocate(recursive=recursive)
         if recursive and not all(
             input.parent_node.close(recursive) for input in self.inputs.iter_all()
         ):
             return False
+        for node in together:
+            if not node.close(recursive=recursive):
+                return False
         self.logger.debug(f"Node '{self.name}': Close")
         self._closed = self._allocated
         if not self._closed:

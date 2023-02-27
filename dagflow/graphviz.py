@@ -3,6 +3,10 @@ from .output import Output
 from .printl import printl
 from .types import NodeT
 
+from numpy import square
+from collections.abc import Sequence
+from typing import Union, Set
+
 try:
     import pygraphviz as G
 except ImportError:
@@ -18,14 +22,19 @@ else:
         _graph = None
         _node_id_map: dict
 
+        _show: Set[str]
         def __init__(
             self,
             dag,
-            graphattr: dict={},
-            edgeattr: dict={},
-            nodeattr: dict={},
+            graphattr: dict={}, edgeattr: dict={}, nodeattr: dict={},
+            show: Union[Sequence,str] = ['type', 'mark', 'label'],
             **kwargs
         ):
+            if show=='all' or 'all' in show:
+                self._show = {'type', 'mark', 'label', 'status', 'data', 'data_summary'}
+            else:
+                self._show = set(show)
+
             graphattr = dict(graphattr)
             graphattr.setdefault("rankdir", "LR")
             graphattr.setdefault("dpi", 300)
@@ -80,10 +89,7 @@ else:
                 shape0 = out0.shape
                 if shape0 is None:
                     shape0 = '?'
-                elif len(shape0)==1:
-                    shape0=str(shape0[0])
-                else:
-                    shape0=str(shape0)[1:-1]
+                shape0="x".join(str(s) for s in shape0)
 
                 dtype0 = out0.dtype
                 if dtype0 is None:
@@ -101,7 +107,56 @@ else:
             else:
                 nout=f' N{npos}/{nall}'
 
-            return f"{{[{shape0}]{dtype0}{nout} | {text}}}"
+            left, right = [], []
+            info_type = f"[{shape0}]{dtype0}{nout}"
+            if 'type' in self._show:
+                left.append(info_type)
+            if 'mark' in self._show and node.mark is not None:
+                left.append(node.mark)
+            if 'label' in self._show:
+                right.append(text)
+            if 'status' in self._show:
+                status = []
+                if node.types_tainted: status.append('types_tainted')
+                if node.tainted: status.append('tainted')
+                if node.frozen: status.append('frozen')
+                if node.frozen_tainted: status.append('frozen_tainted')
+                if node.invalid: status.append('invalid')
+                if not node.closed: status.append('open')
+                right.append(status)
+
+            show_data = 'data' in self._show
+            show_data_summary = 'data_summary' in self._show
+            if show_data or show_data_summary:
+                data = None
+                tainted = out0.tainted and 'tainted' or 'updated'
+                try:
+                    data = out0.data
+                except:
+                    pass
+                if data is None:
+                    right.append('cought exception')
+                else:
+                    if show_data:
+                        right.append(str(data).replace('\n', '\\l')+'\\l')
+                    if show_data_summary:
+                        sm = data.sum()
+                        sm2 = square(data).sum()
+                        mn = data.min()
+                        mx = data.max()
+                        right.append((f'Σ={sm:.2g}', f'Σ²={sm2:.2g}', f'min={mn:.2g}', f'max={mx:.2g}', f'{tainted}'))
+
+            if node.exception is not None:
+                right.append(node.exception)
+
+            return self._combine_labels((left, right))
+
+        def _combine_labels(self, labels: Union[Sequence,str]) -> str:
+            if isinstance(labels, str):
+                return labels
+
+            slabels = [self._combine_labels(l) for l in labels]
+            return f"{{{'|'.join(slabels)}}}"
 
         def _add_node(self, nodedag):
             styledict = {
@@ -189,22 +244,26 @@ else:
             self._edges[input] = (nodein, edge, nodeout)
 
         def _set_style_node(self, node, attr):
-            if not node:
+            if node is None:
                 attr["color"] = "gray"
-            elif node.invalid:
-                attr["color"] = "black"
-            elif node.being_evaluated:
-                attr["color"] = "gold"
-            elif node.tainted:
-                attr["color"] = "red"
-            elif node.frozen_tainted:
-                attr["color"] = "blue"
-            elif node.frozen:
-                attr["color"] = "cyan"
-            elif node.immediate:
-                attr["color"] = "green"
             else:
-                attr["color"] = "forestgreen"
+                if node.invalid:
+                    attr["color"] = "black"
+                elif node.being_evaluated:
+                    attr["color"] = "gold"
+                elif node.tainted:
+                    attr["color"] = "red"
+                elif node.frozen_tainted:
+                    attr["color"] = "blue"
+                elif node.frozen:
+                    attr["color"] = "cyan"
+                elif node.immediate:
+                    attr["color"] = "green"
+                else:
+                    attr["color"] = "forestgreen"
+
+                if node.exception is not None:
+                    attr["color"] = "magenta"
 
         def _set_style_edge(self, obj, attrin, attr, attrout):
             if isinstance(obj, Input):

@@ -7,7 +7,6 @@ from .exception import (
     ClosedGraphError,
     ReconnectionError,
     AllocationError,
-    ConnectionError,
     InitializationError,
 )
 from .output import Output
@@ -213,8 +212,8 @@ class Input:
     def touch(self):
         return self._parent_output.touch()
 
-    def taint(self, *args, **kwargs) -> None:
-        self._node.taint(*args, **kwargs)
+    def taint(self, **kwargs) -> None:
+        self._node.taint(caller=self, **kwargs)
 
     def taint_type(self, *args, **kwargs) -> None:
         self._node.taint_type(*args, **kwargs)

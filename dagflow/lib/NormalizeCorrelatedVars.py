@@ -14,16 +14,26 @@ from scipy.linalg import solve_triangular
 from numpy import matmul, subtract, divide, multiply, add
 
 class NormalizeCorrelatedVars(FunctionNode):
-    """Product of all the inputs together"""
+    """Normalize correlated variables or correlate normal variables with linear expression
+
+    If x is a vector of values, μ are the central values and L is a cholesky decomposition
+    of the covariance matrix V=LLᵀ then
+    z = L⁻¹(x - μ)
+    x = Lz + μ
+    """
 
     _mode: str
     def __init__(self, *args, mode='forward', **kwargs):
+        if mode=='forward':
+            self._mark = 'c→u'
+        elif mode=='backward':
+            self._mark = 'u→c'
+        else:
+            raise InitializationError(f'Invalid NormalizeCorrelatedVars mode={mode}. Expect "forward" or "backward"',node=self)
+
         self._mode = mode
 
-        kwargs.setdefault(
-            "missing_input_handler", MissingInputAddPair()
-        )
-        super().__init__(*args, **kwargs)
+        super().__init__(*args, missing_input_handler=MissingInputAddPair(), **kwargs)
 
         self._add_input("matrix", positional=False)
         self._add_input("central", positional=False)

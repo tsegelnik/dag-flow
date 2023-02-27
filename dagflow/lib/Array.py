@@ -3,7 +3,9 @@ from numpy import array
 from ..nodes import FunctionNode
 from ..output import Output
 from ..exception import InitializationError
+
 from numpy.typing import ArrayLike, NDArray
+from typing import Optional
 
 class Array(FunctionNode):
     """Creates a node with a single data output with predefined array"""
@@ -11,9 +13,16 @@ class Array(FunctionNode):
     _mode: str
     _data: NDArray
     _output = Output
-    def __init__(self, name, arr, outname="array", mode="store", **kwargs):
+    def __init__(self, name, arr, *,
+        mode: str="store",
+        outname="array",
+        mark: Optional[str]=None,
+        **kwargs
+    ):
         super().__init__(name, **kwargs)
         self._mode = mode
+        if mark is not None:
+            self._mark = mark
         self._data = array(arr, copy=True)
 
         if mode=='store':
@@ -31,6 +40,9 @@ class Array(FunctionNode):
                 "fill": self._fcn_fill
                 })
         self.fcn = self._functions[self._mode]
+
+        if mode=='store':
+            self.close()
 
     def _fcn_store(self, *args):
         return self._data
