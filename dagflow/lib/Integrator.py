@@ -1,6 +1,6 @@
 from typing import Literal
 
-from numba import jit
+from numba import njit
 from numpy import floating, integer, issubdtype, multiply, zeros
 from numpy.typing import NDArray
 
@@ -15,7 +15,7 @@ from ..typefunctions import (
 )
 
 
-@jit(nopython=True)
+@njit(cache=True)
 def _integrate1d(data: NDArray, weighted: NDArray, ordersX: NDArray):
     """
     Summing up `weighted` within `ordersX` and puts the result into `data`.
@@ -28,7 +28,7 @@ def _integrate1d(data: NDArray, weighted: NDArray, ordersX: NDArray):
         iprev = inext
 
 
-@jit(nopython=True)
+@njit(cache=True)
 def _integrate2d(
     data: NDArray, weighted: NDArray, ordersX: NDArray, ordersY: NDArray
 ):

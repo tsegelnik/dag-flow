@@ -1,7 +1,7 @@
 from numpy import ndarray
 from numpy.typing import NDArray
 
-from numba import jit
+from numba import njit
 from ..input_extra import MissingInputAddOne
 from ..nodes import FunctionNode
 from ..typefunctions import (
@@ -12,7 +12,7 @@ from ..typefunctions import (
     AllPositionals
 )
 
-@jit(nopython=True)
+@njit(cache=True)
 def _sumsq(data: NDArray, out: NDArray):
     sm = 0.0
     for v in data:
