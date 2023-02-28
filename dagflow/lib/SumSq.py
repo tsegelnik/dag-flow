@@ -1,4 +1,4 @@
-from numpy import copyto
+from numpy import add, square, ndarray, empty_like
 
 from ..input_extra import MissingInputAddOne
 from ..nodes import FunctionNode
@@ -10,9 +10,10 @@ from ..typefunctions import (
     AllPositionals
 )
 
-class Product(FunctionNode):
-    """Product of all the inputs together"""
+class SumSq(FunctionNode):
+    """Sum of the squared of all the inputs"""
 
+    _buffer: ndarray
     def __init__(self, *args, **kwargs):
         kwargs.setdefault(
             "missing_input_handler", MissingInputAddOne(output_fmt="result")
@@ -21,10 +22,11 @@ class Product(FunctionNode):
 
     def _fcn(self, _, inputs, outputs):
         out = outputs["result"].data
-        copyto(out, inputs[0].data)
+        square(inputs[0].data, out=out)
         if len(inputs) > 1:
             for input in inputs[1:]:
-                out *= input.data
+                square(input.data, out=self._buffer)
+                add(self._buffer, out, out=out)
         return out
 
     def _typefunc(self) -> None:
@@ -32,4 +34,7 @@ class Product(FunctionNode):
         check_has_inputs(self)
         copy_input_shape_to_output(self, 0, "result")
         check_inputs_equivalence(self)
-        eval_output_dtype(self, slice(None), "result")
+        eval_output_dtype(self, AllPositionals, "result")
+
+    def _post_allocate(self) -> None:
+        self._buffer = empty_like(self.inputs[0].get_data_unsafe())

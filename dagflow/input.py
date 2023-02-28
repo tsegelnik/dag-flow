@@ -198,6 +198,9 @@ class Input:
             return self._parent_output.data
         return self._parent_output.get_data_unsafe()
 
+    def get_data_unsafe(self):
+        return self._parent_output.get_data_unsafe()
+
     @property
     def dtype(self):
         return self._parent_output.dtype
