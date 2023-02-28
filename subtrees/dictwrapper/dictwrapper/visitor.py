@@ -19,7 +19,7 @@ def MakeDictWrapperVisitor(fcn):
         return fcn
 
     if not callable(fcn):
-        raise TypeError('Expect function, got '+type(fcn).__name__)
+        raise TypeError(f'Expect function, got {type(fcn).__name__}')
 
     ret=DictWrapperVisitor()
     ret.visit = fcn
@@ -32,7 +32,7 @@ class DictWrapperVisitorDemostrator(DictWrapperVisitor):
         return type(v).__name__
 
     def start(self, d):
-        v = object.__repr__(d.unwrap())
+        v = object.__repr__(d.object)
         print('Start printing dictionary:', v)
         print(self.fmt.format(action='Action', depth='Depth', key='Key', vtype='Type', value='Value', **self.opts))
 
@@ -40,12 +40,12 @@ class DictWrapperVisitorDemostrator(DictWrapperVisitor):
         print('Done printing dictionary')
 
     def enterdict(self, k, d):
-        d = d.unwrap()
+        d = d.object
         v = object.__repr__(d)
         print(self.fmt.format(action='Enter', depth=len(k), key=k, vtype=self.typestring(d), value=v, **self.opts))
 
     def exitdict(self, k, d):
-        d = d.unwrap()
+        d = d.object
         v = object.__repr__(d)
         print(self.fmt.format(action='Exit', depth=len(k), key=k, vtype=self.typestring(d), value=v, **self.opts))
 

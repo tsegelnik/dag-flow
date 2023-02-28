@@ -35,8 +35,8 @@ def test_dictwrapper_03(sep):
     #
     # Test self access
     #
-    assert dw.get(()).unwrap() is dct
-    assert dw[()].unwrap() is dct
+    assert dw.get(()).object is dct
+    assert dw[()].object is dct
 
     #
     # Test wrapping
@@ -141,7 +141,7 @@ def test_dictwrapper_03(sep):
     # Test children
     #
     m=dw.child(('k', 'l', 'm'))
-    assert dw.get(('k', 'l', 'm')).unwrap() is m.unwrap()
+    assert dw.get(('k', 'l', 'm')).object is m.object
 
     #
     # Test recursive setitem
@@ -157,7 +157,7 @@ def test_dictwrapper_03(sep):
     dw[('o.l.m.n')] = 6
     assert dw['o.l.m.n'] == 6
     if not sep:
-        assert dw.unwrap()['o.l.m.n'] == 6
+        assert dw.object['o.l.m.n'] == 6
 
     #
     # Test attribute access
@@ -221,7 +221,7 @@ def test_dictwrapper_08_create():
     assert dw._.i.k.l==3
 
     child = dw.child('child')
-    assert dw['child'].unwrap()=={}
+    assert dw['child'].object=={}
 
 def test_dictwrapper_09_dictcopy():
     dct = dict([('a', 1), ('b', 2), ('c', 3), ('d', dict(e=4)), ('f', dict(g=dict(h=5)))])
@@ -232,9 +232,9 @@ def test_dictwrapper_09_dictcopy():
     for i, (k, v) in enumerate(dw1.walkdicts()):
         # print(i, k)
         assert k in dw
-        assert v._obj==dw[k]._obj
-        assert v._obj is not dw[k]._obj
-        assert type(v._obj) is type(dw[k]._obj)
+        assert v._object==dw[k]._object
+        assert v._object is not dw[k]._object
+        assert type(v._object) is type(dw[k]._object)
     assert i==2
 
 def test_dictwrapper_09_walkitems():
@@ -293,11 +293,11 @@ def test_dictwrapper_setdefault_01():
 
     sd1 = dw.setdefault(('a','b'), newdict)
     assert isinstance(sd1, DictWrapper)
-    assert sd1._obj==d['a']['b']
+    assert sd1._object==d['a']['b']
 
     sd2 = dw.setdefault(('a','c'), newdict)
     assert isinstance(sd2, DictWrapper)
-    assert sd2._obj==newdict
+    assert sd2._object==newdict
 
 def test_dictwrapper_eq_01():
     d = dict(a=dict(b=dict(key='value')))
