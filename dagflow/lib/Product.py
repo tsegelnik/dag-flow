@@ -6,6 +6,8 @@ from ..typefunctions import (
     check_has_inputs,
     eval_output_dtype,
     copy_input_shape_to_output,
+    check_inputs_equivalence,
+    AllPositionals
 )
 
 class Product(FunctionNode):
@@ -29,4 +31,5 @@ class Product(FunctionNode):
         """A output takes this function to determine the dtype and shape"""
         check_has_inputs(self)
         copy_input_shape_to_output(self, 0, "result")
-        eval_output_dtype(self, slice(None), "result")
+        check_inputs_equivalence(self)
+        eval_output_dtype(self, AllPositionals, "result")

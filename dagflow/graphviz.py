@@ -133,18 +133,17 @@ else:
                 try:
                     data = out0.data
                 except:
-                    pass
-                if data is None:
                     right.append('cought exception')
-                else:
-                    if show_data:
-                        right.append(str(data).replace('\n', '\\l')+'\\l')
-                    if show_data_summary:
-                        sm = data.sum()
-                        sm2 = square(data).sum()
-                        mn = data.min()
-                        mx = data.max()
-                        right.append((f'Σ={sm:.2g}', f'Σ²={sm2:.2g}', f'min={mn:.2g}', f'max={mx:.2g}', f'{tainted}'))
+                    data = out0._data
+
+                if show_data:
+                    right.append(str(data).replace('\n', '\\l')+'\\l')
+                if show_data_summary:
+                    sm = data.sum()
+                    sm2 = square(data).sum()
+                    mn = data.min()
+                    mx = data.max()
+                    right.append((f'Σ={sm:.2g}', f'Σ²={sm2:.2g}', f'min={mn:.2g}', f'max={mx:.2g}', f'{tainted}'))
 
             if node.exception is not None:
                 right.append(node.exception)

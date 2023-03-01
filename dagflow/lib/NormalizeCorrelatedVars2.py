@@ -10,7 +10,7 @@ from ..typefunctions import (
 )
 
 from scipy.linalg import solve_triangular
-from numpy import matmul, subtract, divide, multiply, add, zeros
+from numpy import matmul, subtract, divide, multiply, add, zeros, copyto
 
 class NormalizeCorrelatedVars2(FunctionNode):
     """Normalize correlated variables or correlate normal variables with linear expression
@@ -59,44 +59,52 @@ class NormalizeCorrelatedVars2(FunctionNode):
         L = inputs["matrix"].data
         central = inputs["central"].data
 
-        input = inputs["value"].data
-        output = outputs["normvalue"].data
+        input_value = inputs["value"].data
+        output_value = outputs["value"].data
+        output_normvalue = outputs["normvalue"].data
 
-        subtract(input, central, out=output)
-        solve_triangular(L, output, lower=True, overwrite_b=True, check_finite=False)
+        subtract(input_value, central, out=output_normvalue)
+        solve_triangular(L, output_normvalue, lower=True, overwrite_b=True, check_finite=False)
+        copyto(output_value, input_value)
 
     def _fcn_backward_2d(self, _, inputs, outputs):
         inputs.touch()
         L = inputs["matrix"].data
         central = inputs["central"].data
 
-        input = inputs["normvalue"].data
-        output = outputs["value"].data
+        input_normvalue = inputs["normvalue"].data
+        output_normvalue = outputs["normvalue"].data
+        output_value = outputs["value"].data
 
-        matmul(L, input, out=output)
-        add(output, central, out=output)
+        matmul(L, input_normvalue, out=output_value)
+        add(output_value, central, out=output_value)
+        copyto(output_normvalue, input_normvalue)
 
     def _fcn_forward_1d(self, _, inputs, outputs):
         inputs.touch()
         Ldiag = inputs["matrix"].data
         central = inputs["central"].data
 
-        input = inputs["value"].data
-        output = outputs["normvalue"].data
+        input_value = inputs["value"].data
+        output_value = outputs["value"].data
+        output_normvalue = outputs["normvalue"].data
 
-        subtract(input, central, out=output)
-        divide(output, Ldiag, out=output)
+        subtract(input_value, central, out=output_normvalue)
+        divide(output_normvalue, Ldiag, out=output_normvalue)
+        copyto(output_value, input_value)
 
     def _fcn_backward_1d(self, _, inputs, outputs):
         inputs.touch()
         Ldiag = inputs["matrix"].data
         central = inputs["central"].data
 
-        input = inputs["normvalue"].data
-        output = outputs["value"].data
+        input_normvalue = inputs["normvalue"].data
+        output_normvalue = outputs["normvalue"].data
+        output_value = outputs["value"].data
 
-        multiply(Ldiag, input, out=output)
-        add(output, central, out=output)
+        multiply(Ldiag, input_normvalue, out=output_value)
+        add(output_value, central, out=output_value)
+        copyto(output_normvalue, input_normvalue)
 
     def _on_taint(self, caller: Input) -> None:
         if caller is self._input_value:
