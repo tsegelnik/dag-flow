@@ -32,4 +32,4 @@ class Product(FunctionNode):
         check_has_inputs(self)
         copy_input_shape_to_output(self, 0, "result")
         check_inputs_equivalence(self)
-        eval_output_dtype(self, slice(None), "result")
+        eval_output_dtype(self, AllPositionals, "result")

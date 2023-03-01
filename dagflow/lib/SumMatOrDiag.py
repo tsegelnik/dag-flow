@@ -67,7 +67,7 @@ class SumMatOrDiag(FunctionNode):
         copy_input_shape_to_output(self, 0, "result")
         self._ndim = check_inputs_square_or_diag(self)
         check_inputs_same_dtype(self)
-        eval_output_dtype(self, slice(None), "result")
+        eval_output_dtype(self, AllPositionals, "result")
 
         size = self.inputs[0].shape[0]
         output = self.outputs[0]

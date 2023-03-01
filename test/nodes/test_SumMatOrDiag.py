@@ -15,7 +15,7 @@ def test_SumMatOrDiag_01(dtype):
     for size in (5, 4):
         array1  = arange(size, dtype=dtype)+1.0
         array2  = arange(size, dtype=dtype)*3
-        matrix1 = arange(size*size, dtype=dtype).reshape(size, size)+1.0 
+        matrix1 = arange(size*size, dtype=dtype).reshape(size, size)+1.0
         matrix2 = arange(size*size, dtype=dtype).reshape(size, size)*2.5
         arrays_in = (array1, array2, matrix1, matrix2)
 

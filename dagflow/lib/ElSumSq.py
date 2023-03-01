@@ -7,7 +7,6 @@ from ..nodes import FunctionNode
 from ..typefunctions import (
     check_has_inputs,
     eval_output_dtype,
-    copy_input_shape_to_output,
     check_inputs_same_dtype,
     AllPositionals
 )
