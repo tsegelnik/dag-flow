@@ -247,7 +247,7 @@ def check_inputs_square_or_diag(
         shape = input.shape
         dim = len(shape)
         dim_max = max(dim, dim_max)
-        if shape0 != shape[0] and (dim == 2 and shape[0] != shape[1]) and dim != 1:
+        if shape0 != shape[0] or ((dim == 2 and shape[0] != shape[1]) and dim != 1):
             raise TypeFunctionError(
                 f"The node supports only square inputs (or 1d as diagonal) of size {shape0}x{shape0}. Got {shape}!",
                 node=node,
