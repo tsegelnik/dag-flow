@@ -47,7 +47,7 @@ class SumMatOrDiag(FunctionNode):
             out[:] = inp
         if len(inputs) > 1:
             for input in inputs[1:]:
-                if len(input.shape)==1:
+                if len(input.dd.shape)==1:
                     _addtodiag(input.data, out)
                 else:
                     add(input.data, out, out=out)
@@ -69,12 +69,12 @@ class SumMatOrDiag(FunctionNode):
         check_inputs_same_dtype(self)
         eval_output_dtype(self, AllPositionals, "result")
 
-        size = self.inputs[0].shape[0]
+        size = self.inputs[0].dd.shape[0]
         output = self.outputs[0]
         if self._ndim==2:
-            output._shape = size, size
+            output.dd._shape = size, size
         elif self._ndim==1:
-            output._shape = size,
+            output.dd._shape = size,
         else:
             assert False
 

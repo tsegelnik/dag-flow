@@ -123,8 +123,8 @@ class NormalizeCorrelatedVars2(FunctionNode):
         self._ndim=f"{ndim}d"
         self.fcn = self._functions[f"forward_{self._ndim}"]
 
-        self._valuedata = zeros(shape=self._input_value.shape, dtype=self._input_value.dtype)
-        self._normvaluedata = zeros(shape=self._input_normvalue.shape, dtype=self._input_normvalue.dtype)
+        self._valuedata = zeros(shape=self._input_value.dd.shape, dtype=self._input_value.dd.dtype)
+        self._normvaluedata = zeros(shape=self._input_normvalue.dd.shape, dtype=self._input_normvalue.dd.dtype)
         self._input_value.set_own_data(self._valuedata, owns_buffer=False)
         self._input_normvalue.set_own_data(self._normvaluedata, owns_buffer=False)
         self._output_value._set_data(self._valuedata, owns_buffer=False, forbid_reallocation=True)

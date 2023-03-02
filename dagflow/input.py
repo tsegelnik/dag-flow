@@ -1,6 +1,8 @@
-from typing import Iterator, Tuple, Optional, Union
+from typing import Iterator, Optional, Union
 from numpy import zeros
 from numpy.typing import DTypeLike, NDArray
+
+from dagflow.datadescriptor import DataDescriptor
 
 from .edges import EdgeContainer
 from .exception import (
@@ -12,13 +14,12 @@ from .exception import (
 from .output import Output
 from .shift import lshift
 from .tools import StopNesting
-from .types import InputT, NodeT
+from .types import EdgesLikeT, InputT, NodeT, ShapeLikeT
 
 
 class Input:
     _own_data: Optional[NDArray] = None
-    _own_dtype: Optional[DTypeLike] = None
-    _own_shape: Optional[Tuple[int, ...]] = None
+    _own_dd: DataDescriptor
 
     _node: Optional[NodeT]
     _name: Optional[str]
@@ -41,8 +42,10 @@ class Input:
         debug: Optional[bool] = None,
         allocatable: bool = False,
         data: Optional[NDArray] = None,
-        dtype: Optional[DTypeLike] = None,
-        shape: Optional[Tuple[int, ...]] = None,
+        dtype: DTypeLike = None,
+        shape: ShapeLikeT = None,
+        axis_edges: EdgesLikeT = None,
+        axis_nodes: EdgesLikeT = None,
     ):
         if data is not None and (
             allocatable or dtype is not None or shape is not None
@@ -54,12 +57,15 @@ class Input:
         self._child_output = child_output
         self._parent_output = parent_output
         self._allocatable = allocatable
-        self._debug = (
-            debug if debug is not None else node.debug if node else False
-        )
+        if debug is not None:
+            self._debug = debug
+        elif node:
+            self._debug = node.debug
+        else:
+            self._debug = False
 
-        self._own_dtype = dtype
-        self._own_shape = shape
+        self._own_dd = DataDescriptor(dtype, shape, axis_edges, axis_nodes)
+
         if data is not None:
             self.set_own_data(data, owns_buffer=True)
 
@@ -74,39 +80,44 @@ class Input:
         return self.__str__()
 
     @property
-    def own_data(self):
+    def own_data(self) -> Optional[NDArray]:
         return self._own_data
+
+    @property
+    def own_dd(self) -> DataDescriptor:
+        return self._own_dd
 
     @property
     def owns_buffer(self) -> bool:
         return self._owns_buffer
 
-    def set_own_data(self, data, *, owns_buffer: bool):
+    def set_own_data(
+        self,
+        data,
+        *,
+        owns_buffer: bool,
+        axis_edges: EdgesLikeT = None,
+        axis_nodes: EdgesLikeT = None,
+    ):
         if self.closed:
             raise ClosedGraphError(
                 "Unable to set input data.", node=self._node, input=self
             )
-        if self._own_data is not None:
+        if self.own_data is not None:
             raise AllocationError(
                 "Input already has data.", node=self._node, input=self
             )
 
         self._own_data = data
         self._owns_buffer = owns_buffer
-        self._own_dtype = data.dtype
-        self._own_shape = data.shape
+        self.own_dd._dtype = data.dtype
+        self.own_dd._shape = data.shape
+        self.own_dd.axis._edges = axis_edges
+        self.own_dd.axis._nodes = axis_nodes
 
     @property
     def closed(self):
         return self._node.closed if self.node else False
-
-    @property
-    def own_dtype(self):
-        return self._own_dtype
-
-    @property
-    def own_shape(self):
-        return self._own_shape
 
     def set_child_output(
         self, child_output: Output, force: bool = False
@@ -201,12 +212,8 @@ class Input:
         return self._parent_output.get_data_unsafe()
 
     @property
-    def dtype(self):
-        return self._parent_output.dtype
-
-    @property
-    def shape(self):
-        return self._parent_output.shape
+    def dd(self):
+        return self._parent_output.dd
 
     @property
     def tainted(self) -> bool:
@@ -250,14 +257,14 @@ class Input:
         if not self._allocatable or self.has_data:
             return True
 
-        if self._own_shape is None or self._own_dtype is None:
+        if self.own_dd.shape is None or self.own_dd.dtype is None:
             raise AllocationError(
                 "No shape/type information provided for the Input",
                 node=self._node,
                 output=self,
             )
         try:
-            self._own_data = zeros(self._own_shape, self._own_dtype, **kwargs)
+            self._own_data = zeros(self.own_dd.shape, self.own_dd.dtype, **kwargs)
         except Exception as exc:
             raise AllocationError(
                 f"Input: {exc.args[0]}", node=self._node, input=self

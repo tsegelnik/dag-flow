@@ -92,7 +92,7 @@ class Integrator(FunctionNode):
         check_has_inputs(self)
         check_has_inputs(self, ("ordersX", "weights"))
         input0 = self.inputs[0]
-        ndim = len(input0.shape)
+        ndim = len(input0.dd.shape)
         if ndim != int(self.mode[:1]):
             raise TypeFunctionError(
                 f"The Integrator works only with {self.mode} inputs, but one has ndim={ndim}!",
@@ -100,15 +100,15 @@ class Integrator(FunctionNode):
             )
         check_input_dimension(self, (slice(None), "weights"), ndim)
         check_input_dimension(self, "ordersX", 1)
-        check_input_shape(self, (slice(None), "weights"), input0.shape)
+        check_input_shape(self, (slice(None), "weights"), input0.dd.shape)
         ordersX = self.inputs["ordersX"]
-        if not issubdtype(ordersX.dtype, integer):
+        if not issubdtype(ordersX.dd.dtype, integer):
             raise TypeFunctionError(
-                "The `ordersX` must be array of integers, but given '{ordersX.dtype}'!",
+                "The `ordersX` must be array of integers, but given '{ordersX.dd.dtype}'!",
                 node=self,
                 input=ordersX,
             )
-        dtype = input0.dtype
+        dtype = input0.dd.dtype
         if not issubdtype(dtype, floating):
             raise TypeFunctionError(
                 "The Integrator works only within `float` or `double` "
@@ -116,10 +116,10 @@ class Integrator(FunctionNode):
                 node=self,
             )
         check_input_dtype(self, (slice(None), "weights"), dtype)
-        if sum(ordersX.data) != input0.shape[0]:
+        if sum(ordersX.data) != input0.dd.shape[0]:
             raise TypeFunctionError(
                 "ordersX must be consistent with inputs shape, "
-                f"but given {ordersX.data=} and {input0.shape=}!",
+                f"but given {ordersX.data=} and {input0.dd.shape=}!",
                 node=self,
                 input=ordersX,
             )
@@ -127,28 +127,28 @@ class Integrator(FunctionNode):
             check_has_inputs(self, "ordersY")
             check_input_dimension(self, "ordersY", 1)
             ordersY = self.inputs["ordersY"]
-            if not issubdtype(ordersY.dtype, integer):
+            if not issubdtype(ordersY.dd.dtype, integer):
                 raise TypeFunctionError(
-                    "The `ordersY` must be array of integers, but given '{ordersY.dtype}'!",
+                    "The `ordersY` must be array of integers, but given '{ordersY.dd.dtype}'!",
                     node=self,
                     input=ordersY,
                 )
-            if sum(ordersY.data) != input0.shape[1]:
+            if sum(ordersY.data) != input0.dd.shape[1]:
                 raise TypeFunctionError(
                     "ordersY must be consistent with inputs shape, "
-                    f"but given {ordersY.data=} and {input0.shape=}!",
+                    f"but given {ordersY.data=} and {input0.dd.shape=}!",
                     node=self,
                     input=ordersX,
                 )
         self.fcn = self._functions[self.mode]
         for output in self.outputs:
-            output._dtype = dtype
-            output._shape = input0.shape
+            output._dd._dtype = dtype
+            output._dd._shape = input0.dd.shape
 
     def _post_allocate(self):
         """Allocates the `buffer` within `weights`"""
         weights = self.inputs["weights"]
-        self.__buffer = zeros(shape=weights.shape, dtype=weights.dtype)
+        self.__buffer = zeros(shape=weights.dd.shape, dtype=weights.dd.dtype)
 
     def _fcn_1d(self, _, inputs, outputs):
         """1d version of integration function"""

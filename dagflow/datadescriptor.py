@@ -44,3 +44,7 @@ class DataDescriptor:
     @property
     def shape(self) -> ShapeLikeT:
         return self._shape
+
+    @property
+    def axis(self) -> Axis:
+        return self._axis

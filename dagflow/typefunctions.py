@@ -53,9 +53,9 @@ def eval_output_dtype(
     inputs = node.inputs.iter(inputkey)
     outputs = node.outputs.iter(outputkey)
 
-    dtype = result_type(*(inp.dtype for inp in inputs))
+    dtype = result_type(*(inp.dd.dtype for inp in inputs))
     for output in outputs:
-        output._dtype = dtype
+        output.dd._dtype = dtype
 
 
 def copy_input_to_output(
@@ -72,18 +72,18 @@ def copy_input_to_output(
     if dtype and shape:
 
         def cpy(input, output):
-            output._dtype = input.dtype
-            output._shape = input.shape
+            output.dd._dtype = input.dd.dtype
+            output.dd._shape = input.dd.shape
 
     elif dtype:
 
         def cpy(input, output):
-            output._dtype = input.dtype
+            output.dd._dtype = input.dd.dtype
 
     elif shape:
 
         def cpy(input, output):
-            output._shape = input.shape
+            output.dd._shape = input.dd.shape
 
     else:
         return
@@ -108,7 +108,7 @@ def copy_input_dtype_to_output(
         inputs = repeat(inputs[0], len(outputs))
 
     for input, output in zip(inputs, outputs, strict=True):
-        output._dtype = input.dtype
+        output.dd._dtype = input.dd.dtype
 
 
 def copy_input_shape_to_output(
@@ -124,7 +124,7 @@ def copy_input_shape_to_output(
         inputs = repeat(inputs[0], len(outputs))
 
     for input, output in zip(inputs, outputs, strict=True):
-        output._shape = input.shape
+        output.dd._shape = input.dd.shape
 
 
 def combine_inputs_shape_to_output(
@@ -134,9 +134,9 @@ def combine_inputs_shape_to_output(
 ) -> None:
     """Combine all the inputs shape and setting for the output"""
     inputs = node.inputs.iter(inputkey)
-    shape = tuple(inp.shape for inp in inputs)
+    shape = tuple(inp.dd.shape for inp in inputs)
     for output in node.outputs.iter(outputkey):
-        output._shape = shape
+        output.dd._shape = shape
 
 
 def check_input_dimension(
@@ -144,7 +144,7 @@ def check_input_dimension(
 ):
     """Checking the dimension of the input"""
     for input in node.inputs.iter(inputkey):
-        dim = len(input.shape)
+        dim = len(input.dd.shape)
         if ndim != dim:
             raise TypeFunctionError(
                 f"The node supports only {ndim}d inputs. Got {dim}d!",
@@ -159,7 +159,7 @@ def check_input_square(
 ):
     """Checking input is a square matrix"""
     for input in node.inputs.iter(inputkey):
-        shape = input.shape
+        shape = input.dd.shape
         dim = len(shape)
         if dim != 2 or shape[0] != shape[1]:
             raise TypeFunctionError(
@@ -177,7 +177,7 @@ def check_input_square_or_diag(
     Returns the maximal dimension."""
     dim_max = 0
     for input in node.inputs.iter(inputkey):
-        shape = input.shape
+        shape = input.dd.shape
         dim = len(shape)
         dim_max = max(dim, dim_max)
         if (dim == 2 and shape[0] != shape[1]) and dim != 1:
@@ -193,7 +193,7 @@ def check_input_shape(
 ):
     """Checking the shape equivalence for inputs"""
     for input in node.inputs.iter(inputkey):
-        sshape = input.shape
+        sshape = input.dd.shape
         if sshape != shape:
             raise TypeFunctionError(
                 f"The node supports only inputs with shape={shape}. Got {sshape}!",
@@ -207,7 +207,7 @@ def check_input_dtype(
 ):
     """Checking the dtype equivalence for inputs"""
     for input in node.inputs.iter(inputkey):
-        dtt = input.dtype
+        dtt = input.dd.dtype
         if dtt != dtype:
             raise TypeFunctionError(
                 f"The node supports only input types {dtype}. Got {dtt}!",
@@ -223,9 +223,9 @@ def check_inputs_equivalence(
     inputs = tuple(node.inputs.iter(inputkey))
     input0, inputs = inputs[0], inputs[1:]
 
-    dtype, shape = input0.dtype, input0.shape
+    dtype, shape = input0.dd.dtype, input0.dd.shape
     for input in inputs:
-        if input.dtype != dtype or input.shape != shape:
+        if input.dd.dtype != dtype or input.dd.shape != shape:
             raise TypeFunctionError(
                 f"Input data {input.dtype} [{input.shape}] is inconsistent with {dtype} [{shape}]",
                 node=node,
@@ -241,10 +241,10 @@ def check_inputs_square_or_diag(
     inputs = tuple(node.inputs.iter(inputkey))
 
     dim_max = 0
-    shape0 = inputs[0].shape[0]
+    shape0 = inputs[0].dd.shape[0]
 
     for input in inputs:
-        shape = input.shape
+        shape = input.dd.shape
         dim = len(shape)
         dim_max = max(dim, dim_max)
         if shape0 != shape[0] or ((dim == 2 and shape[0] != shape[1]) and dim != 1):
@@ -263,11 +263,11 @@ def check_inputs_same_dtype(
     inputs = tuple(node.inputs.iter(inputkey))
     input0, inputs = inputs[0], inputs[1:]
 
-    dtype = input0.dtype
+    dtype = input0.dd.dtype
     for input in inputs:
-        if input.dtype != dtype:
+        if input.dd.dtype != dtype:
             raise TypeFunctionError(
-                f"Input data {input.dtype} is inconsistent with {dtype}",
+                f"Input data {input.dd.dtype} is inconsistent with {dtype}",
                 node=node,
                 input=input,
             )
@@ -291,8 +291,8 @@ def check_inputs_multiplicable_mat(
         inputs2 = repeat(inputs2[0], len1)
 
     for input1, input2 in zip(inputs1, inputs2, strict=True):
-        shape1 = input1.shape
-        shape2 = input2.shape
+        shape1 = input1.dd.shape
+        shape2 = input2.dd.shape
         if shape1[-1] != shape2[0]:
             raise TypeFunctionError(
                 f"Inputs {shape1} and {shape2} are not multiplicable",

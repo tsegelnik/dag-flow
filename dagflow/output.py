@@ -1,5 +1,5 @@
 from itertools import cycle
-from typing import List, Optional, Tuple
+from typing import List, Optional
 
 from numpy import zeros
 from numpy.typing import ArrayLike, DTypeLike, NDArray
@@ -15,13 +15,13 @@ from .exception import (
 )
 from .shift import lshift, rshift
 from .tools import StopNesting
-from .types import InputT, NodeT
+from .types import EdgesLikeT, InputT, NodeT, ShapeLikeT
+from .datadescriptor import DataDescriptor
 
 
 class Output:
     _data: Optional[NDArray] = None
-    _dtype: Optional[DTypeLike] = None
-    _shape: Optional[Tuple[int, ...]] = None
+    _dd: DataDescriptor
 
     _node: Optional[NodeT]
     _name: Optional[str]
@@ -45,9 +45,11 @@ class Output:
         allocatable: Optional[bool] = None,
         data: Optional[NDArray] = None,
         owns_buffer: Optional[bool] = None,
-        dtype: Optional[DTypeLike] = None,
-        shape: Optional[Tuple[int, ...]] = None,
-        forbid_reallocation: bool = False
+        dtype: DTypeLike = None,
+        shape: ShapeLikeT = None,
+        axis_edges: EdgesLikeT = None,
+        axis_nodes: EdgesLikeT = None,
+        forbid_reallocation: bool = False,
     ):
         self._name = name
         self._node = node
@@ -55,8 +57,7 @@ class Output:
         self._debug = (
             debug if debug is not None else node.debug if node else False
         )
-        self._dtype = dtype
-        self._shape = shape
+        self._dd = DataDescriptor(dtype, shape, axis_edges, axis_nodes)
         self._forbid_reallocation = forbid_reallocation
 
         if data is None:
@@ -148,8 +149,10 @@ class Output:
         data,
         *,
         owns_buffer: bool,
+        axis_edges: EdgesLikeT = None,
+        axis_nodes: EdgesLikeT = None,
         override: bool = False,
-        forbid_reallocation: Optional[bool]=None
+        forbid_reallocation: Optional[bool] = None,
     ):
         if self.closed:
             raise ClosedGraphError(
@@ -170,14 +173,20 @@ class Output:
             raise AllocationError(
                 "Output is connected to allocating input, but reallocation is forbidden",
                 node=self._node,
-                output=self
+                output=self,
             )
 
         self._data = data
-        self._dtype = data.dtype
-        self._shape = data.shape
+        self.dd._dtype = data.dtype
+        self.dd._shape = data.shape
+        self.dd.axis._edges = axis_edges
+        self.dd.axis._nodes = axis_nodes
         self._owns_buffer = owns_buffer
         self._forbid_reallocation = forbid_reallocation
+
+    @property
+    def dd(self) -> Optional[DataDescriptor]:
+        return self._dd
 
     @property
     def owns_buffer(self):
@@ -190,14 +199,6 @@ class Output:
     @property
     def closed(self):
         return self.node.closed if self.node else False
-
-    @property
-    def dtype(self):
-        return self._dtype
-
-    @property
-    def shape(self):
-        return self._shape
 
     @property
     def tainted(self) -> bool:
@@ -233,13 +234,13 @@ class Output:
                 raise ConnectionError(
                     "Output has multiple allocatable/allocated child inputs",
                     node=self._node,
-                    output=self
+                    output=self,
                 )
             if self._forbid_reallocation:
                 raise ConnectionError(
                     "Output forbids reallocation and may not connect to allocating inputs",
                     node=self._node,
-                    output=self
+                    output=self,
                 )
             self._allocating_input = input
         self._child_inputs.append(input)
@@ -286,7 +287,7 @@ class Output:
             input.allocate(recursive=False)
             if input.has_data:
                 idata = input._own_data
-                if idata.shape != self.shape or idata.dtype != self.dtype:
+                if idata.shape != self.dd.shape or idata.dtype != self.dd.dtype:
                     raise AllocationError(
                         "Input's data shape/type is inconsistent",
                         node=self._node,
@@ -303,14 +304,14 @@ class Output:
         if self.has_data:
             return True
 
-        if self.shape is None or self.dtype is None:
+        if self.dd.shape is None or self.dd.dtype is None:
             raise AllocationError(
                 "No shape/type information provided for the Output",
                 node=self._node,
                 output=self,
             )
         try:
-            data = zeros(self.shape, self.dtype, **kwargs)
+            data = zeros(self.dd.shape, self.dd.dtype, **kwargs)
             self._set_data(data, owns_buffer=True)
         except Exception as exc:
             raise AllocationError(
@@ -319,21 +320,24 @@ class Output:
 
         return True
 
-    def set(self, data: ArrayLike, check_taint: bool=False, force: bool=False) -> bool:
+    def set(
+        self, data: ArrayLike, check_taint: bool = False, force: bool = False
+    ) -> bool:
         if self.node._frozen and not force:
             return False
 
         tainted = True
         if check_taint:
-            tainted = (self._data!=data).any()
+            tainted = (self._data != data).any()
 
         if tainted:
-            self._data[:]=data
+            self._data[:] = data
             self.taint_children()
             self.node.invalidate_parents()
-            self.node._tainted=False
+            self.node._tainted = False
 
         return tainted
+
 
 class RepeatedOutput:
     def __init__(self, output):
