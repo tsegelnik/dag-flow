@@ -142,8 +142,8 @@ class Integrator(FunctionNode):
                 )
         self.fcn = self._functions[self.mode]
         for output in self.outputs:
-            output._dd._dtype = dtype
-            output._dd._shape = input0.dd.shape
+            output.dd.dtype = dtype
+            output.dd.shape = input0.dd.shape
 
     def _post_allocate(self):
         """Allocates the `buffer` within `weights`"""

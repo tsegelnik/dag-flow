@@ -1,50 +1,32 @@
+from typing import Optional, Tuple, Union
 from numpy.typing import DTypeLike
 
-from .types import ShapeLikeT, EdgesLikeT
-
-
-class Axis:
-    """The axis class stores `edges` and `nodes`"""
-
-    def __init__(
-        self,
-        edges: EdgesLikeT = None,
-        nodes: EdgesLikeT = None,
-    ) -> None:
-        self._edges = edges
-        self._nodes = nodes
-
-    @property
-    def edges(self) -> EdgesLikeT:
-        return self._edges
-
-    @property
-    def nodes(self) -> EdgesLikeT:
-        return self._nodes
+from .types import ShapeLike, EdgesLike
 
 
 class DataDescriptor:
-    """The data descriptor class stores `dtype`, `shape` and `axis` information"""
+    """
+    The data descriptor class stores `dtype`, `shape`,
+    `axes_edges` and `axes_nodes` information.
+    """
+
+    __slots__ = ("dtype", "shape", "axes_edges", "axes_nodes")
+    dtype: DTypeLike # DTypeLike is already Optional
+    shape: Optional[ShapeLike]
+    axes_edges: Optional[Union[EdgesLike, Tuple[EdgesLike]]]
+    axes_nodes: Optional[Union[EdgesLike, Tuple[EdgesLike]]]
 
     def __init__(
         self,
-        dtype: DTypeLike = None,
-        shape: ShapeLikeT = None,
-        axis_edges: EdgesLikeT = None,
-        axis_nodes: EdgesLikeT = None,
+        dtype: DTypeLike, # DTypeLike is already Optional
+        shape: Optional[ShapeLike],
+        axes_edges: Optional[Union[EdgesLike, Tuple[EdgesLike]]] = None,
+        axes_nodes: Optional[Union[EdgesLike, Tuple[EdgesLike]]] = None,
     ) -> None:
-        self._shape = shape
-        self._dtype = dtype
-        self._axis = Axis(axis_edges, axis_nodes)
-
-    @property
-    def dtype(self) -> DTypeLike:
-        return self._dtype
-
-    @property
-    def shape(self) -> ShapeLikeT:
-        return self._shape
-
-    @property
-    def axis(self) -> Axis:
-        return self._axis
+        """
+        Sets the attributes
+        """
+        self.dtype = dtype
+        self.shape = shape
+        self.axes_edges = axes_edges
+        self.axes_nodes = axes_nodes

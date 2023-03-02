@@ -35,8 +35,8 @@ class ThreeInputsSum(FunctionNode):
             raise CriticalError(
                 f"The node must have only 3 inputs, but given {y}: {self.inputs}!"
             )
-        self.outputs["result"].dd._shape = self.inputs[0].dd.shape
-        self.outputs["result"].dd._dtype = result_type(
+        self.outputs["result"].dd.shape = self.inputs[0].dd.shape
+        self.outputs["result"].dd.dtype = result_type(
             *tuple(inp.dd.dtype for inp in self.inputs)
         )
         self.logger.debug(

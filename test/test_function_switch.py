@@ -41,8 +41,8 @@ class SumIntProductFloatElseNothing(FunctionNode):
             self.fcn = self._functions.get("int")
         elif self.inputs[0].dd.dtype == "d":
             self.fcn = self._functions.get("float")
-        self.outputs["result"].dd._shape = self.inputs[0].dd.shape
-        self.outputs["result"].dd._dtype = result_type(
+        self.outputs["result"].dd.shape = self.inputs[0].dd.shape
+        self.outputs["result"].dd.dtype = result_type(
             *tuple(inp.dd.dtype for inp in self.inputs)
         )
         self.logger.debug(

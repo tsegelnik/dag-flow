@@ -46,8 +46,8 @@ class ViewConcat(FunctionNode):
             size += input.dd.shape[0]
 
         output = self.outputs[0]
-        output.dd._dtype = cdtype
-        output.dd._shape = (size,)
+        output.dd.dtype = cdtype
+        output.dd.shape = (size,)
         data = zeros(shape=size, dtype=cdtype)
         output._set_data(data, owns_buffer=True)
 

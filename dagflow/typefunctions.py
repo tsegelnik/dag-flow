@@ -55,7 +55,7 @@ def eval_output_dtype(
 
     dtype = result_type(*(inp.dd.dtype for inp in inputs))
     for output in outputs:
-        output.dd._dtype = dtype
+        output.dd.dtype = dtype
 
 
 def copy_input_to_output(
@@ -72,18 +72,18 @@ def copy_input_to_output(
     if dtype and shape:
 
         def cpy(input, output):
-            output.dd._dtype = input.dd.dtype
-            output.dd._shape = input.dd.shape
+            output.dd.dtype = input.dd.dtype
+            output.dd.shape = input.dd.shape
 
     elif dtype:
 
         def cpy(input, output):
-            output.dd._dtype = input.dd.dtype
+            output.dd.dtype = input.dd.dtype
 
     elif shape:
 
         def cpy(input, output):
-            output.dd._shape = input.dd.shape
+            output.dd.shape = input.dd.shape
 
     else:
         return
@@ -108,7 +108,7 @@ def copy_input_dtype_to_output(
         inputs = repeat(inputs[0], len(outputs))
 
     for input, output in zip(inputs, outputs, strict=True):
-        output.dd._dtype = input.dd.dtype
+        output.dd.dtype = input.dd.dtype
 
 
 def copy_input_shape_to_output(
@@ -124,7 +124,7 @@ def copy_input_shape_to_output(
         inputs = repeat(inputs[0], len(outputs))
 
     for input, output in zip(inputs, outputs, strict=True):
-        output.dd._shape = input.dd.shape
+        output.dd.shape = input.dd.shape
 
 
 def combine_inputs_shape_to_output(
@@ -136,7 +136,7 @@ def combine_inputs_shape_to_output(
     inputs = node.inputs.iter(inputkey)
     shape = tuple(inp.dd.shape for inp in inputs)
     for output in node.outputs.iter(outputkey):
-        output.dd._shape = shape
+        output.dd.shape = shape
 
 
 def check_input_dimension(

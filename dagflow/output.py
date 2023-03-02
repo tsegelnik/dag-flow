@@ -1,5 +1,5 @@
 from itertools import cycle
-from typing import List, Optional
+from typing import List, Optional, Tuple, Union
 
 from numpy import zeros
 from numpy.typing import ArrayLike, DTypeLike, NDArray
@@ -15,7 +15,7 @@ from .exception import (
 )
 from .shift import lshift, rshift
 from .tools import StopNesting
-from .types import EdgesLikeT, InputT, NodeT, ShapeLikeT
+from .types import EdgesLike, InputT, NodeT, ShapeLike
 from .datadescriptor import DataDescriptor
 
 
@@ -46,9 +46,9 @@ class Output:
         data: Optional[NDArray] = None,
         owns_buffer: Optional[bool] = None,
         dtype: DTypeLike = None,
-        shape: ShapeLikeT = None,
-        axis_edges: EdgesLikeT = None,
-        axis_nodes: EdgesLikeT = None,
+        shape: Optional[ShapeLike] = None,
+        axes_edges: Optional[Union[EdgesLike, Tuple[EdgesLike]]] = None,
+        axes_nodes: Optional[Union[EdgesLike, Tuple[EdgesLike]]] = None,
         forbid_reallocation: bool = False,
     ):
         self._name = name
@@ -57,8 +57,9 @@ class Output:
         self._debug = (
             debug if debug is not None else node.debug if node else False
         )
-        self._dd = DataDescriptor(dtype, shape, axis_edges, axis_nodes)
         self._forbid_reallocation = forbid_reallocation
+
+        self._dd = DataDescriptor(dtype, shape, axes_edges, axes_nodes)
 
         if data is None:
             self._allocatable = True if allocatable is None else allocatable
@@ -149,8 +150,6 @@ class Output:
         data,
         *,
         owns_buffer: bool,
-        axis_edges: EdgesLikeT = None,
-        axis_nodes: EdgesLikeT = None,
         override: bool = False,
         forbid_reallocation: Optional[bool] = None,
     ):
@@ -177,10 +176,8 @@ class Output:
             )
 
         self._data = data
-        self.dd._dtype = data.dtype
-        self.dd._shape = data.shape
-        self.dd.axis._edges = axis_edges
-        self.dd.axis._nodes = axis_nodes
+        self.dd.dtype = data.dtype
+        self.dd.shape = data.shape
         self._owns_buffer = owns_buffer
         self._forbid_reallocation = forbid_reallocation
 

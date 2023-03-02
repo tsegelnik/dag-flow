@@ -72,9 +72,9 @@ class SumMatOrDiag(FunctionNode):
         size = self.inputs[0].dd.shape[0]
         output = self.outputs[0]
         if self._ndim==2:
-            output.dd._shape = size, size
+            output.dd.shape = size, size
         elif self._ndim==1:
-            output.dd._shape = size,
+            output.dd.shape = size,
         else:
             assert False
 

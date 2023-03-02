@@ -14,7 +14,7 @@ from .exception import (
 from .output import Output
 from .shift import lshift
 from .tools import StopNesting
-from .types import EdgesLikeT, InputT, NodeT, ShapeLikeT
+from .types import EdgesLike, InputT, NodeT, ShapeLike
 
 
 class Input:
@@ -43,9 +43,9 @@ class Input:
         allocatable: bool = False,
         data: Optional[NDArray] = None,
         dtype: DTypeLike = None,
-        shape: ShapeLikeT = None,
-        axis_edges: EdgesLikeT = None,
-        axis_nodes: EdgesLikeT = None,
+        shape: ShapeLike = None,
+        axes_edges: EdgesLike = None,
+        axes_nodes: EdgesLike = None,
     ):
         if data is not None and (
             allocatable or dtype is not None or shape is not None
@@ -64,7 +64,7 @@ class Input:
         else:
             self._debug = False
 
-        self._own_dd = DataDescriptor(dtype, shape, axis_edges, axis_nodes)
+        self._own_dd = DataDescriptor(dtype, shape, axes_edges, axes_nodes)
 
         if data is not None:
             self.set_own_data(data, owns_buffer=True)
@@ -96,8 +96,8 @@ class Input:
         data,
         *,
         owns_buffer: bool,
-        axis_edges: EdgesLikeT = None,
-        axis_nodes: EdgesLikeT = None,
+        axes_edges: EdgesLike = None,
+        axes_nodes: EdgesLike = None,
     ):
         if self.closed:
             raise ClosedGraphError(
@@ -110,10 +110,10 @@ class Input:
 
         self._own_data = data
         self._owns_buffer = owns_buffer
-        self.own_dd._dtype = data.dtype
-        self.own_dd._shape = data.shape
-        self.own_dd.axis._edges = axis_edges
-        self.own_dd.axis._nodes = axis_nodes
+        self.own_dd.dtype = data.dtype
+        self.own_dd.shape = data.shape
+        self.own_dd.axes_edges = axes_edges
+        self.own_dd.axes_nodes = axes_nodes
 
     @property
     def closed(self):
