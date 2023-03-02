@@ -30,7 +30,10 @@ class NestedSchema(object):
 class ParsCfgHasProperFormat(object):
     def validate(self, data: dict) -> dict:
         format = data['format']
-        nelements = len(format)
+        if isinstance(format, str):
+            nelements = 1
+        else:
+            nelements = len(format)
 
         dtin = DictWrapper(data)
         for key, subdata in dtin['variables'].walkitems():
@@ -79,16 +82,73 @@ def IsFormatOk(format):
 
     return True
 IsFormat = Schema(IsFormatOk, error='Invalid variable format "{}".')
+IsVarsCfgDict = Schema({
+    'variables': IsValuesDict,
+    'labels': IsLabelsDict,
+    'format': IsFormat
+    })
 
-cfg_schema = Schema(
-        And({
-                'variables': IsValuesDict,
-                'labels': IsLabelsDict,
-                'format': IsFormat
-            },
-            ParsCfgHasProperFormat()
-            )
-        )
+IsProperVarsCfg = And(IsVarsCfgDict, ParsCfgHasProperFormat())
+
+def process_var_fixed1(vcfg, format, hascentral):
+    return {'central': vcfg, 'value': vcfg, 'sigma': None}
+
+def process_var_fixed2(vcfg, format, hascentral):
+    ret = dict(zip(format, vcfg))
+    if hascentral:
+        ret['value'] = ret['central']
+    else:
+        ret['central'] = ret['value']
+    ret['sigma'] = None
+    return ret
+
+def process_var_absolute(vcfg, format, hascentral):
+    ret = process_var_fixed2(vcfg, format, hascentral)
+    ret['sigma'] = ret['sigma_absolute']
+    return ret
+
+def process_var_relative(vcfg, format, hascentral):
+    ret = process_var_fixed2(vcfg, format, hascentral)
+    ret['sigma'] = ret['sigma_relative']*ret['central']
+    return ret
+
+def process_var_percent(vcfg, format, hascentral):
+    ret = process_var_fixed2(vcfg, format, hascentral)
+    ret['sigma'] = 0.01*ret['sigma_percent']*ret['central']
+    return ret
+
+def load_variables(cfg):
+    IsProperVarsCfg.validate(cfg)
+
+    cfg = DictWrapper(cfg)
+    variablescfg = cfg['variables']
+    labelscfg = cfg['labels']
+    format = cfg['format']
+
+    hascentral = 'central' in format
+    if isinstance(format, str):
+        process = process_var_fixed1
+    else:
+        process = process_var_fixed2
+        errfmt = format[-1]
+        if errfmt.startswith('sigma'):
+            if errfmt.endswith('_absolute'):
+                process = process_var_absolute
+            elif errfmt.endswith('_relative'):
+                process = process_var_relative
+            else:
+                process = process_var_percent
+        else:
+            process = process_var_fixed2
+
+    ret = DictWrapper({})
+
+    print('go')
+    for key, varcfg in variablescfg.walkitems():
+        skey = '.'.join(key)
+        varcfg = process(varcfg, format, hascentral)
+        print(skey, varcfg)
+
 
 cfg1 = {
         'variables': {
@@ -98,7 +158,7 @@ cfg1 = {
                 'var3': 2.0
                 }
             },
-        'format': ('value',),
+        'format': 'value',
         'labels': {
             'var1': {
                 'text': 'text label 1',
@@ -129,9 +189,9 @@ cfg2 = {
 cfg3 = {
         'variables': {
             'var1': (1.0, 1.0, 0.1),
-            'var2': (1.0, 1.0, 0.1),
+            'var2': (1.0, 2.0, 0.1),
             'sub1': {
-                'var3': (2.0, 1.0, 0.1)
+                'var3': (2.0, 3.0, 0.1)
                 }
             },
         'labels': {
@@ -147,9 +207,9 @@ cfg3 = {
 cfg4 = {
         'variables': {
             'var1': (1.0, 1.0, 0.1),
-            'var2': (1.0, 1.0, 0.1),
+            'var2': (1.0, 2.0, 0.1),
             'sub1': {
-                'var3': (2.0, 1.0, 0.1)
+                'var3': (2.0, 3.0, 0.1)
                 }
             },
         'labels': {
@@ -165,9 +225,9 @@ cfg4 = {
 cfg5 = {
         'variables': {
             'var1': (1.0, 0.1),
-            'var2': (1.0, 0.1),
+            'var2': (2.0, 0.1),
             'sub1': {
-                'var3': (1.0, 0.1)
+                'var3': (3.0, 0.1)
                 }
             },
         'labels': {
@@ -182,9 +242,10 @@ cfg5 = {
 
 cfgs = (cfg1, cfg2, cfg3, cfg4, cfg5)
 
-def test_load_variables_schema():
-    for cfg in cfgs:
-        cfg_schema.validate(cfg)
+# def test_load_variables_schema():
+#     for cfg in cfgs:
+#         cfg_schema.validate(cfg)
 
 def test_load_variables():
-    pass
+    for cfg in cfgs:
+        load_variables(cfg)
