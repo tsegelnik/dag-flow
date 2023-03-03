@@ -1,4 +1,4 @@
-from typing import Iterator, Optional, Union
+from typing import Iterator, Optional, Tuple, Union
 from numpy import zeros
 from numpy.typing import DTypeLike, NDArray
 
@@ -43,9 +43,9 @@ class Input:
         allocatable: bool = False,
         data: Optional[NDArray] = None,
         dtype: DTypeLike = None,
-        shape: ShapeLike = None,
-        axes_edges: EdgesLike = None,
-        axes_nodes: EdgesLike = None,
+        shape: Optional[ShapeLike] = None,
+        axes_edges: Optional[Tuple[EdgesLike]] = None,
+        axes_nodes: Optional[Tuple[EdgesLike]] = None,
     ):
         if data is not None and (
             allocatable or dtype is not None or shape is not None

@@ -1,5 +1,5 @@
 from itertools import cycle
-from typing import List, Optional, Tuple, Union
+from typing import List, Optional, Tuple
 
 from numpy import zeros
 from numpy.typing import ArrayLike, DTypeLike, NDArray
@@ -47,8 +47,8 @@ class Output:
         owns_buffer: Optional[bool] = None,
         dtype: DTypeLike = None,
         shape: Optional[ShapeLike] = None,
-        axes_edges: Optional[Union[EdgesLike, Tuple[EdgesLike]]] = None,
-        axes_nodes: Optional[Union[EdgesLike, Tuple[EdgesLike]]] = None,
+        axes_edges: Optional[Tuple[EdgesLike]] = None,
+        axes_nodes: Optional[Tuple[EdgesLike]] = None,
         forbid_reallocation: bool = False,
     ):
         self._name = name
