@@ -79,7 +79,7 @@ else:
             return f"{name}_{onum}{suffix}"
 
         def get_label(self, node: NodeT) -> str:
-            text = node.label() or node.name
+            text = node.label('graph') or node.name
             try:
                 out0 = node.outputs[0]
             except IndexError:

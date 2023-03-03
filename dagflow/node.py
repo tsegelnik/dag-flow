@@ -15,12 +15,12 @@ from .logger import Logger
 from .output import Output
 from .tools import IsIterable, undefined
 from .types import NodeT
-from typing import Optional, List
+from typing import Optional, List, Dict, Union
 
 class Node(Legs):
     _name = undefined("name")
     _mark: Optional[str] = None
-    _label = undefined("label")
+    _label: Dict[str, str]
     _graph = undefined("graph")
     _fcn = undefined("function")
     _fcn_chain = None
@@ -43,7 +43,7 @@ class Node(Legs):
     _immediate: bool = False
     # _always_tainted: bool = False
 
-    def __init__(self, name, **kwargs):
+    def __init__(self, name, *, label: Union[str, dict, None]=None, **kwargs):
         super().__init__(
             missing_input_handler=kwargs.pop("missing_input_handler", None),
         )
@@ -63,7 +63,14 @@ class Node(Legs):
         self._debug = kwargs.pop(
             "debug", self.graph.debug if self.graph else False
         )
-        self._label = kwargs.pop("label", undefined("label"))
+
+        if isinstance(label, str):
+            self._label = {'text': label}
+        elif isinstance(label, dict):
+            self._label = label
+        else:
+            self._label = {'text': name}
+
         if (logger := kwargs.pop("logger", False)) or (
             self.graph and (logger := self.graph.logger)
         ):
@@ -211,11 +218,15 @@ class Node(Legs):
             raise ReconnectionError(input=inp, node=self, output=output)
         return inp
 
-    def label(self, *args, **kwargs):
-        if self._label:
-            kwargs.setdefault("name", self._name)
-            return self._label.format(*args, **kwargs)
-        return self._label
+    def label(self, source):
+        # if self._label:
+        #     kwargs.setdefault("name", self._name)
+        #     return self._label.format(*args, **kwargs)
+        label = self._label.get(source, None)
+        if label is None:
+            return self._label['text']
+
+        return label
 
     def add_input(self, name, **kwargs):
         if not self.closed:
