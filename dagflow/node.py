@@ -13,16 +13,16 @@ from .input import Input
 from .legs import Legs
 from .logger import Logger
 from .output import Output
-from .tools import IsIterable, undefined
-from .types import NodeT
-from typing import Optional, List, Dict, Union
+from .tools import IsIterable
+from .types import GraphT
+from typing import Optional, List, Dict, Union, Callable, Any
 
 class Node(Legs):
-    _name = undefined("name")
+    _name: str
     _mark: Optional[str] = None
     _label: Dict[str, str]
-    _graph = undefined("graph")
-    _fcn = undefined("function")
+    _graph: Optional[GraphT] = None
+    _fcn: Optional[Callable] = None
     _fcn_chain = None
     _exception: Optional[str] = None
 
@@ -43,26 +43,41 @@ class Node(Legs):
     _immediate: bool = False
     # _always_tainted: bool = False
 
-    def __init__(self, name, *, label: Union[str, dict, None]=None, **kwargs):
-        super().__init__(
-            missing_input_handler=kwargs.pop("missing_input_handler", None),
-        )
+    def __init__(
+        self, name,
+        *,
+        label: Union[str, dict, None]=None,
+        graph: Optional[GraphT] = None,
+        fcn: Optional[Callable] = None,
+        typefunc: Optional[Callable] = None,
+        debug: Optional[bool] = None,
+        logger: Optional[Any] = None,
+        missing_input_handler: Optional[Callable] = None,
+        immediate: bool = False,
+        auto_freeze: bool = False,
+        frozen: bool = False,
+        **kwargs
+    ):
+        super().__init__(missing_input_handler=missing_input_handler)
         self._name = name
-        if newfcn := kwargs.pop("fcn", None):
-            self._fcn = newfcn
-        if typefunc := kwargs.pop("typefunc", None):
+        if fcn is not None:
+            self._fcn = fcn
+        if typefunc is not None:
             self._typefunc = typefunc
         elif typefunc is False:
             self._typefunc = lambda: None
 
         self._fcn_chain = []
-        self.graph = kwargs.pop("graph", None)
-        if not self.graph:
+        if graph is None:
             from .graph import Graph
             self.graph = Graph.current()
-        self._debug = kwargs.pop(
-            "debug", self.graph.debug if self.graph else False
-        )
+        else:
+            self._graph = graph
+
+        if debug is None and self.graph is not None:
+            self._debug = self.graph.debug
+        else:
+            self._debug = bool(debug)
 
         if isinstance(label, str):
             self._label = {'text': label}
@@ -71,22 +86,25 @@ class Node(Legs):
         else:
             self._label = {'text': name}
 
-        if (logger := kwargs.pop("logger", False)) or (
-            self.graph and (logger := self.graph.logger)
-        ):
-            self._logger = logger
+        if logger is None:
+            if self.graph is not None:
+                self._logger = self.graph.logger
+            else:
+                from .logger import get_logger
+                self._logger = get_logger(
+                    filename=kwargs.pop("logfile", None),
+                    debug=self.debug,
+                    console=kwargs.pop("console", True),
+                    formatstr=kwargs.pop("logformat", None),
+                    name=kwargs.pop("loggername", None),
+                )
         else:
-            from .logger import get_logger
-            self._logger = get_logger(
-                filename=kwargs.pop("logfile", None),
-                debug=self.debug,
-                console=kwargs.pop("console", True),
-                formatstr=kwargs.pop("logformat", None),
-                name=kwargs.pop("loggername", None),
-            )
-        for opt in {"immediate", "auto_freeze", "frozen"}:
-            if (value := kwargs.pop(opt, None)) is not None:
-                setattr(self, f"_{opt}", bool(value))
+            self._logger = logger
+
+        self._immediate = immediate
+        self._auto_freeze = auto_freeze
+        self._frozen = frozen
+
         if kwargs:
             raise InitializationError(f"Unparsed arguments: {kwargs}!")
 
@@ -197,7 +215,7 @@ class Node(Legs):
 
     @graph.setter
     def graph(self, graph):
-        if not graph:
+        if graph is None:
             return
         if self._graph:
             raise DagflowError("Graph is already defined")
@@ -207,7 +225,7 @@ class Node(Legs):
     #
     # Methods
     #
-    def __call__(self, name, child_output=undefined("child_output")):
+    def __call__(self, name, child_output: Optional[Output]=None):
         self.logger.debug(f"Node '{self.name}': Get input '{name}'")
         inp = self.inputs.get(name, None)
         if inp is None:
@@ -447,7 +465,7 @@ class Node(Legs):
         self._allocated = True
         return True
 
-    def close(self, recursive: bool = True, together: List[NodeT] = []) -> bool:
+    def close(self, recursive: bool = True, together: List['Node'] = []) -> bool:
         if self._closed:
             return True
         if self.invalid:

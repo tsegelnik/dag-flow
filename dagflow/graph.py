@@ -5,8 +5,8 @@ from .exception import (
 )
 from .logger import Logger, get_logger
 from .node_group import NodeGroup
-from .tools import undefined
 
+from typing import Optional
 
 class Graph(NodeGroup):
     """
@@ -14,8 +14,8 @@ class Graph(NodeGroup):
     holds nodes as a list, has name, label, logger and uses context
     """
 
-    _context_graph = undefined("graph")
-    _label = undefined("label")
+    _context_graph: Optional['Graph'] = None
+    _label: Optional[str] = None
     _name = "graph"
     _close: bool = False
     _closed: bool = False
@@ -24,7 +24,7 @@ class Graph(NodeGroup):
 
     def __init__(self, *args, close: bool = False, **kwargs):
         super().__init__(*args)
-        self._label = kwargs.pop("label", undefined("label"))
+        self._label = kwargs.pop("label", None)
         self._name = kwargs.pop("name", "graph")
         self._debug = kwargs.pop("debug", False)
         self._close = close
@@ -101,7 +101,7 @@ class Graph(NodeGroup):
         return self
 
     def __exit__(self, exc_type, exc_val, exc_tb):
-        Graph._context_graph = undefined("graph")
+        Graph._context_graph = None
         if exc_val is not None:
             raise exc_val
 

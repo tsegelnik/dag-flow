@@ -1,12 +1,12 @@
 from .graph import Graph
 from .node import Node
-from .tools import undefined
 
+from typing import Optional
 
 class MemberNodesHolder:
-    _graph = undefined("graph")
+    _graph: Optional[Graph] = None
 
-    def __init__(self, graph=None):
+    def __init__(self, graph: Graph=None):
         self.graph = graph
         for key in dir(self):
             val = getattr(self, key)
