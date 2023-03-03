@@ -97,18 +97,30 @@ else:
                 else:
                     dtype0 = dtype0.char
 
-            npos = len(node.outputs)
-            nall = node.outputs.len_all()
-            if nall==npos:
-                if npos>1:
-                    nout = f' N{npos}'
+            nout_pos = len(node.outputs)
+            nout_nonpos = node.outputs.len_all()-nout_pos
+            if nout_nonpos==0:
+                if nout_pos>1:
+                    nout = f'→{nout_pos}'
                 else:
                     nout = ''
             else:
-                nout=f' N{npos}/{nall}'
+                nout=f'→{nout_pos}+{nout_nonpos}'
+
+            nin_pos = len(node.inputs)
+            nin_nonpos = node.inputs.len_all() - nin_pos
+            if nin_nonpos==0:
+                if nin_pos>1:
+                    nin = f'{nin_pos}→'
+                else:
+                    nin = ''
+            else:
+                nin=f'{nin_pos}+{nin_nonpos}→'
+
+            nlegs = f' {nin}{nout}'.replace('→→', '→')
 
             left, right = [], []
-            info_type = f"[{shape0}]{dtype0}{nout}"
+            info_type = f"[{shape0}]{dtype0}{nlegs}"
             if 'type' in self._show:
                 left.append(info_type)
             if 'mark' in self._show and node.mark is not None:
