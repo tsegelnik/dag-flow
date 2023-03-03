@@ -1,6 +1,9 @@
 from dictwrapper.dictwrapper import DictWrapper
 from storage.storage import Storage
 
+from dagflow.graphviz import savegraph
+from dagflow.graph import Graph
+
 from typing import Any, Union
 from schema import Schema, Or, Optional, Use, And, Schema, SchemaError
 
@@ -74,8 +77,13 @@ class ParsCfgHasProperFormat(object):
 
 IsNumber = Or(float, int, error='Invalid number "{}", expect int of float')
 IsNumberOrTuple = Or(IsNumber, (IsNumber,), error='Invalid number/tuple {}')
-IsLabel = Or(
-    {'text': str, Optional('latex'): str},
+IsLabel = Or({
+        'text': str,
+        Optional('latex'): str,
+        Optional('graph'): str,
+        Optional('mark'): str,
+        Optional('name'): str
+    },
     And(str, Use(lambda s: {'text': s}), error='Invalid string: {}')
 )
 IsValuesDict = NestedSchema(IsNumberOrTuple)
@@ -164,22 +172,29 @@ def iterate_varcfgs(cfg: DictWrapper):
 
     for key, varcfg in variablescfg.walkitems():
         varcfg = process(varcfg, format, hascentral)
-        varcfg['label'] = labelscfg.get(key, None)
+        try:
+            varcfg['label'] = labelscfg[key]
+        except KeyError:
+            varcfg['label'] = {}
         yield key, varcfg
+
+from dagflow.variable import Parameters
 
 def load_variables(acfg):
     cfg = IsProperVarsCfg.validate(acfg)
     cfg = DictWrapper(cfg)
 
-    ret = DictWrapper({})
+    ret = DictWrapper({}, sep='.')
     print('go')
     for key, varcfg in iterate_varcfgs(cfg):
         skey = '.'.join(key)
+        label = varcfg['label']
+        label['key'] = skey
+        label.setdefault('text', skey)
         print(skey, varcfg)
-
+        ret[key] = Parameters.from_numbers(**varcfg)
 
     return ret
-
 
 cfg1 = {
         'variables': {
@@ -194,6 +209,7 @@ cfg1 = {
             'var1': {
                 'text': 'text label 1',
                 'latex': r'\LaTeX label 1',
+                'name': 'v1-1'
                 },
             'var2': 'simple label 2',
             },
@@ -212,6 +228,7 @@ cfg2 = {
             'var1': {
                 'text': 'text label 1',
                 'latex': r'\LaTeX label 1',
+                'name': 'v1-2'
                 },
             'var2': 'simple label 2'
             },
@@ -229,6 +246,7 @@ cfg3 = {
             'var1': {
                 'text': 'text label 1',
                 'latex': r'\LaTeX label 1',
+                'name': 'v1-3'
                 },
             'var2': 'simple label 2'
             },
@@ -278,5 +296,8 @@ cfgs = (cfg1, cfg2, cfg3, cfg4, cfg5)
 #         cfg_schema.validate(cfg)
 
 def test_load_variables():
-    for cfg in cfgs:
-        load_variables(cfg)
+    with Graph(close=True) as g:
+        for cfg in cfgs:
+            load_variables(cfg)
+
+    savegraph(g, 'output/test_load_variables.pdf', show='all')
