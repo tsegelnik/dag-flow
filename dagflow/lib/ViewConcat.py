@@ -38,20 +38,20 @@ class ViewConcat(FunctionNode):
         """A output takes this function to determine the dtype and shape"""
         size = 0
         self._offsets = []
-        cdtype = self.inputs[0].dtype
+        cdtype = self.inputs[0].dd.dtype
         check_input_dtype(self, slice(None), cdtype)
         check_input_dimension(self, slice(None), 1)
         for input in self.inputs:
             self._offsets.append(size)
-            size += input.shape[0]
+            size += input.dd.shape[0]
 
         output = self.outputs[0]
-        output._dtype = cdtype
-        output._shape = (size,)
+        output.dd.dtype = cdtype
+        output.dd.shape = (size,)
         data = zeros(shape=size, dtype=cdtype)
         output._set_data(data, owns_buffer=True)
 
         for offset, input in zip(self._offsets, self.inputs):
-            size = input.shape[0]
+            size = input.dd.shape[0]
             idata = data[offset : offset + size]
             input.set_own_data(idata, owns_buffer=False)

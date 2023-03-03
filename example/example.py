@@ -1,8 +1,5 @@
+from numpy import arange, copyto, result_type
 
-from numpy import arange, asarray, copyto, result_type
-from numpy.random import randint
-
-from dagflow.exception import CriticalError
 from dagflow.graph import Graph
 from dagflow.graphviz import savegraph
 from dagflow.input_extra import MissingInputAddEach
@@ -34,11 +31,11 @@ class ThreeInputsOneOutput(FunctionNode):
         """A output takes this function to determine the dtype and shape"""
         for i, output in enumerate(self.outputs):
             inputs = self.inputs[2*i:2*(1+i)]
-            output._shape = inputs[0].shape
-            output._dtype = result_type(tuple(inp.dtype for inp in inputs))
+            output.dd.shape = inputs[0].dd.shape
+            output.dd.dtype = result_type(tuple(inp.dd.dtype for inp in inputs))
         self.logger.debug(
-            f"Node '{self.name}': dtype={tuple(out.dtype for out in self.outputs)}, "
-            f"shape={tuple(out.shape for out in self.outputs)}"
+            f"Node '{self.name}': dtype={tuple(out.dd.dtype for out in self.outputs)}, "
+            f"shape={tuple(out.dd.shape for out in self.outputs)}"
         )
 
 

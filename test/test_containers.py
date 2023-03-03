@@ -4,7 +4,7 @@ import contextlib
 
 from dagflow.input import Input, Inputs
 from dagflow.legs import Legs
-from dagflow.output import Output, Outputs
+from dagflow.output import Output
 
 
 def test_01():

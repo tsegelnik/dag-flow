@@ -27,7 +27,7 @@ class WeightedSum(FunctionNode):
         """A output takes this function to determine the dtype and shape"""
         check_has_inputs(self)
         weight = self.inputs["weight"]
-        shape = weight.shape[0]
+        shape = weight.dd.shape[0]
         leninp = len(self.inputs)
         if shape == 0:
             raise TypeFunctionError(
