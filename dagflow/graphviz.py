@@ -135,7 +135,8 @@ else:
                 if node.frozen_tainted: status.append('frozen_tainted')
                 if node.invalid: status.append('invalid')
                 if not node.closed: status.append('open')
-                right.append(status)
+                if status:
+                    right.append(status)
 
             show_data = 'data' in self._show
             show_data_summary = 'data_summary' in self._show
