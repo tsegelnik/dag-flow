@@ -39,27 +39,27 @@ IsLabel = Or({
 IsValuesDict = NestedSchema(IsNumberOrTuple)
 IsLabelsDict = NestedSchema(IsLabel, processdicts=True)
 def IsFormatOk(format):
-    if isinstance(format, tuple):
-        if len(format)==1:
-            f1,=format
-            return f1=='value'
-        else:
-            if len(format)==2:
-                f1, f3 = format
-            elif len(format)==3:
-                f1, f2, f3 = format
-
-                if f2 not in ('value', 'central') or f1==f2:
-                    return False
-            else:
-                return False
-
-            if f3 not in ('sigma_absolute', 'sigma_relative', 'sigma_percent'):
-                return False
-
-            return f1 in ('value', 'central')
-    else:
+    if not isinstance(format, tuple):
         return format=='value'
+
+    if len(format)==1:
+        f1,=format
+        return f1=='value'
+    else:
+        if len(format)==2:
+            f1, f3 = format
+        elif len(format)==3:
+            f1, f2, f3 = format
+
+            if f2 not in ('value', 'central') or f1==f2:
+                return False
+        else:
+            return False
+
+        if f3 not in ('sigma_absolute', 'sigma_relative', 'sigma_percent'):
+            return False
+
+        return f1 in ('value', 'central')
 
 IsFormat = Schema(IsFormatOk, error='Invalid variable format "{}".')
 IsVarsCfgDict = Schema({
@@ -102,15 +102,15 @@ def get_format_processor(format):
         return process_var_fixed1
 
     errfmt = format[-1]
-    if errfmt.startswith('sigma'):
-        if errfmt.endswith('_absolute'):
-            return process_var_absolute
-        elif errfmt.endswith('_relative'):
-            return process_var_relative
-        else:
-            return process_var_percent
-    else:
+    if not errfmt.startswith('sigma'):
         return process_var_fixed2
+
+    if errfmt.endswith('_absolute'):
+        return process_var_absolute
+    elif errfmt.endswith('_relative'):
+        return process_var_relative
+    else:
+        return process_var_percent
 
 def iterate_varcfgs(cfg: DictWrapper):
     variablescfg = cfg['variables']

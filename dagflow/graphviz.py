@@ -145,7 +145,7 @@ else:
                 tainted = out0.tainted and 'tainted' or 'updated'
                 try:
                     data = out0.data
-                except:
+                except Exception:
                     right.append('cought exception')
                     data = out0._data
 

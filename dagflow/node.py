@@ -471,6 +471,8 @@ class Node(Legs):
         return True
 
     def close(self, recursive: bool = True, together: List['Node'] = []) -> bool:
+        # Caution: `together` list should not be written in!
+
         if self._closed:
             return True
         if self.invalid:

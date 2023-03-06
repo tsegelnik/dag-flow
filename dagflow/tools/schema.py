@@ -1,5 +1,7 @@
 from typing import Any, Union
 from schema import Schema, Schema, SchemaError
+from contextlib import suppress
+
 from dictwrapper.dictwrapper import DictWrapper
 
 class NestedSchema(object):
@@ -16,11 +18,9 @@ class NestedSchema(object):
             return self._schema.validate(data)
 
         if self._processdicts:
-            dtout = {}
-            for key, subdata in data.items():
-                dtout[key] = self._process_dict((key,), subdata)
-
-            return dtout
+            return {
+                key: self._process_dict((key,), subdata) for key, subdata in data.items()
+            }
 
         dtin = DictWrapper(data)
         dtout = DictWrapper({})
@@ -40,10 +40,8 @@ class NestedSchema(object):
         if not isinstance(data, dict):
             return self._schema.validate(data)
 
-        try:
+        with suppress(SchemaError):
             return self._schema.validate(data, _is_event_schema=False)
-        except SchemaError:
-            pass
 
         return {
             subkey: self._process_dict(key+(subkey,), subdata) for subkey, subdata in data.items()
