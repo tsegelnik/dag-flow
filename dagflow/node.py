@@ -72,7 +72,7 @@ class Node(Legs):
             from .graph import Graph
             self.graph = Graph.current()
         else:
-            self._graph = graph
+            self.graph = graph
 
         if debug is None and self.graph is not None:
             self._debug = self.graph.debug
@@ -217,7 +217,7 @@ class Node(Legs):
     def graph(self, graph):
         if graph is None:
             return
-        if self._graph:
+        if self._graph is not None:
             raise DagflowError("Graph is already defined")
         self._graph = graph
         self._graph.register_node(self)
@@ -424,6 +424,9 @@ class Node(Legs):
         raise DagflowError(
             "Unimplemented method: the method must be overridden!"
         )
+
+    def _fcn(self, _, inputs, outputs):
+        pass
 
     def _on_taint(self, caller: Input):
         """A node method to be called on taint"""
