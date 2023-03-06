@@ -246,12 +246,12 @@ class Node(Legs):
 
         return label
 
-    def add_input(self, name, **kwargs):
+    def add_input(self, name, **kwargs) -> Union[Input, Tuple[Input]]:
         if not self.closed:
             return self._add_input(name, **kwargs)
         raise ClosedGraphError(node=self)
 
-    def _add_input(self, name, **kwargs):
+    def _add_input(self, name, **kwargs) -> Union[Input, Tuple[Input]]:
         if IsIterable(name):
             return tuple(self._add_input(n, **kwargs) for n in name)
         self.logger.debug(f"Node '{self.name}': Add input '{name}'")
@@ -266,12 +266,12 @@ class Node(Legs):
             self._graph._add_input(inp)
         return inp
 
-    def add_output(self, name, **kwargs):
+    def add_output(self, name, **kwargs) -> Union[Output, Tuple[Output]]:
         if not self.closed:
             return self._add_output(name, **kwargs)
         raise ClosedGraphError(node=self)
 
-    def _add_output(self, name, *, keyword: bool=True, positional: bool=True, **kwargs):
+    def _add_output(self, name, *, keyword: bool=True, positional: bool=True, **kwargs) -> Union[Output, Tuple[Output]]:
         if IsIterable(name):
             return tuple(
                 self._add_output(n, **kwargs) for n in name
@@ -295,18 +295,20 @@ class Node(Legs):
             keyword=keyword
         )
 
-    def __add_output(self, out, positional: bool = True, keyword: bool = True):
+    def __add_output(self, out, positional: bool = True, keyword: bool = True) -> Union[Output, Tuple[Output]]:
         self.outputs.add(out, positional=positional, keyword=keyword)
         if self._graph:
             self._graph._add_output(out)
         return out
 
-    def add_pair(self, iname, oname, **kwargs):
+    def add_pair(self, iname: str, oname: str, **kwargs) -> Tuple[Input, Output]:
         if not self.closed:
             return self._add_pair(iname, oname, **kwargs)
         raise ClosedGraphError(node=self)
 
-    def _add_pair(self, iname, oname, input_kws={}, output_kws={}):
+    def _add_pair(self, iname: str, oname: str, input_kws: Optional[dict]=None, output_kws: Optional[dict]=None) -> Tuple[Input, Output]:
+        input_kws = input_kws or {}
+        output_kws = output_kws or {}
         output = self._add_output(oname, **output_kws)
         input = self._add_input(iname, child_output=output, **input_kws)
         return input, output

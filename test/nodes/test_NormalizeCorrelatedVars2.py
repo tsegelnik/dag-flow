@@ -5,7 +5,6 @@ from dagflow.exception import TypeFunctionError
 
 from dagflow.graph import Graph
 from dagflow.graphviz import savegraph
-from dagflow.lib.View import View
 from dagflow.lib.Array import Array
 from dagflow.lib.NormalizeCorrelatedVars2 import NormalizeCorrelatedVars2
 from dagflow.lib.Cholesky import Cholesky

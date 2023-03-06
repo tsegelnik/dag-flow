@@ -7,7 +7,6 @@ from ..nodes import FunctionNode
 from ..typefunctions import (
     check_has_inputs,
     eval_output_dtype,
-    copy_input_shape_to_output,
     check_inputs_same_dtype,
     AllPositionals
 )
@@ -41,4 +40,4 @@ class ElSumSq(FunctionNode):
         check_has_inputs(self)
         check_inputs_same_dtype(self)
         eval_output_dtype(self, AllPositionals, "result")
-        self.outputs[0]._shape=(1,)
+        self.outputs[0].dd.shape=(1,)

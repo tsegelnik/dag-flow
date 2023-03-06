@@ -37,17 +37,17 @@ class SumIntProductFloatElseNothing(FunctionNode):
         return out
 
     def _typefunc(self) -> bool:
-        if self.inputs[0].dtype == "i":
+        if self.inputs[0].dd.dtype == "i":
             self.fcn = self._functions.get("int")
-        elif self.inputs[0].dtype == "d":
+        elif self.inputs[0].dd.dtype == "d":
             self.fcn = self._functions.get("float")
-        self.outputs["result"]._shape = self.inputs[0].shape
-        self.outputs["result"]._dtype = result_type(
-            *tuple(inp.dtype for inp in self.inputs)
+        self.outputs["result"].dd.shape = self.inputs[0].dd.shape
+        self.outputs["result"].dd.dtype = result_type(
+            *tuple(inp.dd.dtype for inp in self.inputs)
         )
         self.logger.debug(
-            f"Node '{self.name}': dtype={self.outputs['result'].dtype}, "
-            f"shape={self.outputs['result'].shape}, function={self.fcn.__name__}"
+            f"Node '{self.name}': dtype={self.outputs['result'].dd.dtype}, "
+            f"shape={self.outputs['result'].dd.shape}, function={self.fcn.__name__}"
         )
         return True
 

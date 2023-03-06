@@ -1,17 +1,13 @@
 #!/usr/bin/env python
 
 from dagflow.lib import Array
-from dagflow.lib.NormalizeCorrelatedVars import NormalizeCorrelatedVars
-from dagflow.variable import Parameters, GaussianParameters
+from dagflow.variable import GaussianParameters
 from dagflow.graph import Graph
 from dagflow.graphviz import savegraph
 from dagflow.exception import CriticalError
 
 from numpy import square, allclose
 import pytest
-
-# def test_variables_00_parameter() -> None:
-#     pass
 
 @pytest.mark.parametrize('mode', ('single', 'uncorr', 'cov', 'cov1d'))
 def test_variables_00_variable(mode) -> None:

@@ -86,12 +86,12 @@ else:
                 shape0 = '?'
                 dtype0 = '?'
             else:
-                shape0 = out0.shape
+                shape0 = out0.dd.shape
                 if shape0 is None:
                     shape0 = '?'
                 shape0="x".join(str(s) for s in shape0)
 
-                dtype0 = out0.dtype
+                dtype0 = out0.dd.dtype
                 if dtype0 is None:
                     dtype0 = '?'
                 else:
