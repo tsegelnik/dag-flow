@@ -10,7 +10,7 @@ from dagflow.lib.Array import Array
 from dagflow.lib.NormalizeCorrelatedVars2 import NormalizeCorrelatedVars2
 from dagflow.lib.Cholesky import Cholesky
 
-from numpy import array, arange, allclose, sqrt, full_like, zeros_like, ones_like
+from numpy import array, arange, allclose, sqrt, full_like, zeros_like, ones_like, finfo
 from scipy.linalg import solve_triangular, cholesky
 
 import pytest
@@ -20,6 +20,8 @@ debug = False
 
 @pytest.mark.parametrize('dtype', ('d', 'f'))
 def test_NormalizeCorrelatedVars2_00(dtype):
+    fp_tolerance = finfo(dtype).resolution*2
+
     inCentral = arange(3.0, dtype=dtype)*100.0
     inV = array([[10, 2,   1], [ 2, 12,  3], [ 1,  3, 13]], dtype=dtype)
     inD = inV.diagonal()
@@ -29,8 +31,8 @@ def test_NormalizeCorrelatedVars2_00(dtype):
     inVec = inCentral + inOffset
     inNorm = full_like(inVec, -100)
     with Graph(close=True) as graph:
-        matrix = Array('matrix', inV)
-        diag = Array('diag', inD)
+        var_matrix = Array('var_matrix', inV)
+        var_diag = Array('var_diag', inD)
         Lmatrix = Cholesky('cholesky 1d')
         Ldiag = Cholesky('cholesky 2d')
         central = Array('central', inCentral)
@@ -44,8 +46,8 @@ def test_NormalizeCorrelatedVars2_00(dtype):
         central >> norm1d.inputs['central']
         central >> norm2d.inputs['central']
 
-        matrix >> Lmatrix
-        diag   >> Ldiag
+        var_matrix >> Lmatrix
+        var_diag   >> Ldiag
 
         Lmatrix >> norm2d.inputs['matrix']
         Ldiag   >> norm1d.inputs['matrix']
@@ -55,7 +57,7 @@ def test_NormalizeCorrelatedVars2_00(dtype):
 
 
     nodes = (
-        matrix, diag,
+        var_matrix, var_diag,
         Lmatrix, Ldiag,
         central,
         value1d, normvalue1d,
@@ -93,9 +95,12 @@ def test_NormalizeCorrelatedVars2_00(dtype):
 
     assert allclose(norm1, norm_matrix, atol=0, rtol=0)
     assert allclose(norm2, norm_diag, atol=0, rtol=0)
-    assert allclose(inVec, back_matrix, atol=1.e-14, rtol=0)
+    assert allclose(inVec, back_matrix, atol=0, rtol=0)
     assert allclose(inVec, back_diag, atol=0, rtol=0)
 
+    #
+    # Set norm value
+    #
     inZeros = zeros_like(inVec)
     normvalue1d.set(inZeros)
     normvalue2d.set(inZeros)
@@ -105,9 +110,12 @@ def test_NormalizeCorrelatedVars2_00(dtype):
     norm_diag = norm1d.get_data(1)
     assert allclose(inZeros, norm_matrix, atol=0, rtol=0)
     assert allclose(inZeros, norm_diag, atol=0, rtol=0)
-    assert allclose(inCentral, back_matrix, atol=1.e-14, rtol=0)
+    assert allclose(inCentral, back_matrix, atol=0, rtol=0)
     assert allclose(inCentral, back_diag, atol=0, rtol=0)
 
+    #
+    # Set normvalue
+    #
     inOnes = ones_like(inVec)
     normvalue1d.set(inOnes)
     normvalue2d.set(inOnes)
@@ -115,13 +123,16 @@ def test_NormalizeCorrelatedVars2_00(dtype):
     back_diag = norm1d.get_data(0)
     norm_matrix = norm2d.get_data(1)
     norm_diag = norm1d.get_data(1)
-    checkDiag = inCentral + inLd
-    checkMatrix = inCentral + inL@inOnes
+    checkDiagOnes = inCentral + inLd
+    checkMatrixOnes = inCentral + inL@inOnes
     assert allclose(inOnes, norm_matrix, atol=0, rtol=0)
     assert allclose(inOnes, norm_diag, atol=0, rtol=0)
-    assert allclose(checkMatrix, back_matrix, atol=1.e-14, rtol=0)
-    assert allclose(checkDiag, back_diag, atol=0, rtol=0)
+    assert allclose(checkMatrixOnes, back_matrix, atol=0, rtol=0)
+    assert allclose(checkDiagOnes, back_diag, atol=0, rtol=0)
 
+    #
+    # Set value (with immediate flag)
+    #
     norm2d._immediate = True
     norm1d._immediate = True
     value1d.set(inCentral)
@@ -132,9 +143,80 @@ def test_NormalizeCorrelatedVars2_00(dtype):
     back_diag = norm1d.outputs[0]._data
     assert allclose(inZeros, norm_matrix, atol=0, rtol=0)
     assert allclose(inZeros, norm_diag, atol=0, rtol=0)
-    assert allclose(inCentral, back_matrix, atol=1.e-14, rtol=0)
+    assert allclose(inCentral, back_matrix, atol=0, rtol=0)
     assert allclose(inCentral, back_diag, atol=0, rtol=0)
 
+    #
+    # Set value (with immediate flag)
+    #
+    norm2d._immediate = True
+    norm1d._immediate = True
+    normvalue1d.set(inOnes)
+    normvalue2d.set(inOnes)
+    norm_matrix = norm2d.outputs[1]._data
+    norm_diag = norm1d.outputs[1]._data
+    back_matrix = norm2d.outputs[0]._data
+    back_diag = norm1d.outputs[0]._data
+    assert allclose(inOnes, norm_matrix, atol=0, rtol=0)
+    assert allclose(inOnes, norm_diag, atol=0, rtol=0)
+    assert allclose(checkMatrixOnes, back_matrix, atol=0, rtol=0)
+    assert allclose(checkDiagOnes, back_diag, atol=0, rtol=0)
+
+    #
+    # Set central
+    #
+    norm2d._immediate = False
+    norm1d._immediate = False
+    central.set(-inOnes)
+    back_matrix = norm2d.get_data(0)
+    back_diag = norm1d.get_data(0)
+    norm_matrix = norm2d.get_data(1)
+    norm_diag = norm1d.get_data(1)
+    assert all(norm_matrix!=inOnes)
+    assert all(norm_matrix!=inOnes)
+    assert allclose(checkMatrixOnes, back_matrix, atol=0, rtol=0)
+    assert allclose(checkDiagOnes, back_diag, atol=0, rtol=0)
+
+    #
+    # Revert central
+    #
+    central.set(inCentral)
+    back_matrix = norm2d.get_data(0)
+    back_diag = norm1d.get_data(0)
+    norm_matrix = norm2d.get_data(1)
+    norm_diag = norm1d.get_data(1)
+    assert allclose(inOnes, norm_matrix, atol=fp_tolerance, rtol=0)
+    assert allclose(inOnes, norm_diag, atol=fp_tolerance, rtol=0)
+    assert allclose(checkMatrixOnes, back_matrix, atol=0, rtol=0)
+    assert allclose(checkDiagOnes, back_diag, atol=0, rtol=0)
+
+    #
+    # Set sigma
+    #
+    var_matrix.set(inV*2)
+    var_diag.set(inD*2)
+    back_matrix = norm2d.get_data(0)
+    back_diag = norm1d.get_data(0)
+    norm_matrix = norm2d.get_data(1)
+    norm_diag = norm1d.get_data(1)
+    assert all(norm_matrix!=inOnes)
+    assert all(norm_matrix!=inOnes)
+    assert allclose(checkMatrixOnes, back_matrix, atol=0, rtol=0)
+    assert allclose(checkDiagOnes, back_diag, atol=0, rtol=0)
+
+    #
+    # Revert sigma
+    #
+    var_matrix.set(inV)
+    var_diag.set(inD)
+    back_matrix = norm2d.get_data(0)
+    back_diag = norm1d.get_data(0)
+    norm_matrix = norm2d.get_data(1)
+    norm_diag = norm1d.get_data(1)
+    assert allclose(inOnes, norm_matrix, atol=fp_tolerance, rtol=0)
+    assert allclose(inOnes, norm_diag, atol=fp_tolerance, rtol=0)
+    assert allclose(checkMatrixOnes, back_matrix, atol=0, rtol=0)
+    assert allclose(checkDiagOnes, back_diag, atol=0, rtol=0)
 
     savegraph(graph, f"output/test_NormalizeCorrelatedVars2_00_{dtype}.png", show=['all'])
 
@@ -144,24 +226,24 @@ def test_NormalizeCorrelatedVars2_01(dtype='d'):
     inV = array([[10, 2,   1], [ 2, 12,  3], [ 1,  3, 13]], dtype=dtype)
     inD = inV.diagonal()
     with Graph() as graph1:
-        diag = Array('diag', inD)
+        var_diag = Array('var_diag', inD)
         vec = Array('vec', inVec, mode='store_weak')
         nvec = Array('vec', inNorm, mode='store_weak')
         norm1d = NormalizeCorrelatedVars2('norm1d')
 
         vec  >> norm1d.inputs['central']
-        diag >> norm1d.inputs['matrix']
+        var_diag >> norm1d.inputs['matrix']
 
         (vec, nvec) >> norm1d
 
     with Graph() as graph2:
-        matrix = Array('matrix', inV)
+        var_matrix = Array('var_matrix', inV)
         vec = Array('vec', inVec, mode='store_weak')
         nvec = Array('vec', inNorm, mode='store_weak')
         norm2d = NormalizeCorrelatedVars2('norm2d')
 
         vec >> norm2d.inputs['central']
-        matrix >> norm2d.inputs['matrix']
+        var_matrix >> norm2d.inputs['matrix']
 
         (vec, nvec) >> norm2d
 
