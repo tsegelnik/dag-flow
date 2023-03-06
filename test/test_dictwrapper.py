@@ -238,16 +238,42 @@ def test_dictwrapper_09_dictcopy():
     assert i==2
 
 def test_dictwrapper_09_walkitems():
-    dct = dict([('a', 1), ('b', 2), ('c', 3), ('c1', dict(i=dict(j=dict(k=dict(l=6))))), ('d', dict(e=4)), ('f', dict(g=dict(h=5)))])
+    dct = {
+        'a': 1,
+        'b': 2,
+        'c': 3,
+        'c1': {
+            'i': {
+                'j': {
+                    'k': {
+                        'l': 6
+                    }
+                }
+            }
+        },
+        'd': {
+            'e': 4
+        },
+        'f': {
+            'g': {
+                'h': 5
+            }
+        }
+    }
     dct['z'] = {}
     dw = DictWrapper(dct, sep='.')
 
     imaxlist=[5, 0, 6, 5, 5, 5, 5, 5, 5]
-    for imax, maxdepth in zip(imaxlist, [None]+list(range(9))):
+    for imax, maxdepth in zip(imaxlist, [None]+list(range(len(imaxlist)))):
         i=0
+        print(f'{imax=}, {maxdepth=}')
+        maxk = -1
         for i, (k, v) in enumerate(dw.walkitems(maxdepth=maxdepth)):
-            # print(i, k, v)
+            print(i, k, v)
             assert maxdepth is None or len(k)<=maxdepth
+            maxk=max(maxk, len(k))
+        print(f'{maxk=}')
+        print()
         assert i==imax
 
 def test_dictwrapper_09_walk():

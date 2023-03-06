@@ -5,10 +5,7 @@ class ClassWrapper(object):
     _types: Any
     def __init__(self, obj, *, types=None):
         self._object = obj
-        if types:
-            self._types = types
-        else:
-            self._types = type(obj)
+        self._types = type(obj) if types is None else types
         self._wrapper_class = type(self)
 
     @property

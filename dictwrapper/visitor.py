@@ -34,21 +34,26 @@ class DictWrapperVisitorDemostrator(DictWrapperVisitor):
     def start(self, d):
         v = object.__repr__(d.object)
         print('Start printing dictionary:', v)
-        print(self.fmt.format(action='Action', depth='Depth', key='Key', vtype='Type', value='Value', **self.opts))
+        self._print('Action', 'Key', 'Value', 'Type', depth='Depth')
 
-    def stop(self, d):
+    def stop(self, _):
         print('Done printing dictionary')
 
     def enterdict(self, k, d):
         d = d.object
         v = object.__repr__(d)
-        print(self.fmt.format(action='Enter', depth=len(k), key=k, vtype=self.typestring(d), value=v, **self.opts))
+        self._print('Enter', k, v, self.typestring(d))
 
     def exitdict(self, k, d):
         d = d.object
         v = object.__repr__(d)
-        print(self.fmt.format(action='Exit', depth=len(k), key=k, vtype=self.typestring(d), value=v, **self.opts))
+        self._print('Exit', k, v, self.typestring(d))
 
     def visit(self, k, v):
-        print(self.fmt.format(action='Visit', depth=len(k), key=k, vtype=self.typestring(v), value=v, **self.opts))
+        self._print('Visit', k, v, self.typestring(v))
+
+    def _print(self, action, k, v, vtype, *, depth=None):
+        if depth is None:
+            depth = len(k)
+        print(self.fmt.format(action=action, depth=depth, key=k, vtype=vtype, value=v, **self.opts))
 

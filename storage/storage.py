@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from collections import UserDict
-from collections.abc import Sequence, Set
+from collections.abc import Sequence
 from typing import Any, Callable, Generator, Optional
 
 class Storage(UserDict):
