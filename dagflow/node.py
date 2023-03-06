@@ -13,9 +13,9 @@ from .input import Input
 from .legs import Legs
 from .logger import Logger
 from .output import Output
-from .tools import IsIterable
+from .iter import IsIterable
 from .types import GraphT
-from typing import Optional, List, Dict, Union, Callable, Any
+from typing import Optional, List, Dict, Union, Callable, Any, Tuple
 
 class Node(Legs):
     _name: str

@@ -3,7 +3,7 @@ from . import input_extra
 from .input import Inputs
 from .output import Output, Outputs
 from .shift import lshift, rshift
-from .tools import IsIterable, StopNesting
+from .iter import IsIterable, StopNesting
 
 class Legs:
     inputs: Inputs

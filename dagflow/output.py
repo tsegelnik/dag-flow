@@ -14,7 +14,7 @@ from .exception import (
     UnclosedGraphError,
 )
 from .shift import lshift, rshift
-from .tools import StopNesting
+from .iter import StopNesting
 from .types import EdgesLike, InputT, NodeT, ShapeLike
 from .datadescriptor import DataDescriptor
 

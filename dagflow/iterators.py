@@ -1,5 +1,5 @@
 
-from .tools import IsIterable, StopNesting
+from .iter import IsIterable, StopNesting
 
 
 def get_proper_iterator(obj, methodname, onerror, **kwargs):

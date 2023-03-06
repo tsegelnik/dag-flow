@@ -13,7 +13,7 @@ from .exception import (
 )
 from .output import Output
 from .shift import lshift
-from .tools import StopNesting
+from .iter import StopNesting
 from .types import EdgesLike, InputT, NodeT, ShapeLike
 
 
