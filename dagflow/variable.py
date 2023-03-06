@@ -1,4 +1,3 @@
-from dagflow.lib import CovmatrixFromCormatrix
 from .node import Node, Output
 from .exception import InitializationError
 from .lib.NormalizeCorrelatedVars2 import NormalizeCorrelatedVars2
@@ -6,8 +5,9 @@ from .lib.Cholesky import Cholesky
 from .lib.Array import Array
 from .lib.CovmatrixFromCormatrix import CovmatrixFromCormatrix
 
-from numpy import zeros_like
-from typing import Optional
+from numpy import zeros_like, array
+from numpy.typing import DTypeLike
+from typing import Optional, Dict
 
 class Parameters(object):
     value: Output
@@ -16,6 +16,28 @@ class Parameters(object):
     def __init__(self, value: Node):
         self._value_node = value
         self.value = value.outputs[0]
+
+    @staticmethod
+    def from_numbers(*, dtype: DTypeLike='d', **kwargs) -> 'Parameters':
+        sigma = kwargs['sigma']
+        if sigma is not None:
+            return GaussianParameters.from_numbers(dtype=dtype, **kwargs)
+
+        label: Dict[str, str] = kwargs.get('label')
+        if label is None:
+            label = {'text': 'parameter'}
+        else:
+            label = dict(label)
+        name: str = label.setdefault('name', 'parameter')
+        value = kwargs['value']
+        return Parameters(
+            Array(
+                name,
+                array((value,), dtype=dtype),
+                label = label,
+                mode='store_weak'
+            )
+        )
 
 class GaussianParameters(Parameters):
     central: Output
@@ -84,4 +106,40 @@ class GaussianParameters(Parameters):
         self._norm_node.close(recursive=True)
         self._norm_node.touch()
 
+    @staticmethod
+    def from_numbers(
+        value: float,
+        *,
+        central: float,
+        sigma: float,
+        label: Optional[Dict[str,str]]=None,
+        dtype: DTypeLike='d',
+        **_
+    ) -> 'GaussianParameters':
+        if label is None:
+            label = {'text': 'gaussian parameter'}
+        else:
+            label = dict(label)
+        name = label.setdefault('name', 'parameter')
+        node_value = Array(
+            name,
+            array((value,), dtype=dtype),
+            label = label,
+            mode='store_weak'
+        )
 
+        node_central = Array(
+            f'{name}_central',
+            array((central,), dtype=dtype),
+            label = {k: f'central: {v}' for k,v in label.items()},
+            mode='store_weak'
+        )
+
+        node_sigma = Array(
+            f'{name}_sigma',
+            array((sigma,), dtype=dtype),
+            label = {k: f'sigma: {v}' for k,v in label.items()},
+            mode='store_weak'
+        )
+
+        return GaussianParameters(value=node_value, central=node_central, sigma=node_sigma)

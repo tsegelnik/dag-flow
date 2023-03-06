@@ -107,10 +107,19 @@ class NormalizeCorrelatedVars2(FunctionNode):
         copyto(output_normvalue, input_normvalue)
 
     def _on_taint(self, caller: Input) -> None:
-        if caller is self._input_value:
-            self.fcn = self._functions[f"forward_{self._ndim}"]
-        else:
+        """Choose the function to call based on the modified input:
+            - if normvalue is modified, the value should be updated
+            - if value is modified, the normvalue should be updated
+            - if sigma or central is modified, the normvalue should be updated
+
+            TODO:
+                - implement partial taintflag propagation
+                - value should not be tainted on sigma/central modificantion
+        """
+        if caller is self._input_normvalue:
             self.fcn = self._functions[f"backward_{self._ndim}"]
+        else:
+            self.fcn = self._functions[f"forward_{self._ndim}"]
 
     def _typefunc(self) -> None:
         check_has_inputs(self)

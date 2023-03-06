@@ -1,7 +1,6 @@
 from itertools import zip_longest
 
 from .exception import ConnectionError
-from .tools import undefined
 from .iterators import iter_child_outputs, iter_inputs, iter_outputs
 
 _rshift_scope_id = 0
@@ -21,7 +20,7 @@ def rshift(outputs, inputs):
     for output, inp in zip_longest(
         iter_outputs(outputs),
         iter_inputs(inputs, True),
-        fillvalue=undefined("leg"),
+        fillvalue=None,
     ):
         if not output:
             raise ConnectionError("Unable to connect mismatching lists!")

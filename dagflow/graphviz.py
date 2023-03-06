@@ -79,7 +79,7 @@ else:
             return f"{name}_{onum}{suffix}"
 
         def get_label(self, node: NodeT) -> str:
-            text = node.label() or node.name
+            text = node.label('graph') or node.name
             try:
                 out0 = node.outputs[0]
             except IndexError:
@@ -97,18 +97,30 @@ else:
                 else:
                     dtype0 = dtype0.char
 
-            npos = len(node.outputs)
-            nall = node.outputs.len_all()
-            if nall==npos:
-                if npos>1:
-                    nout = f' N{npos}'
+            nout_pos = len(node.outputs)
+            nout_nonpos = node.outputs.len_all()-nout_pos
+            if nout_nonpos==0:
+                if nout_pos>1:
+                    nout = f'→{nout_pos}'
                 else:
                     nout = ''
             else:
-                nout=f' N{npos}/{nall}'
+                nout=f'→{nout_pos}+{nout_nonpos}'
+
+            nin_pos = len(node.inputs)
+            nin_nonpos = node.inputs.len_all() - nin_pos
+            if nin_nonpos==0:
+                if nin_pos>1:
+                    nin = f'{nin_pos}→'
+                else:
+                    nin = ''
+            else:
+                nin=f'{nin_pos}+{nin_nonpos}→'
+
+            nlegs = f' {nin}{nout}'.replace('→→', '→')
 
             left, right = [], []
-            info_type = f"[{shape0}]{dtype0}{nout}"
+            info_type = f"[{shape0}]{dtype0}{nlegs}"
             if 'type' in self._show:
                 left.append(info_type)
             if 'mark' in self._show and node.mark is not None:
@@ -123,7 +135,8 @@ else:
                 if node.frozen_tainted: status.append('frozen_tainted')
                 if node.invalid: status.append('invalid')
                 if not node.closed: status.append('open')
-                right.append(status)
+                if status:
+                    right.append(status)
 
             show_data = 'data' in self._show
             show_data_summary = 'data_summary' in self._show
@@ -132,7 +145,7 @@ else:
                 tainted = out0.tainted and 'tainted' or 'updated'
                 try:
                     data = out0.data
-                except:
+                except Exception:
                     right.append('cought exception')
                     data = out0._data
 
