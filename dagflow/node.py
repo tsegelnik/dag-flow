@@ -11,7 +11,7 @@ from .exception import (
 )
 from .input import Input
 from .legs import Legs
-from .logger import Logger
+from .logger import Logger, get_logger
 from .output import Output
 from .iter import IsIterable
 from .types import GraphT
@@ -86,20 +86,12 @@ class Node(Legs):
         else:
             self._label = {'text': name}
 
-        if logger is None:
-            if self.graph is not None:
-                self._logger = self.graph.logger
-            else:
-                from .logger import get_logger
-                self._logger = get_logger(
-                    filename=kwargs.pop("logfile", None),
-                    debug=self.debug,
-                    console=kwargs.pop("console", True),
-                    formatstr=kwargs.pop("logformat", None),
-                    name=kwargs.pop("loggername", None),
-                )
-        else:
+        if logger is not None:
             self._logger = logger
+        elif self.graph is not None:
+            self._logger = self.graph.logger
+        else:
+            self._logger = get_logger()
 
         self._immediate = immediate
         self._auto_freeze = auto_freeze

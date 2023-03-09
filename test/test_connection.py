@@ -19,8 +19,8 @@ def test_01():
 
 
 def test_02():
-    n1 = FunctionNode("node1", debug=True)
-    n2 = FunctionNode("node2", debug=True)
+    n1 = FunctionNode("node1")
+    n2 = FunctionNode("node2")
 
     n1.add_output("o1")
     n1.add_output("o2")
@@ -56,8 +56,8 @@ def test_04():
 
 
 def test_05():
-    n1 = FunctionNode("node1", debug=True, **nodeargs)
-    n2 = FunctionNode("node2", debug=True, **nodeargs)
+    n1 = FunctionNode("node1", **nodeargs)
+    n2 = FunctionNode("node2", **nodeargs)
 
     out1 = n1.add_output("o1", allocatable=False)
     out2 = n1.add_output("o2", allocatable=False)
@@ -78,8 +78,8 @@ def test_05():
 
 
 def test_06():
-    n1 = FunctionNode("node1", **nodeargs, debug=True)
-    n2 = FunctionNode("node2", **nodeargs, debug=True)
+    n1 = FunctionNode("node1", **nodeargs)
+    n2 = FunctionNode("node2", **nodeargs)
 
     out1 = n1._add_output("o1", allocatable=False)
     out2 = n1._add_output("o2", allocatable=False)
