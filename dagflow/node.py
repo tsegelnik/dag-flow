@@ -91,13 +91,7 @@ class Node(Legs):
         elif self.graph is not None:
             self._logger = self.graph.logger
         else:
-            self._logger = get_logger(
-                filename=kwargs.pop("logfile", None),
-                debug=self.debug,
-                console=kwargs.pop("console", True),
-                formatstr=kwargs.pop("logformat", None),
-                name=kwargs.pop("loggername", None),
-            )
+            self._logger = get_logger()
 
         self._immediate = immediate
         self._auto_freeze = auto_freeze
