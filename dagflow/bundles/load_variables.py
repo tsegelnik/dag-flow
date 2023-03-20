@@ -70,7 +70,7 @@ IsVarsCfgDict = Schema({
 IsProperVarsCfgDict = And(IsVarsCfgDict, ParsCfgHasProperFormat())
 IsLoadableDict = And(
             {'load': 'str'},
-            Use(LoadFileWithExt(yaml=LoadYaml))
+            Use(LoadFileWithExt(yaml=LoadYaml, key='load'))
         )
 IsProperVarsCfg = Or(IsProperVarsCfgDict, And(IsLoadableDict, IsProperVarsCfgDict))
 
@@ -135,7 +135,7 @@ def iterate_varcfgs(cfg: DictWrapper):
 from dagflow.variable import Parameters
 
 def load_variables(acfg):
-    cfg = IsProperVarsCfgDict.validate(acfg)
+    cfg = IsProperVarsCfg.validate(acfg)
     cfg = DictWrapper(cfg)
 
     ret = DictWrapper({}, sep='.')
