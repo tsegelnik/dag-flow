@@ -2,8 +2,36 @@ from typing import Any, Union
 from schema import Schema, Schema, SchemaError
 from contextlib import suppress
 
-from dictwrapper.dictwrapper import DictWrapper
+from os import access, R_OK
+from typing import Callable
 
+def IsReadable(filename: str):
+    """Returns True if the file is readable"""
+    return access(filename, R_OK)
+
+def IsFilewithExt(*exts: str):
+    """Returns a function that retunts True if the file extension is consistent"""
+    def checkfilename(filename: str):
+        return any(filename.endswith(f'.{ext}' for ext in exts))
+    return checkfilename
+
+def LoadFileWithExt(*, key: str=None,**kwargs: Callable):
+    """Returns a function that retunts True if the file extension is consistent"""
+    def checkfilename(filename: Union[str, dict]):
+        if key is not None:
+            filename = filename[key]
+        for ext, loader in kwargs.items():
+            if filename.endswith(f'.{ext}'):
+                return loader(filename)
+
+            return False
+    return checkfilename
+
+from yaml import load, Loader
+def LoadYaml(fname: str):
+    return load(fname, Loader)
+
+from dictwrapper.dictwrapper import DictWrapper
 class NestedSchema(object):
     __slots__ = ('_schema', '_processdicts')
     _schema: Union[Schema,object]
