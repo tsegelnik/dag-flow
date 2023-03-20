@@ -20,4 +20,5 @@ tests:
                 path: coverage.xml
     only:
         - master
+        - main
         - merge_requests
