@@ -66,13 +66,16 @@ IsVarsCfgDict = Schema({
     'variables': IsValuesDict,
     'labels': IsLabelsDict,
     'format': IsFormat
-    })
+    },
+    error = 'Invalid parameters configuration: {}'
+)
 IsProperVarsCfgDict = And(IsVarsCfgDict, ParsCfgHasProperFormat())
 IsLoadableDict = And(
             {'load': str},
-            Use(LoadFileWithExt(yaml=LoadYaml, key='load'))
+            Use(LoadFileWithExt(yaml=LoadYaml, key='load'), error='Failed to load {}'),
+            IsProperVarsCfgDict
         )
-IsProperVarsCfg = Or(IsProperVarsCfgDict, And(IsLoadableDict, IsProperVarsCfgDict))
+IsProperVarsCfg = Or(IsProperVarsCfgDict, IsLoadableDict)
 
 def process_var_fixed1(vcfg, _, __):
     return {'central': vcfg, 'value': vcfg, 'sigma': None}
