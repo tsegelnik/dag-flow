@@ -1,0 +1,18 @@
+# Inputs from PDG2020:
+#     - https://pdglive.lbl.gov
+#     - https://pdg.lbl.gov/2020/html/computer_read.html
+#     - The pages are given for the booklet
+
+format: 'value'
+variables:
+    NeutronLifeTime: 879.4        # s,   page 165
+    NeutronMass:     939.565413   # MeV, page 165
+    ProtonMass:      938.272081   # MeV, page 163
+    ElectronMass:    0.5109989461 # MeV, page 16
+
+labels:
+    NeutronLifeTime: "neutron life time, s (PDG2020)"
+    NeutronMass:     "neutron mass, MeV (PDG2020)"
+    ProtonMass:      "proton mass, MeV (PDG2020)"
+    ElectronMass:    "electron mass, MeV (PDG2020)"
+
