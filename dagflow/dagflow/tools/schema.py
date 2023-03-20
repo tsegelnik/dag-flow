@@ -29,7 +29,8 @@ def LoadFileWithExt(*, key: str=None,**kwargs: Callable):
 
 from yaml import load, Loader
 def LoadYaml(fname: str):
-    return load(fname, Loader)
+    with open(fname, 'read') as file:
+        return load(file, Loader)
 
 from dictwrapper.dictwrapper import DictWrapper
 class NestedSchema(object):
