@@ -142,13 +142,11 @@ def load_variables(acfg):
     cfg = DictWrapper(cfg)
 
     ret = DictWrapper({}, sep='.')
-    print('go')
     for key, varcfg in iterate_varcfgs(cfg):
         skey = '.'.join(key)
         label = varcfg['label']
         label['key'] = skey
         label.setdefault('text', skey)
-        print(skey, varcfg)
         ret[key] = Parameters.from_numbers(**varcfg)
 
     return ret
