@@ -3,7 +3,7 @@ from dictwrapper.dictwrapper import DictWrapper
 
 from schema import Schema, Or, Optional, Use, And, Schema, SchemaError
 
-from ..tools.schema import NestedSchema
+from ..tools.schema import NestedSchema, LoadFileWithExt, LoadYaml
 
 class ParsCfgHasProperFormat(object):
     def validate(self, data: dict) -> dict:
@@ -66,9 +66,17 @@ IsVarsCfgDict = Schema({
     'variables': IsValuesDict,
     'labels': IsLabelsDict,
     'format': IsFormat
-    })
-
-IsProperVarsCfg = And(IsVarsCfgDict, ParsCfgHasProperFormat())
+    },
+    error = 'Invalid parameters configuration: {}'
+)
+IsProperVarsCfgDict = And(IsVarsCfgDict, ParsCfgHasProperFormat())
+IsLoadableDict = And(
+            {'load': str},
+            Use(LoadFileWithExt(yaml=LoadYaml, key='load'), error='Failed to load {}'),
+            IsProperVarsCfgDict,
+            error = 'Failed to load parameters configuration file: {}'
+        )
+IsProperVarsCfg = Or(IsProperVarsCfgDict, IsLoadableDict)
 
 def process_var_fixed1(vcfg, _, __):
     return {'central': vcfg, 'value': vcfg, 'sigma': None}
@@ -135,13 +143,11 @@ def load_variables(acfg):
     cfg = DictWrapper(cfg)
 
     ret = DictWrapper({}, sep='.')
-    print('go')
     for key, varcfg in iterate_varcfgs(cfg):
         skey = '.'.join(key)
         label = varcfg['label']
         label['key'] = skey
         label.setdefault('text', skey)
-        print(skey, varcfg)
         ret[key] = Parameters.from_numbers(**varcfg)
 
     return ret
