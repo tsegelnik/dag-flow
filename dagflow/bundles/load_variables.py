@@ -3,7 +3,7 @@ from dictwrapper.dictwrapper import DictWrapper
 
 from schema import Schema, Or, Optional, Use, And, Schema, SchemaError
 
-from ..tools.schema import NestedSchema
+from ..tools.schema import NestedSchema, LoadFileWithExt, LoadYaml
 
 class ParsCfgHasProperFormat(object):
     def validate(self, data: dict) -> dict:
@@ -67,8 +67,12 @@ IsVarsCfgDict = Schema({
     'labels': IsLabelsDict,
     'format': IsFormat
     })
-
-IsProperVarsCfg = And(IsVarsCfgDict, ParsCfgHasProperFormat())
+IsProperVarsCfgDict = And(IsVarsCfgDict, ParsCfgHasProperFormat())
+IsLoadableDict = And(
+            {'load': 'str'},
+            Use(LoadFileWithExt(yaml=LoadYaml))
+        )
+IsProperVarsCfg = Or(IsProperVarsCfgDict, And(IsLoadableDict, IsProperVarsCfgDict))
 
 def process_var_fixed1(vcfg, _, __):
     return {'central': vcfg, 'value': vcfg, 'sigma': None}
@@ -131,7 +135,7 @@ def iterate_varcfgs(cfg: DictWrapper):
 from dagflow.variable import Parameters
 
 def load_variables(acfg):
-    cfg = IsProperVarsCfg.validate(acfg)
+    cfg = IsProperVarsCfgDict.validate(acfg)
     cfg = DictWrapper(cfg)
 
     ret = DictWrapper({}, sep='.')
