@@ -1,0 +1,8 @@
+contextlib2
+coverage
+numba
+numpy
+pygraphviz
+pytest
+pytest-cov
+schema
