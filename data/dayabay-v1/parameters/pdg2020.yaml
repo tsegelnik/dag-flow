@@ -4,6 +4,7 @@
 #     - The pages are given for the booklet
 
 format: 'value'
+state: 'fixed'
 variables:
     NeutronLifeTime: 879.4        # s,   page 165
     NeutronMass:     939.565413   # MeV, page 165

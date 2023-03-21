@@ -3,6 +3,7 @@
 #     - PDG 2014 is used for neutron lifetime
 
 format: 'value'
+state: 'fixed'
 variables:
     NeutronLifeTime: 880.3       #, s
     NeutronMass:     939.565379  # MeV
