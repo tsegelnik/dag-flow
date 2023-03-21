@@ -21,11 +21,13 @@ def LoadFileWithExt(*, key: Union[str, dict]=None, update: bool=False, **kwargs:
         if key is not None:
             dct = filename.copy()
             filename = dct.pop(key)
+        else:
+            dct = None
         for ext, loader in kwargs.items():
             if filename.endswith(f'.{ext}'):
                 ret = loader(filename)
 
-                if update:
+                if update and dct is not None:
                     ret.update(dct)
 
                 return ret
