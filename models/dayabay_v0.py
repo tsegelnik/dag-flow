@@ -5,6 +5,6 @@ from pprint import pprint
 
 def model_dayabay_v0():
 	datasource = Path('data/dayabay-v0')
-	vars = load_variables({'load': str(datasource/'parameters/pdg2012.yaml')})
+	vars = load_variables({'path': 'ibd', 'load': str(datasource/'parameters/pdg2012.yaml')})
 
 	pprint(vars.object)
