@@ -1,7 +1,7 @@
-from os import chdir, getcwd, mkdir
+from os import chdir, getcwd, mkdir, listdir
 from os.path import isdir
 
-from pytest import fixture, skip
+from pytest import fixture
 
 
 def pytest_sessionstart(session):
@@ -11,19 +11,14 @@ def pytest_sessionstart(session):
 
     Automatic change path to the `dag-flow/test` and create `test/output` dir
     """
-    path = getcwd()
-    lastdir = path.split("/")[-1]
-    if lastdir == "dag-flow":  # rootdir
-        chdir("./test")
-    elif lastdir in (
-        "dagflow",
-        "example",
-        "doc",
-        "docs",
-        "source",
-        "sources",
-    ):  # childdir
-        chdir("../test")
+    while(path := getcwd()):
+        if (lastdir := path.split("/")[-1]) == "test":
+            break
+        elif ".git" in listdir(path):
+            chdir("./test")
+            break
+        else:
+            chdir("..")
     if not isdir("output"):
         mkdir("output")
 

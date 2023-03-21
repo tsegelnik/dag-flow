@@ -53,24 +53,27 @@ class Parameters(object):
 
     @staticmethod
     def from_numbers(*, dtype: DTypeLike='d', **kwargs) -> 'Parameters':
-        sigma = kwargs['sigma']
+        sigma = kwargs.pop('sigma')
         if sigma is not None:
-            return GaussianParameters.from_numbers(dtype=dtype, **kwargs)
+            return GaussianParameters.from_numbers(dtype=dtype, sigma=sigma, **kwargs)
 
-        label: Dict[str, str] = kwargs.get('label')
+        del kwargs['central']
+
+        label: Dict[str, str] = kwargs.pop('label', None)
         if label is None:
             label = {'text': 'parameter'}
         else:
             label = dict(label)
         name: str = label.setdefault('name', 'parameter')
-        value = kwargs['value']
+        value = kwargs.pop('value')
         return Parameters(
             Array(
                 name,
                 array((value,), dtype=dtype),
                 label = label,
-                mode='store_weak'
-            )
+                mode='store_weak',
+            ),
+            **kwargs
         )
 
 class GaussianParameters(Parameters):
