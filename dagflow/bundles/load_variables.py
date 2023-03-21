@@ -2,6 +2,7 @@ from dictwrapper.dictwrapper import DictWrapper
 # from storage.storage import Storage # To be used later
 
 from schema import Schema, Or, Optional, Use, And, Schema, SchemaError
+from pathlib import Path
 
 from ..tools.schema import NestedSchema, LoadFileWithExt, LoadYaml
 
@@ -74,7 +75,7 @@ IsVarsCfgDict = Schema({
 IsProperVarsCfgDict = And(IsVarsCfgDict, ParsCfgHasProperFormat())
 IsLoadableDict = And(
             {
-                'load': str,
+                'load': Or(str, And(Path, Use(str))),
                 Optional(str): object
             },
             Use(LoadFileWithExt(yaml=LoadYaml, key='load', update=True), error='Failed to load {}'),
