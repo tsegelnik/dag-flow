@@ -66,7 +66,8 @@ IsVarsCfgDict = Schema({
     'variables': IsValuesDict,
     'labels': IsLabelsDict,
     'format': IsFormat,
-    'state': Or('fixed', 'variable', error='Invalid parameters state: {}')
+    'state': Or('fixed', 'variable', error='Invalid parameters state: {}'),
+    Optional('path', default=''): str
     },
     # error = 'Invalid parameters configuration: {}'
 )
@@ -142,21 +143,30 @@ def load_variables(acfg):
     cfg = IsProperVarsCfg.validate(acfg)
     cfg = DictWrapper(cfg)
 
+    path = cfg['path']
+    if path:
+        path = path.split('.')
+    else:
+        path = ()
+
+    state = cfg['state']
+
     ret = DictWrapper({'constants': {}, 'free': {}, 'constrained': {}}, sep='.')
     for key, varcfg in iterate_varcfgs(cfg):
         skey = '.'.join(key)
         label = varcfg['label']
         label['key'] = skey
         label.setdefault('text', skey)
+        varcfg.setdefault(state, True)
 
         par = Parameters.from_numbers(**varcfg)
         if par.is_constrained:
-            target = ret['constrained']
+            target = ('constrained',) + path
         elif par.is_fixed:
-            target = ret['constants']
+            target = ('constants',) + path
         else:
-            target = ret['free']
+            target = ('free',) + path
 
-        target[key] = par
+        ret[target+key] = par
 
     return ret
