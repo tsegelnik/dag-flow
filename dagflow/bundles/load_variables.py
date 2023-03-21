@@ -148,7 +148,7 @@ def load_variables(acfg):
 
     path = cfg['path']
     if path:
-        path = path.split('.')
+        path = tuple(path.split('.'))
     else:
         path = ()
 
