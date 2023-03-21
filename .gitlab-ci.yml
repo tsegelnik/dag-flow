@@ -6,7 +6,7 @@ tests:
     stage: tests
 
     script:
-    - python3 -m pip install -r dagflow/requirements.txt
+    - python3 -m pip install -r subtrees/dagflow/requirements.txt
     - coverage run --source=. -m pytest
     - coverage report
     - coverage xml
