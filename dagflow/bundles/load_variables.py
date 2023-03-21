@@ -65,16 +65,16 @@ IsFormat = Schema(IsFormatOk, error='Invalid variable format "{}".')
 IsVarsCfgDict = Schema({
     'variables': IsValuesDict,
     'labels': IsLabelsDict,
-    'format': IsFormat
+    'format': IsFormat,
+    'state': Or('fixed', 'variable', error='Invalid parameters state: {}')
     },
-    error = 'Invalid parameters configuration: {}'
+    # error = 'Invalid parameters configuration: {}'
 )
 IsProperVarsCfgDict = And(IsVarsCfgDict, ParsCfgHasProperFormat())
 IsLoadableDict = And(
             {'load': str},
             Use(LoadFileWithExt(yaml=LoadYaml, key='load'), error='Failed to load {}'),
-            IsProperVarsCfgDict,
-            error = 'Failed to load parameters configuration file: {}'
+            IsProperVarsCfgDict
         )
 IsProperVarsCfg = Or(IsProperVarsCfgDict, IsLoadableDict)
 
@@ -142,12 +142,21 @@ def load_variables(acfg):
     cfg = IsProperVarsCfg.validate(acfg)
     cfg = DictWrapper(cfg)
 
-    ret = DictWrapper({}, sep='.')
+    ret = DictWrapper({'constants': {}, 'free': {}, 'constrained': {}}, sep='.')
     for key, varcfg in iterate_varcfgs(cfg):
         skey = '.'.join(key)
         label = varcfg['label']
         label['key'] = skey
         label.setdefault('text', skey)
-        ret[key] = Parameters.from_numbers(**varcfg)
+
+        par = Parameters.from_numbers(**varcfg)
+        if par.is_constrained:
+            target = ret['constrained']
+        elif par.is_fixed:
+            target = ret['constants']
+        else:
+            target = ret['free']
+
+        target[key] = par
 
     return ret
