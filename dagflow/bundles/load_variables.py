@@ -75,7 +75,7 @@ IsProperVarsCfgDict = And(IsVarsCfgDict, ParsCfgHasProperFormat())
 IsLoadableDict = And(
             {
                 'load': str,
-                str: object
+                Optional(str): object
             },
             Use(LoadFileWithExt(yaml=LoadYaml, key='load', update=True), error='Failed to load {}'),
             IsProperVarsCfgDict
