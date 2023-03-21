@@ -49,6 +49,7 @@ cfg2 = {
                 'var3': (2.0, 1.0, 0.1)
                 }
             },
+        'path': 'sub.folder',
         'format': ('value', 'central', 'sigma_absolute'),
         'state': 'fixed',
         'labels': {
