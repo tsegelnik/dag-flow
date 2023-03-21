@@ -73,8 +73,11 @@ IsVarsCfgDict = Schema({
 )
 IsProperVarsCfgDict = And(IsVarsCfgDict, ParsCfgHasProperFormat())
 IsLoadableDict = And(
-            {'load': str},
-            Use(LoadFileWithExt(yaml=LoadYaml, key='load'), error='Failed to load {}'),
+            {
+                'load': str,
+                str: object
+            },
+            Use(LoadFileWithExt(yaml=LoadYaml, key='load', update=True), error='Failed to load {}'),
             IsProperVarsCfgDict
         )
 IsProperVarsCfg = Or(IsProperVarsCfgDict, IsLoadableDict)
