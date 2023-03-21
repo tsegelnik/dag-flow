@@ -21,6 +21,25 @@ cfg1 = {
             'var2': 'simple label 2',
             },
         }
+cfg1a = {
+        'variables': {
+            'var1': 1.0,
+            'var2': 1.0,
+            'sub1': {
+                'var3': 2.0
+                }
+            },
+        'format': 'value',
+        'state': 'fixed',
+        'labels': {
+            'var1': {
+                'text': 'text label 1',
+                'latex': r'\LaTeX label 1',
+                'name': 'v1-1'
+                },
+            'var2': 'simple label 2',
+            },
+        }
 
 cfg2 = {
         'variables': {
@@ -100,10 +119,14 @@ cfg5 = {
         'state': 'variable',
         }
 
+from pprint import pprint
 def test_load_variables_v01():
-    cfgs = (cfg1, cfg2, cfg3, cfg4, cfg5)
+    cfgs = (cfg1, cfg1a, cfg2, cfg3, cfg4, cfg5)
     with Graph(close=True) as g:
-        for cfg in cfgs:
-            load_variables(cfg)
+        for i, cfg in enumerate(cfgs):
+            vars = load_variables(cfg)
+            print(cfg['state'])
+            print(i, end=' ')
+            pprint(vars.object)
 
     savegraph(g, 'output/test_load_variables.pdf', show='all')
