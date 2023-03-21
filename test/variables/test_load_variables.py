@@ -11,6 +11,7 @@ cfg1 = {
                 }
             },
         'format': 'value',
+        'state': 'variable',
         'labels': {
             'var1': {
                 'text': 'text label 1',
@@ -30,6 +31,7 @@ cfg2 = {
                 }
             },
         'format': ('value', 'central', 'sigma_absolute'),
+        'state': 'fixed',
         'labels': {
             'var1': {
                 'text': 'text label 1',
@@ -56,7 +58,8 @@ cfg3 = {
                 },
             'var2': 'simple label 2'
             },
-        'format': ('value', 'central', 'sigma_relative')
+        'format': ('value', 'central', 'sigma_relative'),
+        'state': 'fixed',
         }
 
 cfg4 = {
@@ -74,7 +77,8 @@ cfg4 = {
                 },
             'var2': 'simple label 2'
             },
-        'format': ('value', 'central', 'sigma_percent')
+        'format': ('value', 'central', 'sigma_percent'),
+        'state': 'variable',
         }
 
 cfg5 = {
@@ -92,7 +96,8 @@ cfg5 = {
                 },
             'var2': 'simple label 2'
             },
-        'format': ('central', 'sigma_percent')
+        'format': ('central', 'sigma_percent'),
+        'state': 'variable',
         }
 
 def test_load_variables_v01():
