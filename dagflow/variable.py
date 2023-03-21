@@ -10,12 +10,46 @@ from numpy.typing import DTypeLike
 from typing import Optional, Dict
 
 class Parameters(object):
+    __slots__ = ('value', '_value_node', '_is_variable')
     value: Output
     _value_node: Node
 
-    def __init__(self, value: Node):
+    _is_variable: bool
+
+    def __init__(
+        self,
+        value: Node,
+        *,
+        variable: Optional[bool]=None,
+        fixed: Optional[bool]=None
+    ):
         self._value_node = value
         self.value = value.outputs[0]
+
+        if all(f is not None for f in (variable, fixed)):
+            raise RuntimeError("Parameter may not be set to variable and fixed at the same time")
+        if variable is not None:
+            self._is_variable = variable
+        elif fixed is not None:
+            self._is_variable = not fixed
+        else:
+            self._is_variable = True
+
+    @property
+    def is_variable(self) -> bool:
+        return self._is_variable
+
+    @property
+    def is_fixed(self) -> bool:
+        return not self._is_variable
+
+    @property
+    def is_constrained(self) -> bool:
+        return False
+
+    @property
+    def is_free(self) -> bool:
+        return True
 
     @staticmethod
     def from_numbers(*, dtype: DTypeLike='d', **kwargs) -> 'Parameters':
@@ -40,6 +74,13 @@ class Parameters(object):
         )
 
 class GaussianParameters(Parameters):
+    __slots__ = (
+        'central', 'sigma', 'normvalue',
+        '_central_node', '_sigma_node', '_normvalue_node',
+        '_cholesky_node', '_covariance_node', '_correlation_node', '_sigma_total_node',
+        '_norm_node',
+        '_is_constrained'
+    )
     central: Output
     sigma: Output
     normvalue: Output
@@ -48,17 +89,43 @@ class GaussianParameters(Parameters):
     _sigma_node: Node
     _normvalue_node: Node
 
-    _cholesky_node: Optional[Node] = None
-    _covariance_node: Optional[Node] = None
-    _correlation_node: Optional[Node] = None
-    _sigma_total_node: Optional[Node] = None
+    _cholesky_node: Optional[Node]
+    _covariance_node: Optional[Node]
+    _correlation_node: Optional[Node]
+    _sigma_total_node: Optional[Node]
 
-    _forward_node: Node
-    _backward_node: Node
+    _norm_node: Node
 
-    def __init__(self, value: Node, central: Node, *, sigma: Node=None, covariance: Node=None, correlation: Node=None):
-        super().__init__(value)
+    _is_constrained: bool
+
+    def __init__(
+        self,
+        value: Node,
+        central: Node,
+        *,
+        sigma: Node=None,
+        covariance: Node=None,
+        correlation: Node=None,
+        constrained: Optional[bool]=None,
+        free: Optional[bool]=None,
+        **kwargs
+    ):
+        super().__init__(value, **kwargs)
         self._central_node = central
+
+        self._cholesky_node = None
+        self._covariance_node = None
+        self._correlation_node = None
+        self._sigma_total_node = None
+
+        if all(f is not None for f in (constrained, free)):
+            raise RuntimeError("GaussianParameter may not be set to constrained and free at the same time")
+        if constrained is not None:
+            self._is_constrained = constrained
+        elif free is not None:
+            self._is_constrained = not free
+        else:
+            self._is_constrained = True
 
         if sigma is not None and covariance is not None:
             raise InitializationError('GaussianParameters: got both "sigma" and "covariance" as arguments')
@@ -105,6 +172,18 @@ class GaussianParameters(Parameters):
 
         self._norm_node.close(recursive=True)
         self._norm_node.touch()
+
+    @property
+    def is_constrained(self) -> bool:
+        return self._is_constrained
+
+    @property
+    def is_free(self) -> bool:
+        return not self._is_constrained
+
+    @property
+    def is_correlated(self) -> bool:
+        return not self._covariance_node is not None
 
     @staticmethod
     def from_numbers(
