@@ -15,14 +15,22 @@ def IsFilewithExt(*exts: str):
         return any(filename.endswith(f'.{ext}' for ext in exts))
     return checkfilename
 
-def LoadFileWithExt(*, key: str=None,**kwargs: Callable):
+def LoadFileWithExt(*, key: Union[str, dict]=None, update: bool=False, **kwargs: Callable):
     """Returns a function that retunts True if the file extension is consistent"""
     def checkfilename(filename: Union[str, dict]):
         if key is not None:
-            filename = filename[key]
+            dct = filename.copy()
+            filename = dct.pop(key)
+        else:
+            dct = None
         for ext, loader in kwargs.items():
             if filename.endswith(f'.{ext}'):
-                return loader(filename)
+                ret = loader(filename)
+
+                if update and dct is not None:
+                    ret.update(dct)
+
+                return ret
 
             return False
     return checkfilename
