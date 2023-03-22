@@ -13,10 +13,10 @@ class DictWrapper(ClassWrapper):
           'key1.key2.key3' will be treated as a nested key if '.' is set for the sep symbol
         - self._ may be used to access nested dictionaries via attributes: dw.key1.key2.key3
     """
-    _sep: str = None
-    _parent: Any = None
-    _types: Any = dict
-    _not_recursive_to_others: bool = True
+    __slots__ = ('_sep', '_parent', '_types', '_not_recursive_to_others')
+    _sep: str
+    _parent: Any
+    _not_recursive_to_others: bool
     def __new__(cls, dic, *args, parent=None, sep=None, recursive_to_others=None):
         if not isinstance(dic, (MutableMapping, DictWrapper)):
             return dic
@@ -32,11 +32,11 @@ class DictWrapper(ClassWrapper):
 
         self._sep = sep
         self._not_recursive_to_others = not recursive_to_others
+        self._parent = parent
         if parent:
             if sep and sep!=parent._sep:
                 raise ValueError(f'Inconsistent separators: {sep} (self) and {parent._sep} (parent)')
 
-            self._parent = parent
             self._sep = parent._sep
             self._types = parent._types
             self._not_recursive_to_others = parent._not_recursive_to_others
@@ -287,3 +287,24 @@ class DictWrapper(ClassWrapper):
 
         if not parentkey:
             visitor.stop(self)
+
+    def update(self, other) -> 'DictWrapper':
+        for k, v in other.walkitems():
+            self[k] = v
+        return self
+
+    __ior__ = update
+
+    def update_missing(self, other) -> 'DictWrapper':
+        for k, v in other.walkitems():
+            try:
+                key_already_present = k in self
+            except TypeError:
+                raise TypeError(f'Value for part({k}) is non nestable')
+            else:
+                if key_already_present:
+                    raise TypeError(f'Key {k} already present')
+            self[k] = v
+        return self
+
+    __ixor__ = update_missing
