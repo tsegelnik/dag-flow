@@ -1,0 +1,23 @@
+format: "value"
+state: "fixed"
+parameters:
+  nprotons_correction:
+    AD11: 0.99705
+    AD12: 0.99835
+    AD21: 0.99455
+    AD22: 0.99720
+    AD31: 0.99585
+    AD32: 0.99945
+    AD33: 0.99460
+    AD34: 0.99655
+
+labels:
+  nprotons_correction:
+    AD11: "Correction to number of protons per AD11"
+    AD12: "Correction to number of protons per AD12"
+    AD21: "Correction to number of protons per AD21"
+    AD22: "Correction to number of protons per AD22"
+    AD31: "Correction to number of protons per AD31"
+    AD32: "Correction to number of protons per AD32"
+    AD33: "Correction to number of protons per AD33"
+    AD34: "Correction to number of protons per AD34"
