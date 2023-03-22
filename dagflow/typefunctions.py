@@ -44,6 +44,14 @@ def check_has_inputs(
             ) from exc
 
 
+def check_inputs_number(node: NodeT, n: int) -> None:
+    """Checking if the node has only `n` inputs"""
+    if (ninp := len(node.inputs)) != n:
+        raise TypeFunctionError(
+            f"The node must have only {n} inputs, but given {ninp}!", node=node
+        )
+
+
 def eval_output_dtype(
     node: NodeT,
     inputkey: Union[str, int, slice, Sequence] = AllPositionals,
@@ -188,6 +196,7 @@ def check_input_square_or_diag(
             )
     return dim_max
 
+
 def check_input_shape(
     node: NodeT, inputkey: Union[str, int, slice, Sequence], shape: tuple
 ):
@@ -232,6 +241,7 @@ def check_inputs_equivalence(
                 input=input,
             )
 
+
 def check_inputs_square_or_diag(
     node: NodeT,
     inputkey: Union[str, int, slice, Sequence] = AllPositionals,
@@ -247,7 +257,9 @@ def check_inputs_square_or_diag(
         shape = input.dd.shape
         dim = len(shape)
         dim_max = max(dim, dim_max)
-        if shape0 != shape[0] or ((dim == 2 and shape[0] != shape[1]) and dim != 1):
+        if shape0 != shape[0] or (
+            (dim == 2 and shape[0] != shape[1]) and dim != 1
+        ):
             raise TypeFunctionError(
                 f"The node supports only square inputs (or 1d as diagonal) of size {shape0}x{shape0}. Got {shape}!",
                 node=node,

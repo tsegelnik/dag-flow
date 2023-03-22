@@ -62,6 +62,7 @@ class Integrator(FunctionNode):
     .. _Numba: https://numba.pydata.org
     """
 
+    __buffer: NDArray
     def __init__(self, *args, dim: int, **kwargs):
         kwargs.setdefault("missing_input_handler", MissingInputAddEach())
         super().__init__(*args, **kwargs)
