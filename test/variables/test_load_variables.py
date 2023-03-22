@@ -64,7 +64,7 @@ cfg2 = {
 
 cfg3 = {
         'variables': {
-            'var1': (1.0, 1.0, 0.1),
+            'var1': [1.0, 1.0, 0.1],
             'var2': (1.0, 2.0, 0.1),
             'sub1': {
                 'var3': (2.0, 3.0, 0.1)
@@ -78,7 +78,7 @@ cfg3 = {
                 },
             'var2': 'simple label 2'
             },
-        'format': ('value', 'central', 'sigma_relative'),
+        'format': ['value', 'central', 'sigma_relative'],
         'state': 'fixed',
         }
 

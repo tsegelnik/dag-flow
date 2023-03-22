@@ -27,7 +27,7 @@ class ParsCfgHasProperFormat(object):
         return data
 
 IsNumber = Or(float, int, error='Invalid number "{}", expect int of float')
-IsNumberOrTuple = Or(IsNumber, (IsNumber,), error='Invalid number/tuple {}')
+IsNumberOrTuple = Or(IsNumber, (IsNumber,), And([IsNumber], Use(tuple)), error='Invalid number/tuple {}')
 IsLabel = Or({
         'text': str,
         Optional('latex'): str,
@@ -40,7 +40,7 @@ IsLabel = Or({
 IsValuesDict = NestedSchema(IsNumberOrTuple)
 IsLabelsDict = NestedSchema(IsLabel, processdicts=True)
 def IsFormatOk(format):
-    if not isinstance(format, tuple):
+    if not isinstance(format, (tuple, list)):
         return format=='value'
 
     if len(format)==1:
