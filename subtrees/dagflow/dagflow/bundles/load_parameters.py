@@ -81,7 +81,11 @@ IsLoadableDict = And(
             Use(LoadFileWithExt(yaml=LoadYaml, key='load', update=True), error='Failed to load {}'),
             IsProperParsCfgDict
         )
-IsProperParsCfg = Or(IsProperParsCfgDict, IsLoadableDict)
+def ValidateParsCfg(cfg):
+    if isinstance(cfg, dict) and 'load' in cfg:
+        return IsLoadableDict.validate(cfg)
+    else:
+        return IsProperParsCfgDict.validate(cfg)
 
 def process_var_fixed1(vcfg, _, __):
     return {'central': vcfg, 'value': vcfg, 'sigma': None}
@@ -144,7 +148,7 @@ def iterate_varcfgs(cfg: DictWrapper):
 from dagflow.variable import Parameters
 
 def load_parameters(acfg):
-    cfg = IsProperParsCfg.validate(acfg)
+    cfg = ValidateParsCfg(acfg)
     cfg = DictWrapper(cfg)
 
     path = cfg['path']
