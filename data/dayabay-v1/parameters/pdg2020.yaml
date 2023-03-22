@@ -12,16 +12,16 @@ variables:
     ElectronMass:    0.5109989461 # MeV, page 16
 
 labels:
-    NeutronLifeTime: 
+    NeutronLifeTime:
       text: "neutron lifetime, s (PDG2014)"
       latex: "$\tau_n$ neutron lifetime, s (PDG2014)"
-    NeutronMass:     
+    NeutronMass:
       text: "neutron mass, MeV (PDG2012)"
       latex: "$m_n$ neutron mass, MeV (PDG2012)"
-    ProtonMass:      
+    ProtonMass:
       text: "proton mass, MeV (PDG2012)"
       latex: "$m_p$ proton mass, MeV (PDG2012)"
-    ElectronMass:    
+    ElectronMass:
       text: "electron mass, MeV (PDG2012)"
       latex: "$m_e$ electron mass, MeV (PDG2012)"
 
