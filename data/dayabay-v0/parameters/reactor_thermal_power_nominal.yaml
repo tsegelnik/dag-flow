@@ -1,0 +1,8 @@
+format: ["value", "sigma_percent"]
+state: "fixed"
+
+parameters:
+  nominal_thermal_power: [2.895, 0.5]
+
+labels:
+  nominal_thermal_power: "Nominal thermal power, GW"

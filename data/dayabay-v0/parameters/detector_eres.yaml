@@ -1,0 +1,16 @@
+# Detector energy resolution:
+# σ(E)/E = sqrt(a² + b²/E + c²/E²),
+
+format: ["value", "sigma_relative"]
+state: "variable"
+parameters:
+  eres:
+    a_nonuniform: [0.016, 30]
+    b_stat:       [0.081, 30]
+    c_noise:      [0.026, 30]
+
+labels:
+  eres:
+    a_nonuniform: "Energy resolution, a — spatial/temporal resolution term"
+    b_stat:       "Energy resolution, b — photon statistics term"
+    c_noise:      "Energy resolution, c — dark noise term"
