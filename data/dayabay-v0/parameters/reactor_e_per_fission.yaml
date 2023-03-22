@@ -2,7 +2,7 @@
 
 format: ["value", "sigma_absolute"]
 state: "variable"
-variables:
+parameters:
   e_per_fission:
     U235:  [202.36, 0.26]
     U238:  [205.99, 0.52]
