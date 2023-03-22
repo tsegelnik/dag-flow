@@ -1,9 +1,9 @@
 from dagflow.graphviz import savegraph
 from dagflow.graph import Graph
-from dagflow.bundles.load_variables import load_variables
+from dagflow.bundles.load_parameters import load_parameters
 
 cfg1 = {
-        'variables': {
+        'parameters': {
             'var1': 1.0,
             'var2': 1.0,
             'sub1': {
@@ -22,7 +22,7 @@ cfg1 = {
             },
         }
 cfg1a = {
-        'variables': {
+        'parameters': {
             'var1': 1.0,
             'var2': 1.0,
             'sub1': {
@@ -42,7 +42,7 @@ cfg1a = {
         }
 
 cfg2 = {
-        'variables': {
+        'parameters': {
             'var1': (1.0, 1.0, 0.1),
             'var2': (1.0, 2.0, 0.1),
             'sub1': {
@@ -63,8 +63,8 @@ cfg2 = {
         }
 
 cfg3 = {
-        'variables': {
-            'var1': (1.0, 1.0, 0.1),
+        'parameters': {
+            'var1': [1.0, 1.0, 0.1],
             'var2': (1.0, 2.0, 0.1),
             'sub1': {
                 'var3': (2.0, 3.0, 0.1)
@@ -78,12 +78,12 @@ cfg3 = {
                 },
             'var2': 'simple label 2'
             },
-        'format': ('value', 'central', 'sigma_relative'),
+        'format': ['value', 'central', 'sigma_relative'],
         'state': 'fixed',
         }
 
 cfg4 = {
-        'variables': {
+        'parameters': {
             'var1': (1.0, 1.0, 10),
             'var2': (1.0, 2.0, 10),
             'sub1': {
@@ -102,7 +102,7 @@ cfg4 = {
         }
 
 cfg5 = {
-        'variables': {
+        'parameters': {
             'var1': (1.0, 10),
             'var2': (2.0, 10),
             'sub1': {
@@ -121,13 +121,13 @@ cfg5 = {
         }
 
 from pprint import pprint
-def test_load_variables_v01():
+def test_load_parameters_v01():
     cfgs = (cfg1, cfg1a, cfg2, cfg3, cfg4, cfg5)
     with Graph(close=True) as g:
         for i, cfg in enumerate(cfgs):
-            vars = load_variables(cfg)
+            vars = load_parameters(cfg)
             print(cfg['state'])
             print(i, end=' ')
             pprint(vars.object)
 
-    savegraph(g, 'output/test_load_variables.pdf', show='all')
+    savegraph(g, 'output/test_load_parameters.pdf', show='all')
