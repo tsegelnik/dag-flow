@@ -6,6 +6,7 @@ from logging import (
     Logger,
     StreamHandler,
     getLogger,
+    addLevelName
 )
 from typing import Optional
 
@@ -17,7 +18,7 @@ def get_logger(
     *,
     filename: Optional[str] = None,
     debug: bool = False,
-    console: bool = False,
+    console: bool = True,
     formatstr: Optional[str] = "%(asctime)s - %(levelname)s - %(message)s",
 ) -> Logger:
     if logger := _loggers.get(name):
@@ -40,6 +41,9 @@ def get_logger(
     _loggers[name] = logger
     return logger
 
+SUBINFO    = INFO-1
+SUBSUBINFO = INFO-2
+addLevelName(SUBINFO, "SUBINFO")
+addLevelName(SUBSUBINFO, "SUBSUBINFO")
+
 logger = get_logger()
-SUBINFO    = INFO-10
-SUBSUBINFO = INFO-20
