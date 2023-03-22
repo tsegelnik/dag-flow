@@ -17,7 +17,7 @@ def get_logger(
     *,
     filename: Optional[str] = None,
     debug: bool = False,
-    console: bool = False,
+    console: bool = True,
     formatstr: Optional[str] = "%(asctime)s - %(levelname)s - %(message)s",
 ) -> Logger:
     if logger := _loggers.get(name):
@@ -40,6 +40,9 @@ def get_logger(
     _loggers[name] = logger
     return logger
 
-logger = get_logger()
 SUBINFO    = INFO-10
 SUBSUBINFO = INFO-20
+logging.addLevelName(SUBINFO, "SUBINFO")
+logging.addLevelName(SUBSUBINFO, "SUBSUBINFO")
+
+logger = get_logger()
