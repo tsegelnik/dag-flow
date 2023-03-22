@@ -1,0 +1,25 @@
+# Mean energy per fission
+
+format: ["value", "sigma_absolute"]
+state: "variable"
+variables:
+  e_per_fission:
+    U235:  [202.36, 0.26]
+    U238:  [205.99, 0.52]
+    Pu239: [211.12, 0.34]
+    Pu241: [214.26, 0.33]
+
+labels:
+  e_per_fission:
+    U235:
+      text: "Mean energy per fission for ²³⁵U, MeV"
+      latex: "$\\overline{e}_\\mathrm{fission}$ mean energy per fission for ${}^{235}U$, MeV"
+    U238:
+      text: "Mean energy per fission for ²³⁸U, MeV"
+      latex: "$\\overline{e}_\\mathrm{fission}$ mean energy per fission for ${}^{238}U$, MeV"
+    Pu239:
+      text: "Mean energy per fission for ²³⁹Pu, MeV"
+      latex: "$\\overline{e}_\\mathrm{fission}$ mean energy per fission for ${}^{239}Pu$, MeV"
+    Pu241:
+      text: "Mean energy per fission for ²⁴¹Pu, MeV"
+      latex: "$\\overline{e}_\\mathrm{fission}$ mean energy per fission for ${}^{241}Pu$, MeV"
