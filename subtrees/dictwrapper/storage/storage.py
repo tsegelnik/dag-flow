@@ -5,7 +5,8 @@ from collections.abc import Sequence
 from typing import Any, Callable, Generator, Optional
 
 class Storage(UserDict):
-    _protect: bool = False
+    __slots__ = ('_protect',)
+    _protect: bool
 
     def __init__(*args, protect: bool = False, **kwargs) -> None:
         self = args[0]
