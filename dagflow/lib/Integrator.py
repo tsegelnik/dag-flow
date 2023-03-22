@@ -1,7 +1,5 @@
-from typing import Literal
-
 from numba import njit
-from numpy import floating, integer, issubdtype, multiply, zeros
+from numpy import floating, integer, issubdtype, multiply, empty
 from numpy.typing import NDArray
 
 from ..exception import InitializationError, TypeFunctionError
@@ -50,13 +48,13 @@ def _integrate2d(
 class Integrator(FunctionNode):
     """
     The `Integrator` node performs integration (summation)
-    of every input within the `weight`, `ordersX` and `ordersY` (for `2d` mode).
+    of every input within the `weight`, `ordersX` and `ordersY` (for 2 dim).
 
-    The `Integrator` has two modes: `1d` and `2d`.
-    The `mode` must be set in the constructor, while `precision=dtype`
+    The `Integrator` has two dims: 1 and 2.
+    The `dim` must be set in the constructor, while `precision=dtype`
     of integration is chosen *automaticly* in the type function.
 
-    For `2d` integration the `ordersY` input must be connected.
+    For 2d-integration the `ordersY` input must be connected.
 
     Note that the `Integrator` preallocates temporary buffer.
     For the integration algorithm the `Numba`_ package is used.
@@ -64,24 +62,24 @@ class Integrator(FunctionNode):
     .. _Numba: https://numba.pydata.org
     """
 
-    def __init__(self, *args, mode: Literal["1d", "2d"], **kwargs):
+    def __init__(self, *args, dim: int, **kwargs):
         kwargs.setdefault("missing_input_handler", MissingInputAddEach())
         super().__init__(*args, **kwargs)
-        if mode not in {"1d", "2d"}:
+        if dim not in {1, 2}:
             raise InitializationError(
-                f"Argument `mode` must be '1d' or '2d', but given '{mode}'!",
+                f"Argument `dim` must be 1 or 2, but given '{dim}'!",
                 node=self,
             )
-        self._mode = mode
-        if self._mode == "2d":
-            self._add_input("ordersY", positional=False)
+        self._dim = dim
         self._add_input("weights", positional=False)
         self._add_input("ordersX", positional=False)
-        self._functions.update({"1d": self._fcn_1d, "2d": self._fcn_2d})
+        if self._dim == 2:
+            self._add_input("ordersY", positional=False)
+        self._functions.update({1: self._fcn_1d, 2: self._fcn_2d})
 
     @property
-    def mode(self) -> str:
-        return self._mode
+    def dim(self) -> str:
+        return self._dim
 
     def _typefunc(self) -> None:
         """
@@ -92,13 +90,12 @@ class Integrator(FunctionNode):
         check_has_inputs(self)
         check_has_inputs(self, ("ordersX", "weights"))
         input0 = self.inputs[0]
-        ndim = len(input0.dd.shape)
-        if ndim != int(self.mode[:1]):
+        if (ndim := len(input0.dd.shape)) != self.dim:
             raise TypeFunctionError(
-                f"The Integrator works only with {self.mode} inputs, but one has ndim={ndim}!",
+                f"The Integrator works only with {self.dim} inputs, but one has {ndim=}!",
                 node=self,
             )
-        check_input_dimension(self, (slice(None), "weights"), ndim)
+        check_input_dimension(self, (slice(None), "weights"), self.dim)
         check_input_dimension(self, "ordersX", 1)
         check_input_shape(self, (slice(None), "weights"), input0.dd.shape)
         ordersX = self.inputs["ordersX"]
@@ -123,7 +120,7 @@ class Integrator(FunctionNode):
                 node=self,
                 input=ordersX,
             )
-        if self.mode == "2d":
+        if self.dim == 2:
             check_has_inputs(self, "ordersY")
             check_input_dimension(self, "ordersY", 1)
             ordersY = self.inputs["ordersY"]
@@ -140,15 +137,15 @@ class Integrator(FunctionNode):
                     node=self,
                     input=ordersX,
                 )
-        self.fcn = self._functions[self.mode]
+        self.fcn = self._functions[self.dim]
         for output in self.outputs:
             output.dd.dtype = dtype
             output.dd.shape = input0.dd.shape
 
     def _post_allocate(self):
         """Allocates the `buffer` within `weights`"""
-        weights = self.inputs["weights"]
-        self.__buffer = zeros(shape=weights.dd.shape, dtype=weights.dd.dtype)
+        weights = self.inputs["weights"].dd
+        self.__buffer = empty(shape=weights.shape, dtype=weights.dtype)
 
     def _fcn_1d(self, _, inputs, outputs):
         """1d version of integration function"""
