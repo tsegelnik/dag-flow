@@ -15,7 +15,7 @@ class ParsCfgHasProperFormat(object):
             nelements = len(format)
 
         dtin = DictWrapper(data)
-        for key, subdata in dtin['variables'].walkitems():
+        for key, subdata in dtin['parameters'].walkitems():
             if isinstance(subdata, tuple):
                 if len(subdata)==nelements: continue
             else:
@@ -27,7 +27,7 @@ class ParsCfgHasProperFormat(object):
         return data
 
 IsNumber = Or(float, int, error='Invalid number "{}", expect int of float')
-IsNumberOrTuple = Or(IsNumber, (IsNumber,), error='Invalid number/tuple {}')
+IsNumberOrTuple = Or(IsNumber, (IsNumber,), And([IsNumber], Use(tuple)), error='Invalid number/tuple {}')
 IsLabel = Or({
         'text': str,
         Optional('latex'): str,
@@ -40,7 +40,7 @@ IsLabel = Or({
 IsValuesDict = NestedSchema(IsNumberOrTuple)
 IsLabelsDict = NestedSchema(IsLabel, processdicts=True)
 def IsFormatOk(format):
-    if not isinstance(format, tuple):
+    if not isinstance(format, (tuple, list)):
         return format=='value'
 
     if len(format)==1:
@@ -62,9 +62,9 @@ def IsFormatOk(format):
 
         return f1 in ('value', 'central')
 
-IsFormat = Schema(IsFormatOk, error='Invalid variable format "{}".')
-IsVarsCfgDict = Schema({
-    'variables': IsValuesDict,
+IsFormat = Schema(IsFormatOk, error='Invalid parameter format "{}".')
+IsParsCfgDict = Schema({
+    'parameters': IsValuesDict,
     'labels': IsLabelsDict,
     'format': IsFormat,
     'state': Or('fixed', 'variable', error='Invalid parameters state: {}'),
@@ -72,16 +72,16 @@ IsVarsCfgDict = Schema({
     },
     # error = 'Invalid parameters configuration: {}'
 )
-IsProperVarsCfgDict = And(IsVarsCfgDict, ParsCfgHasProperFormat())
+IsProperParsCfgDict = And(IsParsCfgDict, ParsCfgHasProperFormat())
 IsLoadableDict = And(
             {
                 'load': Or(str, And(Path, Use(str))),
                 Optional(str): object
             },
             Use(LoadFileWithExt(yaml=LoadYaml, key='load', update=True), error='Failed to load {}'),
-            IsProperVarsCfgDict
+            IsProperParsCfgDict
         )
-IsProperVarsCfg = Or(IsProperVarsCfgDict, IsLoadableDict)
+IsProperParsCfg = Or(IsProperParsCfgDict, IsLoadableDict)
 
 def process_var_fixed1(vcfg, _, __):
     return {'central': vcfg, 'value': vcfg, 'sigma': None}
@@ -126,14 +126,14 @@ def get_format_processor(format):
         return process_var_percent
 
 def iterate_varcfgs(cfg: DictWrapper):
-    variablescfg = cfg['variables']
+    parameterscfg = cfg['parameters']
     labelscfg = cfg['labels']
     format = cfg['format']
 
     hascentral = 'central' in format
     process = get_format_processor(format)
 
-    for key, varcfg in variablescfg.walkitems():
+    for key, varcfg in parameterscfg.walkitems():
         varcfg = process(varcfg, format, hascentral)
         try:
             varcfg['label'] = labelscfg[key]
@@ -143,8 +143,8 @@ def iterate_varcfgs(cfg: DictWrapper):
 
 from dagflow.variable import Parameters
 
-def load_variables(acfg):
-    cfg = IsProperVarsCfg.validate(acfg)
+def load_parameters(acfg):
+    cfg = IsProperParsCfg.validate(acfg)
     cfg = DictWrapper(cfg)
 
     path = cfg['path']
