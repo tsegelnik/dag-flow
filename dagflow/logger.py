@@ -6,6 +6,7 @@ from logging import (
     Logger,
     StreamHandler,
     getLogger,
+    addLevelName
 )
 from typing import Optional
 
@@ -42,7 +43,7 @@ def get_logger(
 
 SUBINFO    = INFO-10
 SUBSUBINFO = INFO-20
-logging.addLevelName(SUBINFO, "SUBINFO")
-logging.addLevelName(SUBSUBINFO, "SUBSUBINFO")
+addLevelName(SUBINFO, "SUBINFO")
+addLevelName(SUBSUBINFO, "SUBSUBINFO")
 
 logger = get_logger()
