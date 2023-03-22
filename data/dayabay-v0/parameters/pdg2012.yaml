@@ -11,8 +11,16 @@ variables:
     ElectronMass:    0.510998928 # MeV
 
 labels:
-    NeutronLifeTime: "neutron lifetime, s (PDG2014)"
-    NeutronMass:     "neutron mass, MeV (PDG2012)"
-    ProtonMass:      "proton mass, MeV (PDG2012)"
-    ElectronMass:    "electron mass, MeV (PDG2012)"
+    NeutronLifeTime:
+      text: "neutron lifetime, s (PDG2014)"
+      latex: "$\tau_n$ neutron lifetime, s (PDG2014)"
+    NeutronMass:
+      text: "neutron mass, MeV (PDG2012)"
+      latex: "$m_n$ neutron mass, MeV (PDG2012)"
+    ProtonMass:
+      text: "proton mass, MeV (PDG2012)"
+      latex: "$m_p$ proton mass, MeV (PDG2012)"
+    ElectronMass:
+      text: "electron mass, MeV (PDG2012)"
+      latex: "$m_e$ electron mass, MeV (PDG2012)"
 
