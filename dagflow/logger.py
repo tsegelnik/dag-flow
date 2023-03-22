@@ -41,8 +41,8 @@ def get_logger(
     _loggers[name] = logger
     return logger
 
-SUBINFO    = INFO-10
-SUBSUBINFO = INFO-20
+SUBINFO    = INFO-1
+SUBSUBINFO = INFO-2
 addLevelName(SUBINFO, "SUBINFO")
 addLevelName(SUBSUBINFO, "SUBSUBINFO")
 
