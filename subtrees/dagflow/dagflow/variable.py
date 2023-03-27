@@ -21,7 +21,8 @@ class Parameters(object):
         value: Node,
         *,
         variable: Optional[bool]=None,
-        fixed: Optional[bool]=None
+        fixed: Optional[bool]=None,
+        close: bool=True
     ):
         self._value_node = value
         self.value = value.outputs[0]
@@ -34,6 +35,9 @@ class Parameters(object):
             self._is_variable = not fixed
         else:
             self._is_variable = True
+
+        if close:
+            self._value_node.close(recursive=True)
 
     @property
     def is_variable(self) -> bool:
@@ -50,6 +54,12 @@ class Parameters(object):
     @property
     def is_free(self) -> bool:
         return True
+
+    def to_dict(self, *, label_from: str='text') -> dict:
+        return {
+                'value': self.value.data[0],
+                'label': self._value_node.label(label_from)
+                }
 
     @staticmethod
     def from_numbers(*, dtype: DTypeLike='d', **kwargs) -> 'Parameters':
@@ -113,7 +123,7 @@ class GaussianParameters(Parameters):
         free: Optional[bool]=None,
         **kwargs
     ):
-        super().__init__(value, **kwargs)
+        super().__init__(value, close=False, **kwargs)
         self._central_node = central
 
         self._cholesky_node = None
@@ -225,3 +235,11 @@ class GaussianParameters(Parameters):
         )
 
         return GaussianParameters(value=node_value, central=node_central, sigma=node_sigma)
+
+    def to_dict(self, **kwargs) -> dict:
+        dct = super().to_dict(**kwargs)
+        dct.update({
+            'sigma': self._sigma_node.data[0],
+            'norm_value': self._norm_node.data[0],
+            })
+        return dct
