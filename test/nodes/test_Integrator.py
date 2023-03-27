@@ -13,7 +13,7 @@ def test_Integrator_00(debug_graph):
         arr2 = Array("array", [3.0, 2.0, 1.0])
         weights = Array("weights", [2.0, 2.0, 2.0])
         ordersX = Array("ordersX", [1, 1, 1])
-        integrator = Integrator("integrator", dim=1)
+        integrator = Integrator("integrator")
         arr1 >> integrator
         arr2 >> integrator
         weights >> integrator("weights")
@@ -28,7 +28,7 @@ def test_Integrator_01(debug_graph):
         arr2 = Array("array", [3.0, 2.0, 1.0])
         weights = Array("weights", [2.0, 2.0, 2.0])
         ordersX = Array("ordersX", [2, 0, 1])
-        integrator = Integrator("integrator", dim=1)
+        integrator = Integrator("integrator")
         arr1 >> integrator
         arr2 >> integrator
         weights >> integrator("weights")
@@ -45,7 +45,7 @@ def test_Integrator_02(debug_graph):
         weights = Array("weights", [[1.0, 1.0, 1.0], arr123])
         ordersX = Array("ordersX", [1, 1])
         ordersY = Array("ordersY", [1, 1, 1])
-        integrator = Integrator("integrator", dim=2)
+        integrator = Integrator("integrator")
         arr1 >> integrator
         arr2 >> integrator
         weights >> integrator("weights")
@@ -63,7 +63,7 @@ def test_Integrator_03(debug_graph):
         weights = Array("weights", [[1.0, 1.0, 1.0], arr123])
         ordersX = Array("ordersX", [1, 1])
         ordersY = Array("ordersY", [1, 2, 0])
-        integrator = Integrator("integrator", dim=2)
+        integrator = Integrator("integrator")
         arr1 >> integrator
         arr2 >> integrator
         weights >> integrator("weights")
@@ -81,7 +81,7 @@ def test_Integrator_04(debug_graph):
         weights = Array("weights", [[1.0, 1.0, 1.0], arr123])
         ordersX = Array("ordersX", [0, 2])
         ordersY = Array("ordersY", [1, 1, 1])
-        integrator = Integrator("integrator", dim=2)
+        integrator = Integrator("integrator")
         arr1 >> integrator
         arr2 >> integrator
         weights >> integrator("weights")
@@ -101,7 +101,7 @@ def test_Integrator_05(debug_graph):
         weights = Array("weights", [unity, unity, unity])
         ordersX = Array("ordersX", [1, 1, 1])
         ordersY = Array("ordersY", [1, 0, 2])
-        integrator = Integrator("integrator", dim=2)
+        integrator = Integrator("integrator")
         arr1 >> integrator
         arr2 >> integrator
         weights >> integrator("weights")
@@ -122,7 +122,7 @@ def test_Integrator_06(debug_graph):
         arr1 = Array("array", arr)
         weights = Array("weights", arr)
         ordersX = Array("ordersX", [1, 2, 3])
-        integrator = Integrator("integrator", dim=1)
+        integrator = Integrator("integrator")
         arr1 >> integrator
         weights >> integrator("weights")
         ordersX >> integrator("ordersX")
@@ -138,7 +138,7 @@ def test_Integrator_07(debug_graph):
         weights = Array("weights", [arr, arr])
         ordersX = Array("ordersX", [1, 3])
         ordersY = Array("ordersY", [1, 0, 0])
-        integrator = Integrator("integrator", dim=2)
+        integrator = Integrator("integrator")
         arr1 >> integrator
         weights >> integrator("weights")
         ordersX >> integrator("ordersX")
@@ -155,7 +155,7 @@ def test_Integrator_08(debug_graph):
         weights = Array("weights", [[1.0, 1.0, 1.0], [1.0, 1.0, 1.0]])
         ordersX = Array("ordersX", [0, 2])
         ordersY = Array("ordersY", [1, 1, 1, 3])
-        integrator = Integrator("integrator", dim=2)
+        integrator = Integrator("integrator")
         arr1 >> integrator
         arr2 >> integrator
         weights >> integrator("weights")

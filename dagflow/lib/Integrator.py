@@ -2,7 +2,7 @@ from numba import njit
 from numpy import floating, integer, issubdtype, multiply, empty
 from numpy.typing import NDArray
 
-from ..exception import InitializationError, TypeFunctionError
+from ..exception import TypeFunctionError
 from ..input_extra import MissingInputAddEach
 from ..nodes import FunctionNode
 from ..typefunctions import (
@@ -50,9 +50,8 @@ class Integrator(FunctionNode):
     The `Integrator` node performs integration (summation)
     of every input within the `weight`, `ordersX` and `ordersY` (for 2 dim).
 
-    The `Integrator` has two dims: 1 and 2.
-    The `dim` must be set in the constructor, while `precision=dtype`
-    of integration is chosen *automaticly* in the type function.
+    The `dim` and `precision=dtype` of integration are chosen *automaticly*
+    in the type function within the inputs.
 
     For 2d-integration the `ordersY` input must be connected.
 
@@ -63,24 +62,12 @@ class Integrator(FunctionNode):
     """
 
     __buffer: NDArray
-    def __init__(self, *args, dim: int, **kwargs):
+    def __init__(self, *args, **kwargs):
         kwargs.setdefault("missing_input_handler", MissingInputAddEach())
         super().__init__(*args, **kwargs)
-        if dim not in {1, 2}:
-            raise InitializationError(
-                f"Argument `dim` must be 1 or 2, but given '{dim}'!",
-                node=self,
-            )
-        self._dim = dim
         self._add_input("weights", positional=False)
         self._add_input("ordersX", positional=False)
-        if self._dim == 2:
-            self._add_input("ordersY", positional=False)
         self._functions.update({1: self._fcn_1d, 2: self._fcn_2d})
-
-    @property
-    def dim(self) -> str:
-        return self._dim
 
     def _typefunc(self) -> None:
         """
@@ -91,12 +78,14 @@ class Integrator(FunctionNode):
         check_has_inputs(self)
         check_has_inputs(self, ("ordersX", "weights"))
         input0 = self.inputs[0]
-        if (ndim := len(input0.dd.shape)) != self.dim:
+        ordersY = self.inputs.get("ordersY", None)
+        dim = 1 if ordersY is None else 2
+        if (ndim := len(input0.dd.shape)) != dim:
             raise TypeFunctionError(
-                f"The Integrator works only with {self.dim} inputs, but one has {ndim=}!",
+                f"The Integrator works only with {dim}d inputs, but the first is {ndim}d!",
                 node=self,
             )
-        check_input_dimension(self, (slice(None), "weights"), self.dim)
+        check_input_dimension(self, (slice(None), "weights"), dim)
         check_input_dimension(self, "ordersX", 1)
         check_input_shape(self, (slice(None), "weights"), input0.dd.shape)
         ordersX = self.inputs["ordersX"]
@@ -121,10 +110,8 @@ class Integrator(FunctionNode):
                 node=self,
                 input=ordersX,
             )
-        if self.dim == 2:
-            check_has_inputs(self, "ordersY")
+        if dim == 2:
             check_input_dimension(self, "ordersY", 1)
-            ordersY = self.inputs["ordersY"]
             if not issubdtype(ordersY.dd.dtype, integer):
                 raise TypeFunctionError(
                     "The `ordersY` must be array of integers, but given '{ordersY.dd.dtype}'!",
@@ -138,7 +125,7 @@ class Integrator(FunctionNode):
                     node=self,
                     input=ordersX,
                 )
-        self.fcn = self._functions[self.dim]
+        self.fcn = self._functions[dim]
         for output in self.outputs:
             output.dd.dtype = dtype
             output.dd.shape = input0.dd.shape

@@ -221,13 +221,14 @@ class Node(Legs):
     #
     # Methods
     #
-    def __call__(self, name, child_output: Optional[Output] = None):
+    def __call__(self, name, child_output: Optional[Output] = None, **kwargs):
         self.logger.debug(f"Node '{self.name}': Get input '{name}'")
+        kwargs.setdefault("positional", False)
         inp = self.inputs.get(name, None)
         if inp is None:
             if self.closed:
                 raise ClosedGraphError(node=self)
-            return self._add_input(name, child_output=child_output)
+            return self._add_input(name, child_output=child_output, **kwargs)
         elif inp.connected and (output := inp.parent_output):
             raise ReconnectionError(input=inp, node=self, output=output)
         return inp
