@@ -76,7 +76,7 @@ class Integrator(FunctionNode):
         determines dtype and shape for outputs
         """
         check_has_inputs(self)
-        check_has_inputs(self, ("ordersX", "weights"))
+        check_has_inputs(self, "weights")
         input0 = self.inputs[0]
         ordersY = self.inputs.get("ordersY", None)
         dim = 1 if ordersY is None else 2
