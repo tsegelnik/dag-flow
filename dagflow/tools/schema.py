@@ -42,7 +42,7 @@ def LoadYaml(fname: str):
     with open(fname, 'r') as file:
         return load(file, Loader)
 
-from dictwrapper.dictwrapper import DictWrapper
+from multikeydict.nestedmkdict import NestedMKDict
 class NestedSchema(object):
     __slots__ = ('_schema', '_processdicts')
     _schema: Union[Schema,object]
@@ -61,8 +61,8 @@ class NestedSchema(object):
                 key: self._process_dict((key,), subdata) for key, subdata in data.items()
             }
 
-        dtin = DictWrapper(data)
-        dtout = DictWrapper({})
+        dtin = NestedMKDict(data)
+        dtout = NestedMKDict({})
         for key, subdata in dtin.walkitems():
             dtout[key] = self._process_element(key, subdata)
 

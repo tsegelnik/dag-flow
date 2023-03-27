@@ -1,21 +1,21 @@
-from dictwrapper.dictwrapper import DictWrapper
+from multikeydict.nestedmkdict import NestedMKDict
 import pytest
 
-def test_dictwrapper_01():
-    dw = DictWrapper({})
+def test_nestedmkdict_01():
+    dw = NestedMKDict({})
 
     assert not dw
     assert len(dw)==0
 
-def test_dictwrapper_02():
-    dw = DictWrapper(dict(a=1))
+def test_nestedmkdict_02():
+    dw = NestedMKDict(dict(a=1))
 
     assert dw
     assert len(dw)==1
 
-def test_dictwrapper_03():
+def test_nestedmkdict_03():
     d = dict(a=1, b=2, c=3)
-    dw = DictWrapper(d)
+    dw = NestedMKDict(d)
 
     assert dw.get('a')==1
     assert dw.get('b')==2
@@ -26,11 +26,11 @@ def test_dictwrapper_03():
     assert tuple(dw.keys())==('a','b','c')
 
 @pytest.mark.parametrize('sep', [None, '.'])
-def test_dictwrapper_03(sep):
+def test_nestedmkdict_03(sep):
     dct = dict(a=1, b=2, c=3, d=dict(e=4), f=dict(g=dict(h=5)))
     dct['z.z.z'] = 0
     print(dct)
-    dw = DictWrapper(dct, sep=sep)
+    dw = NestedMKDict(dct, sep=sep)
 
     #
     # Test self access
@@ -41,8 +41,8 @@ def test_dictwrapper_03(sep):
     #
     # Test wrapping
     #
-    assert isinstance(dw.get('d'), DictWrapper)
-    assert isinstance(dw.get(('f', 'g')), DictWrapper)
+    assert isinstance(dw.get('d'), NestedMKDict)
+    assert isinstance(dw.get(('f', 'g')), NestedMKDict)
 
     #
     # Test get tuple
@@ -172,18 +172,18 @@ def test_dictwrapper_03(sep):
     assert dw._.f.g.h==6
     assert dw._._ is dw
 
-def test_dictwrapper_06_inheritance():
+def test_nestedmkdict_06_inheritance():
     dct = dict([('a', 1), ('b', 2), ('c', 3), ('d', dict(e=4)), ('f', dict(g=dict(h=5, i=6)))])
     dct['z.z.z'] = 0
 
-    class DictWrapperA(DictWrapper):
+    class NestedMKDictA(NestedMKDict):
         def count(self):
             return len(tuple(self.walkitems()))
 
         def depth(self):
             return max([len(k) for k in self.walkkeys()])
 
-    dw = DictWrapperA(dct, sep='.')
+    dw = NestedMKDictA(dct, sep='.')
     assert dw.count()==7
     assert dw['d'].count()==1
     assert dw['f'].count()==2
@@ -194,10 +194,10 @@ def test_dictwrapper_06_inheritance():
     assert dw['d'].depth()==1
     assert dw['f'].depth()==2
 
-def test_dictwrapper_07_delete():
+def test_nestedmkdict_07_delete():
     dct = dict([('a', 1), ('b', 2), ('c', 3), ('d', dict(e=4)), ('f', dict(g=dict(h=5)))])
     dct['z.z.z'] = 0
-    dw = DictWrapper(dct)
+    dw = NestedMKDict(dct)
 
     assert 'a' in dw
     del dw['a']
@@ -212,10 +212,10 @@ def test_dictwrapper_07_delete():
     assert ('f', 'g', 'h') not in dw
     assert ('f', 'g') in dw
 
-def test_dictwrapper_08_create():
+def test_nestedmkdict_08_create():
     dct = dict([('a', 1), ('b', 2), ('c', 3), ('d', dict(e=4)), ('f', dict(g=dict(h=5)))])
     dct['z.z.z'] = 0
-    dw = DictWrapper(dct, sep='.')
+    dw = NestedMKDict(dct, sep='.')
 
     dw._('i.k').l=3
     assert dw._.i.k.l==3
@@ -223,10 +223,10 @@ def test_dictwrapper_08_create():
     child = dw.child('child')
     assert dw['child'].object=={}
 
-def test_dictwrapper_09_dictcopy():
+def test_nestedmkdict_09_dictcopy():
     dct = dict([('a', 1), ('b', 2), ('c', 3), ('d', dict(e=4)), ('f', dict(g=dict(h=5)))])
     dct['z'] = {}
-    dw = DictWrapper(dct, sep='.')
+    dw = NestedMKDict(dct, sep='.')
 
     dw1 = dw.deepcopy()
     for i, (k, v) in enumerate(dw1.walkdicts()):
@@ -237,7 +237,7 @@ def test_dictwrapper_09_dictcopy():
         assert type(v._object) is type(dw[k]._object)
     assert i==2
 
-def test_dictwrapper_09_walkitems():
+def test_nestedmkdict_09_walkitems():
     dct = {
         'a': 1,
         'b': 2,
@@ -261,7 +261,7 @@ def test_dictwrapper_09_walkitems():
         }
     }
     dct['z'] = {}
-    dw = DictWrapper(dct, sep='.')
+    dw = NestedMKDict(dct, sep='.')
 
     imaxlist=[5, 0, 6, 5, 5, 5, 5, 5, 5]
     for imax, maxdepth in zip(imaxlist, [None]+list(range(len(imaxlist)))):
@@ -276,9 +276,9 @@ def test_dictwrapper_09_walkitems():
         print()
         assert i==imax
 
-def test_dictwrapper_09_walk():
+def test_nestedmkdict_09_walk():
     dct = dict([('a', 1), ('b', 2), ('c', 3), ('d', dict(e=4)), ('f', dict(g=dict(h=5)))])
-    dw = DictWrapper(dct)
+    dw = NestedMKDict(dct)
 
     keys0 = [ ('a',), ('b', ), ('c',), ('d', 'e'), ('f', 'g', 'h') ]
     keys = [k for k, v in dw.walkitems()]
@@ -291,9 +291,9 @@ def test_dictwrapper_09_walk():
     assert [(k,v) for k, v in dw.walkitems(('f','g'), appendstartkey=True)] == [(('f','g', 'h'), 5)]
     assert [(k,v) for k, v in dw.walkitems(('f','g'), appendstartkey=False)] == [(('h',), 5)]
 
-def test_dictwrapper_10_iterkey():
+def test_nestedmkdict_10_iterkey():
     d = dict(a=1, b=2, c=3)
-    dw = DictWrapper(d)
+    dw = NestedMKDict(d)
 
     assert ['a']==list(dw.iterkey('a'))
     assert ['a.b']==list(dw.iterkey('a.b'))
@@ -301,9 +301,9 @@ def test_dictwrapper_10_iterkey():
     assert [1]==list(dw.iterkey(1))
     assert [1.0]==list(dw.iterkey(1.0))
 
-def test_dictwrapper_11_iterkey():
+def test_nestedmkdict_11_iterkey():
     d = dict(a=1, b=2, c=3)
-    dw = DictWrapper(d,  sep='.')
+    dw = NestedMKDict(d,  sep='.')
 
     assert ['a']==list(dw.iterkey('a'))
     assert ['a', 'b']==list(dw.iterkey('a.b'))
@@ -311,23 +311,23 @@ def test_dictwrapper_11_iterkey():
     assert [1]==list(dw.iterkey(1))
     assert [1.0]==list(dw.iterkey(1.0))
 
-def test_dictwrapper_setdefault_01():
+def test_nestedmkdict_setdefault_01():
     d = dict(a=dict(b=dict(key='value')))
-    dw = DictWrapper(d)
+    dw = NestedMKDict(d)
 
     newdict = dict(newkey='newvalue')
 
     sd1 = dw.setdefault(('a','b'), newdict)
-    assert isinstance(sd1, DictWrapper)
+    assert isinstance(sd1, NestedMKDict)
     assert sd1._object==d['a']['b']
 
     sd2 = dw.setdefault(('a','c'), newdict)
-    assert isinstance(sd2, DictWrapper)
+    assert isinstance(sd2, NestedMKDict)
     assert sd2._object==newdict
 
-def test_dictwrapper_eq_01():
+def test_nestedmkdict_eq_01():
     d = dict(a=dict(b=dict(key='value')))
-    dw = DictWrapper(d)
+    dw = NestedMKDict(d)
 
     assert dw['a']==d['a']
     assert d['a']==dw['a']

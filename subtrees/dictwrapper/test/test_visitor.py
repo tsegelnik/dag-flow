@@ -1,10 +1,10 @@
-from dictwrapper.dictwrapper import DictWrapper
-from dictwrapper.visitor import DictWrapperVisitorDemostrator
+from multikeydict.nestedmkdict import NestedMKDict
+from multikeydict.visitor import NestedMKDictVisitorDemostrator
 
-def test_dictwrapper_04_visitor():
+def test_nestedmkdict_04_visitor():
     dct = dict([('a', 1), ('b', 2), ('c', 3), ('d', dict(e=4)), ('f', dict(g=dict(h=5)))])
     dct['z.z.z'] = 0
-    dw = DictWrapper(dct)
+    dw = NestedMKDict(dct)
 
     keys0 = (('a',) , ('b',) , ('c',) , ('d', 'e'), ('f', 'g', 'h'), ('z.z.z', ))
     values0 = (1, 2, 3, 4, 5, 0)
@@ -24,9 +24,9 @@ def test_dictwrapper_04_visitor():
     assert v.keys==keys0
     assert v.values==values0
 
-def test_dictwrapper_05_visitor():
+def test_nestedmkdict_05_visitor():
     dct = dict([('a', 1), ('b', 2), ('c', 3), ('d', dict(e=4)), ('f', dict(g=dict(h=5)))])
     dct['z.z.z'] = 0
-    dw = DictWrapper(dct)
+    dw = NestedMKDict(dct)
 
-    dw.visit(DictWrapperVisitorDemostrator())
+    dw.visit(NestedMKDictVisitorDemostrator())
