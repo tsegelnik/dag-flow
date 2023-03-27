@@ -1,11 +1,11 @@
 from .classwrapper import ClassWrapper
-from .visitor import MakeDictWrapperVisitor
-from .dictwrapperaccess import DictWrapperAccess
+from .visitor import MakeNestedMKDictVisitor
+from .nestedmkdictaccess import NestedMKDictAccess
 
 from collections.abc import Sequence, MutableMapping
 from typing import Any
 
-class DictWrapper(ClassWrapper):
+class NestedMKDict(ClassWrapper):
     """Dictionary wrapper managing nested dictionaries
         The following functionality is implemented:
         - Tuple keys are treated to access nested dictionaries ('key1', 'key2', 'key3')
@@ -18,12 +18,12 @@ class DictWrapper(ClassWrapper):
     _parent: Any
     _not_recursive_to_others: bool
     def __new__(cls, dic, *args, parent=None, sep=None, recursive_to_others=None):
-        if not isinstance(dic, (MutableMapping, DictWrapper)):
+        if not isinstance(dic, (MutableMapping, NestedMKDict)):
             return dic
         return ClassWrapper.__new__(cls)
 
     def __init__(self, dic, *, sep: str=None, parent=None, recursive_to_others: bool=False):
-        if isinstance(dic, DictWrapper):
+        if isinstance(dic, NestedMKDict):
             if sep is None:
                 sep = dic._sep
             recursive_to_others = not dic._not_recursive_to_others
@@ -43,7 +43,7 @@ class DictWrapper(ClassWrapper):
 
     @property
     def _(self):
-        return DictWrapperAccess(self)
+        return NestedMKDictAccess(self)
 
     def parent(self):
         return self._parent
@@ -56,7 +56,7 @@ class DictWrapper(ClassWrapper):
             return self._wrap(ret, parent=self)
 
         if not isinstance(ret, self._wrapper_class):
-            raise KeyError('Child {!s} is not DictWrapper'.format(key))
+            raise KeyError('Child {!s} is not NestedMKDict'.format(key))
 
         return ret
 
@@ -97,7 +97,7 @@ class DictWrapper(ClassWrapper):
                 return args[0]
             raise KeyError(f"No nested key '{key}'")
 
-        if self._not_recursive_to_others and not isinstance(sub, DictWrapper):
+        if self._not_recursive_to_others and not isinstance(sub, NestedMKDict):
             raise TypeError(f"Nested value for '{key}' has wrong type")
 
         return sub.get(rest, *args, **kwargs)
@@ -115,7 +115,7 @@ class DictWrapper(ClassWrapper):
         if sub is None:
             raise KeyError( f"No nested key '{key}'" )
 
-        if self._not_recursive_to_others and not isinstance(sub, DictWrapper):
+        if self._not_recursive_to_others and not isinstance(sub, NestedMKDict):
             raise TypeError(f"Nested value for '{key}' has wrong type")
 
         return sub[rest]
@@ -130,7 +130,7 @@ class DictWrapper(ClassWrapper):
             del self._object[key]
             return
 
-        if self._not_recursive_to_others and not isinstance(sub, DictWrapper):
+        if self._not_recursive_to_others and not isinstance(sub, NestedMKDict):
             raise TypeError(f"Nested value for '{key}' has wrong type")
 
         del sub[rest]
@@ -149,7 +149,7 @@ class DictWrapper(ClassWrapper):
             sub = self._wrap(sub, parent=self)
             # # cfg._set_parent( self )
 
-        if self._not_recursive_to_others and not isinstance(sub, DictWrapper):
+        if self._not_recursive_to_others and not isinstance(sub, NestedMKDict):
             raise TypeError(f"Nested value for '{key}' has wrong type")
 
         return sub.setdefault(rest, value)
@@ -168,7 +168,7 @@ class DictWrapper(ClassWrapper):
             sub = self._wrap(sub, parent=self)
             # # cfg._set_parent( self )
 
-        if self._not_recursive_to_others and not isinstance(sub, DictWrapper):
+        if self._not_recursive_to_others and not isinstance(sub, NestedMKDict):
             raise TypeError(f"Nested value for '{key}' has wrong type")
 
         return sub.set(rest, value)
@@ -186,7 +186,7 @@ class DictWrapper(ClassWrapper):
         if rest:
             sub = self._wrap(self._object.get(key), parent=self)
 
-            if self._not_recursive_to_others and not isinstance(sub, DictWrapper):
+            if self._not_recursive_to_others and not isinstance(sub, NestedMKDict):
                 raise TypeError(f"Nested value for '{key}' has wrong type")
 
             return rest in sub
@@ -205,7 +205,7 @@ class DictWrapper(ClassWrapper):
             yield self._wrap(v, parent=self)
 
     def deepcopy(self):
-        new = DictWrapper(self._types(), parent=self._parent, sep=self._sep, recursive_to_others=not self._not_recursive_to_others)
+        new = NestedMKDict(self._types(), parent=self._parent, sep=self._sep, recursive_to_others=not self._not_recursive_to_others)
         for k, v in self.items():
             k = k,
             if isinstance(v, self._wrapper_class):
@@ -270,7 +270,7 @@ class DictWrapper(ClassWrapper):
             yield v
 
     def visit(self, visitor, parentkey=()):
-        visitor = MakeDictWrapperVisitor(visitor)
+        visitor = MakeNestedMKDictVisitor(visitor)
 
         if not parentkey:
             visitor.start(self)
@@ -288,14 +288,14 @@ class DictWrapper(ClassWrapper):
         if not parentkey:
             visitor.stop(self)
 
-    def update(self, other) -> 'DictWrapper':
+    def update(self, other) -> 'NestedMKDict':
         for k, v in other.walkitems():
             self[k] = v
         return self
 
     __ior__ = update
 
-    def update_missing(self, other) -> 'DictWrapper':
+    def update_missing(self, other) -> 'NestedMKDict':
         for k, v in other.walkitems():
             try:
                 key_already_present = k in self
