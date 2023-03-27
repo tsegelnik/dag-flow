@@ -1,6 +1,7 @@
 from typing import Literal, Optional
 
 from numpy import empty, errstate, integer, issubdtype, linspace
+from numpy.polynomial.legendre import leggauss
 from numpy.typing import DTypeLike, NDArray
 
 from ..exception import InitializationError, TypeFunctionError
@@ -33,7 +34,7 @@ class IntegratorSampler(FunctionNode):
         dtype: DTypeLike = "d",
         offset: Optional[Literal["left", "center", "right"]] = None,
         **kwargs,
-    ):
+    ) -> None:
         super().__init__(*args, **kwargs)
         if mode not in {"rect", "trap", "gl", "2d"}:
             raise InitializationError(
@@ -80,10 +81,10 @@ class IntegratorSampler(FunctionNode):
         """
         check_inputs_number(self, 0)
         ordersX = self.__check_orders("ordersX")
-        shape = [ordersX.dd.shape[0]]
+        shape = ordersX.dd.shape[0]
         if self.mode == "2d":
             ordersY = self.__check_orders("ordersY")
-            shape.append(ordersY.dd.shape[0])
+            shape = [2, max((shape, ordersY.dd.shape[0]))]
         shape = tuple(shape)
         self.fcn = self._functions[self.mode]
         for output in self.outputs:
@@ -105,39 +106,42 @@ class IntegratorSampler(FunctionNode):
             )
         return result
 
-    def _post_allocate(self):
+    def _post_allocate(self) -> None:
         """Allocates the `buffer`, which elements are the follows:
-        * 0: binwidths
-        * 1: samplewidths
-        * 2: axis_nodes
+        * 0: axis_nodes
+        * 1: binwidths
+        * 2: samplewidths
         * 3: low edges (only for `rect`)
         * 4: high edges (only for `rect`)
         """
-        input0 = self.inputs[0].dd
+        edgeshape = self.inputs["ordersX"].dd.edges.shape[0]
         if self.mode == "rect":
-            shape = [input0.shape[0] - 1] * 5
+            shape = [edgeshape - 1] * 5
         elif self.mode == "trap":
-            shape = [input0.shape[0] - 1] * 3
+            shape = [edgeshape - 1] * 3
+        elif self.mode == "gl":
+            shape = [edgeshape - 1]
         else:
-            # TODO: configure the buffer for Gauss-Legendre
+            # TODO: implement 2d GL sampling
             shape = []
-        self.__buffer = empty(shape=shape, dtype=input0.dtype)
+        self.__buffer = empty(shape=shape, dtype=self.dtype)
 
-    def _fcn_rect(self, _, inputs, outputs):
+    def _fcn_rect(self, _, inputs, outputs) -> Optional[list]:
         """The rectangular sampling"""
-        ordersX = outputs["ordersX"].data  # type: NDArray
-        binwidths = self.__buffer[0]
-        samplewidths = self.__buffer[1]
-        nodes = self.__buffer[2]
-        low = self.__buffer[3]
-        high = self.__buffer[4]
-        edges = inputs[0].data
+        ordersX = inputs["ordersX"]
+        edges = ordersX.dd.edges
+        orders = ordersX.data
         sample = outputs[0].data
         weights = outputs[1].data
+        nodes = self.__buffer[0]
+        binwidths = self.__buffer[1]
+        samplewidths = self.__buffer[2]
+        low = self.__buffer[3]
+        high = self.__buffer[4]
 
         binwidths[:] = edges[1:] - edges[:-1]
         with errstate(invalid="ignore"):  # to ignore division by zero
-            samplewidths[:] = binwidths / ordersX
+            samplewidths[:] = binwidths / orders
         if self.offset == "left":
             low[:] = edges[:-1]
             high[:] = edges[1:] - samplewidths
@@ -147,18 +151,18 @@ class IntegratorSampler(FunctionNode):
         else:
             low[:] = edges[:-1] + samplewidths
             high[:] = edges[1:]
-        nodes[:] = (edges[1:] + edges[:-1]) * 0.5
 
         offset = 0
-        for i, n in enumerate(ordersX):
+        for i, n in enumerate(orders):
             if n > 1:
-                sample[offset:n] = linspace(low[i], high[i], n)
-                weights[offset:n] = samplewidths[i]
+                sample[offset : offset + n] = linspace(low[i], high[i], n)
+                weights[offset : offset + n] = samplewidths[i]
             else:
-                sample[offset:n] = low[i]
-                weights[offset:n] = binwidths[i]
+                sample[offset : offset + n] = low[i]
+                weights[offset : offset + n] = binwidths[i]
             offset += n
 
+        nodes[:] = (edges[1:] + edges[:-1]) * 0.5
         for output in outputs:
             output.dd.axes_edges = edges
             output.dd.axes_nodes = nodes
@@ -166,30 +170,31 @@ class IntegratorSampler(FunctionNode):
         if self.debug:
             return [outputs.iter_data()]
 
-    def _fcn_trap(self, _, inputs, outputs):
+    def _fcn_trap(self, _, inputs, outputs) -> Optional[list]:
         """The trapezoidal sampling"""
-        ordersX = outputs["ordersX"].data  # type: NDArray
-        binwidths = self.__buffer[0]
-        samplewidths = self.__buffer[1]
-        nodes = self.__buffer[2]
-        edges = inputs[0].data
+        ordersX = inputs["ordersX"]
+        edges = ordersX.dd.edges
+        orders = ordersX.data
         sample = outputs[0].data
         weights = outputs[1].data
+        nodes = self.__buffer[0]
+        binwidths = self.__buffer[1]
+        samplewidths = self.__buffer[2]
 
         binwidths[:] = edges[1:] - edges[:-1]
         with errstate(invalid="ignore"):  # to ignore division by zero
-            samplewidths[:] = binwidths / (ordersX - 1.0)
-        nodes[:] = (edges[1:] + edges[:-1]) * 0.5
+            samplewidths[:] = binwidths / (orders - 1.0)
 
         offset = 0
-        for i, n in enumerate(ordersX):
-            sample[offset:n] = linspace(edges[i], edges[i + 1], n)
+        for i, n in enumerate(orders):
+            sample[offset : offset + n] = linspace(edges[i], edges[i + 1], n)
             weights[offset] = samplewidths[i] * 0.5
             if n > 2:
-                weights[offset + 1 : n - 2] = samplewidths[i]
+                weights[offset + 1 : offset + n - 2] = samplewidths[i]
             offset += n - 1
         weights[-1] = samplewidths[-1] * 0.5
 
+        nodes[:] = (edges[1:] + edges[:-1]) * 0.5
         for output in outputs:
             output.dd.axes_edges = edges
             output.dd.axes_nodes = nodes
@@ -197,14 +202,43 @@ class IntegratorSampler(FunctionNode):
         if self.debug:
             return [outputs.iter_data()]
 
-    def _fcn_gl1d(self, _, inputs, outputs):
+    def _fcn_gl1d(self, _, inputs, outputs) -> Optional[list]:
         """The 1d Gauss-Legendre sampling"""
-        # TODO: implement GL 1d
+        ordersX = outputs["ordersX"]
+        edges = ordersX.dd.edges
+        orders = ordersX.data
+        nodes = self.__buffer[0]
+        sample = outputs[0].data
+        weights = outputs[1].data
+
+        offset = 0
+        for n in orders:
+            if n >= 1:
+                (
+                    sample[offset : offset + n],
+                    weights[offset : offset + n],
+                ) = leggauss(n)
+                # the `leggauss` works only with the range [-1,1],
+                # so we need to transform the result to the original range
+                sample[offset : offset + n] = (
+                    0.5
+                    * (sample[offset : offset + n] + 1)
+                    * (edges[offset + n] - edges[offset])
+                    + edges[offset]
+                )
+                weights[offset : offset + n] *= 0.5*(edges[offset + n] - edges[offset])
+            offset += n
+
+        nodes[:] = (edges[1:] + edges[:-1]) * 0.5
+        for output in outputs:
+            output.dd.axes_edges = edges
+            output.dd.axes_nodes = nodes
+
         if self.debug:
             return [outputs.iter_data()]
 
-    def _fcn_gl2d(self, _, inputs, outputs):
+    def _fcn_gl2d(self, _, inputs, outputs) -> Optional[list]:
         """The 2d Gauss-Legendre sampling"""
-        # TODO: implement GL 2d
+        # TODO: implement 2d GL sampling
         if self.debug:
             return [outputs.iter_data()]
