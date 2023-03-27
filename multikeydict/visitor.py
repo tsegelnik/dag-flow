@@ -1,4 +1,4 @@
-class DictWrapperVisitor(object):
+class NestedMKDictVisitor(object):
     def start(self, dct):
         pass
 
@@ -14,18 +14,18 @@ class DictWrapperVisitor(object):
     def stop(self, dct):
         pass
 
-def MakeDictWrapperVisitor(fcn):
-    if isinstance(fcn, DictWrapperVisitor):
+def MakeNestedMKDictVisitor(fcn):
+    if isinstance(fcn, NestedMKDictVisitor):
         return fcn
 
     if not callable(fcn):
         raise TypeError(f'Expect function, got {type(fcn).__name__}')
 
-    ret=DictWrapperVisitor()
+    ret=NestedMKDictVisitor()
     ret.visit = fcn
     return ret
 
-class DictWrapperVisitorDemostrator(DictWrapperVisitor):
+class NestedMKDictVisitorDemostrator(NestedMKDictVisitor):
     fmt = '{action:7s} {depth!s:>5s} {key!s:<{keylen}s} {vtype!s:<{typelen}s} {value}'
     opts = dict(keylen=20, typelen=15)
     def typestring(self, v):
