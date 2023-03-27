@@ -4,7 +4,7 @@ from collections import UserDict
 from collections.abc import Sequence
 from typing import Any, Callable, Generator, Optional
 
-class Storage(UserDict):
+class FlatMKDict(UserDict):
     __slots__ = ('_protect',)
     _protect: bool
 
@@ -69,12 +69,12 @@ class Storage(UserDict):
 
         yield from res
 
-    def slice(self, *args, **kwargs) -> Storage:
+    def slice(self, *args, **kwargs) -> FlatMKDict:
         """
-        Returns new `Storage` with keys containing `args`.
+        Returns new `FlatMKDict` with keys containing `args`.
         It is possible to filter elements by `filterkey` and `filterkeyelem`.
         """
-        return Storage(
+        return FlatMKDict(
             self.items(
                 *args,
                 filterkey=kwargs.pop("filterkey", None),

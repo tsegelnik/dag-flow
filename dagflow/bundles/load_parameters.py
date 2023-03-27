@@ -1,5 +1,5 @@
-from dictwrapper.dictwrapper import DictWrapper
-# from storage.storage import Storage # To be used later
+from multikeydict.nestedmkdict import NestedMKDict
+# from multikeydict.flatmkdict import FlatMKDict # To be used later
 
 from schema import Schema, Or, Optional, Use, And, Schema, SchemaError
 from pathlib import Path
@@ -14,7 +14,7 @@ class ParsCfgHasProperFormat(object):
         else:
             nelements = len(format)
 
-        dtin = DictWrapper(data)
+        dtin = NestedMKDict(data)
         for key, subdata in dtin['parameters'].walkitems():
             if isinstance(subdata, tuple):
                 if len(subdata)==nelements: continue
@@ -129,7 +129,7 @@ def get_format_processor(format):
     else:
         return process_var_percent
 
-def iterate_varcfgs(cfg: DictWrapper):
+def iterate_varcfgs(cfg: NestedMKDict):
     parameterscfg = cfg['parameters']
     labelscfg = cfg['labels']
     format = cfg['format']
@@ -149,7 +149,7 @@ from dagflow.variable import Parameters
 
 def load_parameters(acfg):
     cfg = ValidateParsCfg(acfg)
-    cfg = DictWrapper(cfg)
+    cfg = NestedMKDict(cfg)
 
     path = cfg['path']
     if path:
@@ -159,7 +159,7 @@ def load_parameters(acfg):
 
     state = cfg['state']
 
-    ret = DictWrapper({'constants': {}, 'free': {}, 'constrained': {}}, sep='.')
+    ret = NestedMKDict({'constants': {}, 'free': {}, 'constrained': {}}, sep='.')
     for key, varcfg in iterate_varcfgs(cfg):
         skey = '.'.join(key)
         label = varcfg['label']
