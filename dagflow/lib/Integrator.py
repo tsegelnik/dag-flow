@@ -1,5 +1,5 @@
 from numba import njit
-from numpy import floating, integer, issubdtype, multiply, empty
+from numpy import empty, floating, integer, issubdtype, multiply
 from numpy.typing import NDArray
 
 from ..exception import TypeFunctionError
@@ -11,6 +11,7 @@ from ..typefunctions import (
     check_input_dtype,
     check_input_shape,
 )
+from ..types import InputT, ShapeLike
 
 
 @njit(cache=True)
@@ -62,6 +63,7 @@ class Integrator(FunctionNode):
     """
 
     __buffer: NDArray
+
     def __init__(self, *args, **kwargs):
         kwargs.setdefault("missing_input_handler", MissingInputAddEach())
         super().__init__(*args, **kwargs)
@@ -78,23 +80,15 @@ class Integrator(FunctionNode):
         check_has_inputs(self)
         check_has_inputs(self, "weights")
         input0 = self.inputs[0]
-        ordersY = self.inputs.get("ordersY", None)
-        dim = 1 if ordersY is None else 2
+        dim = 1 if self.inputs.get("ordersY", None) is None else 2
         if (ndim := len(input0.dd.shape)) != dim:
             raise TypeFunctionError(
                 f"The Integrator works only with {dim}d inputs, but the first is {ndim}d!",
                 node=self,
             )
         check_input_dimension(self, (slice(None), "weights"), dim)
-        check_input_dimension(self, "ordersX", 1)
         check_input_shape(self, (slice(None), "weights"), input0.dd.shape)
-        ordersX = self.inputs["ordersX"]
-        if not issubdtype(ordersX.dd.dtype, integer):
-            raise TypeFunctionError(
-                "The `ordersX` must be array of integers, but given '{ordersX.dd.dtype}'!",
-                node=self,
-                input=ordersX,
-            )
+        self.__check_orders("ordersX", input0.dd.shape[0])
         dtype = input0.dd.dtype
         if not issubdtype(dtype, floating):
             raise TypeFunctionError(
@@ -103,32 +97,34 @@ class Integrator(FunctionNode):
                 node=self,
             )
         check_input_dtype(self, (slice(None), "weights"), dtype)
-        if sum(ordersX.data) != input0.dd.shape[0]:
-            raise TypeFunctionError(
-                "ordersX must be consistent with inputs shape, "
-                f"but given {ordersX.data=} and {input0.dd.shape=}!",
-                node=self,
-                input=ordersX,
-            )
         if dim == 2:
-            check_input_dimension(self, "ordersY", 1)
-            if not issubdtype(ordersY.dd.dtype, integer):
-                raise TypeFunctionError(
-                    "The `ordersY` must be array of integers, but given '{ordersY.dd.dtype}'!",
-                    node=self,
-                    input=ordersY,
-                )
-            if sum(ordersY.data) != input0.dd.shape[1]:
-                raise TypeFunctionError(
-                    "ordersY must be consistent with inputs shape, "
-                    f"but given {ordersY.data=} and {input0.dd.shape=}!",
-                    node=self,
-                    input=ordersX,
-                )
+            self.__check_orders("ordersY", input0.dd.shape[1])
         self.fcn = self._functions[dim]
         for output in self.outputs:
             output.dd.dtype = dtype
             output.dd.shape = input0.dd.shape
+
+    def __check_orders(self, name: str, shape: ShapeLike) -> InputT:
+        """
+        The method checks dimension (==1) of the input `name`, type (==`integer`),
+        and `sum(orders) == len(input)`
+        """
+        check_input_dimension(self, name, 1)
+        result = self.inputs[name]
+        if not issubdtype(result.dd.dtype, integer):
+            raise TypeFunctionError(
+                f"The `name` must be array of integers, but given '{result.dd.dtype}'!",
+                node=self,
+                input=result,
+            )
+        if sum(result.data) != shape:
+            raise TypeFunctionError(
+                f"Input '{name}' must be consistent with inputs {shape=}, "
+                f"but given '{result.data}'!",
+                node=self,
+                input=result,
+            )
+        return result
 
     def _post_allocate(self):
         """Allocates the `buffer` within `weights`"""
