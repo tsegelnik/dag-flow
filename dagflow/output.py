@@ -317,6 +317,22 @@ class Output:
 
         return True
 
+    def seti(self, idx: int, value: float, check_taint: bool = False, force: bool = False) -> bool:
+        if self.node._frozen and not force:
+            return False
+
+        tainted = True
+        if check_taint:
+            tainted = self._data[udx] != value
+
+        if tainted:
+            self._data[idx] = value
+            self.taint_children()
+            self.node.invalidate_parents()
+            self.node._tainted = False
+
+        return tainted
+
     def set(
         self, data: ArrayLike, check_taint: bool = False, force: bool = False
     ) -> bool:
