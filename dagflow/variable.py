@@ -7,12 +7,121 @@ from .lib.CovmatrixFromCormatrix import CovmatrixFromCormatrix
 
 from numpy import zeros_like, array
 from numpy.typing import DTypeLike
-from typing import Optional, Dict
+from typing import Optional, Dict, List, Generator
 
-class Parameters(object):
-    __slots__ = ('value', '_value_node', '_is_variable')
+class Parameter:
+    __slots__ = ('_idx','_parent', '_value_output', '_labelfmt')
+    _parent: Optional['Parameters']
+    _idx: int
+    _value_output: Output
+    _labelfmt: str
+
+    def __init__(
+        self,
+        value_output: Output,
+        idx: int=0,
+        *,
+        parent: 'Parameters',
+        labelfmt: str='{}'
+    ):
+        self._idx = idx
+        self._parent = parent
+        self._value_output = value_output
+        self._labelfmt = labelfmt
+
+    @property
+    def value(self) -> float:
+        return self._value_output.data[self._idx]
+
+    @value.setter
+    def value(self, value: float):
+        return self._value_output.seti(self._idx, value)
+
+    def label(self, source: str='text') -> str:
+        return self._labelfmt.format(self._value_output.node.label(source))
+
+    def to_dict(self, *, label_from: str='text') -> dict:
+        return {
+                'value': self.value,
+                'label': self.label(label_from)
+                }
+
+class GaussianParameter(Parameter):
+    __slots__ = ( '_central_output', '_sigma_output', '_normvalue_output')
+    _central_output: Output
+    _sigma_output: Output
+    _normvalue_output: Output
+
+    def __init__(
+        self,
+        value_output: Output,
+        central_output: Output,
+        sigma_output: Output,
+        idx: int=0,
+        *,
+        normvalue_output: Output,
+        **kwargs
+    ):
+        super().__init__(value_output, idx, **kwargs)
+        self._central_output = central_output
+        self._sigma_output = sigma_output
+        self._normvalue_output = normvalue_output
+
+    @property
+    def central(self) -> float:
+        return self._central_output.data[0]
+
+    @central.setter
+    def central(self, central: float):
+        self._central_output.seti(self._idx, central)
+
+    @property
+    def sigma(self) -> float:
+        return self._sigma_output.data[0]
+
+    @sigma.setter
+    def sigma(self, sigma: float):
+        self._sigma_output.seti(self._idx, sigma)
+
+    @property
+    def sigma_relative(self) -> float:
+        return self.sigma/self.value
+
+    @sigma_relative.setter
+    def sigma_relative(self, sigma_relative: float):
+        self.sigma = sigma_relative * self.value
+
+    @property
+    def sigma_percent(self) -> float:
+        return 100.0 * (self.sigma/self.value)
+
+    @sigma_percent.setter
+    def sigma_percent(self, sigma_percent: float):
+        self.sigma = (0.01*sigma_percent) * self.value
+
+    @property
+    def normvalue(self) -> float:
+        return self._normvalue_output.data[0]
+
+    @normvalue.setter
+    def normvalue(self, normvalue: float):
+        self._normvalue_output.seti(self._idx, normvalue)
+
+    def to_dict(self, **kwargs) -> dict:
+        dct = super().to_dict(**kwargs)
+        dct.update({
+            'central': self.central,
+            'sigma': self.sigma,
+            'normvalue': self.normvalue,
+            })
+        return dct
+
+class Parameters:
+    __slots__ = ('value', '_value_node', '_pars', '_norm_pars', '_is_variable')
     value: Output
     _value_node: Node
+    _pars: List[Parameter]
+    _norm_pars: List[Parameter]
 
     _is_variable: bool
 
@@ -22,7 +131,7 @@ class Parameters(object):
         *,
         variable: Optional[bool]=None,
         fixed: Optional[bool]=None,
-        close: bool=True
+        is_super: bool=False
     ):
         self._value_node = value
         self.value = value.outputs[0]
@@ -36,8 +145,13 @@ class Parameters(object):
         else:
             self._is_variable = True
 
-        if close:
+        self._pars = []
+        self._norm_pars = []
+        if not is_super:
             self._value_node.close(recursive=True)
+
+            for i in range(self.value._data.size):
+                self._pars.append(Parameter(self.value, i, parent=self))
 
     @property
     def is_variable(self) -> bool:
@@ -54,6 +168,14 @@ class Parameters(object):
     @property
     def is_free(self) -> bool:
         return True
+
+    @property
+    def parameters(self) -> Generator[Parameter, None, None]:
+        yield from self._pars
+
+    @property
+    def norm_parameters(self) -> Generator[Parameter, None, None]:
+        yield from self._normpars
 
     def to_dict(self, *, label_from: str='text') -> dict:
         return {
@@ -123,7 +245,7 @@ class GaussianParameters(Parameters):
         free: Optional[bool]=None,
         **kwargs
     ):
-        super().__init__(value, close=False, **kwargs)
+        super().__init__(value, is_super=True, **kwargs)
         self._central_node = central
 
         self._cholesky_node = None
@@ -186,6 +308,10 @@ class GaussianParameters(Parameters):
         self._norm_node.close(recursive=True)
         self._norm_node.touch()
 
+        for i in range(self.value._data.size):
+            self._pars.append(GaussianParameter(self.value, self.central, self.sigma, i, normvalue_output=self.normvalue, parent=self))
+            self._norm_pars.append(Parameter(self.normvalue, i, parent=self, labelfmt='[norm] {}'))
+
     @property
     def is_constrained(self) -> bool:
         return self._is_constrained
@@ -239,7 +365,8 @@ class GaussianParameters(Parameters):
     def to_dict(self, **kwargs) -> dict:
         dct = super().to_dict(**kwargs)
         dct.update({
-            'sigma': self._sigma_node.data[0],
-            'norm_value': self._norm_node.data[0],
+            'central': self.central.data[0],
+            'sigma': self.sigma.data[0],
+            'normvalue': self.normvalue.data[0],
             })
         return dct
