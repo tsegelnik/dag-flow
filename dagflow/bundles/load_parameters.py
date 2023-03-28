@@ -159,7 +159,21 @@ def load_parameters(acfg):
 
     state = cfg['state']
 
-    ret = NestedMKDict({'constants': {}, 'free': {}, 'constrained': {}}, sep='.')
+    ret = NestedMKDict(
+        {
+            'parameter': {
+                'constant': {},
+                'free': {},
+                'constrained': {}
+                },
+            'parameter_node': {
+                'constant': {},
+                'free': {},
+                'constrained': {}
+                }
+        },
+        sep='.'
+    )
     for key, varcfg in iterate_varcfgs(cfg):
         skey = '.'.join(key)
         label = varcfg['label']
@@ -171,10 +185,14 @@ def load_parameters(acfg):
         if par.is_constrained:
             target = ('constrained',) + path
         elif par.is_fixed:
-            target = ('constants',) + path
+            target = ('constant',) + path
         else:
             target = ('free',) + path
 
-        ret[target+key] = par
+        ret[('parameter_node',)+target+key] = par
+
+        target = ('parameter',)+target
+        for subpar in par.parameters:
+            ret[target+key] = subpar
 
     return ret
