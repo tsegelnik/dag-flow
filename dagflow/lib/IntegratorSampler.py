@@ -1,6 +1,14 @@
 from typing import Literal, Optional
 
-from numpy import empty, errstate, integer, issubdtype, linspace
+from numpy import (
+    empty,
+    errstate,
+    integer,
+    issubdtype,
+    linspace,
+    matmul,
+    newaxis,
+)
 from numpy.polynomial.legendre import leggauss
 from numpy.typing import DTypeLike, NDArray
 
@@ -122,8 +130,8 @@ class IntegratorSampler(FunctionNode):
         elif self.mode == "gl":
             shape = [edgeshape - 1]
         else:
-            # TODO: implement 2d GL sampling
-            shape = []
+            edgeshapeY = self.inputs["ordersY"].dd.edges.shape[0]
+            shape = [edgeshape, edgeshapeY]
         self.__buffer = empty(shape=shape, dtype=self.dtype)
 
     def _fcn_rect(self, _, inputs, outputs) -> Optional[list]:
@@ -213,20 +221,23 @@ class IntegratorSampler(FunctionNode):
 
         offset = 0
         for n in orders:
-            if n >= 1:
-                (
-                    sample[offset : offset + n],
-                    weights[offset : offset + n],
-                ) = leggauss(n)
-                # the `leggauss` works only with the range [-1,1],
-                # so we need to transform the result to the original range
-                sample[offset : offset + n] = (
-                    0.5
-                    * (sample[offset : offset + n] + 1)
-                    * (edges[offset + n] - edges[offset])
-                    + edges[offset]
-                )
-                weights[offset : offset + n] *= 0.5*(edges[offset + n] - edges[offset])
+            if n < 1:
+                continue
+            (
+                sample[offset : offset + n],
+                weights[offset : offset + n],
+            ) = leggauss(n)
+            # the `leggauss` works only with the range [-1,1],
+            # so we need to transform the result to the original range
+            sample[offset : offset + n] = (
+                0.5
+                * (sample[offset : offset + n] + 1)
+                * (edges[offset + n] - edges[offset])
+                + edges[offset]
+            )
+            weights[offset : offset + n] *= 0.5 * (
+                edges[offset + n] - edges[offset]
+            )
             offset += n
 
         nodes[:] = (edges[1:] + edges[:-1]) * 0.5
@@ -239,6 +250,75 @@ class IntegratorSampler(FunctionNode):
 
     def _fcn_gl2d(self, _, inputs, outputs) -> Optional[list]:
         """The 2d Gauss-Legendre sampling"""
-        # TODO: implement 2d GL sampling
+        ordersX = outputs["ordersX"]
+        ordersY = outputs["ordersY"]
+        edgesX = ordersX.dd.edges
+        ordersX = ordersX.data
+        edgesY = ordersY.dd.edges
+        ordersY = ordersY.data
+        nodesX = self.__buffer[0]
+        nodesY = self.__buffer[1]
+        weightsX = self.__buffer[2]  # (n, )
+        weightsY = self.__buffer[3]  # (m, )
+        sampleX = self.__buffer[4]  # (n, )
+        sampleY = self.__buffer[5]  # (m, )
+        sample = outputs[0].data  # (2, n, m)
+        weights = outputs[1].data  # (n, m)
+
+        offsetX = 0
+        for n in ordersX:
+            if n < 1:
+                continue
+            (
+                sampleX[offsetX : offsetX + n],
+                weightsX[offsetX : offsetX + n],
+            ) = leggauss(n)
+            # the `leggauss` works only with the range [-1,1],
+            # so we need to transform the result to the original range
+            sampleX[offsetX : offsetX + n] = (
+                0.5
+                * (sampleX[offsetX : offsetX + n] + 1)
+                * (edgesX[offsetX + n] - edgesX[offsetX])
+                + edgesX[offsetX]
+            )
+            weightsX[offsetX : offsetX + n] *= 0.5 * (
+                edgesX[offsetX + n] - edgesX[offsetX]
+            )
+            offsetX += n
+
+        offsetY = 0
+        for n in ordersY:
+            if n < 1:
+                continue
+            (
+                sampleY[offsetY : offsetY + n],
+                weightsY[offsetY : offsetY + n],
+            ) = leggauss(n)
+            # the `leggauss` works only with the range [-1,1],
+            # so we need to transform the result to the original range
+            sampleY[offsetY : offsetY + n] = (
+                0.5
+                * (sampleY[offsetY : offsetY + n] + 1)
+                * (edgesY[offsetY + n] - edgesY[offsetY])
+                + edgesY[offsetY]
+            )
+            weightsY[offsetX : offsetY + n] *= 0.5 * (
+                edgesY[offsetY + n] - edgesY[offsetY]
+            )
+            offsetY += n
+
+        for i, x in enumerate(sampleX):
+            for j in range(len(sampleX[0, i])):
+                sample[0, i, j] = x
+        for i in range(len(sampleY[0])):
+            sample[1, i, :] = sampleY
+        matmul(weightsX[newaxis].T, weightsY, out=weights)
+
+        nodesX[:] = (edgesX[1:] + edgesX[:-1]) * 0.5
+        nodesY[:] = (edgesY[1:] + edgesY[:-1]) * 0.5
+        for output in outputs:
+            output.dd.axes_edges = [edgesX, edgesY]
+            output.dd.axes_nodes = [nodesX, nodesY]
+
         if self.debug:
             return [outputs.iter_data()]
