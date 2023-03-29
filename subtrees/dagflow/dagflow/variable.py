@@ -138,8 +138,22 @@ class NormalizedGaussianParameter(Parameter):
             })
         return dct
 
+class Constraint:
+    __slots__ = ('_pars')
+    _pars: "Parameters"
+
+    def __init__(self, parameters: "Parameters"):
+        self._pars = parameters
+
 class Parameters:
-    __slots__ = ('value', '_value_node', '_pars', '_norm_pars', '_is_variable')
+    __slots__ = (
+        'value',
+        '_value_node',
+        '_pars',
+        '_norm_pars',
+        '_is_variable',
+        '_constraint'
+    )
     value: Output
     _value_node: Node
     _pars: List[Parameter]
@@ -147,13 +161,15 @@ class Parameters:
 
     _is_variable: bool
 
+    _constraint: Optional[Constraint]
+
     def __init__(
         self,
         value: Node,
         *,
         variable: Optional[bool]=None,
         fixed: Optional[bool]=None,
-        is_super: bool=False
+        close: bool=True
     ):
         self._value_node = value
         self.value = value.outputs[0]
@@ -167,13 +183,18 @@ class Parameters:
         else:
             self._is_variable = True
 
+        self._constraint = None
+
         self._pars = []
         self._norm_pars = []
-        if not is_super:
-            self._value_node.close(recursive=True)
+        if close:
+            self._close()
 
             for i in range(self.value._data.size):
                 self._pars.append(Parameter(self.value, i, parent=self))
+
+    def _close(self) -> None:
+        self._value_node.close(recursive=True)
 
     @property
     def is_variable(self) -> bool:
@@ -185,11 +206,11 @@ class Parameters:
 
     @property
     def is_constrained(self) -> bool:
-        return False
+        return self._constraint is not None
 
     @property
     def is_free(self) -> bool:
-        return True
+        return self._constraint is None
 
     @property
     def parameters(self) -> List:
@@ -205,36 +226,58 @@ class Parameters:
                 'label': self._value_node.label(label_from)
                 }
 
+    def set_constraint(self, constraint: Constraint) -> None:
+        if self._constraint is not None:
+            raise InitializationError("Constraint already set")
+        self._constraint = constraint
+        # constraint._pars = self
+
     @staticmethod
-    def from_numbers(*, dtype: DTypeLike='d', **kwargs) -> 'Parameters':
-        sigma = kwargs.pop('sigma')
-        if sigma is not None:
-            return GaussianParameters.from_numbers(dtype=dtype, sigma=sigma, **kwargs)
-
-        del kwargs['central']
-
-        label: Dict[str, str] = kwargs.pop('label', None)
+    def from_numbers(
+        value: float,
+        *,
+        dtype: DTypeLike='d',
+        variable: Optional[bool]=None,
+        fixed: Optional[bool]=None,
+        label: Optional[Dict[str, str]]=None,
+        **kwargs
+    ) -> 'Parameters':
         if label is None:
             label = {'text': 'parameter'}
         else:
             label = dict(label)
         name: str = label.setdefault('name', 'parameter')
-        value = kwargs.pop('value')
-        return Parameters(
+        has_constraint = kwargs.get('sigma', None) is not None
+        pars = Parameters(
             Array(
                 name,
                 array((value,), dtype=dtype),
                 label = label,
                 mode='store_weak',
             ),
-            **kwargs
+            fixed=fixed,
+            variable=variable,
+            close=not has_constraint
         )
 
-class GaussianParameters(Parameters):
+        if has_constraint:
+            pars.set_constraint(
+                GaussianConstraint.from_numbers(
+                    parameters=pars,
+                    dtype=dtype,
+                    **kwargs
+                )
+            )
+            pars._close()
+
+        return pars
+
+class GaussianConstraint(Constraint):
     __slots__ = (
         'central', 'sigma', 'normvalue',
         '_central_node', '_sigma_node', '_normvalue_node',
-        '_cholesky_node', '_covariance_node', '_correlation_node', '_sigma_total_node',
+        '_cholesky_node', '_covariance_node', '_correlation_node',
+        '_sigma_total_node',
         '_norm_node',
         '_is_constrained'
     )
@@ -257,17 +300,17 @@ class GaussianParameters(Parameters):
 
     def __init__(
         self,
-        value: Node,
         central: Node,
         *,
+        parameters: Parameters,
         sigma: Node=None,
         covariance: Node=None,
         correlation: Node=None,
         constrained: Optional[bool]=None,
         free: Optional[bool]=None,
-        **kwargs
+        **_
     ):
-        super().__init__(value, is_super=True, **kwargs)
+        super().__init__(parameters=parameters)
         self._central_node = central
 
         self._cholesky_node = None
@@ -276,7 +319,7 @@ class GaussianParameters(Parameters):
         self._sigma_total_node = None
 
         if all(f is not None for f in (constrained, free)):
-            raise RuntimeError("GaussianParameter may not be set to constrained and free at the same time")
+            raise RuntimeError("GaussianConstraint may not be set to constrained and free at the same time")
         if constrained is not None:
             self._is_constrained = constrained
         elif free is not None:
@@ -285,14 +328,15 @@ class GaussianParameters(Parameters):
             self._is_constrained = True
 
         if sigma is not None and covariance is not None:
-            raise InitializationError('GaussianParameters: got both "sigma" and "covariance" as arguments')
+            raise InitializationError('GaussianConstraint: got both "sigma" and "covariance" as arguments')
         if correlation is not None and sigma is None:
-            raise InitializationError('GaussianParameters: got "correlation", but no "sigma" as arguments')
+            raise InitializationError('GaussianConstraint: got "correlation", but no "sigma" as arguments')
 
+        value_node = parameters._value_node
         if correlation is not None:
             self._correlation_node = correlation
-            self._covariance_node = CovmatrixFromCormatrix(f"V({value.name})")
-            self._cholesky_node = Cholesky(f"L({value.name})")
+            self._covariance_node = CovmatrixFromCormatrix(f"V({value_node.name})")
+            self._cholesky_node = Cholesky(f"L({value_node.name})")
             self._sigma_total_node = sigma
             self._sigma_node = self._cholesky_node
 
@@ -302,39 +346,41 @@ class GaussianParameters(Parameters):
         elif sigma is not None:
             self._sigma_node = sigma
         elif covariance is not None:
-            self._cholesky_node = Cholesky(f"L({value.name})")
+            self._cholesky_node = Cholesky(f"L({value_node.name})")
             self._sigma_node = self._cholesky_node
             self._covariance_node = covariance
 
             covariance >> self._cholesky_node
         else:
             # TODO: no sigma/covariance AND central means normalized=value?
-            raise InitializationError('GaussianParameters: got no "sigma" and no "covariance" arguments')
+            raise InitializationError('GaussianConstraint: got no "sigma" and no "covariance" arguments')
 
         self.central = self._central_node.outputs[0]
         self.sigma = self._sigma_node.outputs[0]
 
         self._normvalue_node = Array(
-            f'Normalized {value.name}',
+            f'Normalized {value_node.name}',
             zeros_like(self.central._data),
-            mark = f'norm({value.mark})',
+            mark = f'norm({value_node.mark})',
             mode='store_weak'
         )
-        self._normvalue_node._inherit_labels(self._value_node, fmt='Normalized {}')
+        self._normvalue_node._inherit_labels(self._pars._value_node, fmt='Normalized {}')
         self.normvalue = self._normvalue_node.outputs[0]
 
-        self._norm_node = NormalizeCorrelatedVars2(f"Normalize {value.name}", immediate=True)
+        self._norm_node = NormalizeCorrelatedVars2(f"Normalize {value_node.name}", immediate=True)
         self.central >> self._norm_node.inputs['central']
         self.sigma >> self._norm_node.inputs['matrix']
-        (self.value, self.normvalue) >> self._norm_node
+
+        (parameters.value, self.normvalue) >> self._norm_node
 
         self._norm_node.close(recursive=True)
         self._norm_node.touch()
 
-        for i in range(self.value._data.size):
-            self._pars.append(
+        value_output = self._pars.value
+        for i in range(value_output._data.size):
+            self._pars._pars.append(
                 GaussianParameter(
-                    self.value,
+                    value_output,
                     self.central,
                     self.sigma,
                     i,
@@ -342,7 +388,7 @@ class GaussianParameters(Parameters):
                     parent=self
                 )
             )
-            self._norm_pars.append(
+            self._pars._norm_pars.append(
                 NormalizedGaussianParameter(
                     self.normvalue,
                     i,
@@ -365,25 +411,18 @@ class GaussianParameters(Parameters):
 
     @staticmethod
     def from_numbers(
-        value: float,
         *,
         central: float,
         sigma: float,
         label: Optional[Dict[str,str]]=None,
         dtype: DTypeLike='d',
-        **_
+        **kwargs
     ) -> 'GaussianParameters':
         if label is None:
             label = {'text': 'gaussian parameter'}
         else:
             label = dict(label)
         name = label.setdefault('name', 'parameter')
-        node_value = Array(
-            name,
-            array((value,), dtype=dtype),
-            label = label,
-            mode='store_weak'
-        )
 
         node_central = Array(
             f'{name}_central',
@@ -399,7 +438,7 @@ class GaussianParameters(Parameters):
             mode='store_weak'
         )
 
-        return GaussianParameters(value=node_value, central=node_central, sigma=node_sigma)
+        return GaussianConstraint(central=node_central, sigma=node_sigma, **kwargs)
 
     def to_dict(self, **kwargs) -> dict:
         dct = super().to_dict(**kwargs)
