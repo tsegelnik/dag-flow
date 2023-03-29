@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
 from dagflow.lib import Array
-from dagflow.variable import GaussianParameters
+from dagflow.parameters import GaussianParameters
 from dagflow.graph import Graph
 from dagflow.graphviz import savegraph
 from dagflow.exception import CriticalError
@@ -61,19 +61,19 @@ def test_variables_00_variable(mode) -> None:
         raise error
 
     value_out0 = gp.value.data.copy()
-    normvalue_out0 = gp.normvalue.data
+    normvalue_out0 = gp.constraint.normvalue.data
     assert allclose(value_in, value_out0, atol=0, rtol=0)
     assert all(normvalue_out0!=0)
 
-    gp.normvalue.set(zeros_in)
+    gp.constraint.normvalue.set(zeros_in)
     value_out1 = gp.value.data
-    normvalue_out1 = gp.normvalue.data
+    normvalue_out1 = gp.constraint.normvalue.data
     assert allclose(central_in, value_out1, atol=0, rtol=0)
     assert allclose(normvalue_out1, 0.0, atol=0, rtol=0)
 
     gp.value.set(value_out0)
     value_out2 = gp.value.data
-    normvalue_out2 = gp.normvalue.data
+    normvalue_out2 = gp.constraint.normvalue.data
     assert allclose(value_in, value_out2, atol=0, rtol=0)
     assert allclose(normvalue_out2, normvalue_out0, atol=0, rtol=0)
 

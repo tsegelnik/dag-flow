@@ -220,6 +220,10 @@ class Parameters:
     def norm_parameters(self) -> List:
         return self._norm_pars
 
+    @property
+    def constraint(self) -> Optional[Constraint]:
+        return self._constraint
+
     def to_dict(self, *, label_from: str='text') -> dict:
         return {
                 'value': self.value.data[0],
@@ -448,3 +452,11 @@ class GaussianConstraint(Constraint):
             # 'normvalue': self.normvalue.data[0],
             })
         return dct
+
+def GaussianParameters(value: Node, *args, **kwargs) -> Parameters:
+    pars = Parameters(value, close=False)
+    pars.set_constraint(GaussianConstraint(*args, parameters=pars, **kwargs))
+    pars._close()
+
+    return pars
+
