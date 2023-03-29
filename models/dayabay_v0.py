@@ -5,6 +5,9 @@ from pathlib import Path
 from typing import Union, Tuple, List, Optional
 from pandas import DataFrame
 
+from dagflow.graph import Graph
+from dagflow.graphviz import savegraph
+
 class ParametersWrapper(NestedMKDict):
 	def to_dict(self, **kwargs) -> list:
 		data = []
@@ -43,10 +46,12 @@ class ParametersWrapper(NestedMKDict):
 def model_dayabay_v0():
 	storage = ParametersWrapper({}, sep='.')
 	datasource = Path('data/dayabay-v0')
-	storage |= load_parameters({'path': 'ibd'      , 'load': datasource/'parameters/pdg2012.yaml'})
-	storage |= load_parameters({'path': 'detector' , 'load': datasource/'parameters/detector_nprotons_correction.yaml'})
-	storage |= load_parameters({'path': 'reactor'  , 'load': datasource/'parameters/reactor_thermal_power_nominal.yaml'})
-	storage |= load_parameters({'path': 'eres'     , 'load': datasource/'parameters/detector_eres.yaml'})
+
+	with Graph() as g:
+		storage |= load_parameters({'path': 'ibd'      , 'load': datasource/'parameters/pdg2012.yaml'})
+		storage |= load_parameters({'path': 'detector' , 'load': datasource/'parameters/detector_nprotons_correction.yaml'})
+		storage |= load_parameters({'path': 'reactor'  , 'load': datasource/'parameters/reactor_thermal_power_nominal.yaml'})
+		storage |= load_parameters({'path': 'eres'     , 'load': datasource/'parameters/detector_eres.yaml'})
 
 	# from pprint import pprint
 	# pprint(storage.object, sort_dicts=False)
@@ -63,3 +68,5 @@ def model_dayabay_v0():
 	print('Constants (latex)')
 	tex = storage['parameter.constant'].to_latex(columns=['path', 'value', 'label'])
 	print(tex)
+
+	savegraph(g, "output/dayabay_v0.dot")
