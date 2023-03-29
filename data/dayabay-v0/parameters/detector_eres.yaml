@@ -1,7 +1,7 @@
 # Detector energy resolution:
 # σ(E)/E = sqrt(a² + b²/E + c²/E²),
 
-format: ["value", "sigma_relative"]
+format: ["value", "sigma_percent"]
 state: "variable"
 parameters:
   eres:
