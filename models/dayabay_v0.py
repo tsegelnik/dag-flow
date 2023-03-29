@@ -27,7 +27,7 @@ class ParametersWrapper(NestedMKDict):
     def to_df(self, *, columns: Optional[List[str]]=None, **kwargs) -> DataFrame:
         dct = self.to_dict(**kwargs)
         if columns is None:
-            columns = ['path', 'value', 'central', 'sigma', 'normvalue', 'label']
+            columns = ['path', 'value', 'central', 'sigma', 'label']
         df = DataFrame(dct, columns=columns)
         return df
 
