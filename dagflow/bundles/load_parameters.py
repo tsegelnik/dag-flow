@@ -147,7 +147,6 @@ def iterate_varcfgs(cfg: NestedMKDict):
 
 from dagflow.variable import Parameters
 from dagflow.lib.SumSq import SumSq
-from dagflow.lib.Sum import Sum
 
 def load_parameters(acfg):
     cfg = ValidateParsCfg(acfg)
@@ -215,14 +214,5 @@ def load_parameters(acfg):
         (n.output for n in normpars) >> ssq
         ssq.close()
         ret[('stat', 'nuisance_parts', path)] = ssq
-
-        nuisanceall = ret.get('stat.nuisance.all', None)
-        if nuisanceall is None:
-            nuisanceall = Sum('nuisance total')
-            ret['stat.nuisance.all'] = nuisanceall
-        else:
-            nuisanceall.open()
-        ssq >> nuisanceall
-        nuisanceall.close()
 
     return ret
