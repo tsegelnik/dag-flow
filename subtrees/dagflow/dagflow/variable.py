@@ -116,6 +116,24 @@ class GaussianParameter(Parameter):
             })
         return dct
 
+class NormalizedGaussianParameter(Parameter):
+    @property
+    def central(self) -> float:
+        return 0.0
+
+    @property
+    def sigma(self) -> float:
+        return 1.0
+
+    def to_dict(self, **kwargs) -> dict:
+        dct = super().to_dict(**kwargs)
+        dct.update({
+            'central': 0.0,
+            'sigma': 1.0,
+            'normvalue': self.value,
+            })
+        return dct
+
 class Parameters:
     __slots__ = ('value', '_value_node', '_pars', '_norm_pars', '_is_variable')
     value: Output
@@ -170,12 +188,12 @@ class Parameters:
         return True
 
     @property
-    def parameters(self) -> Generator[Parameter, None, None]:
-        yield from self._pars
+    def parameters(self) -> List:
+        return self._pars
 
     @property
-    def norm_parameters(self) -> Generator[Parameter, None, None]:
-        yield from self._normpars
+    def norm_parameters(self) -> List:
+        return self._norm_pars
 
     def to_dict(self, *, label_from: str='text') -> dict:
         return {
@@ -310,7 +328,7 @@ class GaussianParameters(Parameters):
 
         for i in range(self.value._data.size):
             self._pars.append(GaussianParameter(self.value, self.central, self.sigma, i, normvalue_output=self.normvalue, parent=self))
-            self._norm_pars.append(Parameter(self.normvalue, i, parent=self, labelfmt='[norm] {}'))
+            self._norm_pars.append(NormalizedGaussianParameter(self.normvalue, i, parent=self, labelfmt='[norm] {}'))
 
     @property
     def is_constrained(self) -> bool:

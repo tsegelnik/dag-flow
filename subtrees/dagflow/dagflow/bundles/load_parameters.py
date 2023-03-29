@@ -164,7 +164,8 @@ def load_parameters(acfg):
             'parameter': {
                 'constant': {},
                 'free': {},
-                'constrained': {}
+                'constrained': {},
+                'normalized': {}
                 },
             'parameter_node': {
                 'constant': {},
@@ -191,8 +192,12 @@ def load_parameters(acfg):
 
         ret[('parameter_node',)+target+key] = par
 
-        target = ('parameter',)+target
+        ptarget = ('parameter',)+target
         for subpar in par.parameters:
-            ret[target+key] = subpar
+            ret[ptarget+key] = subpar
+
+        ntarget = ('parameter', 'normalized')+path
+        for subpar in par.norm_parameters:
+            ret[ntarget+key] = subpar
 
     return ret
