@@ -145,21 +145,43 @@ def iterate_varcfgs(cfg: NestedMKDict):
             varcfg['label'] = {}
         yield key, varcfg
 
-from dagflow.variable import Parameters
+from dagflow.parameters import Parameters
+from dagflow.lib.SumSq import SumSq
 
 def load_parameters(acfg):
     cfg = ValidateParsCfg(acfg)
     cfg = NestedMKDict(cfg)
 
-    path = cfg['path']
-    if path:
-        path = tuple(path.split('.'))
+    pathstr = cfg['path']
+    if pathstr:
+        path = tuple(pathstr.split('.'))
     else:
         path = ()
 
     state = cfg['state']
 
-    ret = NestedMKDict({'constants': {}, 'free': {}, 'constrained': {}}, sep='.')
+    ret = NestedMKDict(
+        {
+            'parameter': {
+                'constant': {},
+                'free': {},
+                'constrained': {},
+                'normalized': {},
+                },
+            'stat': {
+                'nuisance_parts': {},
+                'nuisance': {},
+                },
+            'parameter_node': {
+                'constant': {},
+                'free': {},
+                'constrained': {}
+                }
+        },
+        sep='.'
+    )
+
+    normpars = []
     for key, varcfg in iterate_varcfgs(cfg):
         skey = '.'.join(key)
         label = varcfg['label']
@@ -169,12 +191,28 @@ def load_parameters(acfg):
 
         par = Parameters.from_numbers(**varcfg)
         if par.is_constrained:
-            target = ('constrained',) + path
+            target = ('constrained', path)
         elif par.is_fixed:
-            target = ('constants',) + path
+            target = ('constant', path)
         else:
-            target = ('free',) + path
+            target = ('free', path)
 
-        ret[target+key] = par
+        ret[('parameter_node',)+target+key] = par
+
+        ptarget = ('parameter', target)
+        for subpar in par.parameters:
+            ret[ptarget+key] = subpar
+
+        ntarget = ('parameter', 'normalized', path)
+        for subpar in par.norm_parameters:
+            ret[ntarget+key] = subpar
+
+            normpars.append(subpar)
+
+    if normpars:
+        ssq = SumSq(f'nuisance for {pathstr}')
+        (n.output for n in normpars) >> ssq
+        ssq.close()
+        ret[('stat', 'nuisance_parts', path)] = ssq
 
     return ret
