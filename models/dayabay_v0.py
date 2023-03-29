@@ -7,66 +7,72 @@ from pandas import DataFrame
 
 from dagflow.graph import Graph
 from dagflow.graphviz import savegraph
+from dagflow.lib.Sum import Sum
 
 class ParametersWrapper(NestedMKDict):
-	def to_dict(self, **kwargs) -> list:
-		data = []
-		for k, v in self.walkitems():
-			k = '.'.join(k)
-			try:
-				dct = v.to_dict(**kwargs)
-			except AttributeError:
-				continue
+    def to_dict(self, **kwargs) -> list:
+        data = []
+        for k, v in self.walkitems():
+            k = '.'.join(k)
+            try:
+                dct = v.to_dict(**kwargs)
+            except AttributeError:
+                continue
 
-			dct['path'] = k
-			data.append(dct)
+            dct['path'] = k
+            data.append(dct)
 
-		return data
+        return data
 
-	def to_df(self, *, columns: Optional[List[str]]=None, **kwargs) -> DataFrame:
-		dct = self.to_dict(**kwargs)
-		if columns is None:
-			columns = ['path', 'value', 'central', 'sigma', 'normvalue', 'label']
-		df = DataFrame(dct, columns=columns)
-		return df
+    def to_df(self, *, columns: Optional[List[str]]=None, **kwargs) -> DataFrame:
+        dct = self.to_dict(**kwargs)
+        if columns is None:
+            columns = ['path', 'value', 'central', 'sigma', 'normvalue', 'label']
+        df = DataFrame(dct, columns=columns)
+        return df
 
-	def to_string(self, **kwargs) -> DataFrame:
-		df = self.to_df()
-		return df.to_string(**kwargs)
+    def to_string(self, **kwargs) -> DataFrame:
+        df = self.to_df()
+        return df.to_string(**kwargs)
 
-	def to_latex(self, *, return_df: bool=False, **kwargs) -> Union[str, Tuple[str, DataFrame]]:
-		df = self.to_df(label_from='latex', **kwargs)
-		tex = df.to_latex(escape=False)
+    def to_latex(self, *, return_df: bool=False, **kwargs) -> Union[str, Tuple[str, DataFrame]]:
+        df = self.to_df(label_from='latex', **kwargs)
+        tex = df.to_latex(escape=False)
 
-		if return_df:
-			return tex, df
+        if return_df:
+            return tex, df
 
-		return tex
+        return tex
 
 def model_dayabay_v0():
-	storage = ParametersWrapper({}, sep='.')
-	datasource = Path('data/dayabay-v0')
+    storage = ParametersWrapper({}, sep='.')
+    datasource = Path('data/dayabay-v0')
 
-	with Graph() as g:
-		storage |= load_parameters({'path': 'ibd'      , 'load': datasource/'parameters/pdg2012.yaml'})
-		storage |= load_parameters({'path': 'detector' , 'load': datasource/'parameters/detector_nprotons_correction.yaml'})
-		storage |= load_parameters({'path': 'reactor'  , 'load': datasource/'parameters/reactor_thermal_power_nominal.yaml'})
-		storage |= load_parameters({'path': 'eres'     , 'load': datasource/'parameters/detector_eres.yaml'})
+    with Graph(close=True) as g:
+        storage ^= load_parameters({'path': 'ibd'      , 'load': datasource/'parameters/pdg2012.yaml'})
+        storage ^= load_parameters({'path': 'detector' , 'load': datasource/'parameters/detector_nprotons_correction.yaml'})
+        storage ^= load_parameters({'path': 'reactor'  , 'load': datasource/'parameters/reactor_thermal_power_nominal.yaml'})
+        storage ^= load_parameters({'path': 'eres'     , 'load': datasource/'parameters/detector_eres.yaml'})
 
-	# from pprint import pprint
-	# pprint(storage.object, sort_dicts=False)
+        nuisanceall = Sum('nuisance total')
+        storage['stat.nuisance.all'] = nuisanceall
 
-	print('Everything')
-	print(storage.to_df())
+        (output for output in storage['stat.nuisance_parts'].values()) >> nuisanceall
 
-	print('Parameters')
-	print(storage['parameter'].to_df())
+    storage['parameter.normalized.eres.eres.b_stat'].value = 1
+    storage['parameter.normalized.eres.eres.a_nonuniform'].value = 2
 
-	print('Parameters (latex)')
-	print(storage['parameter'].to_latex())
+    print('Everything')
+    print(storage.to_df())
 
-	print('Constants (latex)')
-	tex = storage['parameter.constant'].to_latex(columns=['path', 'value', 'label'])
-	print(tex)
+    print('Parameters')
+    print(storage['parameter'].to_df())
 
-	savegraph(g, "output/dayabay_v0.dot")
+    print('Parameters (latex)')
+    print(storage['parameter'].to_latex())
+
+    print('Constants (latex)')
+    tex = storage['parameter.constant'].to_latex(columns=['path', 'value', 'label'])
+    print(tex)
+
+    savegraph(g, "output/dayabay_v0.dot", show='all')
