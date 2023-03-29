@@ -20,7 +20,7 @@ from typing import Optional, List, Dict, Union, Callable, Any, Tuple, Generator
 class Node(Legs):
     _name: str
     _mark: Optional[str] = None
-    _label: Dict[str, str]
+    _labels: Dict[str, str]
     _graph: Optional[GraphT] = None
     _fcn: Optional[Callable] = None
     _fcn_chain = None
@@ -80,11 +80,11 @@ class Node(Legs):
             self._debug = bool(debug)
 
         if isinstance(label, str):
-            self._label = {'text': label}
+            self._labels = {'text': label}
         elif isinstance(label, dict):
-            self._label = label
+            self._labels = label
         else:
-            self._label = {'text': name}
+            self._labels = {'text': name}
 
         if logger is not None:
             self._logger = logger
@@ -216,7 +216,7 @@ class Node(Legs):
 
     @property
     def labels(self) -> Generator[Tuple[str,str], None, None]:
-        yield from self._label.items()
+        yield from self._labels.items()
 
     #
     # Methods
@@ -233,14 +233,29 @@ class Node(Legs):
         return inp
 
     def label(self, source='text'):
-        # if self._label:
+        # if self._labels:
         #     kwargs.setdefault("name", self._name)
-        #     return self._label.format(*args, **kwargs)
-        label = self._label.get(source, None)
+        #     return self._labels.format(*args, **kwargs)
+        label = self._labels.get(source, None)
         if label is None:
-            return self._label['text']
+            return self._labels['text']
 
         return label
+
+    def _inherit_labels(self, source: 'Node', fmt: Union[str, Callable]) -> None:
+        if isinstance(fmt, str):
+            formatter = fmt.format
+        elif isinstance(fmt, dict):
+            formatter = lambda s: fmt.get(s, s)
+        else:
+            formatter = fmt
+
+        for k, v in source.labels:
+            if k in ('key',):
+                continue
+            newv = formatter(v)
+            if newv is not None:
+                self._labels[k] = newv
 
     def add_input(self, name, **kwargs) -> Union[Input, Tuple[Input]]:
         if not self.closed:
