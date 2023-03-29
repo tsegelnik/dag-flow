@@ -37,6 +37,10 @@ class Parameter:
     def value(self, value: float):
         return self._value_output.seti(self._idx, value)
 
+    @property
+    def output(self) -> Output:
+        return self._value_output
+
     def label(self, source: str='text') -> str:
         return self._labelfmt.format(self._value_output.node.label(source))
 
@@ -112,7 +116,7 @@ class GaussianParameter(Parameter):
         dct.update({
             'central': self.central,
             'sigma': self.sigma,
-            'normvalue': self.normvalue,
+            # 'normvalue': self.normvalue,
             })
         return dct
 
@@ -130,7 +134,7 @@ class NormalizedGaussianParameter(Parameter):
         dct.update({
             'central': 0.0,
             'sigma': 1.0,
-            'normvalue': self.value,
+            # 'normvalue': self.value,
             })
         return dct
 
