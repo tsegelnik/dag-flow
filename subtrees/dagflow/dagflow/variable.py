@@ -331,8 +331,24 @@ class GaussianParameters(Parameters):
         self._norm_node.touch()
 
         for i in range(self.value._data.size):
-            self._pars.append(GaussianParameter(self.value, self.central, self.sigma, i, normvalue_output=self.normvalue, parent=self))
-            self._norm_pars.append(NormalizedGaussianParameter(self.normvalue, i, parent=self, labelfmt='[norm] {}'))
+            self._pars.append(
+                GaussianParameter(
+                    self.value,
+                    self.central,
+                    self.sigma,
+                    i,
+                    normvalue_output=self.normvalue,
+                    parent=self
+                )
+            )
+            self._norm_pars.append(
+                NormalizedGaussianParameter(
+                    self.normvalue,
+                    i,
+                    parent=self,
+                    labelfmt='[norm] {}'
+                )
+            )
 
     @property
     def is_constrained(self) -> bool:
