@@ -13,11 +13,11 @@ parameters:
 
 labels:
   nprotons_correction:
-    AD11: "Correction to number of protons per AD11"
-    AD12: "Correction to number of protons per AD12"
-    AD21: "Correction to number of protons per AD21"
-    AD22: "Correction to number of protons per AD22"
-    AD31: "Correction to number of protons per AD31"
-    AD32: "Correction to number of protons per AD32"
-    AD33: "Correction to number of protons per AD33"
-    AD34: "Correction to number of protons per AD34"
+    AD11: "Correction to number of protons AD11"
+    AD12: "Correction to number of protons AD12"
+    AD21: "Correction to number of protons AD21"
+    AD22: "Correction to number of protons AD22"
+    AD31: "Correction to number of protons AD31"
+    AD32: "Correction to number of protons AD32"
+    AD33: "Correction to number of protons AD33"
+    AD34: "Correction to number of protons AD34"
