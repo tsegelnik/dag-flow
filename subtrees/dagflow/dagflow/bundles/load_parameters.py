@@ -145,7 +145,7 @@ def iterate_varcfgs(cfg: NestedMKDict):
             varcfg['label'] = {}
         yield key, varcfg
 
-from dagflow.variable import Parameters
+from dagflow.parameters import Parameters
 from dagflow.lib.SumSq import SumSq
 
 def load_parameters(acfg):
