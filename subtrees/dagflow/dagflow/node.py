@@ -15,7 +15,7 @@ from .logger import Logger, get_logger
 from .output import Output
 from .iter import IsIterable
 from .types import GraphT
-from typing import Optional, List, Dict, Union, Callable, Any, Tuple
+from typing import Optional, List, Dict, Union, Callable, Any, Tuple, Generator
 
 class Node(Legs):
     _name: str
@@ -214,6 +214,10 @@ class Node(Legs):
         self._graph = graph
         self._graph.register_node(self)
 
+    @property
+    def labels(self) -> Generator[Tuple[str,str], None, None]:
+        yield from self._label.items()
+
     #
     # Methods
     #
@@ -228,7 +232,7 @@ class Node(Legs):
             raise ReconnectionError(input=inp, node=self, output=output)
         return inp
 
-    def label(self, source):
+    def label(self, source='text'):
         # if self._label:
         #     kwargs.setdefault("name", self._name)
         #     return self._label.format(*args, **kwargs)
