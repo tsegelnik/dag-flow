@@ -13,6 +13,7 @@ from ..typefunctions import (
 class Sum(FunctionNode):
     """Sum of all the inputs together"""
 
+    _mark = 'Σ'
     def __init__(self, *args, **kwargs):
         kwargs.setdefault(
             "missing_input_handler", MissingInputAddOne(output_fmt="result")
