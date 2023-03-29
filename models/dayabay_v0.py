@@ -75,4 +75,4 @@ def model_dayabay_v0():
     tex = storage['parameter.constant'].to_latex(columns=['path', 'value', 'label'])
     print(tex)
 
-    savegraph(g, "output/dayabay_v0.dot", show='all')
+    # savegraph(g, "output/dayabay_v0.dot", show='all')
