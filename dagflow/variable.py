@@ -320,6 +320,7 @@ class GaussianParameters(Parameters):
             mark = f'norm({value.mark})',
             mode='store_weak'
         )
+        self._normvalue_node._inherit_labels(self._value_node, fmt='Normalized {}')
         self.normvalue = self._normvalue_node.outputs[0]
 
         self._norm_node = NormalizeCorrelatedVars2(f"Normalize {value.name}", immediate=True)
@@ -405,6 +406,6 @@ class GaussianParameters(Parameters):
         dct.update({
             'central': self.central.data[0],
             'sigma': self.sigma.data[0],
-            'normvalue': self.normvalue.data[0],
+            # 'normvalue': self.normvalue.data[0],
             })
         return dct
