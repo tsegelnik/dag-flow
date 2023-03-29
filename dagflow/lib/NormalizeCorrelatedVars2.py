@@ -129,6 +129,11 @@ class NormalizeCorrelatedVars2(FunctionNode):
         check_inputs_multiplicable_mat(self, 'matrix', slice(None))
         copy_input_to_output(self, slice(None), slice(None))
 
+        for k, v in self.inputs['value'].parent_node.labels:
+            if k in ('key',):
+                continue
+            self._label[k] = f'Normalized {v}'
+
         self._ndim=f"{ndim}d"
         self.fcn = self._functions[f"forward_{self._ndim}"]
 
