@@ -90,13 +90,16 @@ class IntegratorSampler(FunctionNode):
         check_inputs_number(self, 0)
         lenX = self.__check_orders("ordersX")
         if self.mode == "2d":
-            shape = (2, lenX, self.__check_orders("ordersY"))
+            lenY = self.__check_orders("ordersY")
+            self.outputs[0].dd.shape = (2, lenX, lenY)
+            self.outputs[1].dd.shape = (lenX, lenY)
         else:
             shape = (lenX,)
-        self.fcn = self._functions[self.mode]
+            for output in self.outputs:
+                output.dd.shape = shape
         for output in self.outputs:
             output.dd.dtype = self.dtype
-            output.dd.shape = shape
+        self.fcn = self._functions[self.mode]
 
     def __check_orders(self, name: str) -> int:
         """
