@@ -15,7 +15,6 @@ from numpy.typing import DTypeLike, NDArray
 from ..exception import InitializationError, TypeFunctionError
 from ..nodes import FunctionNode
 from ..typefunctions import check_input_dimension, check_inputs_number
-from ..types import InputT
 
 
 class IntegratorSampler(FunctionNode):
@@ -33,7 +32,8 @@ class IntegratorSampler(FunctionNode):
     There are two outputs: 0 - `sample`, 1 - `weights`
     """
 
-    __buffer: NDArray
+    __bufferX: NDArray
+    __bufferY: NDArray
 
     def __init__(
         self,
@@ -88,21 +88,20 @@ class IntegratorSampler(FunctionNode):
         determines dtype and shape for outputs
         """
         check_inputs_number(self, 0)
-        ordersX = self.__check_orders("ordersX")
-        shape = ordersX.dd.shape[0]
+        lenX = self.__check_orders("ordersX")
         if self.mode == "2d":
-            ordersY = self.__check_orders("ordersY")
-            shape = [2, max((shape, ordersY.dd.shape[0]))]
-        shape = tuple(shape)
+            shape = (2, lenX, self.__check_orders("ordersY"))
+        else:
+            shape = (lenX,)
         self.fcn = self._functions[self.mode]
         for output in self.outputs:
             output.dd.dtype = self.dtype
             output.dd.shape = shape
 
-    def __check_orders(self, name: str) -> InputT:
+    def __check_orders(self, name: str) -> int:
         """
         The method checks dimension (==1) of the input `name`, type (==`integer`),
-        and returns the input
+        and returns the `dd.shape[0]`
         """
         check_input_dimension(self, name, 1)
         result = self.inputs[name]
@@ -112,7 +111,7 @@ class IntegratorSampler(FunctionNode):
                 node=self,
                 input=result,
             )
-        return result
+        return result.dd.shape[0]
 
     def _post_allocate(self) -> None:
         """Allocates the `buffer`, which elements are the follows:
@@ -122,17 +121,19 @@ class IntegratorSampler(FunctionNode):
         * 3: low edges (only for `rect`)
         * 4: high edges (only for `rect`)
         """
-        edgeshape = self.inputs["ordersX"].dd.edges.shape[0]
+        edgeshapeX = self.inputs["ordersX"].dd.edges.shape[0] - 1
         if self.mode == "rect":
-            shape = [edgeshape - 1] * 5
+            shapeX = (5, edgeshapeX)
         elif self.mode == "trap":
-            shape = [edgeshape - 1] * 3
+            shapeX = (3, edgeshapeX)
         elif self.mode == "gl":
-            shape = [edgeshape - 1]
+            shapeX = (edgeshapeX,)
         else:
-            edgeshapeY = self.inputs["ordersY"].dd.edges.shape[0]
-            shape = [edgeshape, edgeshapeY]
-        self.__buffer = empty(shape=shape, dtype=self.dtype)
+            edgeshapeY = self.inputs["ordersY"].dd.edges.shape[0] - 1
+            shapeX = (3, edgeshapeX)
+            shapeY = (3, edgeshapeY)
+            self.__bufferY = empty(shape=shapeY, dtype=self.dtype)
+        self.__bufferX = empty(shape=shapeX, dtype=self.dtype)
 
     def _fcn_rect(self, _, inputs, outputs) -> Optional[list]:
         """The rectangular sampling"""
@@ -141,11 +142,11 @@ class IntegratorSampler(FunctionNode):
         orders = ordersX.data
         sample = outputs[0].data
         weights = outputs[1].data
-        nodes = self.__buffer[0]
-        binwidths = self.__buffer[1]
-        samplewidths = self.__buffer[2]
-        low = self.__buffer[3]
-        high = self.__buffer[4]
+        nodes = self.__bufferX[0]
+        binwidths = self.__bufferX[1]
+        samplewidths = self.__bufferX[2]
+        low = self.__bufferX[3]
+        high = self.__bufferX[4]
 
         binwidths[:] = edges[1:] - edges[:-1]
         with errstate(invalid="ignore"):  # to ignore division by zero
@@ -185,9 +186,9 @@ class IntegratorSampler(FunctionNode):
         orders = ordersX.data
         sample = outputs[0].data
         weights = outputs[1].data
-        nodes = self.__buffer[0]
-        binwidths = self.__buffer[1]
-        samplewidths = self.__buffer[2]
+        nodes = self.__bufferX[0]
+        binwidths = self.__bufferX[1]
+        samplewidths = self.__bufferX[2]
 
         binwidths[:] = edges[1:] - edges[:-1]
         with errstate(invalid="ignore"):  # to ignore division by zero
@@ -215,7 +216,7 @@ class IntegratorSampler(FunctionNode):
         ordersX = outputs["ordersX"]
         edges = ordersX.dd.edges
         orders = ordersX.data
-        nodes = self.__buffer[0]
+        nodes = self.__bufferX[0]
         sample = outputs[0].data
         weights = outputs[1].data
 
@@ -253,15 +254,15 @@ class IntegratorSampler(FunctionNode):
         ordersX = outputs["ordersX"]
         ordersY = outputs["ordersY"]
         edgesX = ordersX.dd.edges
-        ordersX = ordersX.data
         edgesY = ordersY.dd.edges
+        ordersX = ordersX.data
         ordersY = ordersY.data
-        nodesX = self.__buffer[0]
-        nodesY = self.__buffer[1]
-        weightsX = self.__buffer[2]  # (n, )
-        weightsY = self.__buffer[3]  # (m, )
-        sampleX = self.__buffer[4]  # (n, )
-        sampleY = self.__buffer[5]  # (m, )
+        nodesX = self.__bufferX[0]  # (n, )
+        nodesY = self.__bufferY[0]  # (m, )
+        weightsX = self.__bufferX[1]  # (n, )
+        weightsY = self.__bufferY[1]  # (m, )
+        sampleX = self.__bufferX[2]  # (n, )
+        sampleY = self.__bufferY[2]  # (m, )
         sample = outputs[0].data  # (2, n, m)
         weights = outputs[1].data  # (n, m)
 
@@ -302,7 +303,7 @@ class IntegratorSampler(FunctionNode):
                 * (edgesY[offsetY + n] - edgesY[offsetY])
                 + edgesY[offsetY]
             )
-            weightsY[offsetX : offsetY + n] *= 0.5 * (
+            weightsY[offsetY : offsetY + n] *= 0.5 * (
                 edgesY[offsetY + n] - edgesY[offsetY]
             )
             offsetY += n
