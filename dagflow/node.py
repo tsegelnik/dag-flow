@@ -502,10 +502,10 @@ class Node(Legs):
         for node in together:
             if not node.close(recursive=recursive):
                 return False
-        self.logger.debug(f"Node '{self.name}': Close")
         self._closed = self._allocated
         if not self._closed:
             raise ClosingError(node=self)
+        self.logger.debug(f"Node '{self.name}': Closed")
         return self._closed
 
     def open(self, force: bool = False) -> bool:

@@ -11,7 +11,7 @@ from ..typefunctions import (
     check_input_dtype,
     check_input_shape,
 )
-from ..types import InputT, ShapeLike
+from ..types import ShapeLike
 
 
 @njit(cache=True)
@@ -88,7 +88,7 @@ class Integrator(FunctionNode):
             )
         check_input_dimension(self, (slice(None), "weights"), dim)
         check_input_shape(self, (slice(None), "weights"), input0.dd.shape)
-        self.__check_orders("ordersX", input0.dd.shape[0])
+        shape = [self.__check_orders("ordersX", input0.dd.shape[0])]
         dtype = input0.dd.dtype
         if not issubdtype(dtype, floating):
             raise TypeFunctionError(
@@ -98,33 +98,34 @@ class Integrator(FunctionNode):
             )
         check_input_dtype(self, (slice(None), "weights"), dtype)
         if dim == 2:
-            self.__check_orders("ordersY", input0.dd.shape[1])
+            shape.append(self.__check_orders("ordersY", input0.dd.shape[1]))
+        shape = tuple(shape)
         self.fcn = self._functions[dim]
         for output in self.outputs:
             output.dd.dtype = dtype
-            output.dd.shape = input0.dd.shape
+            output.dd.shape = shape
 
-    def __check_orders(self, name: str, shape: ShapeLike) -> InputT:
+    def __check_orders(self, name: str, shape: ShapeLike):
         """
         The method checks dimension (==1) of the input `name`, type (==`integer`),
         and `sum(orders) == len(input)`
         """
         check_input_dimension(self, name, 1)
-        result = self.inputs[name]
-        if not issubdtype(result.dd.dtype, integer):
+        orders = self.inputs[name]
+        if not issubdtype(orders.dd.dtype, integer):
             raise TypeFunctionError(
-                f"The `name` must be array of integers, but given '{result.dd.dtype}'!",
+                f"The '{name}' must be array of integers, but given '{orders.dd.dtype}'!",
                 node=self,
-                input=result,
+                input=orders,
             )
-        if sum(result.data) != shape:
+        if (y := sum(orders.data)) != shape:
             raise TypeFunctionError(
-                f"Input '{name}' must be consistent with inputs {shape=}, "
-                f"but given '{result.data}'!",
+                f"Orders '{name}' must be consistent with inputs len={shape}, "
+                f"but given '{y}'!",
                 node=self,
-                input=result,
+                input=orders,
             )
-        return result
+        return len(orders.dd.axes_edges) - 1
 
     def _post_allocate(self):
         """Allocates the `buffer` within `weights`"""
@@ -139,15 +140,15 @@ class Integrator(FunctionNode):
             multiply(input, weights, out=self.__buffer)
             _integrate1d(output, self.__buffer, ordersX)
         if self.debug:
-            return [outputs.iter_data()]
+            return list(outputs.iter_data())
 
     def _fcn_2d(self, _, inputs, outputs):
         """2d version of integration function"""
-        weights = inputs["weights"].data
-        ordersX = inputs["ordersX"].data
-        ordersY = inputs["ordersY"].data
+        weights = inputs["weights"].data # (n, m)
+        ordersX = inputs["ordersX"].data # (n, )
+        ordersY = inputs["ordersY"].data # (m, )
         for input, output in zip(inputs.iter_data(), outputs.iter_data()):
             multiply(input, weights, out=self.__buffer)
             _integrate2d(output, self.__buffer, ordersX, ordersY)
         if self.debug:
-            return [outputs.iter_data()]
+            return list(outputs.iter_data())

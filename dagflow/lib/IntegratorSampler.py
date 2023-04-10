@@ -1,3 +1,5 @@
+# TODO: Implementing of 21GL
+
 from typing import Literal, Optional
 
 from numpy import (
@@ -34,13 +36,14 @@ class IntegratorSampler(FunctionNode):
 
     __bufferX: NDArray
     __bufferY: NDArray
+    __bufferExtra: NDArray
 
     def __init__(
         self,
         *args,
         mode: Literal["rect", "trap", "gl", "2d"],
         dtype: DTypeLike = "d",
-        offset: Optional[Literal["left", "center", "right"]] = None,
+        align: Optional[Literal["left", "center", "right"]] = None,
         **kwargs,
     ) -> None:
         super().__init__(*args, **kwargs)
@@ -49,13 +52,13 @@ class IntegratorSampler(FunctionNode):
                 f"Argument `mode` must be 'rect', 'trap', 'gl', or '2d', but given '{mode}'!",
                 node=self,
             )
-        if offset is not None and mode != "rect":
+        if align is not None and mode != "rect":
             raise InitializationError(
-                "Argument `offset` is used only within 'rect' mode!", node=self
+                "Argument 'align' is used only within 'rect' mode!", node=self
             )
         self._dtype = dtype
         self._mode = mode
-        self._offset = offset if offset is not None else "center"
+        self._align = align if align is not None else "center"
         self._add_input("ordersX", positional=False)
         if mode == "2d":
             self._add_input("ordersY", positional=False)
@@ -78,8 +81,8 @@ class IntegratorSampler(FunctionNode):
         return self._dtype
 
     @property
-    def offset(self) -> Optional[str]:
-        return self._offset
+    def align(self) -> Optional[str]:
+        return self._align
 
     def _typefunc(self) -> None:
         """
@@ -107,14 +110,14 @@ class IntegratorSampler(FunctionNode):
         and returns the `dd.shape[0]`
         """
         check_input_dimension(self, name, 1)
-        result = self.inputs[name]
-        if not issubdtype(result.dd.dtype, integer):
+        orders = self.inputs[name]
+        if not issubdtype(orders.dd.dtype, integer):
             raise TypeFunctionError(
-                f"The `name` must be array of integers, but given '{result.dd.dtype}'!",
+                f"The `name` must be array of integers, but given '{orders.dd.dtype}'!",
                 node=self,
-                input=result,
+                input=orders,
             )
-        return result.dd.shape[0]
+        return sum(orders.data)
 
     def _post_allocate(self) -> None:
         """Allocates the `buffer`, which elements are the follows:
@@ -124,7 +127,9 @@ class IntegratorSampler(FunctionNode):
         * 3: low edges (only for `rect`)
         * 4: high edges (only for `rect`)
         """
-        edgeshapeX = self.inputs["ordersX"].dd.edges.shape[0] - 1
+        ordersX = self.inputs["ordersX"]
+        edgeshapeX = ordersX.dd.axes_edges.shape[0] - 1
+        npoints = sum(ordersX.data)
         if self.mode == "rect":
             shapeX = (5, edgeshapeX)
         elif self.mode == "trap":
@@ -132,7 +137,7 @@ class IntegratorSampler(FunctionNode):
         elif self.mode == "gl":
             shapeX = (edgeshapeX,)
         else:
-            edgeshapeY = self.inputs["ordersY"].dd.edges.shape[0] - 1
+            edgeshapeY = self.inputs["ordersY"].dd.axes_edges.shape[0] - 1
             shapeX = (3, edgeshapeX)
             shapeY = (3, edgeshapeY)
             self.__bufferY = empty(shape=shapeY, dtype=self.dtype)
@@ -141,23 +146,23 @@ class IntegratorSampler(FunctionNode):
     def _fcn_rect(self, _, inputs, outputs) -> Optional[list]:
         """The rectangular sampling"""
         ordersX = inputs["ordersX"]
-        edges = ordersX.dd.edges
-        orders = ordersX.data
-        sample = outputs[0].data
-        weights = outputs[1].data
-        nodes = self.__bufferX[0]
-        binwidths = self.__bufferX[1]
-        samplewidths = self.__bufferX[2]
-        low = self.__bufferX[3]
-        high = self.__bufferX[4]
+        edges = ordersX.dd.axes_edges # n
+        orders = ordersX.data # n
+        sample = outputs[0].data # m = sum(orders)
+        weights = outputs[1].data # m = sum(orders)
+        nodes = self.__bufferX[0] # n
+        binwidths = self.__bufferX[1] # n
+        samplewidths = self.__bufferX[2] # n
+        low = self.__bufferX[3] # n
+        high = self.__bufferX[4] # n
 
         binwidths[:] = edges[1:] - edges[:-1]
         with errstate(invalid="ignore"):  # to ignore division by zero
             samplewidths[:] = binwidths / orders
-        if self.offset == "left":
+        if self.align == "left":
             low[:] = edges[:-1]
             high[:] = edges[1:] - samplewidths
-        elif self.offset == "center":
+        elif self.align == "center":
             low[:] = edges[:-1] + samplewidths * 0.5
             high[:] = edges[1:] - samplewidths * 0.5
         else:
@@ -180,12 +185,12 @@ class IntegratorSampler(FunctionNode):
             output.dd.axes_nodes = nodes
 
         if self.debug:
-            return [outputs.iter_data()]
+            return list(outputs.iter_data())
 
     def _fcn_trap(self, _, inputs, outputs) -> Optional[list]:
         """The trapezoidal sampling"""
         ordersX = inputs["ordersX"]
-        edges = ordersX.dd.edges
+        edges = ordersX.dd.axes_edges
         orders = ordersX.data
         sample = outputs[0].data
         weights = outputs[1].data
@@ -212,12 +217,12 @@ class IntegratorSampler(FunctionNode):
             output.dd.axes_nodes = nodes
 
         if self.debug:
-            return [outputs.iter_data()]
+            return list(outputs.iter_data())
 
     def _fcn_gl1d(self, _, inputs, outputs) -> Optional[list]:
         """The 1d Gauss-Legendre sampling"""
         ordersX = outputs["ordersX"]
-        edges = ordersX.dd.edges
+        edges = ordersX.dd.axes_edges
         orders = ordersX.data
         nodes = self.__bufferX[0]
         sample = outputs[0].data
@@ -250,14 +255,14 @@ class IntegratorSampler(FunctionNode):
             output.dd.axes_nodes = nodes
 
         if self.debug:
-            return [outputs.iter_data()]
+            return list(outputs.iter_data())
 
     def _fcn_gl2d(self, _, inputs, outputs) -> Optional[list]:
         """The 2d Gauss-Legendre sampling"""
         ordersX = outputs["ordersX"]
         ordersY = outputs["ordersY"]
-        edgesX = ordersX.dd.edges
-        edgesY = ordersY.dd.edges
+        edgesX = ordersX.dd.axes_edges
+        edgesY = ordersY.dd.axes_edges
         ordersX = ordersX.data
         ordersY = ordersY.data
         nodesX = self.__bufferX[0]  # (n, )
@@ -325,4 +330,4 @@ class IntegratorSampler(FunctionNode):
             output.dd.axes_nodes = [nodesX, nodesY]
 
         if self.debug:
-            return [outputs.iter_data()]
+            return list(outputs.iter_data())
