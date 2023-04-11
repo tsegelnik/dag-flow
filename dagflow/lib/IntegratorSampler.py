@@ -146,7 +146,7 @@ class IntegratorSampler(FunctionNode):
     def _fcn_rect(self, _, inputs, outputs) -> Optional[list]:
         """The rectangular sampling"""
         ordersX = inputs["ordersX"]
-        edges = ordersX.dd.axes_edges # n
+        edges = ordersX.dd.axes_edges # n+1
         orders = ordersX.data # n
         sample = outputs[0].data # m = sum(orders)
         weights = outputs[1].data # m = sum(orders)
@@ -190,13 +190,13 @@ class IntegratorSampler(FunctionNode):
     def _fcn_trap(self, _, inputs, outputs) -> Optional[list]:
         """The trapezoidal sampling"""
         ordersX = inputs["ordersX"]
-        edges = ordersX.dd.axes_edges
-        orders = ordersX.data
-        sample = outputs[0].data
-        weights = outputs[1].data
-        nodes = self.__bufferX[0]
-        binwidths = self.__bufferX[1]
-        samplewidths = self.__bufferX[2]
+        edges = ordersX.dd.axes_edges # n+1
+        orders = ordersX.data # n
+        sample = outputs[0].data # m = sum(orders)
+        weights = outputs[1].data # m = sum(orders)
+        nodes = self.__bufferX[0] # n
+        binwidths = self.__bufferX[1] # n
+        samplewidths = self.__bufferX[2] # n
 
         binwidths[:] = edges[1:] - edges[:-1]
         with errstate(invalid="ignore"):  # to ignore division by zero
