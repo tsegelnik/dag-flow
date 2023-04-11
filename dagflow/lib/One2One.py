@@ -1,21 +1,16 @@
-from numpy import sin
-
 from ..input_extra import MissingInputAddEach
 from ..nodes import FunctionNode
 from ..typefunctions import check_has_inputs
 
 
-class Sin(FunctionNode):
-    """Sin function"""
+class One2One(FunctionNode):
+    """
+    The abstract node with an output for every positional input
+    """
 
     def __init__(self, *args, **kwargs):
         kwargs.setdefault("missing_input_handler", MissingInputAddEach())
         super().__init__(*args, **kwargs)
-
-    def _fcn(self, _, inputs, outputs):
-        for inp, out in zip(inputs, outputs):
-            out.data[:] = sin(inp.data)
-        return list(outputs.iter_data())
 
     def _typefunc(self) -> None:
         """A output takes this function to determine the dtype and shape"""
