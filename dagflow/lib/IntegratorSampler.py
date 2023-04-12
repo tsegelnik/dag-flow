@@ -268,47 +268,37 @@ class IntegratorSampler(FunctionNode):
         sample = outputs[0].data  # (2, n, m)
         weights = outputs[1].data  # (n, m)
 
-        offsetX = 0
-        for n in ordersX:
+        offset = 0
+        for i, n in enumerate(ordersX):
             if n < 1:
                 continue
             (
-                sampleX[offsetX : offsetX + n],
-                weightsX[offsetX : offsetX + n],
+                sampleX[offset : offset + n],
+                weightsX[offset : offset + n],
             ) = leggauss(n)
-            # the `leggauss` works only with the range [-1,1],
-            # so we need to transform the result to the original range
-            sampleX[offsetX : offsetX + n] = (
-                0.5
-                * (sampleX[offsetX : offsetX + n] + 1)
-                * (edgesX[offsetX + n] - edgesX[offsetX])
-                + edgesX[offsetX]
+            # transforming to the original range [a, b]
+            sampleX[offset : offset + n] = 0.5 * (
+                sampleX[offset : offset + n] * (edgesX[i + 1] - edgesX[i])
+                + (edgesX[i + 1] + edgesX[i])
             )
-            weightsX[offsetX : offsetX + n] *= 0.5 * (
-                edgesX[offsetX + n] - edgesX[offsetX]
-            )
-            offsetX += n
+            weightsX[offset : offset + n] *= 0.5 * (edgesX[i + 1] - edgesX[i])
+            offset += n
 
-        offsetY = 0
-        for n in ordersY:
+        offset = 0
+        for i, n in enumerate(ordersY):
             if n < 1:
                 continue
             (
-                sampleY[offsetY : offsetY + n],
-                weightsY[offsetY : offsetY + n],
+                sampleY[offset : offset + n],
+                weightsY[offset : offset + n],
             ) = leggauss(n)
-            # the `leggauss` works only with the range [-1,1],
-            # so we need to transform the result to the original range
-            sampleY[offsetY : offsetY + n] = (
-                0.5
-                * (sampleY[offsetY : offsetY + n] + 1)
-                * (edgesY[offsetY + n] - edgesY[offsetY])
-                + edgesY[offsetY]
+            # transforming to the original range [a, b]
+            sampleY[offset : offset + n] = 0.5 * (
+                sampleY[offset : offset + n] * (edgesY[i + 1] - edgesY[i])
+                + (edgesY[i + 1] + edgesY[i])
             )
-            weightsY[offsetY : offsetY + n] *= 0.5 * (
-                edgesY[offsetY + n] - edgesY[offsetY]
-            )
-            offsetY += n
+            weightsY[offset : offset + n] *= 0.5 * (edgesY[i + 1] - edgesY[i])
+            offset += n
 
         for i, x in enumerate(sampleX):
             for j in range(len(sampleX[0, i])):
