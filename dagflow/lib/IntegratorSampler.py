@@ -19,6 +19,31 @@ from ..nodes import FunctionNode
 from ..typefunctions import check_input_dimension, check_inputs_number
 
 
+def _gl_sampler(
+    orders: NDArray, sample: NDArray, weights: NDArray, edges: NDArray
+) -> tuple:
+    """
+    Uses `numpy.polynomial.legendre.leggauss` to sample points with weights
+    on the range [-1,1] and transforms to any range [a, b]
+    """
+    offset = 0
+    for i, n in enumerate(orders):
+        if n < 1:
+            continue
+        (
+            sample[offset : offset + n],
+            weights[offset : offset + n],
+        ) = leggauss(n)
+        # transforms to the original range [a, b]
+        sample[offset : offset + n] = 0.5 * (
+            sample[offset : offset + n] * (edges[i + 1] - edges[i])
+            + (edges[i + 1] + edges[i])
+        )
+        weights[offset : offset + n] *= 0.5 * (edges[i + 1] - edges[i])
+        offset += n
+    return sample, weights
+
+
 class IntegratorSampler(FunctionNode):
     """
     The `IntegratorSampler` node creates a sample for the `Integrator` node.
@@ -36,7 +61,6 @@ class IntegratorSampler(FunctionNode):
 
     __bufferX: NDArray
     __bufferY: NDArray
-    __bufferExtra: NDArray
 
     def __init__(
         self,
@@ -226,22 +250,7 @@ class IntegratorSampler(FunctionNode):
         sample = outputs[0].data
         weights = outputs[1].data
 
-        offset = 0
-        for i, n in enumerate(orders):
-            if n < 1:
-                continue
-            (
-                sample[offset : offset + n],
-                weights[offset : offset + n],
-            ) = leggauss(n)
-            # the `leggauss` works only with the range [-1,1],
-            # so we need to transform the result to the original range
-            sample[offset : offset + n] = 0.5 * (
-                sample[offset : offset + n] * (edges[i + 1] - edges[i])
-                + (edges[i + 1] + edges[i])
-            )
-            weights[offset : offset + n] *= 0.5 * (edges[i + 1] - edges[i])
-            offset += n
+        sample, weights = _gl_sampler(orders, sample, weights, edges)
 
         nodes[:] = (edges[1:] + edges[:-1]) * 0.5
         for output in outputs:
@@ -268,37 +277,8 @@ class IntegratorSampler(FunctionNode):
         sample = outputs[0].data  # (2, n, m)
         weights = outputs[1].data  # (n, m)
 
-        offset = 0
-        for i, n in enumerate(ordersX):
-            if n < 1:
-                continue
-            (
-                sampleX[offset : offset + n],
-                weightsX[offset : offset + n],
-            ) = leggauss(n)
-            # transforming to the original range [a, b]
-            sampleX[offset : offset + n] = 0.5 * (
-                sampleX[offset : offset + n] * (edgesX[i + 1] - edgesX[i])
-                + (edgesX[i + 1] + edgesX[i])
-            )
-            weightsX[offset : offset + n] *= 0.5 * (edgesX[i + 1] - edgesX[i])
-            offset += n
-
-        offset = 0
-        for i, n in enumerate(ordersY):
-            if n < 1:
-                continue
-            (
-                sampleY[offset : offset + n],
-                weightsY[offset : offset + n],
-            ) = leggauss(n)
-            # transforming to the original range [a, b]
-            sampleY[offset : offset + n] = 0.5 * (
-                sampleY[offset : offset + n] * (edgesY[i + 1] - edgesY[i])
-                + (edgesY[i + 1] + edgesY[i])
-            )
-            weightsY[offset : offset + n] *= 0.5 * (edgesY[i + 1] - edgesY[i])
-            offset += n
+        sampleX, weightsX = _gl_sampler(ordersX, sampleX, weightsX, edgesX)
+        sampleY, weightsY = _gl_sampler(ordersY, sampleY, weightsY, edgesY)
 
         for i, x in enumerate(sampleX):
             for j in range(len(sampleX[0, i])):
