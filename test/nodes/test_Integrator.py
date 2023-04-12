@@ -8,19 +8,19 @@ from dagflow.lib.Integrator import Integrator
 from dagflow.lib.IntegratorSampler import IntegratorSampler
 
 from numpy import allclose, linspace, pi, vectorize
-from pytest import raises
+from pytest import mark, raises
 
 
-# TODO: implement left and right rect tests
-def test_Integrator_rect_center(debug_graph):
+@mark.parametrize("align", ("left", "center", "right"))
+def test_Integrator_rect_center(align, debug_graph):
     with Graph(debug=debug_graph, close=True):
         npoints = 10
-        ordersX = Array("ordersX", [30] * npoints)
+        ordersX = Array("ordersX", [1000] * npoints)
         edges = linspace(0, pi, npoints + 1)
         ordersX.outputs[0].dd.axes_edges = edges
         A = Array("X", edges[:-1])
         B = Array("X", edges[1:])
-        sampler = IntegratorSampler("sampler", mode="rect", align="center")
+        sampler = IntegratorSampler("sampler", mode="rect", align=align)
         integrator = Integrator("integrator")
         cosf = Cos("cos")
         sinf = Sin("sin")
@@ -31,16 +31,14 @@ def test_Integrator_rect_center(debug_graph):
         sampler.outputs["weights"] >> integrator("weights")
         cosf.outputs[0] >> integrator
         ordersX >> integrator("ordersX")
-    assert allclose(
-        integrator.outputs[0].data,
-        (sinf.outputs[1].data - sinf.outputs[0].data),
-    )
+    res = sinf.outputs[1].data - sinf.outputs[0].data
+    assert allclose(integrator.outputs[0].data, res, atol=1e-4)
 
 
 def test_Integrator_trap(debug_graph):
     with Graph(debug=debug_graph, close=True):
         npoints = 10
-        ordersX = Array("ordersX", [40] * npoints)
+        ordersX = Array("ordersX", [1000] * npoints)
         edges = linspace(0, pi, npoints + 1)
         ordersX.outputs[0].dd.axes_edges = edges
         A = Array("X", edges[:-1])
@@ -56,11 +54,9 @@ def test_Integrator_trap(debug_graph):
         sampler.outputs["weights"] >> integrator("weights")
         cosf.outputs[0] >> integrator
         ordersX >> integrator("ordersX")
-    assert allclose(
-        integrator.outputs[0].data,
-        (sinf.outputs[1].data - sinf.outputs[0].data),
-        atol=1e-1,
-    )  # TODO: why is there the very bad accuracy?
+    res = sinf.outputs[1].data - sinf.outputs[0].data
+    # TODO: why is there the very bad accuracy?
+    assert allclose(integrator.outputs[0].data, res, atol=1e-2)
 
 
 def test_Integrator_gl_1(debug_graph):

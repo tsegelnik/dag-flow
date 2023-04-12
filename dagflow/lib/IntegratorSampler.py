@@ -155,7 +155,7 @@ class IntegratorSampler(FunctionNode):
         if self.mode == "rect":
             shapeX = (5, edgeshapeX)
         elif self.mode == "trap":
-            shapeX = (3, edgeshapeX)
+            shapeX = (2, edgeshapeX)
         elif self.mode == "gl":
             shapeX = (edgeshapeX,)
         else:
@@ -217,12 +217,11 @@ class IntegratorSampler(FunctionNode):
         sample = outputs[0].data  # m = sum(orders)
         weights = outputs[1].data  # m = sum(orders)
         nodes = self.__bufferX[0]  # n
-        binwidths = self.__bufferX[1]  # n
-        samplewidths = self.__bufferX[2]  # n
+        samplewidths = self.__bufferX[1]  # n
 
-        binwidths[:] = edges[1:] - edges[:-1]
+        samplewidths[:] = edges[1:] - edges[:-1]
         with errstate(invalid="ignore"):  # to ignore division by zero
-            samplewidths[:] = binwidths / (orders - 1.0)
+            samplewidths[:] = samplewidths[:] / (orders - 2.0)
 
         offset = 0
         for i, n in enumerate(orders):
