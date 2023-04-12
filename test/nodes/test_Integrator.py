@@ -63,51 +63,51 @@ def test_Integrator_trap(debug_graph):
     )  # TODO: why is there the very bad accuracy?
 
 
+def test_Integrator_gl_1(debug_graph):
+    def f0(x: float) -> float:
+        return 4 * x**3 + 3 * x**2 + 2 * x - 1
+
+    def fres(x: float) -> float:
+        return x**4 + x**3 + x**2 - x
+
+    vecF0 = vectorize(f0)
+    vecFres = vectorize(fres)
+
+    class Polynomial0(One2One):
+        def _fcn(self, _, inputs, outputs):
+            for inp, out in zip(inputs, outputs):
+                out.data[:] = vecF0(inp.data)
+            return list(outputs.iter_data())
+
+    class PolynomialRes(One2One):
+        def _fcn(self, _, inputs, outputs):
+            for inp, out in zip(inputs, outputs):
+                out.data[:] = vecFres(inp.data)
+            return list(outputs.iter_data())
+
+    with Graph(debug=debug_graph, close=True):
+        npoints = 10
+        ordersX = Array("ordersX", [2] * npoints)
+        edges = linspace(0, 10, npoints + 1)
+        ordersX.outputs[0].dd.axes_edges = edges
+        A = Array("X", edges[:-1])
+        B = Array("X", edges[1:])
+        sampler = IntegratorSampler("sampler", mode="gl")
+        integrator = Integrator("integrator")
+        poly0 = Polynomial0("poly0")
+        polyres = PolynomialRes("polyres")
+        ordersX >> sampler("ordersX")
+        sampler.outputs["sample"] >> poly0
+        A >> polyres
+        B >> polyres
+        sampler.outputs["weights"] >> integrator("weights")
+        poly0.outputs[0] >> integrator
+        ordersX >> integrator("ordersX")
+    res = polyres.outputs[1].data - polyres.outputs[0].data
+    assert allclose(integrator.outputs[0].data, res, atol=1e-10)
+
+
 # TODO: fix old tests
-#def test_Integrator_gl_1(debug_graph):
-#    def f1(x: float) -> float:
-#        return 4 * x**3 + 3 * x**2 + 2 * x - 1
-#
-#    def f2(x: float) -> float:
-#        return x**4 + x**3 + x**2 - x
-#
-#    vecF1 = vectorize(f1)
-#    vecF2 = vectorize(f2)
-#
-#    class Polynomial1(One2One):
-#        def _fcn(self, _, inputs, outputs):
-#            for inp, out in zip(inputs, outputs):
-#                out.data[:] = vecF1(inp.data)
-#            return list(outputs.iter_data())
-#
-#    class Polynomial2(One2One):
-#        def _fcn(self, _, inputs, outputs):
-#            for inp, out in zip(inputs, outputs):
-#                out.data[:] = vecF2(inp.data)
-#            return list(outputs.iter_data())
-#
-#    with Graph(debug=debug_graph, close=True):
-#        npoints = 10
-#        ordersX = Array("ordersX", [2] * npoints)
-#        edges = linspace(0, pi, npoints + 1)
-#        ordersX.outputs[0].dd.axes_edges = edges
-#        A = Array("X", edges[:-1])
-#        B = Array("X", edges[1:])
-#        sampler = IntegratorSampler("sampler", mode="gl")
-#        integrator = Integrator("integrator")
-#        poly1 = Polynomial1("poly1")
-#        poly2 = Polynomial2("poly2")
-#        ordersX >> sampler("ordersX")
-#        sampler.outputs["sample"] >> poly1
-#        A >> poly2
-#        B >> poly2
-#        sampler.outputs["weights"] >> integrator("weights")
-#        poly1.outputs[0] >> integrator
-#        ordersX >> integrator("ordersX")
-#    assert allclose(
-#        integrator.outputs[0].data,
-#        (poly2.outputs[1].data - poly2.outputs[0].data),
-#    )
 
 # def test_Integrator_01(debug_graph):
 #    with Graph(debug=debug_graph, close=True):

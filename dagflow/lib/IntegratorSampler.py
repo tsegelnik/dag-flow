@@ -127,9 +127,7 @@ class IntegratorSampler(FunctionNode):
         * 3: low edges (only for `rect`)
         * 4: high edges (only for `rect`)
         """
-        ordersX = self.inputs["ordersX"]
-        edgeshapeX = ordersX.dd.axes_edges.shape[0] - 1
-        npoints = sum(ordersX.data)
+        edgeshapeX = self.inputs["ordersX"].dd.axes_edges.shape[0] - 1
         if self.mode == "rect":
             shapeX = (5, edgeshapeX)
         elif self.mode == "trap":
@@ -146,15 +144,15 @@ class IntegratorSampler(FunctionNode):
     def _fcn_rect(self, _, inputs, outputs) -> Optional[list]:
         """The rectangular sampling"""
         ordersX = inputs["ordersX"]
-        edges = ordersX.dd.axes_edges # n+1
-        orders = ordersX.data # n
-        sample = outputs[0].data # m = sum(orders)
-        weights = outputs[1].data # m = sum(orders)
-        nodes = self.__bufferX[0] # n
-        binwidths = self.__bufferX[1] # n
-        samplewidths = self.__bufferX[2] # n
-        low = self.__bufferX[3] # n
-        high = self.__bufferX[4] # n
+        edges = ordersX.dd.axes_edges  # n+1
+        orders = ordersX.data  # n
+        sample = outputs[0].data  # m = sum(orders)
+        weights = outputs[1].data  # m = sum(orders)
+        nodes = self.__bufferX[0]  # n
+        binwidths = self.__bufferX[1]  # n
+        samplewidths = self.__bufferX[2]  # n
+        low = self.__bufferX[3]  # n
+        high = self.__bufferX[4]  # n
 
         binwidths[:] = edges[1:] - edges[:-1]
         with errstate(invalid="ignore"):  # to ignore division by zero
@@ -190,13 +188,13 @@ class IntegratorSampler(FunctionNode):
     def _fcn_trap(self, _, inputs, outputs) -> Optional[list]:
         """The trapezoidal sampling"""
         ordersX = inputs["ordersX"]
-        edges = ordersX.dd.axes_edges # n+1
-        orders = ordersX.data # n
-        sample = outputs[0].data # m = sum(orders)
-        weights = outputs[1].data # m = sum(orders)
-        nodes = self.__bufferX[0] # n
-        binwidths = self.__bufferX[1] # n
-        samplewidths = self.__bufferX[2] # n
+        edges = ordersX.dd.axes_edges  # n+1
+        orders = ordersX.data  # n
+        sample = outputs[0].data  # m = sum(orders)
+        weights = outputs[1].data  # m = sum(orders)
+        nodes = self.__bufferX[0]  # n
+        binwidths = self.__bufferX[1]  # n
+        samplewidths = self.__bufferX[2]  # n
 
         binwidths[:] = edges[1:] - edges[:-1]
         with errstate(invalid="ignore"):  # to ignore division by zero
@@ -221,15 +219,15 @@ class IntegratorSampler(FunctionNode):
 
     def _fcn_gl1d(self, _, inputs, outputs) -> Optional[list]:
         """The 1d Gauss-Legendre sampling"""
-        ordersX = outputs["ordersX"]
+        ordersX = inputs["ordersX"]
         edges = ordersX.dd.axes_edges
         orders = ordersX.data
-        nodes = self.__bufferX[0]
+        nodes = self.__bufferX
         sample = outputs[0].data
         weights = outputs[1].data
 
         offset = 0
-        for n in orders:
+        for i, n in enumerate(orders):
             if n < 1:
                 continue
             (
@@ -238,15 +236,11 @@ class IntegratorSampler(FunctionNode):
             ) = leggauss(n)
             # the `leggauss` works only with the range [-1,1],
             # so we need to transform the result to the original range
-            sample[offset : offset + n] = (
-                0.5
-                * (sample[offset : offset + n] + 1)
-                * (edges[offset + n] - edges[offset])
-                + edges[offset]
+            sample[offset : offset + n] = 0.5 * (
+                sample[offset : offset + n] * (edges[i + 1] - edges[i])
+                + (edges[i + 1] + edges[i])
             )
-            weights[offset : offset + n] *= 0.5 * (
-                edges[offset + n] - edges[offset]
-            )
+            weights[offset : offset + n] *= 0.5 * (edges[i + 1] - edges[i])
             offset += n
 
         nodes[:] = (edges[1:] + edges[:-1]) * 0.5
@@ -259,8 +253,8 @@ class IntegratorSampler(FunctionNode):
 
     def _fcn_gl2d(self, _, inputs, outputs) -> Optional[list]:
         """The 2d Gauss-Legendre sampling"""
-        ordersX = outputs["ordersX"]
-        ordersY = outputs["ordersY"]
+        ordersX = inputs["ordersX"]
+        ordersY = inputs["ordersY"]
         edgesX = ordersX.dd.axes_edges
         edgesY = ordersY.dd.axes_edges
         ordersX = ordersX.data
