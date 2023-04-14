@@ -15,25 +15,25 @@ from ..types import ShapeLike
 
 
 @njit(cache=True)
-def _integrate1d(data: NDArray, weighted: NDArray, ordersX: NDArray):
+def _integrate1d(result: NDArray, data: NDArray, ordersX: NDArray):
     """
-    Summing up `weighted` within `ordersX` and puts the result into `data`.
+    Summing up `data` within `ordersX` and puts the result into `result`.
     The 1-dimensional version of integration.
     """
     iprev = 0
     for i, order in enumerate(ordersX):
         inext = iprev + order
-        data[i] = weighted[iprev:inext].sum()
+        result[i] = data[iprev:inext].sum()
         iprev = inext
 
 
 @njit(cache=True)
 def _integrate2d(
-    data: NDArray, weighted: NDArray, ordersX: NDArray, ordersY: NDArray
+    result: NDArray, data: NDArray, ordersX: NDArray, ordersY: NDArray
 ):
     """
-    Summing up `weighted` within `ordersX` and `ordersY` and then
-    puts the result into `data`. The 2-dimensional version of integration.
+    Summing up `data` within `ordersX` and `ordersY` and then
+    puts the result into `result`. The 2-dimensional version of integration.
     """
     iprev = 0
     for i, orderx in enumerate(ordersX):
@@ -41,7 +41,7 @@ def _integrate2d(
         jprev = 0
         for j, ordery in enumerate(ordersY):
             jnext = jprev + ordery
-            data[i, j] = weighted[iprev:inext, jprev:jnext].sum()
+            result[i, j] = data[iprev:inext, jprev:jnext].sum()
             jprev = jnext
         iprev = inext
 

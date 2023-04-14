@@ -1,5 +1,3 @@
-# TODO: Implementing of 21GL
-
 from typing import Literal, Optional
 
 from numpy import (
@@ -9,6 +7,7 @@ from numpy import (
     issubdtype,
     linspace,
     matmul,
+    meshgrid,
     newaxis,
 )
 from numpy.polynomial.legendre import leggauss
@@ -21,7 +20,7 @@ from ..typefunctions import check_input_dimension, check_inputs_number
 
 def _gl_sampler(
     orders: NDArray, sample: NDArray, weights: NDArray, edges: NDArray
-) -> tuple:
+):
     """
     Uses `numpy.polynomial.legendre.leggauss` to sample points with weights
     on the range [-1,1] and transforms to any range [a, b]
@@ -40,8 +39,8 @@ def _gl_sampler(
             + (edges[i + 1] + edges[i])
         )
         weights[offset : offset + n] *= 0.5 * (edges[i + 1] - edges[i])
+        # NOTE: the operations above may allocate additional memory in runtime!
         offset += n
-    return sample, weights
 
 
 class IntegratorSampler(FunctionNode):
@@ -84,9 +83,11 @@ class IntegratorSampler(FunctionNode):
         self._mode = mode
         self._align = align if align is not None else "center"
         self._add_input("ordersX", positional=False)
+        self._add_output("x")
         if mode == "2d":
             self._add_input("ordersY", positional=False)
-        self._add_output(("sample", "weights"))
+            self._add_output("y")
+        self._add_output("weights", positional=False)
         self._functions.update(
             {
                 "rect": self._fcn_rect,
@@ -118,13 +119,11 @@ class IntegratorSampler(FunctionNode):
         lenX = self.__check_orders("ordersX")
         if self.mode == "2d":
             lenY = self.__check_orders("ordersY")
-            self.outputs[0].dd.shape = (2, lenX, lenY)
-            self.outputs[1].dd.shape = (lenX, lenY)
+            shape = (lenX, lenY)
         else:
             shape = (lenX,)
-            for output in self.outputs:
-                output.dd.shape = shape
-        for output in self.outputs:
+        for output in (*self.outputs, self.outputs["weights"]):
+            output.dd.shape = shape
             output.dd.dtype = self.dtype
         self.fcn = self._functions[self.mode]
 
@@ -151,7 +150,8 @@ class IntegratorSampler(FunctionNode):
         * 3: low edges (only for `rect`)
         * 4: high edges (only for `rect`)
         """
-        edgeshapeX = self.inputs["ordersX"].dd.axes_edges.shape[0] - 1
+        ordersX = self.inputs["ordersX"]
+        edgeshapeX = ordersX.dd.axes_edges.shape[0] - 1
         if self.mode == "rect":
             shapeX = (5, edgeshapeX)
         elif self.mode == "trap":
@@ -159,10 +159,11 @@ class IntegratorSampler(FunctionNode):
         elif self.mode == "gl":
             shapeX = (edgeshapeX,)
         else:
-            edgeshapeY = self.inputs["ordersY"].dd.axes_edges.shape[0] - 1
-            shapeX = (3, edgeshapeX)
-            shapeY = (3, edgeshapeY)
+            lenY = sum(self.inputs["ordersY"].data)
+            shapeY = (3, lenY)
             self.__bufferY = empty(shape=shapeY, dtype=self.dtype)
+            lenX = sum(ordersX.data)
+            shapeX = (3, lenX)
         self.__bufferX = empty(shape=shapeX, dtype=self.dtype)
 
     def _fcn_rect(self, _, inputs, outputs) -> Optional[list]:
@@ -171,7 +172,7 @@ class IntegratorSampler(FunctionNode):
         edges = ordersX.dd.axes_edges  # n+1
         orders = ordersX.data  # n
         sample = outputs[0].data  # m = sum(orders)
-        weights = outputs[1].data  # m = sum(orders)
+        weights = outputs["weights"].data
         nodes = self.__bufferX[0]  # n
         binwidths = self.__bufferX[1]  # n
         samplewidths = self.__bufferX[2]  # n
@@ -201,6 +202,7 @@ class IntegratorSampler(FunctionNode):
                 weights[offset : offset + n] = binwidths[i]
             offset += n
 
+        # NOTE: the operations below may allocate additional memory in runtime!
         nodes[:] = (edges[1:] + edges[:-1]) * 0.5
         for output in outputs:
             output.dd.axes_edges = edges
@@ -215,7 +217,7 @@ class IntegratorSampler(FunctionNode):
         edges = ordersX.dd.axes_edges  # n+1
         orders = ordersX.data  # n
         sample = outputs[0].data  # m = sum(orders)
-        weights = outputs[1].data  # m = sum(orders)
+        weights = outputs["weights"].data
         nodes = self.__bufferX[0]  # n
         samplewidths = self.__bufferX[1]  # n
 
@@ -232,6 +234,7 @@ class IntegratorSampler(FunctionNode):
             offset += n - 1
         weights[-1] = samplewidths[-1] * 0.5
 
+        # NOTE: the operations below may allocate additional memory in runtime!
         nodes[:] = (edges[1:] + edges[:-1]) * 0.5
         for output in outputs:
             output.dd.axes_edges = edges
@@ -247,10 +250,11 @@ class IntegratorSampler(FunctionNode):
         orders = ordersX.data
         nodes = self.__bufferX
         sample = outputs[0].data
-        weights = outputs[1].data
+        weights = outputs["weights"].data
 
-        sample, weights = _gl_sampler(orders, sample, weights, edges)
+        _gl_sampler(orders, sample, weights, edges)
 
+        # NOTE: the operations below may allocate additional memory in runtime!
         nodes[:] = (edges[1:] + edges[:-1]) * 0.5
         for output in outputs:
             output.dd.axes_edges = edges
@@ -263,34 +267,35 @@ class IntegratorSampler(FunctionNode):
         """The 2d Gauss-Legendre sampling"""
         ordersX = inputs["ordersX"]
         ordersY = inputs["ordersY"]
-        edgesX = ordersX.dd.axes_edges
-        edgesY = ordersY.dd.axes_edges
+        edgesX = ordersX.dd.axes_edges  # p + 1
+        edgesY = ordersY.dd.axes_edges  # q + 1
         ordersX = ordersX.data
         ordersY = ordersY.data
-        nodesX = self.__bufferX[0]  # (n, )
-        nodesY = self.__bufferY[0]  # (m, )
+        # NOTE: nodesX and nodesY need only p and q elements
+        nodesX = self.__bufferX[0]  # (p, )
+        nodesY = self.__bufferY[0]  # (q, )
         weightsX = self.__bufferX[1]  # (n, )
         weightsY = self.__bufferY[1]  # (m, )
         sampleX = self.__bufferX[2]  # (n, )
         sampleY = self.__bufferY[2]  # (m, )
-        sample = outputs[0].data  # (2, n, m)
-        weights = outputs[1].data  # (n, m)
+        X = outputs[0].data  # (n, m)
+        Y = outputs[1].data  # (n, m)
+        weights = outputs["weights"].data  # (n, m)
 
-        sampleX, weightsX = _gl_sampler(ordersX, sampleX, weightsX, edgesX)
-        sampleY, weightsY = _gl_sampler(ordersY, sampleY, weightsY, edgesY)
+        _gl_sampler(ordersX, sampleX, weightsX, edgesX)
+        _gl_sampler(ordersY, sampleY, weightsY, edgesY)
 
-        for i, x in enumerate(sampleX):
-            for j in range(len(sampleX[0, i])):
-                sample[0, i, j] = x
-        for i in range(len(sampleY[0])):
-            sample[1, i, :] = sampleY
-        matmul(weightsX[newaxis].T, weightsY, out=weights)
+        X[:], Y[:] = meshgrid(sampleX, sampleY, indexing="ij")
+        matmul(weightsX[newaxis].T, weightsY[newaxis], out=weights)
 
-        nodesX[:] = (edgesX[1:] + edgesX[:-1]) * 0.5
-        nodesY[:] = (edgesY[1:] + edgesY[:-1]) * 0.5
+        # NOTE: the operations below may allocate additional memory in runtime!
+        p = edgesX.shape[0] - 1
+        q = edgesY.shape[0] - 1
+        nodesX[:p] = (edgesX[1:] + edgesX[:-1]) * 0.5
+        nodesY[:q] = (edgesY[1:] + edgesY[:-1]) * 0.5
         for output in outputs:
             output.dd.axes_edges = [edgesX, edgesY]
-            output.dd.axes_nodes = [nodesX, nodesY]
+            output.dd.axes_nodes = [nodesX[:p], nodesY[:q]]
 
         if self.debug:
             return list(outputs.iter_data())
