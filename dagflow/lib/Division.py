@@ -1,8 +1,8 @@
 from numpy import copyto
 
-from .N2One import N2One
+from .NodeManyToOne import NodeManyToOne
 
-class Division(N2One):
+class Division(NodeManyToOne):
     """Division of all the inputs together"""
 
     def _fcn(self, _, inputs, outputs):

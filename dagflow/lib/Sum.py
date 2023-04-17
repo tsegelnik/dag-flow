@@ -1,9 +1,9 @@
 from numpy import add, copyto
 
-from .N2One import N2One
+from .NodeManyToOne import NodeManyToOne
 
 
-class Sum(N2One):
+class Sum(NodeManyToOne):
     """Sum of all the inputs together"""
 
     def _fcn(self, _, inputs, outputs):

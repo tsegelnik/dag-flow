@@ -1,9 +1,9 @@
 from numpy import copyto
 
-from .N2One import N2One
+from .NodeManyToOne import NodeManyToOne
 
 
-class Product(N2One):
+class Product(NodeManyToOne):
     """Product of all the inputs together"""
 
     def _fcn(self, _, inputs, outputs):

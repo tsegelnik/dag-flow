@@ -8,7 +8,7 @@ from ..typefunctions import (
     AllPositionals
 )
 
-class N2One(FunctionNode):
+class NodeManyToOne(FunctionNode):
     """
     The abstract node with only one output `result`,
     which is the result of some function on all the positional inputs
