@@ -143,41 +143,32 @@ class IntegratorSampler(FunctionNode):
         return sum(orders.data)
 
     def _post_allocate(self) -> None:
-        """Allocates the `buffer`, which elements are the follows:
-        * 0: axis_nodes
-        * 1: binwidths
-        * 2: samplewidths
-        * 3: low edges (only for `rect`)
-        * 4: high edges (only for `rect`)
-        """
+        """Allocates the `buffer`"""
         ordersX = self.inputs["ordersX"]
-        edgeshapeX = ordersX.dd.axes_edges.shape[0] - 1
+        edgeshapeX = ordersX.dd.axes_edges._data.shape[0] - 1
         if self.mode == "rect":
-            shapeX = (5, edgeshapeX)
-        elif self.mode == "trap":
-            shapeX = (2, edgeshapeX)
-        elif self.mode == "gl":
+            shapeX = (4, edgeshapeX)
+        elif self.mode in {"trap", "gl"}:
             shapeX = (edgeshapeX,)
         else:
             lenY = sum(self.inputs["ordersY"].data)
-            shapeY = (3, lenY)
+            shapeY = (2, lenY)
             self.__bufferY = empty(shape=shapeY, dtype=self.dtype)
             lenX = sum(ordersX.data)
-            shapeX = (3, lenX)
+            shapeX = (2, lenX)
         self.__bufferX = empty(shape=shapeX, dtype=self.dtype)
 
     def _fcn_rect(self, _, inputs, outputs) -> Optional[list]:
         """The rectangular sampling"""
         ordersX = inputs["ordersX"]
-        edges = ordersX.dd.axes_edges  # n+1
+        edges = ordersX.dd.axes_edges._data  # n+1
         orders = ordersX.data  # n
         sample = outputs[0].data  # m = sum(orders)
         weights = outputs["weights"].data
-        nodes = self.__bufferX[0]  # n
-        binwidths = self.__bufferX[1]  # n
-        samplewidths = self.__bufferX[2]  # n
-        low = self.__bufferX[3]  # n
-        high = self.__bufferX[4]  # n
+        binwidths = self.__bufferX[0]  # n
+        samplewidths = self.__bufferX[1]  # n
+        low = self.__bufferX[2]  # n
+        high = self.__bufferX[3]  # n
 
         binwidths[:] = edges[1:] - edges[:-1]
         with errstate(invalid="ignore"):  # to ignore division by zero
@@ -202,24 +193,17 @@ class IntegratorSampler(FunctionNode):
                 weights[offset : offset + n] = binwidths[i]
             offset += n
 
-        # NOTE: the operations below may allocate additional memory in runtime!
-        nodes[:] = (edges[1:] + edges[:-1]) * 0.5
-        for output in outputs:
-            output.dd.axes_edges = edges
-            output.dd.axes_nodes = nodes
-
         if self.debug:
             return list(outputs.iter_data())
 
     def _fcn_trap(self, _, inputs, outputs) -> Optional[list]:
         """The trapezoidal sampling"""
         ordersX = inputs["ordersX"]
-        edges = ordersX.dd.axes_edges  # n+1
+        edges = ordersX.dd.axes_edges._data  # n+1
         orders = ordersX.data  # n
         sample = outputs[0].data  # m = sum(orders)
         weights = outputs["weights"].data
-        nodes = self.__bufferX[0]  # n
-        samplewidths = self.__bufferX[1]  # n
+        samplewidths = self.__bufferX  # n
 
         samplewidths[:] = edges[1:] - edges[:-1]
         with errstate(invalid="ignore"):  # to ignore division by zero
@@ -234,31 +218,18 @@ class IntegratorSampler(FunctionNode):
             offset += n - 1
         weights[-1] = samplewidths[-1] * 0.5
 
-        # NOTE: the operations below may allocate additional memory in runtime!
-        nodes[:] = (edges[1:] + edges[:-1]) * 0.5
-        for output in outputs:
-            output.dd.axes_edges = edges
-            output.dd.axes_nodes = nodes
-
         if self.debug:
             return list(outputs.iter_data())
 
     def _fcn_gl1d(self, _, inputs, outputs) -> Optional[list]:
         """The 1d Gauss-Legendre sampling"""
         ordersX = inputs["ordersX"]
-        edges = ordersX.dd.axes_edges
+        edges = ordersX.dd.axes_edges._data
         orders = ordersX.data
-        nodes = self.__bufferX
         sample = outputs[0].data
         weights = outputs["weights"].data
 
         _gl_sampler(orders, sample, weights, edges)
-
-        # NOTE: the operations below may allocate additional memory in runtime!
-        nodes[:] = (edges[1:] + edges[:-1]) * 0.5
-        for output in outputs:
-            output.dd.axes_edges = edges
-            output.dd.axes_nodes = nodes
 
         if self.debug:
             return list(outputs.iter_data())
@@ -267,17 +238,14 @@ class IntegratorSampler(FunctionNode):
         """The 2d Gauss-Legendre sampling"""
         ordersX = inputs["ordersX"]
         ordersY = inputs["ordersY"]
-        edgesX = ordersX.dd.axes_edges  # p + 1
-        edgesY = ordersY.dd.axes_edges  # q + 1
+        edgesX = ordersX.dd.axes_edges._data  # p + 1
+        edgesY = ordersY.dd.axes_edges._data  # q + 1
         ordersX = ordersX.data
         ordersY = ordersY.data
-        # NOTE: nodesX and nodesY need only p and q elements
-        nodesX = self.__bufferX[0]  # (p, )
-        nodesY = self.__bufferY[0]  # (q, )
-        weightsX = self.__bufferX[1]  # (n, )
-        weightsY = self.__bufferY[1]  # (m, )
-        sampleX = self.__bufferX[2]  # (n, )
-        sampleY = self.__bufferY[2]  # (m, )
+        weightsX = self.__bufferX[0]  # (n, )
+        weightsY = self.__bufferY[0]  # (m, )
+        sampleX = self.__bufferX[1]  # (n, )
+        sampleY = self.__bufferY[1]  # (m, )
         X = outputs[0].data  # (n, m)
         Y = outputs[1].data  # (n, m)
         weights = outputs["weights"].data  # (n, m)
@@ -287,15 +255,6 @@ class IntegratorSampler(FunctionNode):
 
         X[:], Y[:] = meshgrid(sampleX, sampleY, indexing="ij")
         matmul(weightsX[newaxis].T, weightsY[newaxis], out=weights)
-
-        # NOTE: the operations below may allocate additional memory in runtime!
-        p = edgesX.shape[0] - 1
-        q = edgesY.shape[0] - 1
-        nodesX[:p] = (edgesX[1:] + edgesX[:-1]) * 0.5
-        nodesY[:q] = (edgesY[1:] + edgesY[:-1]) * 0.5
-        for output in outputs:
-            output.dd.axes_edges = [edgesX, edgesY]
-            output.dd.axes_nodes = [nodesX[:p], nodesY[:q]]
 
         if self.debug:
             return list(outputs.iter_data())

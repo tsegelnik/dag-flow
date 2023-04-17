@@ -125,7 +125,7 @@ class Integrator(FunctionNode):
                 node=self,
                 input=orders,
             )
-        return len(orders.dd.axes_edges) - 1
+        return len(orders.dd.axes_edges._data) - 1
 
     def _post_allocate(self):
         """Allocates the `buffer` within `weights`"""

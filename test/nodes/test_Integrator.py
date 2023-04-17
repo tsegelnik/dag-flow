@@ -16,10 +16,10 @@ def test_Integrator_rect_center(align, debug_graph):
     with Graph(debug=debug_graph, close=True):
         npoints = 10
         ordersX = Array("ordersX", [1000] * npoints)
-        edges = linspace(0, pi, npoints + 1)
+        edges = Array("edges", linspace(0, pi, npoints + 1))
         ordersX.outputs[0].dd.axes_edges = edges
-        A = Array("A", edges[:-1])
-        B = Array("B", edges[1:])
+        A = Array("A", edges._data[:-1])
+        B = Array("B", edges._data[1:])
         sampler = IntegratorSampler("sampler", mode="rect", align=align)
         integrator = Integrator("integrator")
         cosf = Cos("cos")
@@ -39,10 +39,10 @@ def test_Integrator_trap(debug_graph):
     with Graph(debug=debug_graph, close=True):
         npoints = 10
         ordersX = Array("ordersX", [1000] * npoints)
-        edges = linspace(0, pi, npoints + 1)
+        edges = Array("edges", linspace(0, pi, npoints + 1))
         ordersX.outputs[0].dd.axes_edges = edges
-        A = Array("A", edges[:-1])
-        B = Array("B", edges[1:])
+        A = Array("A", edges._data[:-1])
+        B = Array("B", edges._data[1:])
         sampler = IntegratorSampler("sampler", mode="trap")
         integrator = Integrator("integrator")
         cosf = Cos("cos")
@@ -55,7 +55,6 @@ def test_Integrator_trap(debug_graph):
         cosf.outputs[0] >> integrator
         ordersX >> integrator("ordersX")
     res = sinf.outputs[1].data - sinf.outputs[0].data
-    # TODO: why is there the very bad accuracy?
     assert allclose(integrator.outputs[0].data, res, atol=1e-2)
 
 
@@ -89,10 +88,10 @@ def test_Integrator_gl1d(debug_graph):
     with Graph(debug=debug_graph, close=True):
         npoints = 10
         ordersX = Array("ordersX", [2] * npoints)
-        edges = linspace(0, 10, npoints + 1)
+        edges = Array("edges", linspace(0, 10, npoints + 1))
         ordersX.outputs[0].dd.axes_edges = edges
-        A = Array("A", edges[:-1])
-        B = Array("B", edges[1:])
+        A = Array("A", edges._data[:-1])
+        B = Array("B", edges._data[1:])
         sampler = IntegratorSampler("sampler", mode="gl")
         integrator = Integrator("integrator")
         poly0 = Polynomial0("poly0")
@@ -120,12 +119,12 @@ def test_Integrator_gl2d(debug_graph):
         npointsX, npointsY = 10, 20
         ordersX = Array("ordersX", [2] * npointsX)
         ordersY = Array("ordersY", [2] * npointsY)
-        edgesX = linspace(0, 10, npointsX + 1)
-        edgesY = linspace(0, 10, npointsY + 1)
+        edgesX = Array("edgesX", linspace(0, 10, npointsX + 1))
+        edgesY = Array("edgesY", linspace(0, 10, npointsY + 1))
         ordersX.outputs[0].dd.axes_edges = edgesX
         ordersY.outputs[0].dd.axes_edges = edgesY
-        x0, y0 = meshgrid(edgesX[:-1], edgesY[:-1], indexing="ij")
-        x1, y1 = meshgrid(edgesX[1:], edgesY[1:], indexing="ij")
+        x0, y0 = meshgrid(edgesX._data[:-1], edgesY._data[:-1], indexing="ij")
+        x1, y1 = meshgrid(edgesX._data[1:], edgesY._data[1:], indexing="ij")
         X0, X1 = Array("X0", x0), Array("X1", x1)
         Y0, Y1 = Array("Y0", y0), Array("Y1", y1)
         sampler = IntegratorSampler("sampler", mode="2d")
