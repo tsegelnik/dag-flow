@@ -8,7 +8,7 @@ class Cos(NodeOneToOne):
 
     def _fcn(self, _, inputs, outputs):
         for inp, out in zip(inputs, outputs):
-            out.data[:] = cos(inp.data)
+            cos(inp.data, out=out.data)
         return list(outputs.iter_data())
 
 
@@ -17,7 +17,7 @@ class Sin(NodeOneToOne):
 
     def _fcn(self, _, inputs, outputs):
         for inp, out in zip(inputs, outputs):
-            out.data[:] = sin(inp.data)
+            sin(inp.data, out=out.data)
         return list(outputs.iter_data())
 
 class ArcCos(NodeOneToOne):
@@ -25,7 +25,7 @@ class ArcCos(NodeOneToOne):
 
     def _fcn(self, _, inputs, outputs):
         for inp, out in zip(inputs, outputs):
-            out.data[:] = arccos(inp.data)
+            arccos(inp.data, out=out.data)
         return list(outputs.iter_data())
 
 
@@ -34,7 +34,7 @@ class ArcSin(NodeOneToOne):
 
     def _fcn(self, _, inputs, outputs):
         for inp, out in zip(inputs, outputs):
-            out.data[:] = arcsin(inp.data)
+            arcsin(inp.data, out=out.data)
         return list(outputs.iter_data())
 
 
@@ -43,7 +43,7 @@ class Tan(NodeOneToOne):
 
     def _fcn(self, _, inputs, outputs):
         for inp, out in zip(inputs, outputs):
-            out.data[:] = tan(inp.data)
+            tan(inp.data, out=out.data)
         return list(outputs.iter_data())
 
 
@@ -52,5 +52,5 @@ class Arctan(NodeOneToOne):
 
     def _fcn(self, _, inputs, outputs):
         for inp, out in zip(inputs, outputs):
-            out.data[:] = arctan(inp.data)
+            arctan(inp.data, out=out.data)
         return list(outputs.iter_data())
