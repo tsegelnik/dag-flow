@@ -24,7 +24,7 @@ except TypeError:
             yield combo
 
 
-class FunctionCaller:
+class MethodSequenceCaller:
     """Class to call a sequence of methods"""
 
     methods: list
@@ -111,7 +111,7 @@ def copy_input_to_output(
     if not any((dtype, shape, edges, nodes)):
         return
 
-    caller = FunctionCaller()
+    caller = MethodSequenceCaller()
     if dtype:
         caller.methods.append(cpy_dtype)
     if shape:
