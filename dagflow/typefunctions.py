@@ -24,6 +24,35 @@ except TypeError:
             yield combo
 
 
+class FunctionCaller:
+    """Class to call a sequence of methods"""
+
+    methods: list
+
+    def __init__(self) -> None:
+        self.methods = []
+
+    def __call__(self, inputs, outputs):
+        for method in self.methods:
+            method(inputs, outputs)
+
+
+def cpy_dtype(input, output):
+    output.dd.dtype = input.dd.dtype
+
+
+def cpy_shape(input, output):
+    output.dd.shape = input.dd.shape
+
+
+def cpy_edges(input, output):
+    output.dd.axes_edges = input.dd.axes_edges
+
+
+def cpy_nodes(input, output):
+    output.dd.axes_nodes = input.dd.axes_nodes
+
+
 def check_has_inputs(
     node: NodeT, inputkey: Union[str, int, slice, Sequence, None] = None
 ) -> None:
@@ -72,35 +101,31 @@ def copy_input_to_output(
     outputkey: Union[str, int, slice, Sequence] = AllPositionals,
     dtype: bool = True,
     shape: bool = True,
+    edges: bool = True,
+    nodes: bool = True,
 ) -> None:
     """Coping input dtype and setting for the output"""
     inputs = tuple(node.inputs.iter(inputkey))
     outputs = tuple(node.outputs.iter(outputkey))
 
-    if dtype and shape:
-
-        def cpy(input, output):
-            output.dd.dtype = input.dd.dtype
-            output.dd.shape = input.dd.shape
-
-    elif dtype:
-
-        def cpy(input, output):
-            output.dd.dtype = input.dd.dtype
-
-    elif shape:
-
-        def cpy(input, output):
-            output.dd.shape = input.dd.shape
-
-    else:
+    if not any((dtype, shape, edges, nodes)):
         return
+
+    caller = FunctionCaller()
+    if dtype:
+        caller.methods.append(cpy_dtype)
+    if shape:
+        caller.methods.append(cpy_shape)
+    if edges:
+        caller.methods.append(cpy_edges)
+    if nodes:
+        caller.methods.append(cpy_nodes)
 
     if len(inputs) == 1:
         inputs = repeat(inputs[0], len(outputs))
 
     for input, output in zip(inputs, outputs, strict=True):
-        cpy(input, output)
+        caller(input, output)
 
 
 def copy_input_dtype_to_output(
