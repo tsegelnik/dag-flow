@@ -62,7 +62,7 @@ class Integrator(FunctionNode):
     .. _Numba: https://numba.pydata.org
     """
 
-    __buffer: NDArray
+    __slots__ = ("__buffer",)
 
     def __init__(self, *args, **kwargs):
         kwargs.setdefault("missing_input_handler", MissingInputAddEach())
@@ -144,9 +144,9 @@ class Integrator(FunctionNode):
 
     def _fcn_2d(self, _, inputs, outputs):
         """2d version of integration function"""
-        weights = inputs["weights"].data # (n, m)
-        ordersX = inputs["ordersX"].data # (n, )
-        ordersY = inputs["ordersY"].data # (m, )
+        weights = inputs["weights"].data  # (n, m)
+        ordersX = inputs["ordersX"].data  # (n, )
+        ordersY = inputs["ordersY"].data  # (m, )
         for input, output in zip(inputs.iter_data(), outputs.iter_data()):
             multiply(input, weights, out=self.__buffer)
             _integrate2d(output, self.__buffer, ordersX, ordersY)

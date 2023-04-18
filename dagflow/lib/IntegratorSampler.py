@@ -58,8 +58,7 @@ class IntegratorSampler(FunctionNode):
     There are two outputs: 0 - `sample`, 1 - `weights`
     """
 
-    __bufferX: NDArray
-    __bufferY: NDArray
+    __slots__ = ("__bufferX", "__bufferY")
 
     def __init__(
         self,
