@@ -31,3 +31,8 @@ class DataDescriptor:
         self.shape = shape
         self.axes_edges = axes_edges or []
         self.axes_nodes = axes_nodes or []
+
+    @property
+    def dim(self) -> int:
+        """ Return the dimension of the data """
+        return len(self.shape)

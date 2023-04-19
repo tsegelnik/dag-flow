@@ -1,10 +1,11 @@
 from collections.abc import Sequence
-from typing import Union
+from itertools import repeat
+from typing import Optional, Tuple, Union
 
 from numpy import result_type
-from itertools import repeat
 
 from .exception import TypeFunctionError
+from .output import Output
 from .types import NodeT
 
 AllPositionals = slice(None)
@@ -160,6 +161,22 @@ def copy_input_shape_to_output(
         output.dd.shape = input.dd.shape
 
 
+def copy_input_edges_to_output(
+    node: NodeT,
+    inputkey: Union[str, int] = 0,
+    outputkey: Union[str, int, slice, Sequence] = AllPositionals,
+) -> None:
+    """Coping input edges and setting for the output"""
+    inputs = tuple(node.inputs.iter(inputkey))
+    outputs = tuple(node.outputs.iter(outputkey))
+
+    if len(inputs) == 1:
+        inputs = repeat(inputs[0], len(outputs))
+
+    for input, output in zip(inputs, outputs, strict=True):
+        output.dd.axes_edges = input.dd.axes_edges
+
+
 def combine_inputs_shape_to_output(
     node: NodeT,
     inputkey: Union[str, int, slice, Sequence] = AllPositionals,
@@ -253,15 +270,26 @@ def check_input_dtype(
 def check_inputs_equivalence(
     node: NodeT, inputkey: Union[str, int, slice, Sequence] = AllPositionals
 ):
-    """Checking the equivalence of the dtype and shape of all the inputs"""
+    """Checking the equivalence of the dtype, shape, axes_edges and axes_nodes of all the inputs"""
     inputs = tuple(node.inputs.iter(inputkey))
     input0, inputs = inputs[0], inputs[1:]
 
-    dtype, shape = input0.dd.dtype, input0.dd.shape
+    dtype, shape, edges, nodes = (
+        input0.dd.dtype,
+        input0.dd.shape,
+        input0.dd.axes_edges,
+        input0.dd.axes_nodes,
+    )
     for input in inputs:
-        if input.dd.dtype != dtype or input.dd.shape != shape:
+        if (
+            input.dd.dtype != dtype
+            or input.dd.shape != shape
+            or input.dd.axes_edges != edges
+            or input.dd.axes_nodes != nodes
+        ):
             raise TypeFunctionError(
-                f"Input data {input.dtype} [{input.shape}] is inconsistent with {dtype} [{shape}]",
+                f"Input data [{input.dtype=}, {input.shape=}, {input.axes_edges=}, {input.axes_nodes=}]"
+                f" is inconsistent with [{dtype=}, {shape=}, {edges=}, {nodes=}]",
                 node=node,
                 input=input,
             )
@@ -333,6 +361,55 @@ def check_inputs_multiplicable_mat(
         if shape1[-1] != shape2[0]:
             raise TypeFunctionError(
                 f"Inputs {shape1} and {shape2} are not multiplicable",
+                node=node,
+                input=input,
+            )
+
+
+def check_input_edges_dim(
+    node: NodeT,
+    inputkey: Union[str, int, slice, Sequence] = AllPositionals,
+    dim: int = 1,
+):
+    """Checking the existence and dim of the edges of the inputs"""
+    for input in node.inputs.iter(inputkey):
+        edges = input.dd.axes_edges
+        if len(edges) == 0:
+            raise TypeFunctionError(
+                f"The input must have edges, but given {edges=}!",
+                node=node,
+                input=input,
+            )
+        for edge in edges:
+            if not isinstance(edge, Output):
+                raise TypeFunctionError(
+                    f"The input edge must be an `Output`, but given {edge=}!",
+                    node=node,
+                    input=input,
+                )
+            if edge.dd.dim != dim:
+                raise TypeFunctionError(
+                    f"The input edge must be a {dim}d array, but given {edge.dd.dim=}!",
+                    node=node,
+                    input=input,
+                )
+
+
+def check_input_edges_equivalence(
+    node: NodeT,
+    inputkey: Union[str, int, slice, Sequence] = AllPositionals,
+    reference: Optional[Tuple[Output]] = None,
+):
+    """Checking the equivalence of the edges of the inputs."""
+    inputs = tuple(node.inputs.iter(inputkey))
+    if reference is None:
+        input0, inputs = inputs[0], inputs[1:]
+        reference = input0.dd.axes_edges
+    for input in inputs:
+        edges = input.dd.axes_edges
+        if edges != reference:
+            raise TypeFunctionError(
+                f"The input edge must be {reference}, but given {edges=}!",
                 node=node,
                 input=input,
             )

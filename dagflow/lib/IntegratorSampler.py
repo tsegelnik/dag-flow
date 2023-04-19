@@ -15,7 +15,7 @@ from numpy.typing import DTypeLike, NDArray
 
 from ..exception import InitializationError, TypeFunctionError
 from ..nodes import FunctionNode
-from ..typefunctions import check_input_dimension, check_inputs_number
+from ..typefunctions import check_input_dimension, check_input_edges_dim, check_inputs_number
 
 
 def _gl_sampler(
@@ -115,18 +115,21 @@ class IntegratorSampler(FunctionNode):
         determines dtype and shape for outputs
         """
         check_inputs_number(self, 0)
-        lenX = self.__check_orders("ordersX")
+        lenX, edgesX = self.__check_orders("ordersX")
         if self.mode == "2d":
-            lenY = self.__check_orders("ordersY")
+            lenY, edgesY = self.__check_orders("ordersY")
             shape = (lenX, lenY)
+            edges = [edgesX, edgesY]
         else:
             shape = (lenX,)
+            edges = [edgesX]
         for output in (*self.outputs, self.outputs["weights"]):
-            output.dd.shape = shape
             output.dd.dtype = self.dtype
+            output.dd.shape = shape
+            output.dd.axes_edges = edges
         self.fcn = self._functions[self.mode]
 
-    def __check_orders(self, name: str) -> int:
+    def __check_orders(self, name: str) -> tuple:
         """
         The method checks dimension (==1) of the input `name`, type (==`integer`),
         and returns the `dd.shape[0]`
@@ -139,12 +142,13 @@ class IntegratorSampler(FunctionNode):
                 node=self,
                 input=orders,
             )
-        return sum(orders.data)
+        check_input_edges_dim(self, name, 1)
+        return sum(orders.data), orders.dd.axes_edges[0]
 
     def _post_allocate(self) -> None:
         """Allocates the `buffer`"""
         ordersX = self.inputs["ordersX"]
-        edgeshapeX = ordersX.dd.axes_edges[0]._data.shape[0] - 1
+        edgeshapeX = ordersX.dd.axes_edges[0].dd.shape[0] - 1
         if self.mode == "rect":
             shapeX = (4, edgeshapeX)
         elif self.mode in {"trap", "gl"}:

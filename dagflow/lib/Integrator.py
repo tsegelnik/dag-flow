@@ -9,7 +9,9 @@ from ..typefunctions import (
     check_has_inputs,
     check_input_dimension,
     check_input_dtype,
+    check_input_edges_equivalence,
     check_input_shape,
+    check_input_edges_dim,
 )
 from ..types import ShapeLike
 
@@ -88,7 +90,9 @@ class Integrator(FunctionNode):
             )
         check_input_dimension(self, (slice(None), "weights"), dim)
         check_input_shape(self, (slice(None), "weights"), input0.dd.shape)
-        shape = [self.__check_orders("ordersX", input0.dd.shape[0])]
+        edgeslenX, edgesX = self.__check_orders("ordersX", input0.dd.shape[0])
+        shape = [edgeslenX]
+        edges = [edgesX]
         dtype = input0.dd.dtype
         if not issubdtype(dtype, floating):
             raise TypeFunctionError(
@@ -98,14 +102,19 @@ class Integrator(FunctionNode):
             )
         check_input_dtype(self, (slice(None), "weights"), dtype)
         if dim == 2:
-            shape.append(self.__check_orders("ordersY", input0.dd.shape[1]))
+            edgeslenY, edgesY = self.__check_orders("ordersY", input0.dd.shape[1])
+            shape.append(edgeslenY)
+            edges.append(edgesY)
+        check_input_edges_equivalence(self, slice(None), edges)
         shape = tuple(shape)
         self.fcn = self._functions[dim]
         for output in self.outputs:
             output.dd.dtype = dtype
             output.dd.shape = shape
+            output.dd.axes_edges = edges
+            # TODO: copy axes_nodes?
 
-    def __check_orders(self, name: str, shape: ShapeLike):
+    def __check_orders(self, name: str, shape: ShapeLike) -> tuple:
         """
         The method checks dimension (==1) of the input `name`, type (==`integer`),
         and `sum(orders) == len(input)`
@@ -125,7 +134,9 @@ class Integrator(FunctionNode):
                 node=self,
                 input=orders,
             )
-        return len(orders.dd.axes_edges[0]._data) - 1
+        check_input_edges_dim(self, name, 1)
+        edges = orders.dd.axes_edges[0]
+        return edges.dd.shape[0] - 1, edges
 
     def _post_allocate(self):
         """Allocates the `buffer` within `weights`"""
