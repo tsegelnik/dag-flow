@@ -1,0 +1,9 @@
+pytest
+pytest-benchmark
+pytest-cov
+sphinx
+pydata_sphinx_theme
+m2r2
+schema
+attrs
+-e git+https://git.jinr.ru/gna/gparser.git#egg=gparser
