@@ -66,7 +66,7 @@ class GNIndexInstance:
         that is the `string` for formatting
     """
 
-    values: Tuple[GIndexInstance, ...] = field(default=tuple())
+    _instances: Tuple[GIndexInstance, ...] = field(default=tuple(), alias='instances')
     order: tuple = field(default=tuple())
     sep: str = field(validator=instance_of(str), default="_")
     withname: bool = field(validator=instance_of(bool), default=False)
@@ -79,8 +79,12 @@ class GNIndexInstance:
         repr=False,
     )
 
+    @property
+    def values(self) -> Tuple[str]:
+        return tuple(instance.value for instance in self._instances)
+
     def __attrs_post_init__(self) -> None:
-        self._check_values()
+        self._check_instances()
         if not self.order:
             self.order = self._auto_order()
         else:
@@ -93,20 +97,20 @@ class GNIndexInstance:
         if not order:
             order = self.order
         values = [self.dict[name] for name in order if name in self.dict]
-        if len(self.values) != len(values):
+        if len(self._instances) != len(values):
             names = set(self.dict.keys()) - set(order)
             for name in names:
                 if rest2end:
                     values.append(self.dict[name])
                 else:
                     values.insert(0, self.dict[name])
-        self.values = tuple(values)
+        self._instances = tuple(values)
 
     def _create_dict(self) -> GIndexNameDict:
-        return GIndexNameDict({val.name: val for val in self.values})
+        return GIndexNameDict({val.name: val for val in self._instances})
 
     def _auto_order(self) -> tuple:
-        return (True,) + tuple(val.name.s for val in self.values)
+        return (True,) + tuple(val.name.s for val in self._instances)
 
     def _check_order(self, order: Sequence) -> None:
         if not isinstance(order, Sequence):
@@ -116,18 +120,18 @@ class GNIndexInstance:
         elif not isinstance(order, tuple):
             order = tuple(order)
 
-    def _check_values(self) -> None:
-        if not isinstance(self.values, (Sequence, set)):
+    def _check_instances(self) -> None:
+        if not isinstance(self._instances, (Sequence, set)):
             raise TypeError(
-                f"'values' must be `Sequence`, but given '{type(self.values)}'!"
+                f"'values' must be `Sequence`, but given '{type(self._instances)}'!"
             )
-        elif not all(isinstance(x, GIndexInstance) for x in self.values):
+        elif not all(isinstance(x, GIndexInstance) for x in self._instances):
             raise ValueError(
                 "'values' must be `Sequence[GIndexInstance]`, "
-                f"but given '{self.values}'!"
+                f"but given '{self._instances}'!"
             )
-        elif not isinstance(self.values, tuple):
-            self.values = tuple(self.values)
+        elif not isinstance(self._instances, tuple):
+            self._instances = tuple(self._instances)
 
     def formatwith(
         self,
@@ -211,13 +215,13 @@ class GNIndexInstance:
 
     def size(self) -> int:
         """Returns the size of the list with values (number of variants)"""
-        return len(self.values)
+        return len(self._instances)
 
     def copy(self, deep: bool = False) -> GNIndexInstance:
         """Returns a copy of the object"""
         return (
             GNIndexInstance(
-                values=tuple(self.values),
+                instances=tuple(self._instances),
                 order=tuple(self.order),
                 sep=str(self.sep),
                 withname=bool(self.withname),
@@ -226,7 +230,7 @@ class GNIndexInstance:
             )
             if deep
             else GNIndexInstance(
-                values=self.values,
+                instances=self._instances,
                 order=self.order,
                 sep=self.sep,
                 withname=self.withname,
@@ -239,7 +243,7 @@ class GNIndexInstance:
         """Returns a copy of the object with updated fields from `kwargs`"""
         return (
             GNIndexInstance(
-                values=kwargs.pop("values", tuple(self.values)),
+                instances=kwargs.pop("values", tuple(self._instances)),
                 order=kwargs.pop("order", tuple(self.order)),
                 sep=kwargs.pop("sep", str(self.sep)),
                 withname=kwargs.pop("withname", bool(self.withname)),
@@ -248,7 +252,7 @@ class GNIndexInstance:
             )
             if kwargs.pop("deep", True)
             else GNIndexInstance(
-                values=kwargs.pop("values", self.values),
+                instances=kwargs.pop("values", self._instances),
                 order=kwargs.pop("order", self.order),
                 sep=kwargs.pop("sep", self.sep),
                 withname=kwargs.pop("withname", self.withname),
@@ -258,12 +262,12 @@ class GNIndexInstance:
         )
 
     def __iter__(self) -> Iterator[GIndexInstance]:
-        yield from self.values
+        yield from self._instances
 
     def __getitem__(self, key: int) -> GIndexInstance:
         if not isinstance(key, int):
             raise TypeError(f"'key' must be 'int', but given '{type(key)}'!")
-        return self.values[key]
+        return self._instances[key]
 
 
 @define(hash=True, slots=True)
@@ -273,7 +277,7 @@ class GNIndex:
     (set of the 1-dim indices), the indices `order` and usefull methods
     """
 
-    values: tuple = field(default=tuple())
+    values: Tuple[GIndex] = field(default=tuple())
     order: tuple = field(default=tuple())
     sep: str = field(validator=instance_of(str), default="_")
     withname: bool = field(validator=instance_of(bool), default=False)
@@ -285,6 +289,16 @@ class GNIndex:
         default=Factory(lambda self: self._create_dict(), takes_self=True),
         repr=False,
     )
+
+    @staticmethod
+    def from_dict(data: dict) -> "GNIndex":
+        return GNIndex(
+                tuple(
+                    GIndex(GIndexName(name, name), values) if isinstance(name, str) \
+                    else GIndex(GIndexName(*name), values) \
+                    for name, values in data.items()
+                    )
+                )
 
     def __attrs_post_init__(self) -> None:
         self._check_values()
@@ -499,7 +513,7 @@ class GNIndex:
     def __iter__(self) -> Iterator[GNIndexInstance]:
         for val in product(*self.instances()):
             yield GNIndexInstance(
-                values=val,  # type:ignore
+                instances=val,  # type:ignore
                 order=self.order,
                 sep=self.sep,
                 withname=self.withname,
