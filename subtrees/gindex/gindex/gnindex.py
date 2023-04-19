@@ -53,7 +53,7 @@ class GIndexNameDict(UserDict):
         return super().__contains__(key)
 
 
-@define(hash=True)
+@define(hash=True, slots=True)
 class GNIndexInstance:
     """
     The n-dimensional index instance class, storing `values`
@@ -266,7 +266,7 @@ class GNIndexInstance:
         return self.values[key]
 
 
-@define(hash=True)
+@define(hash=True, slots=True)
 class GNIndex:
     """
     The n-dimensional index class, storing the `indices`
