@@ -32,6 +32,7 @@ def test_Integrator_rect_center(align, debug_graph):
         ordersX >> integrator("ordersX")
     res = sinf.outputs[1].data - sinf.outputs[0].data
     assert allclose(integrator.outputs[0].data, res, atol=1e-4)
+    assert integrator.outputs[0].dd.axes_edges == [edges["array"]]
 
 
 def test_Integrator_trap(debug_graph):
@@ -54,6 +55,7 @@ def test_Integrator_trap(debug_graph):
         ordersX >> integrator("ordersX")
     res = sinf.outputs[1].data - sinf.outputs[0].data
     assert allclose(integrator.outputs[0].data, res, atol=1e-2)
+    assert integrator.outputs[0].dd.axes_edges == [edges["array"]]
 
 
 def f0(x: float) -> float:
@@ -102,6 +104,7 @@ def test_Integrator_gl1d(debug_graph):
         ordersX >> integrator("ordersX")
     res = polyres.outputs[1].data - polyres.outputs[0].data
     assert allclose(integrator.outputs[0].data, res, atol=1e-10)
+    assert integrator.outputs[0].dd.axes_edges == [edges["array"]]
 
 
 def test_Integrator_gl2d(debug_graph):
@@ -142,6 +145,10 @@ def test_Integrator_gl2d(debug_graph):
         polyres.outputs[3].data - polyres.outputs[2].data
     )
     assert allclose(integrator.outputs[0].data, res, atol=1e-10)
+    assert integrator.outputs[0].dd.axes_edges == [
+        edgesX["array"],
+        edgesY["array"],
+    ]
 
 
 # test wrong ordersX: edges not given
@@ -181,8 +188,12 @@ def test_Integrator_03(debug_graph):
     with Graph(debug=debug_graph):
         edgesX = Array("edgesX", [-1.0, 0.0, 1.0])
         edgesY = Array("edgesX", [-1.0, 0.0, 1.0])
-        arr1 = Array("array", [arr, arr], edges=[edgesX["array"], edgesY["array"]])
-        weights = Array("weights", [arr, arr], edges=[edgesX["array"], edgesY["array"]])
+        arr1 = Array(
+            "array", [arr, arr], edges=[edgesX["array"], edgesY["array"]]
+        )
+        weights = Array(
+            "weights", [arr, arr], edges=[edgesX["array"], edgesY["array"]]
+        )
         ordersX = Array("ordersX", [1, 3], edges=edgesX["array"])
         ordersY = Array("ordersY", [1, 0, 0], edges=edgesY["array"])
         integrator = Integrator("integrator")
