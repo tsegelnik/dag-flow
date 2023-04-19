@@ -9,6 +9,8 @@ from dagflow.graph import Graph
 from dagflow.graphviz import savegraph
 from dagflow.lib.Sum import Sum
 
+from gindex import GNIndex
+
 class ParametersWrapper(NestedMKDict):
     def to_dict(self, **kwargs) -> list:
         data = []
@@ -48,6 +50,12 @@ def model_dayabay_v0():
     storage = ParametersWrapper({}, sep='.')
     datasource = Path('data/dayabay-v0')
 
+    index = GNIndex.from_dict({
+		('d', 'detector'): ('AD11', 'AD12', 'AD21', 'AD22', 'AD31', 'AD32', 'AD33', 'AD34'),
+		('r', 'reactor'): ('DB1', 'DB2', 'LA1', 'LA2', 'LA3', 'LA4'),
+		('b', 'background'): ('acc', 'lihe', 'fastn', 'amc', 'alphan'),
+		})
+
     with Graph(close=True) as g:
         storage ^= load_parameters({'path': 'ibd'      , 'load': datasource/'parameters/pdg2012.yaml'})
         storage ^= load_parameters({'path': 'detector' , 'load': datasource/'parameters/detector_nprotons_correction.yaml'})
@@ -75,4 +83,4 @@ def model_dayabay_v0():
     tex = storage['parameter.constant'].to_latex(columns=['path', 'value', 'label'])
     print(tex)
 
-    # savegraph(g, "output/dayabay_v0.dot", show='all')
+    savegraph(g, "output/dayabay_v0.dot", show='all')
