@@ -7,7 +7,7 @@ from attr import define, field
 from attr.validators import instance_of
 
 
-@define(hash=True)
+@define(hash=True, slots=True)
 class GIndexName:
     """
     The index name class.
@@ -109,7 +109,7 @@ def namemode_validator(instance, attribute, value):
         )
 
 
-@define(hash=True)
+@define(hash=True, slots=True)
 class GIndexInstance:
     """
     The index instance class, storing a single `value` (`type=str`)
@@ -316,7 +316,7 @@ class GIndexInstance:
         )
 
 
-@define(hash=True)
+@define(hash=True, slots=True)
 class GIndex:
     """
     The index class, storing the `values`, `name` and usefull methods
