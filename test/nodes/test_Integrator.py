@@ -15,9 +15,8 @@ from pytest import mark, raises
 def test_Integrator_rect_center(align, debug_graph):
     with Graph(debug=debug_graph, close=True):
         npoints = 10
-        ordersX = Array("ordersX", [1000] * npoints)
         edges = Array("edges", linspace(0, pi, npoints + 1))
-        ordersX.outputs[0].dd.axes_edges = edges
+        ordersX = Array("ordersX", [1000] * npoints, edges=edges["array"])
         A = Array("A", edges._data[:-1])
         B = Array("B", edges._data[1:])
         sampler = IntegratorSampler("sampler", mode="rect", align=align)
@@ -38,9 +37,8 @@ def test_Integrator_rect_center(align, debug_graph):
 def test_Integrator_trap(debug_graph):
     with Graph(debug=debug_graph, close=True):
         npoints = 10
-        ordersX = Array("ordersX", [1000] * npoints)
         edges = Array("edges", linspace(0, pi, npoints + 1))
-        ordersX.outputs[0].dd.axes_edges = edges
+        ordersX = Array("ordersX", [1000] * npoints, edges=edges["array"])
         A = Array("A", edges._data[:-1])
         B = Array("B", edges._data[1:])
         sampler = IntegratorSampler("sampler", mode="trap")
@@ -87,9 +85,8 @@ class PolynomialRes(NodeOneToOne):
 def test_Integrator_gl1d(debug_graph):
     with Graph(debug=debug_graph, close=True):
         npoints = 10
-        ordersX = Array("ordersX", [2] * npoints)
         edges = Array("edges", linspace(0, 10, npoints + 1))
-        ordersX.outputs[0].dd.axes_edges = edges
+        ordersX = Array("ordersX", [2] * npoints, edges=edges["array"])
         A = Array("A", edges._data[:-1])
         B = Array("B", edges._data[1:])
         sampler = IntegratorSampler("sampler", mode="gl")
@@ -117,12 +114,10 @@ def test_Integrator_gl2d(debug_graph):
 
     with Graph(debug=debug_graph, close=True):
         npointsX, npointsY = 10, 20
-        ordersX = Array("ordersX", [2] * npointsX)
-        ordersY = Array("ordersY", [2] * npointsY)
         edgesX = Array("edgesX", linspace(0, 10, npointsX + 1))
         edgesY = Array("edgesY", linspace(0, 10, npointsY + 1))
-        ordersX.outputs[0].dd.axes_edges = edgesX
-        ordersY.outputs[0].dd.axes_edges = edgesY
+        ordersX = Array("ordersX", [2] * npointsX, edges=edgesX["array"])
+        ordersY = Array("ordersY", [2] * npointsY, edges=edgesY["array"])
         x0, y0 = meshgrid(edgesX._data[:-1], edgesY._data[:-1], indexing="ij")
         x1, y1 = meshgrid(edgesX._data[1:], edgesY._data[1:], indexing="ij")
         X0, X1 = Array("X0", x0), Array("X1", x1)
@@ -149,7 +144,7 @@ def test_Integrator_gl2d(debug_graph):
     assert allclose(integrator.outputs[0].data, res, atol=1e-10)
 
 
-# test wrong ordersX: sum(ordersX) != shape
+# test wrong ordersX: edges not given
 def test_Integrator_01(debug_graph):
     arr = [1.0, 2.0, 3.0]
     with Graph(debug=debug_graph):
@@ -164,14 +159,32 @@ def test_Integrator_01(debug_graph):
         integrator.close()
 
 
-# test wrong ordersX: sum(ordersX[i]) != shape[i]
+# test wrong ordersX: sum(ordersX) != shape
 def test_Integrator_02(debug_graph):
     arr = [1.0, 2.0, 3.0]
     with Graph(debug=debug_graph):
-        arr1 = Array("array", [arr, arr])
-        weights = Array("weights", [arr, arr])
-        ordersX = Array("ordersX", [1, 3])
-        ordersY = Array("ordersY", [1, 0, 0])
+        edges = Array("edges", [0.0, 1.0, 2.0, 3.0])
+        arr1 = Array("array", arr, edges=edges["array"])
+        weights = Array("weights", arr, edges=edges["array"])
+        ordersX = Array("ordersX", [1, 2, 3], edges=edges["array"])
+        integrator = Integrator("integrator")
+        arr1 >> integrator
+        weights >> integrator("weights")
+        ordersX >> integrator("ordersX")
+    with raises(TypeFunctionError):
+        integrator.close()
+
+
+# test wrong ordersX: sum(ordersX[i]) != shape[i]
+def test_Integrator_03(debug_graph):
+    arr = [1.0, 2.0, 3.0]
+    with Graph(debug=debug_graph):
+        edgesX = Array("edgesX", [-1.0, 0.0, 1.0])
+        edgesY = Array("edgesX", [-1.0, 0.0, 1.0])
+        arr1 = Array("array", [arr, arr], edges=[edgesX["array"], edgesY["array"]])
+        weights = Array("weights", [arr, arr], edges=[edgesX["array"], edgesY["array"]])
+        ordersX = Array("ordersX", [1, 3], edges=edgesX["array"])
+        ordersY = Array("ordersY", [1, 0, 0], edges=edgesY["array"])
         integrator = Integrator("integrator")
         arr1 >> integrator
         weights >> integrator("weights")
@@ -182,7 +195,7 @@ def test_Integrator_02(debug_graph):
 
 
 # test wrong shape
-def test_Integrator_03(debug_graph):
+def test_Integrator_04(debug_graph):
     with Graph(debug=debug_graph, close=False):
         arr1 = Array("array", [[1.0, 1.0, 1.0], [1.0, 1.0, 1.0]])
         arr2 = Array("array", [[1.0, 2.0, 3.0, 4.0], [1.0, 2.0, 3.0, 4.0]])

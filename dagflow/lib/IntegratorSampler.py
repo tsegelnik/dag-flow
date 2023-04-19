@@ -144,7 +144,7 @@ class IntegratorSampler(FunctionNode):
     def _post_allocate(self) -> None:
         """Allocates the `buffer`"""
         ordersX = self.inputs["ordersX"]
-        edgeshapeX = ordersX.dd.axes_edges._data.shape[0] - 1
+        edgeshapeX = ordersX.dd.axes_edges[0]._data.shape[0] - 1
         if self.mode == "rect":
             shapeX = (4, edgeshapeX)
         elif self.mode in {"trap", "gl"}:
@@ -160,7 +160,7 @@ class IntegratorSampler(FunctionNode):
     def _fcn_rect(self, _, inputs, outputs) -> Optional[list]:
         """The rectangular sampling"""
         ordersX = inputs["ordersX"]
-        edges = ordersX.dd.axes_edges._data  # n+1
+        edges = ordersX.dd.axes_edges[0]._data  # n+1
         orders = ordersX.data  # n
         sample = outputs[0].data  # m = sum(orders)
         weights = outputs["weights"].data
@@ -198,7 +198,7 @@ class IntegratorSampler(FunctionNode):
     def _fcn_trap(self, _, inputs, outputs) -> Optional[list]:
         """The trapezoidal sampling"""
         ordersX = inputs["ordersX"]
-        edges = ordersX.dd.axes_edges._data  # n+1
+        edges = ordersX.dd.axes_edges[0]._data  # n+1
         orders = ordersX.data  # n
         sample = outputs[0].data  # m = sum(orders)
         weights = outputs["weights"].data
@@ -223,7 +223,7 @@ class IntegratorSampler(FunctionNode):
     def _fcn_gl1d(self, _, inputs, outputs) -> Optional[list]:
         """The 1d Gauss-Legendre sampling"""
         ordersX = inputs["ordersX"]
-        edges = ordersX.dd.axes_edges._data
+        edges = ordersX.dd.axes_edges[0]._data
         orders = ordersX.data
         sample = outputs[0].data
         weights = outputs["weights"].data
@@ -237,8 +237,8 @@ class IntegratorSampler(FunctionNode):
         """The 2d Gauss-Legendre sampling"""
         ordersX = inputs["ordersX"]
         ordersY = inputs["ordersY"]
-        edgesX = ordersX.dd.axes_edges._data  # p + 1
-        edgesY = ordersY.dd.axes_edges._data  # q + 1
+        edgesX = ordersX.dd.axes_edges[0]._data  # p + 1
+        edgesY = ordersY.dd.axes_edges[0]._data  # q + 1
         ordersX = ordersX.data
         ordersY = ordersY.data
         weightsX = self.__bufferX[0]  # (n, )
