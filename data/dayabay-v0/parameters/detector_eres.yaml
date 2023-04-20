@@ -11,6 +11,15 @@ parameters:
 
 labels:
   eres:
-    a_nonuniform: "Energy resolution, a — spatial/temporal resolution term"
-    b_stat:       "Energy resolution, b — photon statistics term"
-    c_noise:      "Energy resolution, c — dark noise term"
+    a_nonuniform:
+      text:  "Energy resolution, a — spatial/temporal resolution term"
+      latex: "Energy resolution, $a$ — spatial/temporal resolution term"
+      mark:  "a"
+    b_stat:
+      text:  "Energy resolution, b, √MeV — photon statistics term"
+      latex: "Energy resolution, $b$, $\\sqrt{\\mathrm{MeV}}$ — photon statistics term"
+      mark:  "b"
+    c_noise:
+      text:  "Energy resolution, c, MeV — dark noise term"
+      latex: "Energy resolution, $c$, MeV — dark noise term"
+      mark:  "c"
