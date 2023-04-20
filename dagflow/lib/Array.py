@@ -1,5 +1,7 @@
 from numpy import array
 
+from ..typefunctions import check_edges_type
+
 from ..nodes import FunctionNode
 from ..output import Output
 from ..exception import InitializationError
@@ -62,11 +64,11 @@ class Array(FunctionNode):
             else:
                 # assume that the edges are Sequence[Output]
                 try:
-                    for edge in edges:
-                        self._output.dd.axes_edges.append(edges)
+                    self._output.dd.axes_edges.extend(edges)
                 except Exception as exc:
                     raise InitializationError(
-                        f"Array: edges must be `Output` or `Sequence[Output]`, but given {edges=}, {type(edges)=}"
+                        "Array: edges must be `Output` or `Sequence[Output]`, "
+                        f"but given {edges=}, {type(edges)=}"
                     ) from exc
 
         if mode == "store":
@@ -81,7 +83,7 @@ class Array(FunctionNode):
         return data
 
     def _typefunc(self) -> None:
-        pass
+        check_edges_type(self, slice(None), "array")
 
     def _post_allocate(self) -> None:
         if self._mode == "fill":

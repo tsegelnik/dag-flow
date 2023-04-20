@@ -413,3 +413,43 @@ def check_input_edges_equivalence(
                 node=node,
                 input=input,
             )
+
+
+def check_edges_type(
+    node: NodeT,
+    inputkey: Union[str, int, slice, Sequence] = AllPositionals,
+    outputkey: Union[str, int, slice, Sequence] = AllPositionals,
+):
+    """Checking of the edges type (must be `List[Output]`) of the inputs and outputs."""
+    # check inputs
+    for input in node.inputs.iter(inputkey):
+        edges = input.dd.axes_edges
+        if not isinstance(edges, list):
+            raise TypeFunctionError(
+                f"The `input.dd.axes_edges` must be `List[Output]`, but given {edges=}!",
+                node=node,
+                input=input,
+            )
+        for edge in edges:
+            if not isinstance(edge, Output):
+                raise TypeFunctionError(
+                    f"The edge must be `Output`, but given {edge=}!",
+                    node=node,
+                    input=input,
+                )
+    # check outputs
+    for output in node.outputs.iter(outputkey):
+        edges = output.dd.axes_edges
+        if not isinstance(edges, list):
+            raise TypeFunctionError(
+                f"The `output.dd.axes_edges` must be `List[Output]`, but given {edges=}!",
+                node=node,
+                output=output,
+            )
+        for edge in edges:
+            if not isinstance(edge, Output):
+                raise TypeFunctionError(
+                    f"The edge must be `Output`, but given {edge=}!",
+                    node=node,
+                    iutput=output,
+                )
