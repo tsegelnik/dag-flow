@@ -143,7 +143,7 @@ def get_label(key: tuple, labelscfg: dict) -> dict:
         except KeyError:
             continue
 
-        sidx = '.'.join(key[n-1:])
+        sidx = '.'.join(key[-n:])
         return {k: v.format(sidx) for k, v in lcfg.items()}
 
     return {}
