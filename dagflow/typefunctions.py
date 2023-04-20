@@ -453,3 +453,23 @@ def check_edges_type(
                     node=node,
                     iutput=output,
                 )
+
+def check_array_edges_consistency(node: NodeT, output: Output):
+    dd = output.dd
+    edges = dd.axes_edges
+    if (y := len(edges)) > 0:
+        if y != dd.dim:
+            raise TypeFunctionError(
+                f"Array: the data ({dd.dim}d) and edges "
+                f"({len(edges)}d) must have the same dimension!",
+                node=node,
+                output=output,
+            )
+        for i, edge in enumerate(edges):
+            if edge.dd.shape[0] != dd.shape[i] + 1:
+                raise TypeFunctionError(
+                    f"Array: the data lenght (={dd.shape[i]} + 1) must be "
+                    f"consistent with edges (={edge.dd.shape[0]})!",
+                    node=node,
+                    output=output,
+                )
