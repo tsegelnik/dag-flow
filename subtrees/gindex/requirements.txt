@@ -5,5 +5,5 @@ sphinx
 pydata_sphinx_theme
 m2r2
 schema
-attrs
+attrs==23.1.0
 -e git+https://git.jinr.ru/gna/gparser.git#egg=gparser
