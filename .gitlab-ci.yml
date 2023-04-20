@@ -6,14 +6,16 @@ tests:
     stage: tests
 
     script:
-    - python3 -m pip install -r subtrees/dagflow/requirements.txt
-    - coverage run --source=. --omit=subtrees/* -m pytest
-    - coverage report
-    - coverage xml
+        - python3 -m pip install -r subtrees/dagflow/requirements.txt
+        - mkdir output
+        - coverage run --source=. --omit=subtrees/* -m pytest
+        - coverage report
+        - coverage xml
     coverage: '/(?i)total.*? (100(?:\.0+)?\%|[1-9]?\d(?:\.\d+)?\%)$/'
     artifacts:
         paths:
             - test
+            - output
         reports:
             coverage_report:
                 coverage_format: cobertura
