@@ -53,6 +53,7 @@ def model_dayabay_v0():
     index = GNIndex.from_dict({
 		('d', 'detector'): ('AD11', 'AD12', 'AD21', 'AD22', 'AD31', 'AD32', 'AD33', 'AD34'),
 		('r', 'reactor'): ('DB1', 'DB2', 'LA1', 'LA2', 'LA3', 'LA4'),
+		('i', 'isotope'): ('U235', 'U238', 'Pu239', 'Pu241'),
 		('b', 'background'): ('acc', 'lihe', 'fastn', 'amc', 'alphan'),
 		})
 
