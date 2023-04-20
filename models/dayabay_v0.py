@@ -3,7 +3,9 @@ from multikeydict.nestedmkdict import NestedMKDict
 from pathlib import Path
 
 from typing import Union, Tuple, List, Optional
+import pandas as pd
 from pandas import DataFrame
+pd.set_option('display.max_rows', None)
 
 from dagflow.graph import Graph
 from dagflow.graphviz import savegraph
@@ -62,6 +64,7 @@ def model_dayabay_v0():
         storage ^= load_parameters({'path': 'detector' , 'load': datasource/'parameters/detector_nprotons_correction.yaml'})
         storage ^= load_parameters({'path': 'reactor'  , 'load': datasource/'parameters/reactor_thermal_power_nominal.yaml'})
         storage ^= load_parameters({'path': 'eres'     , 'load': datasource/'parameters/detector_eres.yaml'})
+        storage ^= load_parameters({                     'load': datasource/'parameters/baselines.yaml'})
 
         nuisanceall = Sum('nuisance total')
         storage['stat.nuisance.all'] = nuisanceall
@@ -74,14 +77,14 @@ def model_dayabay_v0():
     print('Everything')
     print(storage.to_df())
 
-    print('Parameters')
-    print(storage['parameter'].to_df())
-
-    print('Parameters (latex)')
-    print(storage['parameter'].to_latex())
-
-    print('Constants (latex)')
-    tex = storage['parameter.constant'].to_latex(columns=['path', 'value', 'label'])
-    print(tex)
+    # print('Parameters')
+    # print(storage['parameter'].to_df())
+    #
+    # print('Parameters (latex)')
+    # print(storage['parameter'].to_latex())
+    #
+    # print('Constants (latex)')
+    # tex = storage['parameter.constant'].to_latex(columns=['path', 'value', 'label'])
+    # print(tex)
 
     savegraph(g, "output/dayabay_v0.dot", show='all')
