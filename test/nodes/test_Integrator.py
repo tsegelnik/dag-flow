@@ -152,10 +152,29 @@ def test_Integrator_gl2d(debug_graph):
 
 
 # test wrong ordersX: edges not given
-def test_Integrator_01(debug_graph):
+def test_Integrator_edges_0(debug_graph):
     arr = [1.0, 2.0, 3.0]
     with Graph(debug=debug_graph):
         arr1 = Array("array", arr)
+        weights = Array("weights", arr)
+        ordersX = Array("ordersX", [1, 2, 3])
+        integrator = Integrator("integrator")
+        arr1 >> integrator
+        weights >> integrator("weights")
+        ordersX >> integrator("ordersX")
+    with raises(TypeFunctionError):
+        integrator.close()
+
+
+# test wrong ordersX: edges is wrong
+def test_Integrator_edges_1(debug_graph):
+    arr = [1.0, 2.0, 3.0]
+    with Graph(debug=debug_graph, close=False):
+        edges = Array("edges", [0.0, 1.0, 2.0])
+        with raises(TypeFunctionError):
+            arr1 = Array("array", arr, edges=edges["array"])
+        edges = Array("edges", [0.0, 1.0, 2.0, 3.0])
+        arr1 = Array("array", arr, edges=edges["array"])
         weights = Array("weights", arr)
         ordersX = Array("ordersX", [1, 2, 3])
         integrator = Integrator("integrator")
@@ -185,9 +204,9 @@ def test_Integrator_02(debug_graph):
 # test wrong ordersX: sum(ordersX[i]) != shape[i]
 def test_Integrator_03(debug_graph):
     arr = [1.0, 2.0, 3.0]
-    with Graph(debug=debug_graph):
+    with Graph(debug=debug_graph, close=False):
         edgesX = Array("edgesX", [-1.0, 0.0, 1.0])
-        edgesY = Array("edgesX", [-1.0, 0.0, 1.0])
+        edgesY = Array("edgesY", [-2.0, -1, 0.0, 1.0])
         arr1 = Array(
             "array", [arr, arr], edges=[edgesX["array"], edgesY["array"]]
         )

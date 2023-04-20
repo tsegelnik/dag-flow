@@ -4,7 +4,7 @@ from ..typefunctions import check_edges_type
 
 from ..nodes import FunctionNode
 from ..output import Output
-from ..exception import InitializationError
+from ..exception import InitializationError, TypeFunctionError
 
 from numpy.typing import ArrayLike, NDArray
 from typing import Optional, Sequence, Union
@@ -84,6 +84,25 @@ class Array(FunctionNode):
 
     def _typefunc(self) -> None:
         check_edges_type(self, slice(None), "array")
+        dd = self._output.dd
+        edges = dd.axes_edges
+        # check dim
+        if (y := len(edges)) > 0:
+            if y != dd.dim:
+                raise TypeFunctionError(
+                    f"Array: the data ({dd.dim}d) and edges "
+                    f"({len(edges)}d) must have the same dimension!",
+                    node=self,
+                    output=self._output,
+                )
+            for i, edge in enumerate(edges):
+                if edge.dd.shape[0] != dd.shape[i] + 1:
+                    raise TypeFunctionError(
+                        f"Array: the data lenght (={dd.shape[i]} + 1) must be "
+                        f"consistent with edges (={edge.dd.shape[0]})!",
+                        node=self,
+                        output=self._output,
+                    )
 
     def _post_allocate(self) -> None:
         if self._mode == "fill":
