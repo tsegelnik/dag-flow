@@ -455,6 +455,11 @@ def check_edges_type(
                 )
 
 def check_array_edges_consistency(node: NodeT, output: Output):
+    """
+    Checks the dimension equivalence of edges and the output, then checks that
+    `len(output) = N` and `len(edges) = N+1` for each dimension.
+    Tht type function is passed if the edges are empty.
+    """
     dd = output.dd
     edges = dd.axes_edges
     if (y := len(edges)) > 0:

@@ -1,13 +1,12 @@
+from typing import Optional, Sequence, Union
+
 from numpy import array
+from numpy.typing import ArrayLike, NDArray
 
-from ..typefunctions import check_array_edges_consistency, check_edges_type
-
+from ..exception import InitializationError
 from ..nodes import FunctionNode
 from ..output import Output
-from ..exception import InitializationError, TypeFunctionError
-
-from numpy.typing import ArrayLike, NDArray
-from typing import Optional, Sequence, Union
+from ..typefunctions import check_array_edges_consistency, check_edges_type
 
 
 class Array(FunctionNode):
@@ -83,8 +82,8 @@ class Array(FunctionNode):
         return data
 
     def _typefunc(self) -> None:
-        check_edges_type(self, slice(None), "array")
-        check_array_edges_consistency(self, self._output)
+        check_edges_type(self, slice(None), "array") # checks List[Output]
+        check_array_edges_consistency(self, self._output) # checks dim and N+1 size
 
     def _post_allocate(self) -> None:
         if self._mode == "fill":
