@@ -3,7 +3,7 @@ from .visitor import MakeNestedMKDictVisitor
 from .nestedmkdictaccess import NestedMKDictAccess
 
 from collections.abc import Sequence, MutableMapping
-from typing import Any
+from typing import Any, Optional
 
 class NestedMKDict(ClassWrapper):
     """Dictionary wrapper managing nested dictionaries
@@ -22,7 +22,7 @@ class NestedMKDict(ClassWrapper):
             return dic
         return ClassWrapper.__new__(cls)
 
-    def __init__(self, dic, *, sep: str=None, parent=None, recursive_to_others: bool=False):
+    def __init__(self, dic, *, sep: str=None, parent: Optional[Any]=None, recursive_to_others: bool=False):
         if isinstance(dic, NestedMKDict):
             if sep is None:
                 sep = dic._sep
@@ -105,20 +105,25 @@ class NestedMKDict(ClassWrapper):
     def __getitem__(self, key):
         if key==():
             return self
-        key, rest=self.splitkey(key)
+        head, rest=self.splitkey(key)
 
-        sub = self._object.__getitem__(key)
-        sub = self._wrap(sub, parent=self)
+        sub = self._object.__getitem__(head)
         if not rest:
+            sub = self._wrap(sub, parent=self)
             return sub
 
         if sub is None:
             raise KeyError( f"No nested key '{key}'" )
 
+        sub = self._wrap(sub, parent=self)
         if self._not_recursive_to_others and not isinstance(sub, NestedMKDict):
             raise TypeError(f"Nested value for '{key}' has wrong type")
 
-        return sub[rest]
+        try:
+            return sub[rest]
+        except KeyError as e:
+            raise KeyError(key) from e
+
 
     def __delitem__(self, key):
         if key==():
@@ -171,7 +176,7 @@ class NestedMKDict(ClassWrapper):
         if self._not_recursive_to_others and not isinstance(sub, NestedMKDict):
             raise TypeError(f"Nested value for '{key}' has wrong type")
 
-        return sub.set(rest, value)
+        return sub.__setitem__(rest, value)
 
     __setitem__= set
 
@@ -308,3 +313,4 @@ class NestedMKDict(ClassWrapper):
         return self
 
     __ixor__ = update_missing
+

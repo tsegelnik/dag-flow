@@ -26,7 +26,7 @@ def test_nestedmkdict_03():
     assert tuple(dw.keys())==('a','b','c')
 
 @pytest.mark.parametrize('sep', [None, '.'])
-def test_nestedmkdict_03(sep):
+def test_nestedmkdict_04(sep):
     dct = dict(a=1, b=2, c=3, d=dict(e=4), f=dict(g=dict(h=5)))
     dct['z.z.z'] = 0
     print(dct)
