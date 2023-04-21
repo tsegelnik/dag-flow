@@ -1,5 +1,6 @@
 from multikeydict.nestedmkdict import NestedMKDict
 # from multikeydict.flatmkdict import FlatMKDict # To be used later
+from gindex import GNIndex
 
 from schema import Schema, Or, Optional, Use, And, Schema, SchemaError
 from pathlib import Path
@@ -129,6 +130,24 @@ def get_format_processor(format):
     else:
         return process_var_percent
 
+def get_label(key: tuple, labelscfg: dict) -> dict:
+    try:
+        return labelscfg[key]
+    except KeyError:
+        pass
+
+    for n in range(1, len(key)+1):
+        subkey = key[:-n]
+        try:
+            lcfg = labelscfg[subkey]
+        except KeyError:
+            continue
+
+        sidx = '.'.join(key[n-1:])
+        return {k: v.format(sidx) for k, v in lcfg.items()}
+
+    return {}
+
 def iterate_varcfgs(cfg: NestedMKDict):
     parameterscfg = cfg['parameters']
     labelscfg = cfg['labels']
@@ -139,10 +158,7 @@ def iterate_varcfgs(cfg: NestedMKDict):
 
     for key, varcfg in parameterscfg.walkitems():
         varcfg = process(varcfg, format, hascentral)
-        try:
-            varcfg['label'] = labelscfg[key]
-        except KeyError:
-            varcfg['label'] = {}
+        varcfg['label'] = get_label(key, labelscfg)
         yield key, varcfg
 
 from dagflow.parameters import Parameters
@@ -187,6 +203,7 @@ def load_parameters(acfg):
         label = varcfg['label']
         label['key'] = skey
         label.setdefault('text', skey)
+
         varcfg.setdefault(state, True)
 
         par = Parameters.from_numbers(**varcfg)
