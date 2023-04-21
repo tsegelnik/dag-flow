@@ -1,5 +1,5 @@
 from numba import njit
-from numpy import empty, floating, integer, issubdtype, multiply
+from numpy import empty, floating, integer, multiply
 from numpy.typing import NDArray
 
 from ..exception import TypeFunctionError
@@ -9,9 +9,11 @@ from ..typefunctions import (
     check_has_inputs,
     check_input_dimension,
     check_input_dtype,
+    check_input_edges_dim,
     check_input_edges_equivalence,
     check_input_shape,
-    check_input_edges_dim,
+    check_input_subtype,
+    check_output_subtype,
 )
 from ..types import ShapeLike
 
@@ -81,6 +83,7 @@ class Integrator(FunctionNode):
         """
         check_has_inputs(self)
         check_has_inputs(self, "weights")
+
         input0 = self.inputs[0]
         dim = 1 if self.inputs.get("ordersY", None) is None else 2
         if (ndim := len(input0.dd.shape)) != dim:
@@ -90,22 +93,21 @@ class Integrator(FunctionNode):
             )
         check_input_dimension(self, (slice(None), "weights"), dim)
         check_input_shape(self, (slice(None), "weights"), input0.dd.shape)
+        check_input_subtype(self, input0, floating)
+        dtype = input0.dd.dtype
+        check_input_dtype(self, (slice(None), "weights"), dtype)
+
         edgeslenX, edgesX = self.__check_orders("ordersX", input0.dd.shape[0])
         shape = [edgeslenX]
         edges = [edgesX]
-        dtype = input0.dd.dtype
-        if not issubdtype(dtype, floating):
-            raise TypeFunctionError(
-                "The Integrator works only within `float` or `double` "
-                f"precision, but given '{dtype}'!",
-                node=self,
-            )
-        check_input_dtype(self, (slice(None), "weights"), dtype)
         if dim == 2:
-            edgeslenY, edgesY = self.__check_orders("ordersY", input0.dd.shape[1])
+            edgeslenY, edgesY = self.__check_orders(
+                "ordersY", input0.dd.shape[1]
+            )
             shape.append(edgeslenY)
             edges.append(edgesY)
         check_input_edges_equivalence(self, slice(None), edges)
+
         shape = tuple(shape)
         self.fcn = self._functions[dim]
         for output in self.outputs:
@@ -121,12 +123,7 @@ class Integrator(FunctionNode):
         """
         check_input_dimension(self, name, 1)
         orders = self.inputs[name]
-        if not issubdtype(orders.dd.dtype, integer):
-            raise TypeFunctionError(
-                f"The '{name}' must be array of integers, but given '{orders.dd.dtype}'!",
-                node=self,
-                input=orders,
-            )
+        check_output_subtype(self, orders, integer)
         if (y := sum(orders.data)) != shape:
             raise TypeFunctionError(
                 f"Orders '{name}' must be consistent with inputs len={shape}, "

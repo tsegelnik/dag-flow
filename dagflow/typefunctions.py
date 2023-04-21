@@ -6,6 +6,7 @@ from numpy import issubdtype, result_type
 from numpy.typing import DTypeLike
 
 from .exception import TypeFunctionError
+from .input import Input
 from .output import Output
 from .types import NodeT
 
@@ -337,6 +338,16 @@ def check_inputs_same_dtype(
                 node=node,
                 input=input,
             )
+
+
+def check_input_subtype(node: NodeT, input: Input, dtype: DTypeLike):
+    """Checks if the input dtype is some subtype of `dtype`."""
+    if not issubdtype(input.dd.dtype, dtype):
+        raise TypeFunctionError(
+            f"The input must be an array of {dtype}, but given '{input.dd.dtype}'!",
+            node=node,
+            input=input,
+        )
 
 
 def check_output_subtype(node: NodeT, output: Output, dtype: DTypeLike):
