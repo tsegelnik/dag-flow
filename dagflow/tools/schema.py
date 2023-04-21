@@ -26,7 +26,7 @@ def LoadFileWithExt(*, key: Union[str, dict]=None, update: bool=False, **kwargs:
             dct = None
         for ext, loader in kwargs.items():
             if filename.endswith(f'.{ext}'):
-                logger.log(SUBINFO, f'Read filename')
+                logger.log(SUBINFO, f'Read: {filename}')
                 ret = loader(filename)
 
                 if update and dct is not None:
