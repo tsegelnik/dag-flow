@@ -1,19 +1,19 @@
 from typing import Iterator, Optional, Tuple, Union
+
 from numpy import zeros
 from numpy.typing import DTypeLike, NDArray
 
-from dagflow.datadescriptor import DataDescriptor
-
+from .datadescriptor import DataDescriptor
 from .edges import EdgeContainer
 from .exception import (
-    ClosedGraphError,
-    ReconnectionError,
     AllocationError,
+    ClosedGraphError,
     InitializationError,
+    ReconnectionError,
 )
+from .iter import StopNesting
 from .output import Output
 from .shift import lshift
-from .iter import StopNesting
 from .types import EdgesLike, InputT, NodeT, ShapeLike
 
 
@@ -264,7 +264,9 @@ class Input:
                 output=self,
             )
         try:
-            self._own_data = zeros(self.own_dd.shape, self.own_dd.dtype, **kwargs)
+            self._own_data = zeros(
+                self.own_dd.shape, self.own_dd.dtype, **kwargs
+            )
         except Exception as exc:
             raise AllocationError(
                 f"Input: {exc.args[0]}", node=self._node, input=self

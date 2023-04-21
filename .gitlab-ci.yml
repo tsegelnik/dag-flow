@@ -7,7 +7,7 @@ tests:
 
     script:
     - python3 -m pip install -r requirements.txt
-    - coverage run --source=. --omit=subtrees/* -m pytest
+    - coverage run --source=dagflow --omit=subtrees/* -m pytest
     - coverage report
     - coverage xml
     coverage: '/(?i)total.*? (100(?:\.0+)?\%|[1-9]?\d(?:\.\d+)?\%)$/'
