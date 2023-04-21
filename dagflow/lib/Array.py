@@ -83,7 +83,7 @@ class Array(FunctionNode):
 
     def _typefunc(self) -> None:
         check_edges_type(self, slice(None), "array") # checks List[Output]
-        check_array_edges_consistency(self, self._output) # checks dim and N+1 size
+        check_array_edges_consistency(self, "array") # checks dim and N+1 size
 
     def _post_allocate(self) -> None:
         if self._mode == "fill":

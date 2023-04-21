@@ -1,14 +1,6 @@
 from typing import Literal, Optional
 
-from numpy import (
-    empty,
-    errstate,
-    integer,
-    linspace,
-    matmul,
-    meshgrid,
-    newaxis,
-)
+from numpy import empty, errstate, integer, linspace, matmul, meshgrid, newaxis
 from numpy.polynomial.legendre import leggauss
 from numpy.typing import DTypeLike, NDArray
 
@@ -17,8 +9,8 @@ from ..nodes import FunctionNode
 from ..typefunctions import (
     check_input_dimension,
     check_input_edges_dim,
+    check_input_subtype,
     check_inputs_number,
-    check_output_subtype,
 )
 
 
@@ -139,9 +131,9 @@ class IntegratorSampler(FunctionNode):
         and returns the `dd.shape[0]`
         """
         check_input_dimension(self, name, 1)
-        orders = self.inputs[name]
-        check_output_subtype(self, orders, integer)
+        check_input_subtype(self, name, integer)
         check_input_edges_dim(self, name, 1)
+        orders = self.inputs[name]
         return sum(orders.data), orders.dd.axes_edges[0]
 
     def _post_allocate(self) -> None:

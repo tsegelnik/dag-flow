@@ -6,7 +6,6 @@ from numpy import issubdtype, result_type
 from numpy.typing import DTypeLike
 
 from .exception import TypeFunctionError
-from .input import Input
 from .output import Output
 from .types import NodeT
 
@@ -340,24 +339,30 @@ def check_inputs_same_dtype(
             )
 
 
-def check_input_subtype(node: NodeT, input: Input, dtype: DTypeLike):
+def check_input_subtype(
+    node: NodeT, inputkey: Union[str, int, slice, Sequence], dtype: DTypeLike
+):
     """Checks if the input dtype is some subtype of `dtype`."""
-    if not issubdtype(input.dd.dtype, dtype):
-        raise TypeFunctionError(
-            f"The input must be an array of {dtype}, but given '{input.dd.dtype}'!",
-            node=node,
-            input=input,
-        )
+    for input in node.inputs.iter(inputkey):
+        if not issubdtype(input.dd.dtype, dtype):
+            raise TypeFunctionError(
+                f"The input must be an array of {dtype}, but given '{input.dd.dtype}'!",
+                node=node,
+                input=input,
+            )
 
 
-def check_output_subtype(node: NodeT, output: Output, dtype: DTypeLike):
+def check_output_subtype(
+    node: NodeT, outputkey: Union[str, int, slice, Sequence], dtype: DTypeLike
+):
     """Checks if the output dtype is some subtype of `dtype`."""
-    if not issubdtype(output.dd.dtype, dtype):
-        raise TypeFunctionError(
-            f"The output must be an array of {dtype}, but given '{output.dd.dtype}'!",
-            node=node,
-            output=output,
-        )
+    for output in node.outputs.iter(outputkey):
+        if not issubdtype(output.dd.dtype, dtype):
+            raise TypeFunctionError(
+                f"The output must be an array of {dtype}, but given '{output.dd.dtype}'!",
+                node=node,
+                output=output,
+            )
 
 
 def check_inputs_multiplicable_mat(
@@ -477,27 +482,30 @@ def check_edges_type(
                 )
 
 
-def check_array_edges_consistency(node: NodeT, output: Output):
+def check_array_edges_consistency(
+    node: NodeT, outputkey: Union[str, int, slice, Sequence] = AllPositionals
+):
     """
     Checks the dimension equivalence of edges and the output, then checks that
     `len(output) = N` and `len(edges) = N+1` for each dimension.
     Tht type function is passed if the edges are empty.
     """
-    dd = output.dd
-    edges = dd.axes_edges
-    if (y := len(edges)) > 0:
-        if y != dd.dim:
-            raise TypeFunctionError(
-                f"Array: the data ({dd.dim}d) and edges "
-                f"({len(edges)}d) must have the same dimension!",
-                node=node,
-                output=output,
-            )
-        for i, edge in enumerate(edges):
-            if edge.dd.shape[0] != dd.shape[i] + 1:
+    for output in node.outputs.iter(outputkey):
+        dd = output.dd
+        edges = dd.axes_edges
+        if (y := len(edges)) > 0:
+            if y != dd.dim:
                 raise TypeFunctionError(
-                    f"Array: the data lenght (={dd.shape[i]} + 1) must be "
-                    f"consistent with edges (={edge.dd.shape[0]})!",
+                    f"Array: the data ({dd.dim}d) and edges "
+                    f"({len(edges)}d) must have the same dimension!",
                     node=node,
                     output=output,
                 )
+            for i, edge in enumerate(edges):
+                if edge.dd.shape[0] != dd.shape[i] + 1:
+                    raise TypeFunctionError(
+                        f"Array: the data lenght (={dd.shape[i]} + 1) must be "
+                        f"consistent with edges (={edge.dd.shape[0]})!",
+                        node=node,
+                        output=output,
+                    )
