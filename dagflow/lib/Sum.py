@@ -8,9 +8,6 @@ class Sum(NodeManyToOne):
 
     _mark = 'Σ'
     def __init__(self, *args, **kwargs):
-        kwargs.setdefault(
-            "missing_input_handler", MissingInputAddOne(output_fmt="result")
-        )
         super().__init__(*args, **kwargs)
 
     def _fcn(self, _, inputs, outputs):
