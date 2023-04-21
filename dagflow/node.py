@@ -1,19 +1,21 @@
+from typing import Any, Callable, Dict, List, Optional, Tuple, Union
+
 from .exception import (
     AllocationError,
-    CriticalError,
     ClosedGraphError,
     ClosingError,
-    OpeningError,
+    CriticalError,
     DagflowError,
+    InitializationError,
+    OpeningError,
     ReconnectionError,
     UnclosedGraphError,
-    InitializationError,
 )
 from .input import Input
+from .iter import IsIterable
 from .legs import Legs
 from .logger import Logger, get_logger
 from .output import Output
-from .iter import IsIterable
 from .types import GraphT
 from typing import Optional, List, Dict, Union, Callable, Any, Tuple, Generator
 
@@ -44,9 +46,10 @@ class Node(Legs):
     # _always_tainted: bool = False
 
     def __init__(
-        self, name,
+        self,
+        name,
         *,
-        label: Union[str, dict, None]=None,
+        label: Union[str, dict, None] = None,
         graph: Optional[GraphT] = None,
         fcn: Optional[Callable] = None,
         typefunc: Optional[Callable] = None,
@@ -56,7 +59,7 @@ class Node(Legs):
         immediate: bool = False,
         auto_freeze: bool = False,
         frozen: bool = False,
-        **kwargs
+        **kwargs,
     ):
         super().__init__(missing_input_handler=missing_input_handler)
         self._name = name
@@ -70,6 +73,7 @@ class Node(Legs):
         self._fcn_chain = []
         if graph is None:
             from .graph import Graph
+
             self.graph = Graph.current()
         else:
             self.graph = graph
@@ -221,13 +225,14 @@ class Node(Legs):
     #
     # Methods
     #
-    def __call__(self, name, child_output: Optional[Output]=None):
+    def __call__(self, name, child_output: Optional[Output] = None, **kwargs):
         self.logger.debug(f"Node '{self.name}': Get input '{name}'")
+        kwargs.setdefault("positional", False)
         inp = self.inputs.get(name, None)
         if inp is None:
             if self.closed:
                 raise ClosedGraphError(node=self)
-            return self._add_input(name, child_output=child_output)
+            return self._add_input(name, child_output=child_output, **kwargs)
         elif inp.connected and (output := inp.parent_output):
             raise ReconnectionError(input=inp, node=self, output=output)
         return inp
@@ -282,20 +287,18 @@ class Node(Legs):
             return self._add_output(name, **kwargs)
         raise ClosedGraphError(node=self)
 
-    def _add_output(self, name, *, keyword: bool=True, positional: bool=True, **kwargs) -> Union[Output, Tuple[Output]]:
+    def _add_output(
+        self, name, *, keyword: bool = True, positional: bool = True, **kwargs
+    ) -> Union[Output, Tuple[Output]]:
         if IsIterable(name):
-            return tuple(
-                self._add_output(n, **kwargs) for n in name
-            )
+            return tuple(self._add_output(n, **kwargs) for n in name)
         self.logger.debug(f"Node '{self.name}': Add output '{name}'")
         if isinstance(name, Output):
             if name.name in self.outputs or name.node:
                 raise ReconnectionError(output=name, node=self)
             name._node = self
             return self.__add_output(
-                name,
-                positional=positional,
-                keyword=keyword
+                name, positional=positional, keyword=keyword
             )
         if name in self.outputs:
             raise ReconnectionError(output=name, node=self)
@@ -303,21 +306,31 @@ class Node(Legs):
         return self.__add_output(
             Output(name, self, **kwargs),
             positional=positional,
-            keyword=keyword
+            keyword=keyword,
         )
 
-    def __add_output(self, out, positional: bool = True, keyword: bool = True) -> Union[Output, Tuple[Output]]:
+    def __add_output(
+        self, out, positional: bool = True, keyword: bool = True
+    ) -> Union[Output, Tuple[Output]]:
         self.outputs.add(out, positional=positional, keyword=keyword)
         if self._graph:
             self._graph._add_output(out)
         return out
 
-    def add_pair(self, iname: str, oname: str, **kwargs) -> Tuple[Input, Output]:
+    def add_pair(
+        self, iname: str, oname: str, **kwargs
+    ) -> Tuple[Input, Output]:
         if not self.closed:
             return self._add_pair(iname, oname, **kwargs)
         raise ClosedGraphError(node=self)
 
-    def _add_pair(self, iname: str, oname: str, input_kws: Optional[dict]=None, output_kws: Optional[dict]=None) -> Tuple[Input, Output]:
+    def _add_pair(
+        self,
+        iname: str,
+        oname: str,
+        input_kws: Optional[dict] = None,
+        output_kws: Optional[dict] = None,
+    ) -> Tuple[Input, Output]:
         input_kws = input_kws or {}
         output_kws = output_kws or {}
         output = self._add_output(oname, **output_kws)
@@ -450,7 +463,9 @@ class Node(Legs):
         if not self._types_tainted:
             return True
         if recursive:
-            self.logger.debug(f"Node '{self.name}': Trigger recursive update types...")
+            self.logger.debug(
+                f"Node '{self.name}': Trigger recursive update types..."
+            )
             for input in self.inputs.iter_all():
                 input.parent_node.update_types(recursive)
         self.logger.debug(f"Node '{self.name}': Update types...")
@@ -461,9 +476,12 @@ class Node(Legs):
         if self._allocated:
             return True
         if recursive:
-            self.logger.debug(f"Node '{self.name}': Trigger recursive memory allocation...")
+            self.logger.debug(
+                f"Node '{self.name}': Trigger recursive memory allocation..."
+            )
             if not all(
-                input.parent_node.allocate(recursive) for input in self.inputs.iter_all()
+                input.parent_node.allocate(recursive)
+                for input in self.inputs.iter_all()
             ):
                 return False
         self.logger.debug(f"Node '{self.name}': Allocate memory on inputs")
@@ -481,7 +499,9 @@ class Node(Legs):
         self._allocated = True
         return True
 
-    def close(self, recursive: bool = True, together: List['Node'] = []) -> bool:
+    def close(
+        self, recursive: bool = True, together: List["Node"] = []
+    ) -> bool:
         # Caution: `together` list should not be written in!
 
         if self._closed:
@@ -489,21 +509,22 @@ class Node(Legs):
         if self.invalid:
             raise ClosingError("Cannot close an invalid node!", node=self)
         self.logger.debug(f"Node '{self.name}': Trigger recursive close")
-        for node in [self]+together:
+        for node in [self] + together:
             node.update_types(recursive=recursive)
-        for node in [self]+together:
+        for node in [self] + together:
             node.allocate(recursive=recursive)
         if recursive and not all(
-            input.parent_node.close(recursive) for input in self.inputs.iter_all()
+            input.parent_node.close(recursive)
+            for input in self.inputs.iter_all()
         ):
             return False
         for node in together:
             if not node.close(recursive=recursive):
                 return False
-        self.logger.debug(f"Node '{self.name}': Close")
         self._closed = self._allocated
         if not self._closed:
             raise ClosingError(node=self)
+        self.logger.debug(f"Node '{self.name}': Closed")
         return self._closed
 
     def open(self, force: bool = False) -> bool:
