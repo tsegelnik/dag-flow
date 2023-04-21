@@ -6,6 +6,10 @@ from .NodeManyToOne import NodeManyToOne
 class Sum(NodeManyToOne):
     """Sum of all the inputs together"""
 
+    _mark = 'Σ'
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
     def _fcn(self, _, inputs, outputs):
         out = outputs["result"].data
         copyto(out, inputs[0].data)

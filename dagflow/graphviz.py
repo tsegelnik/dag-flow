@@ -5,7 +5,7 @@ from .types import NodeT
 
 from numpy import square
 from collections.abc import Sequence
-from typing import Union, Set
+from typing import Union, Set, Optional, Dict
 
 try:
     import pygraphviz as G
@@ -17,6 +17,17 @@ else:
     def savegraph(graph, *args, **kwargs):
         gd = GraphDot(graph, **kwargs)
         gd.savegraph(*args)
+
+    class EdgeDef:
+        __slots__ = ('nodein', 'nodemid', 'nodeout', 'edges')
+        def __init__(self, nodeout, nodemid, nodein, edge):
+            self.nodein = nodein
+            self.nodemid = nodemid
+            self.nodeout = nodeout
+            self.edges = [edge]
+
+        def append(self, edge):
+            self.edges.append(edge)
 
     class GraphDot:
         _graph = None
@@ -50,7 +61,7 @@ else:
             self._nodes = {}
             self._nodes_open_input = {}
             self._nodes_open_output = {}
-            self._edges = {}
+            self._edges: Dict[str, EdgeDef] = {}
             self._graph = G.AGraph(directed=True, strict=False, **kwargs)
 
             if graphattr:
@@ -198,15 +209,25 @@ else:
             nodeout = self._graph.get_node(target)
 
             self._nodes_open_input[input] = nodein
-            self._edges[input] = (nodein, edge, nodeout)
+            self._edges[input] = EdgeDef(nodein, None, nodeout, edge)
 
         def _add_edges(self, nodedag):
             for output in nodedag.outputs:
                 if output.connected():
-                    for input in output.child_inputs:
-                        self._add_edge(nodedag, output, input)
+                    if len(output.child_inputs)>1:
+                        self._add_edges_multi(nodedag, output)
+                    else:
+                        self._add_edge(nodedag, output, output.child_inputs[0])
                 else:
                     self._add_open_output(nodedag, output)
+
+        def _add_edges_multi(self, nodedag, output):
+            vnode = self.get_id(output, "_mid")
+            self._graph.add_node(vnode, label="", shape="none", width=0, height=0, penwidth=0, weight=10)
+            firstinput = output.child_inputs[0]
+            self._add_edge(nodedag, output, firstinput, vtarget=vnode)
+            for input in output.child_inputs:
+                self._add_edge(nodedag, output, input, vsource=vnode)
 
         def _add_open_output(self, nodedag, output):
             styledict = {}
@@ -223,7 +244,7 @@ else:
             nodeout = self._graph.get_node(target)
 
             self._nodes_open_output[output] = nodeout
-            self._edges[output] = (nodein, edge, nodeout)
+            self._edges[output] = EdgeDef(nodein, None, nodeout, edge)
 
         def _get_index(self, leg, styledict: dict, target: str):
             if isinstance(leg, Input):
@@ -240,20 +261,34 @@ else:
             else:
                 styledict[target] = str(idx)
 
-        def _add_edge(self, nodedag, output, input):
+        def _add_edge(self, nodedag, output, input, *, vsource: Optional[str]=None, vtarget: Optional[str]=None) -> None:
             styledict = {}
 
-            source = self.get_id(nodedag)
-            target = self.get_id(input.node)
-            self._get_index(output, styledict, 'taillabel')
-            self._get_index(input, styledict, 'headlabel')
+            if vsource is not None:
+                source = vsource
+                styledict['arrowtail'] = 'none'
+            else:
+                source = self.get_id(nodedag)
+                self._get_index(output, styledict, 'taillabel')
+
+            if vtarget is not None:
+                target = vtarget
+                styledict['arrowhead'] = 'none'
+            else:
+                target = self.get_id(input.node)
+                self._get_index(input, styledict, 'headlabel')
+
             self._graph.add_edge(source, target, **styledict)
 
             nodein = self._graph.get_node(source)
             edge = self._graph.get_edge(source, target)
             nodeout = self._graph.get_node(target)
 
-            self._edges[input] = (nodein, edge, nodeout)
+            edgedef = self._edges.get(input, None)
+            if edgedef is None:
+                self._edges[input] = EdgeDef(nodein, None, nodeout, edge)
+            else:
+                edgedef.append(edge)
 
         def _set_style_node(self, node, attr):
             if node is None:
@@ -301,10 +336,10 @@ else:
                 allocated_on_output = obj.owns_buffer
             attr.update({
                 "dir": "both",
-                "arrowsize": 0.5,
-                "arrowhead": allocated_on_input  and 'dotopen' or 'odotopen',
-                "arrowtail": allocated_on_output and 'dot' or 'odot'
+                "arrowsize": 0.5
                 })
+            attr["arrowhead"] = attr["arrowhead"] or allocated_on_input  and 'dotopen' or 'odotopen'
+            attr["arrowtail"] = attr["arrowtail"] or allocated_on_output and 'dot' or 'odot'
 
             if node:
                 if node.frozen:
@@ -318,10 +353,11 @@ else:
             for nodedag, nodedot in self._nodes.items():
                 self._set_style_node(nodedag, nodedot.attr)
 
-            for object, (nodein, edge, nodeout) in self._edges.items():
-                self._set_style_edge(
-                    object, nodein.attr, edge.attr, nodeout.attr
-                )
+            for object, edgedef in self._edges.items():
+                for edge in edgedef.edges:
+                    self._set_style_edge(
+                        object, edgedef.nodein.attr, edge.attr, edgedef.nodeout.attr
+                    )
 
         def set_label(self, label):
             self._graph.graph_attr["label"] = label

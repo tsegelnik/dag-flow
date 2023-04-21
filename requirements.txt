@@ -1,7 +1,7 @@
 contextlib2
 coverage
-numpy==1.23.5
 numba
+numpy==1.23.5
 pygraphviz
 pytest
 pytest-cov

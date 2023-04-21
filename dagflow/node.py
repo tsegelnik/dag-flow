@@ -17,12 +17,12 @@ from .legs import Legs
 from .logger import Logger, get_logger
 from .output import Output
 from .types import GraphT
-
+from typing import Optional, List, Dict, Union, Callable, Any, Tuple, Generator
 
 class Node(Legs):
     _name: str
     _mark: Optional[str] = None
-    _label: Dict[str, str]
+    _labels: Dict[str, str]
     _graph: Optional[GraphT] = None
     _fcn: Optional[Callable] = None
     _fcn_chain = None
@@ -84,11 +84,11 @@ class Node(Legs):
             self._debug = bool(debug)
 
         if isinstance(label, str):
-            self._label = {"text": label}
+            self._labels = {'text': label}
         elif isinstance(label, dict):
-            self._label = label
+            self._labels = label
         else:
-            self._label = {"text": name}
+            self._labels = {'text': name}
 
         if logger is not None:
             self._logger = logger
@@ -218,6 +218,10 @@ class Node(Legs):
         self._graph = graph
         self._graph.register_node(self)
 
+    @property
+    def labels(self) -> Generator[Tuple[str,str], None, None]:
+        yield from self._labels.items()
+
     #
     # Methods
     #
@@ -233,15 +237,30 @@ class Node(Legs):
             raise ReconnectionError(input=inp, node=self, output=output)
         return inp
 
-    def label(self, source):
-        # if self._label:
+    def label(self, source='text'):
+        # if self._labels:
         #     kwargs.setdefault("name", self._name)
-        #     return self._label.format(*args, **kwargs)
-        label = self._label.get(source, None)
+        #     return self._labels.format(*args, **kwargs)
+        label = self._labels.get(source, None)
         if label is None:
-            return self._label["text"]
+            return self._labels['text']
 
         return label
+
+    def _inherit_labels(self, source: 'Node', fmt: Union[str, Callable]) -> None:
+        if isinstance(fmt, str):
+            formatter = fmt.format
+        elif isinstance(fmt, dict):
+            formatter = lambda s: fmt.get(s, s)
+        else:
+            formatter = fmt
+
+        for k, v in source.labels:
+            if k in ('key',):
+                continue
+            newv = formatter(v)
+            if newv is not None:
+                self._labels[k] = newv
 
     def add_input(self, name, **kwargs) -> Union[Input, Tuple[Input]]:
         if not self.closed:
@@ -531,3 +550,12 @@ class Node(Legs):
 
     def get_input_data(self, key):
         return self.inputs[key].data()
+
+    def to_dict(self, *, label_from: str='text') -> dict:
+        data = self.get_data()
+        if data.size>1:
+            raise AttributeError('to_dict')
+        return {
+                'value': data[0],
+                'label': self.label(label_from)
+                }

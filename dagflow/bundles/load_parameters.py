@@ -1,9 +1,10 @@
-from dictwrapper.dictwrapper import DictWrapper
-# from storage.storage import Storage # To be used later
+from multikeydict.nestedmkdict import NestedMKDict
+# from multikeydict.flatmkdict import FlatMKDict # To be used later
 
 from schema import Schema, Or, Optional, Use, And, Schema, SchemaError
+from pathlib import Path
 
-from ..tools.schema import NestedSchema
+from ..tools.schema import NestedSchema, LoadFileWithExt, LoadYaml
 
 class ParsCfgHasProperFormat(object):
     def validate(self, data: dict) -> dict:
@@ -13,8 +14,8 @@ class ParsCfgHasProperFormat(object):
         else:
             nelements = len(format)
 
-        dtin = DictWrapper(data)
-        for key, subdata in dtin['variables'].walkitems():
+        dtin = NestedMKDict(data)
+        for key, subdata in dtin['parameters'].walkitems():
             if isinstance(subdata, tuple):
                 if len(subdata)==nelements: continue
             else:
@@ -26,7 +27,7 @@ class ParsCfgHasProperFormat(object):
         return data
 
 IsNumber = Or(float, int, error='Invalid number "{}", expect int of float')
-IsNumberOrTuple = Or(IsNumber, (IsNumber,), error='Invalid number/tuple {}')
+IsNumberOrTuple = Or(IsNumber, (IsNumber,), And([IsNumber], Use(tuple)), error='Invalid number/tuple {}')
 IsLabel = Or({
         'text': str,
         Optional('latex'): str,
@@ -39,7 +40,7 @@ IsLabel = Or({
 IsValuesDict = NestedSchema(IsNumberOrTuple)
 IsLabelsDict = NestedSchema(IsLabel, processdicts=True)
 def IsFormatOk(format):
-    if not isinstance(format, tuple):
+    if not isinstance(format, (tuple, list)):
         return format=='value'
 
     if len(format)==1:
@@ -61,14 +62,30 @@ def IsFormatOk(format):
 
         return f1 in ('value', 'central')
 
-IsFormat = Schema(IsFormatOk, error='Invalid variable format "{}".')
-IsVarsCfgDict = Schema({
-    'variables': IsValuesDict,
+IsFormat = Schema(IsFormatOk, error='Invalid parameter format "{}".')
+IsParsCfgDict = Schema({
+    'parameters': IsValuesDict,
     'labels': IsLabelsDict,
-    'format': IsFormat
-    })
-
-IsProperVarsCfg = And(IsVarsCfgDict, ParsCfgHasProperFormat())
+    'format': IsFormat,
+    'state': Or('fixed', 'variable', error='Invalid parameters state: {}'),
+    Optional('path', default=''): str
+    },
+    # error = 'Invalid parameters configuration: {}'
+)
+IsProperParsCfgDict = And(IsParsCfgDict, ParsCfgHasProperFormat())
+IsLoadableDict = And(
+            {
+                'load': Or(str, And(Path, Use(str))),
+                Optional(str): object
+            },
+            Use(LoadFileWithExt(yaml=LoadYaml, key='load', update=True), error='Failed to load {}'),
+            IsProperParsCfgDict
+        )
+def ValidateParsCfg(cfg):
+    if isinstance(cfg, dict) and 'load' in cfg:
+        return IsLoadableDict.validate(cfg)
+    else:
+        return IsProperParsCfgDict.validate(cfg)
 
 def process_var_fixed1(vcfg, _, __):
     return {'central': vcfg, 'value': vcfg, 'sigma': None}
@@ -112,15 +129,15 @@ def get_format_processor(format):
     else:
         return process_var_percent
 
-def iterate_varcfgs(cfg: DictWrapper):
-    variablescfg = cfg['variables']
+def iterate_varcfgs(cfg: NestedMKDict):
+    parameterscfg = cfg['parameters']
     labelscfg = cfg['labels']
     format = cfg['format']
 
     hascentral = 'central' in format
     process = get_format_processor(format)
 
-    for key, varcfg in variablescfg.walkitems():
+    for key, varcfg in parameterscfg.walkitems():
         varcfg = process(varcfg, format, hascentral)
         try:
             varcfg['label'] = labelscfg[key]
@@ -128,20 +145,74 @@ def iterate_varcfgs(cfg: DictWrapper):
             varcfg['label'] = {}
         yield key, varcfg
 
-from dagflow.variable import Parameters
+from dagflow.parameters import Parameters
+from dagflow.lib.SumSq import SumSq
 
-def load_variables(acfg):
-    cfg = IsProperVarsCfg.validate(acfg)
-    cfg = DictWrapper(cfg)
+def load_parameters(acfg):
+    cfg = ValidateParsCfg(acfg)
+    cfg = NestedMKDict(cfg)
 
-    ret = DictWrapper({}, sep='.')
-    print('go')
+    pathstr = cfg['path']
+    if pathstr:
+        path = tuple(pathstr.split('.'))
+    else:
+        path = ()
+
+    state = cfg['state']
+
+    ret = NestedMKDict(
+        {
+            'parameter': {
+                'constant': {},
+                'free': {},
+                'constrained': {},
+                'normalized': {},
+                },
+            'stat': {
+                'nuisance_parts': {},
+                'nuisance': {},
+                },
+            'parameter_node': {
+                'constant': {},
+                'free': {},
+                'constrained': {}
+                }
+        },
+        sep='.'
+    )
+
+    normpars = []
     for key, varcfg in iterate_varcfgs(cfg):
         skey = '.'.join(key)
         label = varcfg['label']
         label['key'] = skey
         label.setdefault('text', skey)
-        print(skey, varcfg)
-        ret[key] = Parameters.from_numbers(**varcfg)
+        varcfg.setdefault(state, True)
+
+        par = Parameters.from_numbers(**varcfg)
+        if par.is_constrained:
+            target = ('constrained', path)
+        elif par.is_fixed:
+            target = ('constant', path)
+        else:
+            target = ('free', path)
+
+        ret[('parameter_node',)+target+key] = par
+
+        ptarget = ('parameter', target)
+        for subpar in par.parameters:
+            ret[ptarget+key] = subpar
+
+        ntarget = ('parameter', 'normalized', path)
+        for subpar in par.norm_parameters:
+            ret[ntarget+key] = subpar
+
+            normpars.append(subpar)
+
+    if normpars:
+        ssq = SumSq(f'nuisance for {pathstr}')
+        (n.output for n in normpars) >> ssq
+        ssq.close()
+        ret[('stat', 'nuisance_parts', path)] = ssq
 
     return ret
