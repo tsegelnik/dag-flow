@@ -2,7 +2,8 @@ from collections.abc import Sequence
 from itertools import repeat
 from typing import Optional, Tuple, Union
 
-from numpy import result_type
+from numpy import issubdtype, result_type
+from numpy.typing import DTypeLike
 
 from .exception import TypeFunctionError
 from .output import Output
@@ -338,6 +339,16 @@ def check_inputs_same_dtype(
             )
 
 
+def check_output_subtype(node: NodeT, output: Output, dtype: DTypeLike):
+    """Checks if the output dtype is some subtype of `dtype`."""
+    if not issubdtype(output.dd.dtype, dtype):
+        raise TypeFunctionError(
+            f"The output must be an array of {dtype}, but given '{output.dd.dtype}'!",
+            node=node,
+            output=output,
+        )
+
+
 def check_inputs_multiplicable_mat(
     node: NodeT,
     inputkey1: Union[str, int, slice, Sequence],
@@ -453,6 +464,7 @@ def check_edges_type(
                     node=node,
                     iutput=output,
                 )
+
 
 def check_array_edges_consistency(node: NodeT, output: Output):
     """

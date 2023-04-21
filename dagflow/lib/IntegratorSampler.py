@@ -4,7 +4,6 @@ from numpy import (
     empty,
     errstate,
     integer,
-    issubdtype,
     linspace,
     matmul,
     meshgrid,
@@ -13,9 +12,14 @@ from numpy import (
 from numpy.polynomial.legendre import leggauss
 from numpy.typing import DTypeLike, NDArray
 
-from ..exception import InitializationError, TypeFunctionError
+from ..exception import InitializationError
 from ..nodes import FunctionNode
-from ..typefunctions import check_input_dimension, check_input_edges_dim, check_inputs_number
+from ..typefunctions import (
+    check_input_dimension,
+    check_input_edges_dim,
+    check_inputs_number,
+    check_output_subtype,
+)
 
 
 def _gl_sampler(
@@ -136,12 +140,7 @@ class IntegratorSampler(FunctionNode):
         """
         check_input_dimension(self, name, 1)
         orders = self.inputs[name]
-        if not issubdtype(orders.dd.dtype, integer):
-            raise TypeFunctionError(
-                f"The `name` must be array of integers, but given '{orders.dd.dtype}'!",
-                node=self,
-                input=orders,
-            )
+        check_output_subtype(self, orders, integer)
         check_input_edges_dim(self, name, 1)
         return sum(orders.data), orders.dd.axes_edges[0]
 
