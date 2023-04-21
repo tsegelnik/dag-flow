@@ -60,3 +60,19 @@ def test_slice_filter():
         ("a", "b", "c"): 2,
         ("a", "b"): 1,
     }
+
+def test_merge():
+    fd = FlatMKDict()
+    fdsub = FlatMKDict()
+    fdsub['d', 'e', 'f'] = 3
+    fdsub['d', 'e', 'g'] = 4
+
+    fd['a', 'b', 'c1'] = 1
+    fd['a', 'b', 'c2'] = 2
+    fd['a', 'b', 'c4'] = fdsub
+
+    assert fd['a', 'b', 'c1'] == 1
+    assert fd['a', 'b', 'c2'] == 2
+    fd['a', 'b', 'c4', 'd', 'e', 'f'] = 3
+    fd['a', 'b', 'c4', 'd', 'e', 'g'] = 4
+

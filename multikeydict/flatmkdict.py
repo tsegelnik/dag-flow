@@ -5,19 +5,20 @@ from collections.abc import Sequence
 from typing import Any, Callable, Generator, Optional
 
 class FlatMKDict(UserDict):
-    __slots__ = ('_protect',)
+    __slots__ = ('_protect', '_merge_flatdicts')
     _protect: bool
 
     def __init__(*args, protect: bool = False, **kwargs) -> None:
         self = args[0]
         self._protect = protect
+        self._merge_flatdicts = True
         UserDict.__init__(*args, **kwargs)
 
     def _process_key(self, key: Any) -> tuple:
-        if isinstance(key, Sequence):
-            return tuple(sorted(key))
-        else:
-            return frozenset((key,))
+        # if isinstance(key, Sequence):
+        return tuple(sorted(key))
+        # else:
+        #     return frozenset((key,))
 
     def __getitem__(self, key: Any) -> Any:
         key = self._process_key(key)
@@ -30,6 +31,15 @@ class FlatMKDict(UserDict):
                 f"Reassigning of the existed key '{key}' is restricted, "
                 "due to the protection!"
             )
+
+        if self._merge_flatdicts and isinstance(val, FlatMKDict):
+            print('here', key, val)
+            for subkey, subval in val.items():
+                newkey = key+subkey
+                self[newkey] = subval
+
+            return
+
         super().__setitem__(key, val)
 
     def __contains__(self, key: Any) -> bool:
@@ -49,7 +59,7 @@ class FlatMKDict(UserDict):
         *args,
         filterkey: Optional[Callable[[Any], bool]] = None,
         filterkeyelem: Optional[Callable[[Any], bool]] = None,
-    ) -> tuple:
+    ) -> Generator:
         """
         Returns items from the slice by `args`.
         If `args` are empty returns all items.
