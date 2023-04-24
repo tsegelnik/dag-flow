@@ -1,6 +1,4 @@
-output
 build
-_build
 __pycache__
 
 # Local configuration files and folders
@@ -13,6 +11,7 @@ config_local
 matplotlibrc
 .coverage
 cov.*
+.hypothesis
 
 # Transient files (vim, etc)
 *~
@@ -41,7 +40,6 @@ UltiSnips/*
 *.fdb*
 *.out
 *.pdf
-*.png
 *.blg
 *.snm
 *.nav
@@ -51,4 +49,3 @@ UltiSnips/*
 tags
 *.pyc
 *.o
-coverage.json
