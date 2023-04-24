@@ -7,7 +7,7 @@ from .lib.CovmatrixFromCormatrix import CovmatrixFromCormatrix
 
 from numpy import zeros_like, array
 from numpy.typing import DTypeLike
-from typing import Optional, Dict, List, Generator
+from typing import Optional, Dict, List
 
 class Parameter:
     __slots__ = ('_idx','_parent', '_value_output', '_labelfmt')

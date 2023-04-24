@@ -1,21 +1,9 @@
 from numpy import copyto
 
-from ..input_extra import MissingInputAddOne
-from ..nodes import FunctionNode
-from ..typefunctions import (
-    check_has_inputs,
-    eval_output_dtype,
-    copy_input_shape_to_output,
-)
+from .NodeManyToOne import NodeManyToOne
 
-class Division(FunctionNode):
+class Division(NodeManyToOne):
     """Division of all the inputs together"""
-
-    def __init__(self, *args, **kwargs):
-        kwargs.setdefault(
-            "missing_input_handler", MissingInputAddOne(output_fmt="result")
-        )
-        super().__init__(*args, **kwargs)
 
     def _fcn(self, _, inputs, outputs):
         out = outputs[0].data
@@ -24,9 +12,3 @@ class Division(FunctionNode):
             for input in inputs[1:]:
                 out /= input.data
         return out
-
-    def _typefunc(self):
-        """A output takes this function to determine the dtype and shape"""
-        check_has_inputs(self)
-        copy_input_shape_to_output(self, 0, "result")
-        eval_output_dtype(self, slice(None), "result")

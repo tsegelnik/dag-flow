@@ -1,4 +1,3 @@
-from dagflow.exception import CriticalError
 from .node import Node
 
 
