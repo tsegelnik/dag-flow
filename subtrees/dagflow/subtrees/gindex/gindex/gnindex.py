@@ -286,7 +286,7 @@ class GNIndex:
     (set of the 1-dim indices), the indices `order` and usefull methods
     """
 
-    values: Tuple[GIndex] = field(default=tuple())
+    _indices: Tuple[GIndex] = field(default=tuple(), alias='indices')
     order: tuple = field(default=tuple())
     sep: str = field(validator=instance_of(str), default="_")
     withname: bool = field(validator=instance_of(bool), default=False)
@@ -310,7 +310,7 @@ class GNIndex:
                 )
 
     def __attrs_post_init__(self) -> None:
-        self._check_values()
+        self._check_indices()
         if not self.order:
             self.order = self._auto_order()
         else:
@@ -318,7 +318,7 @@ class GNIndex:
         self.sort()
 
     def _auto_order(self) -> tuple:
-        return (True,) + tuple(val.name.s for val in self.values)
+        return (True,) + tuple(val.name.s for val in self._indices)
 
     def _check_order(self, order: Sequence) -> None:
         if not isinstance(order, Sequence):
@@ -328,21 +328,21 @@ class GNIndex:
         elif not isinstance(order, tuple):
             order = tuple(order)
 
-    def _check_values(self) -> None:
-        if not isinstance(self.values, (Sequence, set)):
+    def _check_indices(self) -> None:
+        if not isinstance(self._indices, (Sequence, set)):
             raise TypeError(
-                f"'indices' must be `Sequence`, but given '{type(self.values)}'!"
+                f"'indices' must be `Sequence`, but given '{type(self._indices)}'!"
             )
-        elif not all(isinstance(x, GIndex) for x in self.values):
+        elif not all(isinstance(x, GIndex) for x in self._indices):
             raise ValueError(
                 "'indices' must be `Sequence[GIndex]`, "
-                f"but given '{self.values}'!"
+                f"but given '{self._indices}'!"
             )
-        elif not isinstance(self.values, tuple):
-            self.values = tuple(self.values)
+        elif not isinstance(self._indices, tuple):
+            self._indices = tuple(self._indices)
 
     def _create_dict(self) -> GIndexNameDict:
-        return GIndexNameDict({val.name: val for val in self.values})
+        return GIndexNameDict({val.name: val for val in self._indices})
 
     def rest(
         self,
@@ -362,14 +362,14 @@ class GNIndex:
 
         return: A `GNIndex` with tuple of the rest indices
         """
-        if len(self.values) == 0:
+        if len(self._indices) == 0:
             return None
         if isinstance(names, (list, tuple, set)):
             return (
-                self.copywith(values=values)
+                self.copywith(indices=indices)
                 if len(names) != 0
                 and (
-                    values := tuple(
+                    indices := tuple(
                         self._rest(self.dict.copy(), names).values()
                     )
                 )
@@ -378,7 +378,7 @@ class GNIndex:
         elif isinstance(names, (str, GIndexName)):
             tmpdict = self.dict.copy()
             tmpdict.pop(names)
-            return self.copywith(values=tuple(tmpdict.values()))
+            return self.copywith(indices=tuple(tmpdict.values()))
         raise TypeError(
             f"'names' must be `Sequence[str]`, but given '{type(names)}'!"
         )
@@ -427,7 +427,7 @@ class GNIndex:
             res.extend(self.__split(name) for name in names)
         else:
             res.append(self.__split(names))
-        return self.copywith(values=tuple(res))
+        return self.copywith(indices=tuple(res))
 
     def __split(self, name: Any) -> GIndex:
         if not isinstance(name, (str, GIndexName)):
@@ -440,9 +440,9 @@ class GNIndex:
 
     def sub(self, names: tuple) -> GNIndex:
         return self.copywith(
-            values=tuple(
+            indices=tuple(
                 val
-                for val in self.values
+                for val in self._indices
                 if (val.name.s in names or val.name.f in names)
             )
         )
@@ -450,15 +450,15 @@ class GNIndex:
     subindex = sub
 
     def union(self, *args, **kwargs) -> GNIndex:
-        values = [*self.values]
+        indices = [*self._indices]
         for arg in args:
             if not isinstance(arg, GNIndex):
                 raise TypeError(
                     f"'args' must be `GNIndex`, but given '{type(arg)}'"
                 )
 
-            values.extend(value for value in arg.values if value not in values)
-        return self.copywith(values=values, **kwargs)
+            indices.extend(index for index in arg._indices if index not in indices)
+        return self.copywith(indices=indices, **kwargs)
 
     def __add__(self, right: GNIndex) -> GNIndex:
         if not isinstance(right, GNIndex):
@@ -470,7 +470,7 @@ class GNIndex:
                 "'right' must have the same `order` as the left,"
                 f"but given '{self.order=}', '{right.order=}'"
             )
-        return self.copywith(values=set(self.values + right.values))
+        return self.copywith(indices=set(self._indices + right._indices))
 
     def __or__(self, right: GNIndex) -> GNIndex:
         return self.__add__(right)
@@ -485,7 +485,7 @@ class GNIndex:
                 "'right' must have the same `order` as the left,"
                 f"but given '{self.order=}', '{right.order=}'"
             )
-        return self.copywith(values=set(self.values) - set(right.values))
+        return self.copywith(indices=set(self._indices) - set(right._indices))
 
     def __xor__(self, right: GNIndex) -> GNIndex:
         return self.__sub__(right)
@@ -494,30 +494,30 @@ class GNIndex:
         if not order:
             order = self.order
         tmpdict = self.dict.copy()
-        values = [tmpdict.pop(name) for name in order if name in tmpdict]
-        if vals := tmpdict.values():
-            values.extend(vals)
-        self.values = tuple(values)
+        indices = [tmpdict.pop(name) for name in order if name in tmpdict]
+        if idxs := tmpdict.values():
+            indices.extend(idxs)
+        self._indices = tuple(indices)
 
     def dim(self) -> int:
         """Returns the dimension of the index (size of the indices list)"""
-        return len(self.values)
+        return len(self._indices)
 
     def instances(self) -> Tuple[Tuple[GNIndexInstance, ...], ...]:
         """Returns a tuple of the indices instances tuples (2D version)"""
-        return tuple(ind.instances() for ind in self.values)
+        return tuple(ind.instances() for ind in self._indices)
 
     def instances1d(self) -> Tuple[GNIndexInstance, ...]:
         """Returns a tuple of the indices instances (1D version)"""
-        return tuple(inst for ind in self.values for inst in ind.instances())
+        return tuple(inst for ind in self._indices for inst in ind.instances())
 
     def names(self) -> tuple:
-        return tuple(val.name for val in self.values)
+        return tuple(val.name for val in self._indices)
 
     def names1d(
         self, namemode: Literal["s", "f", "short", "full"] = "s"
     ) -> tuple:
-        return tuple(val.name[namemode] for val in self.values)
+        return tuple(val.name[namemode] for val in self._indices)
 
     def __iter__(self) -> Iterator[GNIndexInstance]:
         for val in product(*self.instances()):
@@ -534,7 +534,7 @@ class GNIndex:
         """Returns a copy of the object"""
         if deep:
             ret = GNIndex(
-                values=tuple(self.values),
+                indices=tuple(self._indices),
                 order=tuple(self.order),
                 sep=str(self.sep),
                 withname=bool(self.withname),
@@ -543,7 +543,7 @@ class GNIndex:
             )
         else:
             ret = GNIndex(
-                values=self.values,
+                indices=self._indices,
                 order=self.order,
                 sep=self.sep,
                 withname=self.withname,
@@ -561,7 +561,7 @@ class GNIndex:
 
         if kwargs.pop("deep", True):
             ret = GNIndex(
-                values=kwargs.pop("values", tuple(self.values)),
+                indices=kwargs.pop("indices", tuple(self._indices)),
                 order=kwargs.pop("order", tuple(self.order)),
                 sep=kwargs.pop("sep", str(self.sep)),
                 withname=kwargs.pop("withname", bool(self.withname)),
@@ -570,7 +570,7 @@ class GNIndex:
             )
         else:
             ret = GNIndex(
-                values=kwargs.pop("values", self.values),
+                indices=kwargs.pop("indices", self._indices),
                 order=kwargs.pop("order", self.order),
                 sep=kwargs.pop("sep", self.sep),
                 withname=kwargs.pop("withname", self.withname),

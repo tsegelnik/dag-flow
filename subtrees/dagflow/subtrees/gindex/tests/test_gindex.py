@@ -130,7 +130,7 @@ def test_gnindex(detector, subdetector):
 
 def test_gnindex_iter(detector, subdetector, index_values):
     sep = "_"
-    nind = GNIndex(values=(detector, subdetector), sep=sep)
+    nind = GNIndex(indices=(detector, subdetector), sep=sep)
     nvals = tuple(
         sep.join(pair) for pair in product(index_values, index_values)
     )
@@ -141,29 +141,29 @@ def test_gnindex_iter(detector, subdetector, index_values):
 
 def test_gnindex_arithmetic(detector, subdetector):
     gorder = ("det", "subdet", "i")
-    nind = GNIndex(values=(detector, subdetector), order=gorder)
+    nind = GNIndex(indices=(detector, subdetector), order=gorder)
     ind = GIndex(GIndexName("i", "index"), ("1", "2"))
-    nind2 = GNIndex(values=(detector, ind), order=gorder)
-    nind3 = GNIndex(values=(ind,), order=gorder)
+    nind2 = GNIndex(indices=(detector, ind), order=gorder)
+    nind3 = GNIndex(indices=(ind,), order=gorder)
     # `sub` and `-`
-    assert all(x - x == x.copywith(values=tuple()) for x in (nind, nind2))
+    assert all(x - x == x.copywith(indices=tuple()) for x in (nind, nind2))
     assert all(
-        x.sub(("new",)) == x.copywith(values=tuple()) for x in (nind, nind2)
+        x.sub(("new",)) == x.copywith(indices=tuple()) for x in (nind, nind2)
     )
     assert all(x.sub(x.names1d()) == x for x in (nind, nind2))
-    assert nind2.sub(("i",)) == nind.copywith(values=(ind,))
+    assert nind2.sub(("i",)) == nind.copywith(indices=(ind,))
     # `merge` and  `+`
     assert all(
-        len(x.values) == len(nind.values)
-        and set(x.values) == set(nind.values)
+        len(x._indices) == len(nind._indices)
+        and set(x._indices) == set(nind._indices)
         and x.order == gorder
         for x in (nind + nind, nind | nind, nind.union(nind))
     )
     assert all(
         (y := nind + nind2) and y == x and y.order == gorder
         for x in (
-            nind.copywith(values={detector, subdetector, ind}),
-            nind2.copywith(values={detector, subdetector, ind}),
+            nind.copywith(indices={detector, subdetector, ind}),
+            nind2.copywith(indices={detector, subdetector, ind}),
             nind.union(nind3),
             nind | nind2,
         )
@@ -176,7 +176,7 @@ def test_gnindex_rest_split(
     gorder = ("det", "subdet", "i")
     iname = GIndexName("i", "index")
     ind = GIndex(iname, ("1", "2"))
-    nind = GNIndex(values=(detector, subdetector, ind), order=gorder)
+    nind = GNIndex(indices=(detector, subdetector, ind), order=gorder)
     # test `dict`
     assert all(
         x in nind.dict
@@ -197,22 +197,22 @@ def test_gnindex_rest_split(
     ):
         assert isinstance(elem, GNIndex)
         assert elem.order == nind.order
-        assert elem.values == (subdetector, ind)
+        assert elem._indices == (subdetector, ind)
     for elem in (
         nind.rest(val) for val in (iname, "i", "index", ("i",), ("index",))
     ):
         assert isinstance(elem, GNIndex)
         assert elem.order == nind.order
-        assert elem.values == (detector, subdetector)
+        assert elem._indices == (detector, subdetector)
     # test `split`
     assert nind, None == nind.split(nind.names1d())
-    assert nind.copywith(values=tuple()), nind == nind.split(tuple())
+    assert nind.copywith(indices=tuple()), nind == nind.split(tuple())
     for elem, rest in (
         nind.split(val) for val in (("det",), ("detector",), (detector_name,))
     ):
         assert isinstance(elem, GNIndex) and isinstance(rest, GNIndex)
         assert elem.order == nind.order and rest.order == nind.order
-        assert elem.values == (detector,) and rest.values == (subdetector, ind)
+        assert elem._indices == (detector,) and rest._indices == (subdetector, ind)
     for elem, rest in (
         nind.split(val)
         for val in (
@@ -223,7 +223,7 @@ def test_gnindex_rest_split(
     ):
         assert isinstance(elem, GNIndex) and isinstance(rest, GNIndex)
         assert elem.order == nind.order and rest.order == nind.order
-        assert elem.values == (subdetector,) and rest.values == (detector, ind)
+        assert elem._indices == (subdetector,) and rest._indices == (detector, ind)
     for elem, rest in (
         nind.split(val)
         for val in (
@@ -234,7 +234,7 @@ def test_gnindex_rest_split(
     ):
         assert isinstance(elem, GNIndex) and isinstance(rest, GNIndex)
         assert elem.order == nind.order and rest.order == nind.order
-        assert elem.values == (detector, subdetector) and rest.values == (ind,)
+        assert elem._indices == (detector, subdetector) and rest._indices == (ind,)
 
 
 def test_gnindex_order_exception(detector, subdetector, detector_name):
