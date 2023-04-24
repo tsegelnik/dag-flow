@@ -503,6 +503,10 @@ class GNIndex:
         """Returns the dimension of the index (size of the indices list)"""
         return len(self._indices)
 
+    @property
+    def values(self) -> Tuple[Tuple[str]]:
+        return tuple(n.values for n in self)
+
     def instances(self) -> Tuple[Tuple[GNIndexInstance, ...], ...]:
         """Returns a tuple of the indices instances tuples (2D version)"""
         return tuple(ind.instances() for ind in self._indices)
