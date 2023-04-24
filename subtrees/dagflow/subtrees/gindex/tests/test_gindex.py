@@ -109,7 +109,7 @@ def test_gindex_format(detector01, detector_name):
 
 
 def test_gnindex(detector, subdetector):
-    nind = GNIndexInstance(instances=(detector[0], subdetector[0]))
+    nind = GNIndexInstance(indices=(detector[0], subdetector[0]))
     assert nind
     assert nind.format(string="Spectrum") == (
         f"Spectrum{detector[0].sep}{detector[0].value}"
@@ -241,5 +241,5 @@ def test_gnindex_order_exception(detector, subdetector, detector_name):
     orders = (object, 12, {4, 3, 2}, detector_name, detector)
     with pytest.raises(TypeError):
         for order in orders:
-            GNIndexInstance(instances=(detector[0], subdetector[0]), order=order)  # type: ignore
+            GNIndexInstance(indices=(detector[0], subdetector[0]), order=order)  # type: ignore
             GNIndex(values=(detector, subdetector), order=order)  # type: ignore

@@ -56,7 +56,7 @@ class GIndexNameDict(UserDict):
 @define(hash=True, slots=True)
 class GNIndexInstance:
     """
-    The n-dimensional index instance class, storing `instances`
+    The n-dimensional index instance class, storing `indices`
     (`type=list[GIndexInstance]`) and `names` (`type=dict[GIndexName, ]`).
     Contains `format` method, which substitutes `value` instead of `name.short`
     and `name.full`.
@@ -66,7 +66,7 @@ class GNIndexInstance:
         that is the `string` for formatting
     """
 
-    _instances: Tuple[GIndexInstance, ...] = field(default=tuple(), alias='instances')
+    _indices: Tuple[GIndexInstance, ...] = field(default=tuple(), alias='indices')
     order: tuple = field(default=tuple())
     sep: str = field(validator=instance_of(str), default="_")
     withname: bool = field(validator=instance_of(bool), default=False)
@@ -81,10 +81,10 @@ class GNIndexInstance:
 
     @property
     def values(self) -> Tuple[str]:
-        return tuple(instance.value for instance in self._instances)
+        return tuple(instance.value for instance in self._indices)
 
     def __attrs_post_init__(self) -> None:
-        self._check_instances()
+        self._check_indices()
         if not self.order:
             self.order = self._auto_order()
         else:
@@ -96,21 +96,21 @@ class GNIndexInstance:
     ) -> None:
         if not order:
             order = self.order
-        values = [self.dict[name] for name in order if name in self.dict]
-        if len(self._instances) != len(values):
+        indices = [self.dict[name] for name in order if name in self.dict]
+        if len(self._indices) != len(indices):
             names = set(self.dict.keys()) - set(order)
             for name in names:
                 if rest2end:
-                    values.append(self.dict[name])
+                    indices.append(self.dict[name])
                 else:
-                    values.insert(0, self.dict[name])
-        self._instances = tuple(values)
+                    indices.insert(0, self.dict[name])
+        self._indices = tuple(indices)
 
     def _create_dict(self) -> GIndexNameDict:
-        return GIndexNameDict({val.name: val for val in self._instances})
+        return GIndexNameDict({val.name: val for val in self._indices})
 
     def _auto_order(self) -> tuple:
-        return (True,) + tuple(val.name.s for val in self._instances)
+        return (True,) + tuple(val.name.s for val in self._indices)
 
     def _check_order(self, order: Sequence) -> None:
         if not isinstance(order, Sequence):
@@ -120,18 +120,18 @@ class GNIndexInstance:
         elif not isinstance(order, tuple):
             order = tuple(order)
 
-    def _check_instances(self) -> None:
-        if not isinstance(self._instances, (Sequence, set)):
+    def _check_indices(self) -> None:
+        if not isinstance(self._indices, (Sequence, set)):
             raise TypeError(
-                f"'values' must be `Sequence`, but given '{type(self._instances)}'!"
+                f"'indices' must be `Sequence`, but given '{type(self._indices)}'!"
             )
-        elif not all(isinstance(x, GIndexInstance) for x in self._instances):
+        elif not all(isinstance(x, GIndexInstance) for x in self._indices):
             raise ValueError(
-                "'values' must be `Sequence[GIndexInstance]`, "
-                f"but given '{self._instances}'!"
+                "'indices' must be `Sequence[GIndexInstance]`, "
+                f"but given '{self._indices}'!"
             )
-        elif not isinstance(self._instances, tuple):
-            self._instances = tuple(self._instances)
+        elif not isinstance(self._indices, tuple):
+            self._indices = tuple(self._indices)
 
     def formatwith(
         self,
@@ -214,15 +214,15 @@ class GNIndexInstance:
         )
 
     def size(self) -> int:
-        """Returns the size of the list with values (number of variants)"""
-        return len(self._instances)
+        """Returns the size of the list with indices (number of variants)"""
+        return len(self._indices)
 
     def copy(self, deep: bool = False) -> GNIndexInstance:
         """Returns a copy of the object"""
 
         if deep:
             ret = GNIndexInstance(
-                instances=tuple(self._instances),
+                indices=tuple(self._indices),
                 order=tuple(self.order),
                 sep=str(self.sep),
                 withname=bool(self.withname),
@@ -231,7 +231,7 @@ class GNIndexInstance:
             )
         else:
             ret = GNIndexInstance(
-                instances=self._instances,
+                indices=self._indices,
                 order=self.order,
                 sep=self.sep,
                 withname=self.withname,
@@ -248,7 +248,7 @@ class GNIndexInstance:
         """Returns a copy of the object with updated fields from `kwargs`"""
         if kwargs.pop("deep", True):
             ret = GNIndexInstance(
-                instances=kwargs.pop("values", tuple(self._instances)),
+                indices=kwargs.pop("indices", tuple(self._indices)),
                 order=kwargs.pop("order", tuple(self.order)),
                 sep=kwargs.pop("sep", str(self.sep)),
                 withname=kwargs.pop("withname", bool(self.withname)),
@@ -257,7 +257,7 @@ class GNIndexInstance:
             )
         else:
             ret = GNIndexInstance(
-                instances=kwargs.pop("values", self._instances),
+                indices=kwargs.pop("indices", self._indices),
                 order=kwargs.pop("order", self.order),
                 sep=kwargs.pop("sep", self.sep),
                 withname=kwargs.pop("withname", self.withname),
@@ -271,12 +271,12 @@ class GNIndexInstance:
         return ret
 
     def __iter__(self) -> Iterator[GIndexInstance]:
-        yield from self._instances
+        yield from self._indices
 
     def __getitem__(self, key: int) -> GIndexInstance:
         if not isinstance(key, int):
             raise TypeError(f"'key' must be 'int', but given '{type(key)}'!")
-        return self._instances[key]
+        return self._indices[key]
 
 
 @define(hash=True, slots=True)
@@ -522,7 +522,7 @@ class GNIndex:
     def __iter__(self) -> Iterator[GNIndexInstance]:
         for val in product(*self.instances()):
             yield GNIndexInstance(
-                instances=val,  # type:ignore
+                indices=val,  # type:ignore
                 order=self.order,
                 sep=self.sep,
                 withname=self.withname,
