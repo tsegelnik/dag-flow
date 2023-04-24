@@ -56,7 +56,7 @@ class GIndexNameDict(UserDict):
 @define(hash=True, slots=True)
 class GNIndexInstance:
     """
-    The n-dimensional index instance class, storing `values`
+    The n-dimensional index instance class, storing `instances`
     (`type=list[GIndexInstance]`) and `names` (`type=dict[GIndexName, ]`).
     Contains `format` method, which substitutes `value` instead of `name.short`
     and `name.full`.
@@ -219,8 +219,9 @@ class GNIndexInstance:
 
     def copy(self, deep: bool = False) -> GNIndexInstance:
         """Returns a copy of the object"""
-        return (
-            GNIndexInstance(
+
+        if deep:
+            ret = GNIndexInstance(
                 instances=tuple(self._instances),
                 order=tuple(self.order),
                 sep=str(self.sep),
@@ -228,8 +229,8 @@ class GNIndexInstance:
                 namemode=str(self.namemode),  # type: ignore
                 namesep=str(self.namesep),
             )
-            if deep
-            else GNIndexInstance(
+        else:
+            ret = GNIndexInstance(
                 instances=self._instances,
                 order=self.order,
                 sep=self.sep,
@@ -237,12 +238,16 @@ class GNIndexInstance:
                 namemode=self.namemode,
                 namesep=self.namesep,
             )
-        )
+
+        if kwargs:
+            raise RuntimeError(f"GNIndexInstance.copy() unparsed arguments: {kwargs}")
+
+        return ret
 
     def copywith(self, **kwargs) -> GNIndexInstance:
         """Returns a copy of the object with updated fields from `kwargs`"""
-        return (
-            GNIndexInstance(
+        if kwargs.pop("deep", True):
+            ret = GNIndexInstance(
                 instances=kwargs.pop("values", tuple(self._instances)),
                 order=kwargs.pop("order", tuple(self.order)),
                 sep=kwargs.pop("sep", str(self.sep)),
@@ -250,8 +255,8 @@ class GNIndexInstance:
                 namemode=kwargs.pop("namemode", str(self.namemode)),
                 namesep=kwargs.pop("namesep", str(self.namesep)),
             )
-            if kwargs.pop("deep", True)
-            else GNIndexInstance(
+        else:
+            ret = GNIndexInstance(
                 instances=kwargs.pop("values", self._instances),
                 order=kwargs.pop("order", self.order),
                 sep=kwargs.pop("sep", self.sep),
@@ -259,7 +264,11 @@ class GNIndexInstance:
                 namemode=kwargs.pop("namemode", self.namemode),
                 namesep=kwargs.pop("namesep", self.namesep),
             )
-        )
+
+        if kwargs:
+            raise RuntimeError(f"GNIndexInstance.copywith() unparsed arguments: {kwargs}")
+
+        return ret
 
     def __iter__(self) -> Iterator[GIndexInstance]:
         yield from self._instances
@@ -523,8 +532,8 @@ class GNIndex:
 
     def copy(self, deep: bool = False) -> GNIndex:
         """Returns a copy of the object"""
-        return (
-            GNIndex(
+        if deep:
+            ret = GNIndex(
                 values=tuple(self.values),
                 order=tuple(self.order),
                 sep=str(self.sep),
@@ -532,8 +541,8 @@ class GNIndex:
                 namemode=str(self.namemode),  # type:ignore
                 namesep=str(self.namesep),
             )
-            if deep
-            else GNIndex(
+        else:
+            ret = GNIndex(
                 values=self.values,
                 order=self.order,
                 sep=self.sep,
@@ -541,12 +550,17 @@ class GNIndex:
                 namemode=self.namemode,
                 namesep=self.namesep,
             )
-        )
+
+        if kwargs:
+            raise RuntimeError(f"GNIndex.copy() unparsed arguments: {kwargs}")
+
+        return ret
 
     def copywith(self, **kwargs) -> GNIndex:
         """Returns a copy of the object with updated fields from `kwargs`"""
-        return (
-            GNIndex(
+
+        if kwargs.pop("deep", True):
+            ret = GNIndex(
                 values=kwargs.pop("values", tuple(self.values)),
                 order=kwargs.pop("order", tuple(self.order)),
                 sep=kwargs.pop("sep", str(self.sep)),
@@ -554,8 +568,8 @@ class GNIndex:
                 namemode=kwargs.pop("namemode", str(self.namemode)),
                 namesep=kwargs.pop("namesep", str(self.namesep)),
             )
-            if kwargs.pop("deep", True)
-            else GNIndex(
+        else:
+            ret = GNIndex(
                 values=kwargs.pop("values", self.values),
                 order=kwargs.pop("order", self.order),
                 sep=kwargs.pop("sep", self.sep),
@@ -563,4 +577,8 @@ class GNIndex:
                 namemode=kwargs.pop("namemode", self.namemode),
                 namesep=kwargs.pop("namesep", self.namesep),
             )
-        )
+
+        if kwargs:
+            raise RuntimeError(f"GNIndex.copywith() unparsed arguments: {kwargs}")
+
+        return ret
