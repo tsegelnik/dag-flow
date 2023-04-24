@@ -202,20 +202,16 @@ def load_parameters(acfg):
 
     subkeys = cfg['replicate']
 
-    normpars = {}
+    normpars = []
     for key_general, varcfg in iterate_varcfgs(cfg):
-        key_general_str = '.'.join(key_general)
-        varcfg.setdefault(state, True)
-
-        normpars_i = normpars.setdefault(key_general[0], [])
         for subkey in subkeys:
             key = key_general + subkey
             key_str = '.'.join(key)
-            subkey_str = '.'.join(subkey)
-
-            label = varcfg['label'].copy()
+            label = varcfg['label']
             label['key'] = key_str
             label.setdefault('text', key_str)
+
+            varcfg.setdefault(state, True)
 
             par = Parameters.from_numbers(**varcfg)
             if par.is_constrained:
@@ -225,23 +221,22 @@ def load_parameters(acfg):
             else:
                 target = ('free', path)
 
-            ret[('parameter_node',)+target+key] = par
+        ret[('parameter_node',)+target+key] = par
 
-            ptarget = ('parameter', target)
-            for subpar in par.parameters:
-                ret[ptarget+key] = subpar
+        ptarget = ('parameter', target)
+        for subpar in par.parameters:
+            ret[ptarget+key] = subpar
 
-            ntarget = ('parameter', 'normalized', path)
-            for subpar in par.norm_parameters:
-                ret[ntarget+key] = subpar
+        ntarget = ('parameter', 'normalized', path)
+        for subpar in par.norm_parameters:
+            ret[ntarget+key] = subpar
 
-                normpars_i.append(subpar)
+            normpars.append(subpar)
 
-        for name, np in normpars.items():
-            if np:
-                ssq = SumSq(f'nuisance for {pathstr}.{name}')
-                (n.output for n in np) >> ssq
-                ssq.close()
-                ret[('stat', 'nuisance_parts', path, name)] = ssq
+    if normpars:
+        ssq = SumSq(f'nuisance for {pathstr}')
+        (n.output for n in normpars) >> ssq
+        ssq.close()
+        ret[('stat', 'nuisance_parts', path)] = ssq
 
     return ret
