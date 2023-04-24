@@ -64,12 +64,15 @@ def IsFormatOk(format):
         return f1 in ('value', 'central')
 
 IsFormat = Schema(IsFormatOk, error='Invalid parameter format "{}".')
+IsStrSeq = (str,)
+IsStrSeqOrStr = Or(IsStrSeq, And(str, Use(lambda s: (s,))))
 IsParsCfgDict = Schema({
     'parameters': IsValuesDict,
     'labels': IsLabelsDict,
     'format': IsFormat,
     'state': Or('fixed', 'variable', error='Invalid parameters state: {}'),
-    Optional('path', default=''): str
+    Optional('path', default=''): str,
+    Optional('replicate', default=((),)): (IsStrSeqOrStr,),
     },
     # error = 'Invalid parameters configuration: {}'
 )
@@ -197,22 +200,26 @@ def load_parameters(acfg):
         sep='.'
     )
 
+    subkeys = cfg['replicate']
+
     normpars = []
-    for key, varcfg in iterate_varcfgs(cfg):
-        skey = '.'.join(key)
-        label = varcfg['label']
-        label['key'] = skey
-        label.setdefault('text', skey)
+    for key_general, varcfg in iterate_varcfgs(cfg):
+        for subkey in subkeys:
+            key = key_general + subkey
+            key_str = '.'.join(key)
+            label = varcfg['label']
+            label['key'] = key_str
+            label.setdefault('text', key_str)
 
-        varcfg.setdefault(state, True)
+            varcfg.setdefault(state, True)
 
-        par = Parameters.from_numbers(**varcfg)
-        if par.is_constrained:
-            target = ('constrained', path)
-        elif par.is_fixed:
-            target = ('constant', path)
-        else:
-            target = ('free', path)
+            par = Parameters.from_numbers(**varcfg)
+            if par.is_constrained:
+                target = ('constrained', path)
+            elif par.is_fixed:
+                target = ('constant', path)
+            else:
+                target = ('free', path)
 
         ret[('parameter_node',)+target+key] = par
 
