@@ -133,6 +133,17 @@ def get_format_processor(format):
     else:
         return process_var_percent
 
+def format_latex(k, s: str, /, *args, **kwargs) -> str:
+    if k=='latex' and '$' in s:
+        return s
+
+    return s.format(*args, **kwargs)
+
+def format_dict(dct: dict, /, *args, **kwargs) -> dict:
+    return {
+        k: format_latex(k, v, *args, **kwargs) for k, v in dct.items()
+    }
+
 def get_label(key: tuple, labelscfg: dict) -> dict:
     try:
         return labelscfg[key]
@@ -150,7 +161,7 @@ def get_label(key: tuple, labelscfg: dict) -> dict:
             break
 
         sidx = '.'.join(key[n-1:])
-        return {k: v.format(sidx) for k, v in lcfg.items()}
+        return format_dict(lcfg, sidx)
 
     return {}
 
@@ -218,7 +229,13 @@ def load_parameters(acfg):
             key_str = '.'.join(key)
             subkey_str = '.'.join(subkey)
 
-            varcfg['label'] = (label := label_general.copy())
+            label = format_dict(
+                label_general.copy(),
+                subkey=subkey_str,
+                space_subkey=f' {subkey_str}',
+                subkey_space=f'{subkey_str} ',
+            )
+            varcfg['label'] = label
             label['key'] = key_str
             label.setdefault('text', key_str)
 
