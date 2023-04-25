@@ -1,6 +1,0 @@
-[run]
-source = .
-omit = ./src/*,*__init__.py
-
-[report]
-omit = ./src/*,*__init__.py
