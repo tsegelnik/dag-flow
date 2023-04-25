@@ -146,6 +146,9 @@ def get_label(key: tuple, labelscfg: dict) -> dict:
         except KeyError:
             continue
 
+        if not subkey and not 'text' in lcfg:
+            break
+
         sidx = '.'.join(key[n-1:])
         return {k: v.format(sidx) for k, v in lcfg.items()}
 
@@ -207,13 +210,15 @@ def load_parameters(acfg):
         key_general_str = '.'.join(key_general)
         varcfg.setdefault(state, True)
 
+        label_general = varcfg['label']
+
         normpars_i = normpars.setdefault(key_general[0], [])
         for subkey in subkeys:
             key = key_general + subkey
             key_str = '.'.join(key)
             subkey_str = '.'.join(subkey)
 
-            label = varcfg['label'].copy()
+            varcfg['label'] = (label := label_general.copy())
             label['key'] = key_str
             label.setdefault('text', key_str)
 
