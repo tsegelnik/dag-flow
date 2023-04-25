@@ -363,12 +363,12 @@ class GaussianConstraint(Constraint):
         self.sigma = self._sigma_node.outputs[0]
 
         self._normvalue_node = Array(
-            f'Normalized {value_node.name}',
+            f'[norm] {value_node.name}',
             zeros_like(self.central._data),
             mark = f'norm({value_node.mark})',
             mode='store_weak'
         )
-        self._normvalue_node._inherit_labels(self._pars._value_node, fmt='Normalized {}')
+        self._normvalue_node._inherit_labels(self._pars._value_node, fmt='[norm] {}')
         self.normvalue = self._normvalue_node.outputs[0]
 
         self._norm_node = NormalizeCorrelatedVars2(f"Normalize {value_node.name}", immediate=True)
@@ -397,7 +397,7 @@ class GaussianConstraint(Constraint):
                     self.normvalue,
                     i,
                     parent=self,
-                    labelfmt='[norm] {}'
+                    labelfmt='{}'
                 )
             )
 
