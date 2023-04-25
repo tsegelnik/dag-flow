@@ -209,7 +209,10 @@ class NestedMKDict(ClassWrapper):
         for v in self._object.values():
             yield self._wrap(v, parent=self)
 
-    def deepcopy(self):
+    def copy(self) -> 'NestedMKDict':
+        return NestedMKDict(self.object.copy(), parent=self._parent, sep=self._sep, recursive_to_others=not self._not_recursive_to_others)
+
+    def deepcopy(self) -> 'NestedMKDict':
         new = NestedMKDict(self._types(), parent=self._parent, sep=self._sep, recursive_to_others=not self._not_recursive_to_others)
         for k, v in self.items():
             k = k,
