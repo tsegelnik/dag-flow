@@ -34,13 +34,27 @@ def LoadFileWithExt(*, key: Union[str, dict]=None, update: bool=False, **kwargs:
 
                 return ret
 
-            return False
+        raise SchemaError(f'Do not know how to load {filename}')
     return checkfilename
 
 from yaml import load, Loader
 def LoadYaml(fname: str):
     with open(fname, 'r') as file:
         return load(file, Loader)
+
+import runpy
+def LoadPy(fname: str, variable: str):
+    dct = runpy.run_path(fname)
+
+    try:
+        return dct[variable]
+    except KeyError:
+        raise RuntimeError(f"Variable {variable} is not provided in file {fname}")
+
+def MakeLoaderPy(variable: str):
+    def loader(fname):
+        return LoadPy(fname, variable)
+    return loader
 
 from multikeydict.nestedmkdict import NestedMKDict
 class NestedSchema(object):
