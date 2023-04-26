@@ -6,6 +6,5 @@ pandas
 pygraphviz
 pytest
 pytest-cov
-runpy
 schema
 tabulate
