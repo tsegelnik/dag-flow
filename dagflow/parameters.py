@@ -6,8 +6,8 @@ from .lib.Array import Array
 from .lib.CovmatrixFromCormatrix import CovmatrixFromCormatrix
 
 from numpy import zeros_like, array
-from numpy.typing import DTypeLike
-from typing import Optional, Dict, List
+from numpy.typing import DTypeLike, ArrayLike
+from typing import Optional, Dict, Tuple, List, Union, Generator
 
 class Parameter:
     __slots__ = ('_idx','_parent', '_value_output', '_labelfmt')
@@ -150,6 +150,7 @@ class Parameters:
         'value',
         '_value_node',
         '_pars',
+        '_names',
         '_norm_pars',
         '_is_variable',
         '_constraint'
@@ -157,6 +158,7 @@ class Parameters:
     value: Output
     _value_node: Node
     _pars: List[Parameter]
+    _names: Tuple[Tuple[str,...],...]
     _norm_pars: List[Parameter]
 
     _is_variable: bool
@@ -165,6 +167,7 @@ class Parameters:
 
     def __init__(
         self,
+        names: Tuple[Tuple[str,...],...],
         value: Node,
         *,
         variable: Optional[bool]=None,
@@ -186,6 +189,7 @@ class Parameters:
         self._constraint = None
 
         self._pars = []
+        self._names = tuple((name,) if isinstance(name, str) else name for name in names)
         self._norm_pars = []
         if close:
             self._close()
@@ -220,6 +224,12 @@ class Parameters:
     def norm_parameters(self) -> List:
         return self._norm_pars
 
+    def iter_items(self) -> Generator[Tuple[Tuple[str,...], Parameter], None, None]:
+        yield from zip(self._names, self._pars)
+
+    def iter_norm_items(self) -> Generator[Tuple[Tuple[str,...], Parameter], None, None]:
+        yield from zip(self._names, self._norm_pars)
+
     @property
     def constraint(self) -> Optional[Constraint]:
         return self._constraint
@@ -238,8 +248,9 @@ class Parameters:
 
     @staticmethod
     def from_numbers(
-        value: float,
+        value: Union[float, ArrayLike],
         *,
+        names: Tuple[Tuple[str,...],...] = ((),),
         dtype: DTypeLike='d',
         variable: Optional[bool]=None,
         fixed: Optional[bool]=None,
@@ -252,10 +263,19 @@ class Parameters:
             label = dict(label)
         name: str = label.setdefault('name', 'parameter')
         has_constraint = kwargs.get('sigma', None) is not None
+
+        if isinstance(value, float):
+            value = (value,)
+        elif not isinstance(value, ArrayLike):
+            raise InitializationError(f"Parameters.from_numbers: Unsupported value type {type(value)}")
+        if len(names)!=len(value):
+            raise InitializationError(f"Parameters.from_numbers: inconsistent values ({value}) and names ({names})")
+
         pars = Parameters(
+            names,
             Array(
                 name,
-                array((value,), dtype=dtype),
+                array(value, dtype=dtype),
                 label = label,
                 mode='store_weak',
             ),
@@ -323,7 +343,7 @@ class GaussianConstraint(Constraint):
         self._sigma_total_node = None
 
         if all(f is not None for f in (constrained, free)):
-            raise RuntimeError("GaussianConstraint may not be set to constrained and free at the same time")
+            raise InitializationError("GaussianConstraint may not be set to constrained and free at the same time")
         if constrained is not None:
             self._is_constrained = constrained
         elif free is not None:
@@ -453,8 +473,8 @@ class GaussianConstraint(Constraint):
             })
         return dct
 
-def GaussianParameters(value: Node, *args, **kwargs) -> Parameters:
-    pars = Parameters(value, close=False)
+def GaussianParameters(names: Tuple[Tuple[str]], value: Node, *args, **kwargs) -> Parameters:
+    pars = Parameters(names, value, close=False)
     pars.set_constraint(GaussianConstraint(*args, parameters=pars, **kwargs))
     pars._close()
 
