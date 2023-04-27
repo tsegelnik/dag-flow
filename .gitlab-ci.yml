@@ -6,7 +6,8 @@ tests:
     stage: tests
 
     script:
-        - git submodule update --init --recursive --remote
+        - git submodule sync
+        - git submodule update --init --recursive --depth=1
         - python3 -m pip install -r requirements.txt
         - coverage run --source=dagflow --omit=submodules/* -m pytest
         - coverage report
