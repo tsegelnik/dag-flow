@@ -261,17 +261,19 @@ def load_parameters(acfg):
     subkeys = cfg['replicate']
     replica_key_offset = cfg['replica_key_offset']
     if replica_key_offset>0:
+        make_key = lambda key, subkey: key[:-replica_key_offset]+subkey+key[replica_key_offset:]
+    elif replica_key_offset==0:
         make_key = lambda key, subkey: key+subkey
     else:
-        make_key = lambda key, subkey: key[:-replica_key_offset]+subkey+key[replica_key_offset:]
+        raise ValueError('{replica_key_offset=} should be non-negative')
 
+    varcfgs = NestedMKDict({})
     normpars = {}
     for key_general, varcfg in iterate_varcfgs(cfg):
         varcfg.setdefault(state, True)
 
         label_general = varcfg['label']
 
-        normpars_i = normpars.setdefault(key_general[0], [])
         for subkey in subkeys:
             key = key_general + subkey
             key = make_key(key_general, subkey)
@@ -288,31 +290,42 @@ def load_parameters(acfg):
             label['key'] = key_str
             label.setdefault('text', key_str)
 
-            par = Parameters.from_numbers(**varcfg)
-            if par.is_constrained:
-                target = ('constrained', path)
-            elif par.is_fixed:
-                target = ('constant', path)
-            else:
-                target = ('free', path)
+            varcfgs[key] = (varcfg,) # protect dictionary from being 'nested'
 
-            ret[('parameter_node',)+target+key] = par
+    pars = NestedMKDict({})
+    for key, (varcfg,) in varcfgs.walkitems():
+        par = Parameters.from_numbers(**varcfg)
+        pars[key] = par
 
-            ptarget = ('parameter', target)
-            for subname, subpar in par.iter_items():
-                ret[ptarget+key+subname] = subpar
+    for key, par in pars.walkitems():
+        if par.is_constrained:
+            target = ('constrained', path)
+        elif par.is_fixed:
+            target = ('constant', path)
+        else:
+            target = ('free', path)
 
-            ntarget = ('parameter', 'normalized', path)
-            for subname, subpar in par.iter_norm_items():
-                ret[ntarget+key+subname] = subpar
+        targetkey = target+key
+        ret[('parameter_node',)+targetkey] = par
 
-                normpars_i.append(subpar)
+        ptarget = ('parameter', targetkey)
+        for subname, subpar in par.iter_items():
+            ret[ptarget+subname] = subpar
+
+        normpars_i = normpars.setdefault(key[0], [])
+        ntarget = ('parameter', 'normalized', path)+key
+        for subname, subpar in par.iter_norm_items():
+            ret[ntarget+subname] = subpar
+
+            normpars_i.append(subpar)
 
         for name, np in normpars.items():
-            if np:
-                ssq = SumSq(f'nuisance for {pathstr}.{name}')
-                (n.output for n in np) >> ssq
-                ssq.close()
-                ret[('stat', 'nuisance_parts', path, name)] = ssq
+            if not np:
+                continue
+
+            ssq = SumSq(f'nuisance for {pathstr}.{name}')
+            (n.output for n in np) >> ssq
+            ssq.close()
+            ret[('stat', 'nuisance_parts', path, name)] = ssq
 
     return ret
