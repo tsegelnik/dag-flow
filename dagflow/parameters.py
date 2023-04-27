@@ -29,6 +29,9 @@ class Parameter:
         self._value_output = value_output
         self._labelfmt = labelfmt
 
+    def __str__(self):
+        return f'par v={self.value}'
+
     @property
     def value(self) -> float:
         return self._value_output.data[self._idx]
@@ -70,6 +73,14 @@ class GaussianParameter(Parameter):
         self._central_output = central_output
         self._sigma_output = sigma_output
         self._normvalue_output = normvalue_output
+
+    def __str__(self):
+        central = self.central
+        if self.central!=0:
+            return f'gpar v={self.value} ({self.normvalue}σ): {self.central}±{self.sigma} ({self.sigma_percent:.2g}%)'
+        else:
+            return f'gpar v={self.value} ({self.normvalue}σ): {self.central}±{self.sigma}'
+
 
     @property
     def central(self) -> float:
@@ -229,6 +240,10 @@ class Parameters:
 
     def iter_norm_items(self) -> Generator[Tuple[Tuple[str,...], Parameter], None, None]:
         yield from zip(self._names, self._norm_pars)
+
+    def _reset_pars(self) -> None:
+        self._pars = []
+        self._norm_pars = []
 
     @property
     def constraint(self) -> Optional[Constraint]:
@@ -402,6 +417,7 @@ class GaussianConstraint(Constraint):
 
         value_output = self._pars.value
         for i in range(value_output._data.size):
+            self._pars._reset_pars()
             self._pars._pars.append(
                 GaussianParameter(
                     value_output,
