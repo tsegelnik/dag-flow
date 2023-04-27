@@ -11,6 +11,7 @@ import pytest
 
 @pytest.mark.parametrize('mode', ('single', 'uncorr', 'cov', 'cov1d'))
 def test_variables_00_variable(mode) -> None:
+    names = list('abc')
     value_in    = [1.1, 1.8, 5.0]
     central_in  = [1.0, 2.0, 3.0]
     sigma_in    = [1.0, 0.5, 2.0]
@@ -32,7 +33,7 @@ def test_variables_00_variable(mode) -> None:
             sigma = Array("sigma", sigma_in, mark='σ')
 
         if mode in ('single', 'uncorr'):
-            gp = GaussianParameters(value, central, sigma=sigma)
+            gp = GaussianParameters(names, value, central, sigma=sigma)
         elif mode=='cov':
             covariance = Array("covariance", [
                     [variance_in[0],                      corrs_in[0]*sigma_in[0]*sigma_in[1], corrs_in[1]*sigma_in[0]*sigma_in[2]],
@@ -40,17 +41,17 @@ def test_variables_00_variable(mode) -> None:
                     [corrs_in[1]*sigma_in[0]*sigma_in[2], corrs_in[2]*sigma_in[1]*sigma_in[2], variance_in[2]]
                                 ],
                                mark='V')
-            gp = GaussianParameters(value, central, covariance=covariance)
+            gp = GaussianParameters(names, value, central, covariance=covariance)
         elif mode=='cov1d':
             covariance = Array("covariance", variance_in, mark='diag(V)')
-            gp = GaussianParameters(value, central, covariance=covariance)
+            gp = GaussianParameters(names, value, central, covariance=covariance)
         elif mode=='cor':
             correlation = Array("correlation", [
                 [1.0,         corrs_in[0], corrs_in[1]],
                 [corrs_in[0], 1.0,         corrs_in[2]],
                 [corrs_in[1], corrs_in[2], 1.0],
                 ], mark='C')
-            gp = GaussianParameters(value, central, sigma=sigma, correlation=correlation)
+            gp = GaussianParameters(names, value, central, sigma=sigma, correlation=correlation)
         else:
             raise RuntimeError(f"Invalid mode {mode}")
 

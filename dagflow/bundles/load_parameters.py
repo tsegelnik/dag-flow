@@ -63,6 +63,27 @@ def IsFormatOk(format):
 
         return f1 in ('value', 'central')
 
+def CheckCorrelationSizes(cfg):
+    nnames = len(cfg['names'])
+    matrix = cfg['matrix']
+    nrows = len(matrix)
+
+    if nrows!=nnames:
+        return False
+
+    for row in matrix:
+        if nnames!=len(row):
+            return False
+
+    return True
+
+IsCorrelationsDict = And({
+        'names': Or((str,), And([str], Use(tuple))),
+        'matrix_type': Or('correlation', 'covariance'),
+        'matrix': [[IsNumber]],
+        }, CheckCorrelationSizes)
+IsNestedCorrelationsDict = NestedSchema(IsCorrelationsDict, processdicts=True)
+
 IsFormat = Schema(IsFormatOk, error='Invalid parameter format "{}".')
 IsStrSeq = (str,)
 IsStrSeqOrStr = Or(IsStrSeq, And(str, Use(lambda s: (s,))))
@@ -73,6 +94,7 @@ IsParsCfgDict = Schema({
     'state': Or('fixed', 'variable', error='Invalid parameters state: {}'),
     Optional('path', default=''): str,
     Optional('replicate', default=((),)): (IsStrSeqOrStr,),
+    Optional('correlations', default={}): IsNestedCorrelationsDict
     },
     # error = 'Invalid parameters configuration: {}'
 )
@@ -186,6 +208,22 @@ def iterate_varcfgs(cfg: NestedMKDict):
 from dagflow.parameters import Parameters
 from dagflow.lib.SumSq import SumSq
 
+from numpy.typing import ArrayLike
+from numpy import ascontiguousarray
+from typing import Sequence
+class CorrelationsDef:
+    __slots__ = ('matrix_type', 'matrix', 'names')
+
+    def __init__(
+        self,
+        matrix_type: str,
+        matrix: ArrayLike,
+        names: Sequence[str]
+    ):
+        self.matrix_type = matrix_type
+        self.matrix = ascontiguousarray(matrix, dtype='d')
+        self.names = names
+
 def load_parameters(acfg):
     cfg = ValidateParsCfg(acfg)
     cfg = NestedMKDict(cfg)
@@ -223,7 +261,6 @@ def load_parameters(acfg):
 
     normpars = {}
     for key_general, varcfg in iterate_varcfgs(cfg):
-        key_general_str = '.'.join(key_general)
         varcfg.setdefault(state, True)
 
         label_general = varcfg['label']
@@ -255,12 +292,12 @@ def load_parameters(acfg):
             ret[('parameter_node',)+target+key] = par
 
             ptarget = ('parameter', target)
-            for subpar in par.parameters:
-                ret[ptarget+key] = subpar
+            for subname, subpar in par.iter_items():
+                ret[ptarget+key+subname] = subpar
 
             ntarget = ('parameter', 'normalized', path)
-            for subpar in par.norm_parameters:
-                ret[ntarget+key] = subpar
+            for subname, subpar in par.iter_norm_items():
+                ret[ntarget+key+subname] = subpar
 
                 normpars_i.append(subpar)
 
