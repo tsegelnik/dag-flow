@@ -94,6 +94,7 @@ IsParsCfgDict = Schema({
     'state': Or('fixed', 'variable', error='Invalid parameters state: {}'),
     Optional('path', default=''): str,
     Optional('replicate', default=((),)): (IsStrSeqOrStr,),
+    Optional('replica_key_offset', default=0): int,
     Optional('correlations', default={}): IsNestedCorrelationsDict
     },
     # error = 'Invalid parameters configuration: {}'
@@ -258,6 +259,11 @@ def load_parameters(acfg):
     )
 
     subkeys = cfg['replicate']
+    replica_key_offset = cfg['replica_key_offset']
+    if replica_key_offset>0:
+        make_key = lambda key, subkey: key+subkey
+    else:
+        make_key = lambda key, subkey: key[:-replica_key_offset]+subkey+key[replica_key_offset:]
 
     normpars = {}
     for key_general, varcfg in iterate_varcfgs(cfg):
@@ -268,6 +274,7 @@ def load_parameters(acfg):
         normpars_i = normpars.setdefault(key_general[0], [])
         for subkey in subkeys:
             key = key_general + subkey
+            key = make_key(key_general, subkey)
             key_str = '.'.join(key)
             subkey_str = '.'.join(subkey)
 
