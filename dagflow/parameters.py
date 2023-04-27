@@ -7,7 +7,7 @@ from .lib.CovmatrixFromCormatrix import CovmatrixFromCormatrix
 
 from numpy import zeros_like, array
 from numpy.typing import DTypeLike, ArrayLike
-from typing import Optional, Dict, Tuple, List, Union, Generator
+from typing import Optional, Dict, Tuple, List, Union, Generator, Sequence
 
 class Parameter:
     __slots__ = ('_idx','_parent', '_value_output', '_labelfmt')
@@ -248,7 +248,7 @@ class Parameters:
 
     @staticmethod
     def from_numbers(
-        value: Union[float, ArrayLike],
+        value: Union[float, int, ArrayLike],
         *,
         names: Tuple[Tuple[str,...],...] = ((),),
         dtype: DTypeLike='d',
@@ -264,9 +264,9 @@ class Parameters:
         name: str = label.setdefault('name', 'parameter')
         has_constraint = kwargs.get('sigma', None) is not None
 
-        if isinstance(value, float):
+        if isinstance(value, (float, int)):
             value = (value,)
-        elif not isinstance(value, ArrayLike):
+        elif not isinstance(value, Sequence):
             raise InitializationError(f"Parameters.from_numbers: Unsupported value type {type(value)}")
         if len(names)!=len(value):
             raise InitializationError(f"Parameters.from_numbers: inconsistent values ({value}) and names ({names})")
