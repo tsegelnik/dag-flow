@@ -4,6 +4,7 @@ from gindex import GNIndex
 
 from schema import Schema, Or, Optional, Use, And, Schema, SchemaError
 from pathlib import Path
+from typing import Tuple, Generator
 
 from ..tools.schema import NestedSchema, LoadFileWithExt, LoadYaml, MakeLoaderPy
 
@@ -193,7 +194,7 @@ def get_label(key: tuple, labelscfg: dict) -> dict:
 
     return {}
 
-def iterate_varcfgs(cfg: NestedMKDict):
+def iterate_varcfgs(cfg: NestedMKDict) -> Generator[Tuple[Tuple[str, ...], NestedMKDict], None, None]:
     parameterscfg = cfg['parameters']
     labelscfg = cfg['labels']
     format = cfg['format']
@@ -206,24 +207,23 @@ def iterate_varcfgs(cfg: NestedMKDict):
         varcfg['label'] = get_label(key, labelscfg)
         yield key, varcfg
 
-from dagflow.parameters import Parameters
-from dagflow.lib.SumSq import SumSq
+from ..lib import Array
+from ..parameters import Parameters
+from ..lib.ElSumSq import ElSumSq
 
-from numpy.typing import ArrayLike
-from numpy import ascontiguousarray
-from typing import Sequence
-class CorrelationsDef:
-    __slots__ = ('matrix_type', 'matrix', 'names')
+def check_correlations_consistent(cfg: NestedMKDict) -> None:
+    parscfg = cfg['parameters']
+    for key, corrcfg in cfg['correlations'].walkdicts():
+        # processed_cfgs.add(varcfg)
+        names = corrcfg['names']
+        try:
+            parcfg = parscfg[key]
+        except KeyError:
+            raise InitializationError(f"Failed to obtain parameters for {key}")
 
-    def __init__(
-        self,
-        matrix_type: str,
-        matrix: ArrayLike,
-        names: Sequence[str]
-    ):
-        self.matrix_type = matrix_type
-        self.matrix = ascontiguousarray(matrix, dtype='d')
-        self.names = names
+        inames = tuple(parcfg.walkjoinedkeys())
+        if names!=inames:
+            raise InitializationError(f'Keys in {".".join(key)} are not consistent with names: {inames} and {names}')
 
 def load_parameters(acfg):
     cfg = ValidateParsCfg(acfg)
@@ -245,6 +245,7 @@ def load_parameters(acfg):
                 'constrained': {},
                 'normalized': {},
                 },
+            'correlations': {},
             'stat': {
                 'nuisance_parts': {},
                 'nuisance': {},
@@ -257,6 +258,8 @@ def load_parameters(acfg):
         },
         sep='.'
     )
+
+    check_correlations_consistent(cfg)
 
     subkeys = cfg['replicate']
     replica_key_offset = cfg['replica_key_offset']
@@ -290,42 +293,70 @@ def load_parameters(acfg):
             label['key'] = key_str
             label.setdefault('text', key_str)
 
-            varcfgs[key] = (varcfg,) # protect dictionary from being 'nested'
+            varcfgs[key] = varcfg
 
+    processed_cfgs = set()
     pars = NestedMKDict({})
-    for key, (varcfg,) in varcfgs.walkitems():
+    for key, corrcfg in cfg['correlations'].walkdicts():
+        matrixtype = corrcfg['matrix_type']
+        matrix = corrcfg['matrix']
+        mark = matrixtype=='correlation' and 'C' or 'V'
+        matrix_array = Array(matrixtype, matrix, mark=mark)
+
+        for subkey in subkeys:
+            fullkey = key+subkey
+            try:
+                varcfg = varcfgs[fullkey]
+            except KeyError:
+                raise InitializationError(f"Failed to obtain parameters for {fullkey}")
+
+            kwargs = {matrixtype: matrix_array}
+            kwargs['value'] = (vvalue := [])
+            kwargs['central'] = (vcentral := [])
+            kwargs['sigma'] = (vsigma := [])
+            kwargs['names'] = (names := [])
+            for name, vcfg in varcfg.walkdicts(ignorekeys=('label',)):
+                vvalue.append(vcfg['value'])
+                vcentral.append(vcfg['central'])
+                vsigma.append(vcfg['sigma'])
+                names.append(name)
+                processed_cfgs.add(fullkey+name)
+            par = Parameters.from_numbers(**kwargs)
+            pars[subkey] = par
+
+    for key, varcfg in varcfgs.walkdicts(ignorekeys=('label',)):
+        if key in processed_cfgs:
+            continue
         par = Parameters.from_numbers(**varcfg)
         pars[key] = par
 
     for key, par in pars.walkitems():
         if par.is_constrained:
-            target = ('constrained', path)
+            target = ('constrained',)+path
         elif par.is_fixed:
-            target = ('constant', path)
+            target = ('constant',)+path
         else:
-            target = ('free', path)
+            target = ('free',)+path
 
         targetkey = target+key
         ret[('parameter_node',)+targetkey] = par
 
-        ptarget = ('parameter', targetkey)
-        for subname, subpar in par.iter_items():
+        ptarget = ('parameter',)+targetkey
+        for subname, subpar in par.iteritems():
             ret[ptarget+subname] = subpar
 
-        normpars_i = normpars.setdefault(key[0], [])
-        ntarget = ('parameter', 'normalized', path)+key
-        for subname, subpar in par.iter_norm_items():
-            ret[ntarget+subname] = subpar
+        if (constraint:=par.constraint):
+            normpars_i = normpars.setdefault(key[0], [])
+            normpars_i.append(constraint.normvalue_final)
 
-            normpars_i.append(subpar)
+            ntarget = ('parameter', 'normalized', path)+key
+            for subname, subpar in par.iteritems_norm():
+                ret[ntarget+subname] = subpar
 
-        for name, np in normpars.items():
-            if not np:
-                continue
-
-            ssq = SumSq(f'nuisance for {pathstr}.{name}')
-            (n.output for n in np) >> ssq
-            ssq.close()
-            ret[('stat', 'nuisance_parts', path, name)] = ssq
+    for name, outputs in normpars.items():
+        ssq = ElSumSq(f'nuisance for {pathstr}.{name}')
+        outputs >> ssq
+        ssq.close()
+        ret[('stat', 'nuisance_parts', path, name)] = ssq
 
     return ret
