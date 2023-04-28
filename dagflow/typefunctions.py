@@ -290,7 +290,7 @@ def check_inputs_equivalence(
             or input.dd.axes_nodes != nodes
         ):
             raise TypeFunctionError(
-                f"Input data [{input.dtype=}, {input.shape=}, {input.axes_edges=}, {input.axes_nodes=}]"
+                f"Input data [{input.dd.dtype=}, {input.dd.shape=}, {input.dd.axes_edges=}, {input.dd.axes_nodes=}]"
                 f" is inconsistent with [{dtype=}, {shape=}, {edges=}, {nodes=}]",
                 node=node,
                 input=input,
