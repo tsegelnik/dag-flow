@@ -81,7 +81,6 @@ class GaussianParameter(Parameter):
         else:
             return f'gpar v={self.value} ({self.normvalue}σ): {self.central}±{self.sigma}'
 
-
     @property
     def central(self) -> float:
         return self._central_output.data[0]
@@ -235,10 +234,10 @@ class Parameters:
     def norm_parameters(self) -> List:
         return self._norm_pars
 
-    def iter_items(self) -> Generator[Tuple[Tuple[str,...], Parameter], None, None]:
+    def iteritems(self) -> Generator[Tuple[Tuple[str,...], Parameter], None, None]:
         yield from zip(self._names, self._pars)
 
-    def iter_norm_items(self) -> Generator[Tuple[Tuple[str,...], Parameter], None, None]:
+    def iteritems_norm(self) -> Generator[Tuple[Tuple[str,...], Parameter], None, None]:
         yield from zip(self._names, self._norm_pars)
 
     def _reset_pars(self) -> None:
@@ -314,6 +313,7 @@ class Parameters:
 class GaussianConstraint(Constraint):
     __slots__ = (
         'central', 'sigma', 'normvalue',
+        'normvalue_final',
         '_central_node', '_sigma_node', '_normvalue_node',
         '_cholesky_node', '_covariance_node', '_correlation_node',
         '_sigma_total_node',
@@ -323,6 +323,8 @@ class GaussianConstraint(Constraint):
     central: Output
     sigma: Output
     normvalue: Output
+
+    normvalue_final: Output
 
     _central_node: Node
     _sigma_node: Node
@@ -352,10 +354,10 @@ class GaussianConstraint(Constraint):
         super().__init__(parameters=parameters)
         self._central_node = central
 
-        self._cholesky_node = None
-        self._covariance_node = None
-        self._correlation_node = None
-        self._sigma_total_node = None
+        self._cholesky_node: Node = None
+        self._covariance_node: Node = None
+        self._correlation_node: Node = None
+        self._sigma_total_node: Node = None
 
         if all(f is not None for f in (constrained, free)):
             raise InitializationError("GaussianConstraint may not be set to constrained and free at the same time")
@@ -372,11 +374,11 @@ class GaussianConstraint(Constraint):
             raise InitializationError('GaussianConstraint: got "correlation", but no "sigma" as arguments')
 
         value_node = parameters._value_node
+        self._sigma_total_node = sigma
         if correlation is not None:
             self._correlation_node = correlation
             self._covariance_node = CovmatrixFromCormatrix(f"V({value_node.name})")
             self._cholesky_node = Cholesky(f"L({value_node.name})")
-            self._sigma_total_node = sigma
             self._sigma_node = self._cholesky_node
 
             self._sigma_total_node >> self._covariance_node.inputs['sigma']
@@ -411,13 +413,14 @@ class GaussianConstraint(Constraint):
         self.sigma >> self._norm_node.inputs['matrix']
 
         (parameters.value, self.normvalue) >> self._norm_node
+        self.normvalue_final = self._norm_node.outputs['normvalue']
 
         self._norm_node.close(recursive=True)
         self._norm_node.touch()
 
         value_output = self._pars.value
+        self._pars._reset_pars()
         for i in range(value_output._data.size):
-            self._pars._reset_pars()
             self._pars._pars.append(
                 GaussianParameter(
                     value_output,
@@ -452,8 +455,8 @@ class GaussianConstraint(Constraint):
     @staticmethod
     def from_numbers(
         *,
-        central: float,
-        sigma: float,
+        central: Union[float, Sequence[float]],
+        sigma: Union[float, Sequence[float]],
         label: Optional[Dict[str,str]]=None,
         dtype: DTypeLike='d',
         **kwargs
@@ -464,16 +467,21 @@ class GaussianConstraint(Constraint):
             label = dict(label)
         name = label.setdefault('name', 'parameter')
 
+        if isinstance(central, (float, int)):
+            central = (central,)
+        if isinstance(sigma, (float, int)):
+            sigma = (sigma,)
+
         node_central = Array(
             f'{name}_central',
-            array((central,), dtype=dtype),
+            array(central, dtype=dtype),
             label = {k: f'central: {v}' for k,v in label.items()},
             mode='store_weak'
         )
 
         node_sigma = Array(
             f'{name}_sigma',
-            array((sigma,), dtype=dtype),
+            array(sigma, dtype=dtype),
             label = {k: f'sigma: {v}' for k,v in label.items()},
             mode='store_weak'
         )
