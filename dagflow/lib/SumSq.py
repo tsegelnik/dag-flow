@@ -11,7 +11,7 @@ from ..typefunctions import (
 )
 
 class SumSq(FunctionNode):
-    """Sum of the squared of all the inputs"""
+    """Sum of the squares of all the inputs"""
 
     _buffer: ndarray
     _mark = 'Σ()²'
