@@ -312,7 +312,7 @@ class Parameters:
 
 class GaussianConstraint(Constraint):
     __slots__ = (
-        'central', 'sigma', 'normvalue',
+        'central', 'sigma', 'normvalue', 'sigma_total',
         'normvalue_final',
         '_central_node', '_sigma_node', '_normvalue_node',
         '_cholesky_node', '_covariance_node', '_correlation_node',
@@ -323,6 +323,7 @@ class GaussianConstraint(Constraint):
     central: Output
     sigma: Output
     normvalue: Output
+    sigma_total: Output
 
     normvalue_final: Output
 
@@ -375,6 +376,7 @@ class GaussianConstraint(Constraint):
 
         value_node = parameters._value_node
         self._sigma_total_node = sigma
+        self.sigma_total = sigma.outputs[0]
         if correlation is not None:
             self._correlation_node = correlation
             self._covariance_node = CovmatrixFromCormatrix(f"V({value_node.name})")
@@ -392,6 +394,10 @@ class GaussianConstraint(Constraint):
             self._covariance_node = covariance
 
             covariance >> self._cholesky_node
+
+            # Todo, add square root of the diagonal of the covariance matrix
+            self.sigma_total = None
+            self._sigma_total_node = None
         else:
             # TODO: no sigma/covariance AND central means normalized=value?
             raise InitializationError('GaussianConstraint: got no "sigma" and no "covariance" arguments')
@@ -425,7 +431,7 @@ class GaussianConstraint(Constraint):
                 GaussianParameter(
                     value_output,
                     self.central,
-                    self.sigma,
+                    self.sigma_total,
                     i,
                     normvalue_output=self.normvalue,
                     parent=self
