@@ -26,7 +26,7 @@ class DagflowError(Exception):
         self.input = input
         self.output = output
 
-        if node is not None:
+        if node is not None and '_exception' in dir(node):
             node._exception = message
 
 class CriticalError(DagflowError):

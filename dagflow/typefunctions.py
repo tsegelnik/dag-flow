@@ -1,6 +1,6 @@
 from collections.abc import Sequence
 from itertools import repeat
-from typing import Optional, Tuple, Union
+from typing import Callable, Optional, Tuple, Union
 
 from numpy import issubdtype, result_type
 from numpy.typing import DTypeLike
@@ -29,14 +29,17 @@ except TypeError:
 class MethodSequenceCaller:
     """Class to call a sequence of methods"""
 
-    methods: list
+    __slots__ = ("methods",)
 
     def __init__(self) -> None:
         self.methods = []
 
-    def __call__(self, inputs, outputs):
+    def __call__(self, inputs, outputs) -> None:
         for method in self.methods:
             method(inputs, outputs)
+
+    def add(self, method: Callable) -> None:
+        self.methods.append(method)
 
 
 def cpy_dtype(input, output):
@@ -115,13 +118,13 @@ def copy_input_to_output(
 
     caller = MethodSequenceCaller()
     if dtype:
-        caller.methods.append(cpy_dtype)
+        caller.add(cpy_dtype)
     if shape:
-        caller.methods.append(cpy_shape)
+        caller.add(cpy_shape)
     if edges:
-        caller.methods.append(cpy_edges)
+        caller.add(cpy_edges)
     if nodes:
-        caller.methods.append(cpy_nodes)
+        caller.add(cpy_nodes)
 
     if len(inputs) == 1:
         inputs = repeat(inputs[0], len(outputs))
