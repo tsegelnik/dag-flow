@@ -319,6 +319,7 @@ class Parameters:
                 GaussianConstraint.from_numbers(
                     parameters=pars,
                     dtype=dtype,
+                    label=label,
                     **kwargs
                 )
             )
@@ -422,7 +423,7 @@ class GaussianConstraint(Constraint):
         self.central = self._central_node.outputs[0]
         self.sigma = self._sigma_node.outputs[0]
 
-        if (mark:=value_node.label('mark')) is not None:
+        if (mark:=value_node.label('mark', fallback=None)) is not None:
             normmark = f'norm({mark})'
         else:
             normmark = f'norm'
@@ -432,10 +433,10 @@ class GaussianConstraint(Constraint):
             mark=normmark,
             mode='store_weak'
         )
-        self._normvalue_node._inherit_labels(self._pars._value_node, fmt='[norm] {}')
+        self._normvalue_node._inherit_labels(self._pars._value_node, fmtlong='[norm] {}', fmtshort='n({})')
         self.normvalue = self._normvalue_node.outputs[0]
 
-        self._norm_node = NormalizeCorrelatedVars2(f"Normalize {value_node.name}", immediate=True)
+        self._norm_node = NormalizeCorrelatedVars2(f"[norm] {value_node.name}", immediate=True)
         self.central >> self._norm_node.inputs['central']
         self.sigma >> self._norm_node.inputs['matrix']
 
@@ -499,17 +500,22 @@ class GaussianConstraint(Constraint):
         if isinstance(sigma, (float, int)):
             sigma = (sigma,)
 
+        def fmtlabels(labels: dict, fmtlong: str, fmtshort: str) -> dict:
+            return {
+                    k: k=='mark' and fmtshort.format(v) or fmtlong.format(v) for k,v in labels.items()
+             }
+
         node_central = Array(
             f'{name}_central',
             array(central, dtype=dtype),
-            label = {k: f'central: {v}' for k,v in label.items()},
+            label = fmtlabels(label, 'central: {}', 'c({})'),
             mode='store_weak'
         )
 
         node_sigma = Array(
             f'{name}_sigma',
             array(sigma, dtype=dtype),
-            label = {k: f'sigma: {v}' for k,v in label.items()},
+            label = fmtlabels(label, 'sigma: {}', 'σ({})'),
             mode='store_weak'
         )
 

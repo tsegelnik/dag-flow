@@ -19,6 +19,32 @@ from .output import Output
 from .types import GraphT
 from typing import Optional, List, Dict, Union, Callable, Any, Tuple, Generator
 
+def _make_formatter(fmt: Union[str, Callable, dict]) -> Callable:
+    if isinstance(fmt, str):
+        return fmt.format
+    elif isinstance(fmt, dict):
+        return lambda s: fmt.get(s, s)
+
+    return fmt
+
+def inherit_labels(source: dict, destination: Optional[dict]=None, *, fmtlong: Union[str, Callable], fmtshort: Union[str, Callable]) -> dict:
+    if destination is None:
+        destination = {}
+
+    fmtlong = _make_formatter(fmtlong)
+    fmtshort = _make_formatter(fmtshort)
+
+    kshort = {'mark'}
+    kskip = {'key', 'name'}
+    for k, v in source.items():
+        if k in kskip:
+            continue
+        newv = fmtshort(v) if k in kshort else fmtlong(v)
+        if newv is not None:
+            destination[k] = newv
+
+    return destination
+
 class Node(Legs):
     _name: str
     _labels: Dict[str, str]
@@ -214,8 +240,8 @@ class Node(Legs):
         self._graph.register_node(self)
 
     @property
-    def labels(self) -> Generator[Tuple[str,str], None, None]:
-        yield from self._labels.items()
+    def labels(self) -> dict:
+        return self._labels
 
     #
     # Methods
@@ -232,30 +258,18 @@ class Node(Legs):
             raise ReconnectionError(input=inp, node=self, output=output)
         return inp
 
-    def label(self, source: str='text', default: str=None) -> Optional[str]:
+    def label(self, source: str='text', default: str=None, *, fallback: Optional[str]='text') -> Optional[str]:
         # if self._labels:
         #     kwargs.setdefault("name", self._name)
         #     return self._labels.format(*args, **kwargs)
         label = self._labels.get(source, default)
-        if label is None:
-            return self._labels['text']
+        if label is None and fallback is not None:
+            return self._labels[fallback]
 
         return label
 
-    def _inherit_labels(self, source: 'Node', fmt: Union[str, Callable]) -> None:
-        if isinstance(fmt, str):
-            formatter = fmt.format
-        elif isinstance(fmt, dict):
-            formatter = lambda s: fmt.get(s, s)
-        else:
-            formatter = fmt
-
-        for k, v in source.labels:
-            if k in ('key',):
-                continue
-            newv = formatter(v)
-            if newv is not None:
-                self._labels[k] = newv
+    def _inherit_labels(self, source: 'Node', fmtlong: Union[str, Callable], fmtshort: Union[str, Callable]) -> dict:
+        return inherit_labels(source.labels, self._labels, fmtlong=fmtlong, fmtshort=fmtshort)
 
     def add_input(self, name, **kwargs) -> Union[Input, Tuple[Input]]:
         if not self.closed:

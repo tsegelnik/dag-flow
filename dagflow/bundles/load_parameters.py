@@ -7,6 +7,7 @@ from pathlib import Path
 from typing import Tuple, Generator
 
 from ..tools.schema import NestedSchema, LoadFileWithExt, LoadYaml, MakeLoaderPy
+from ..node import inherit_labels
 
 class ParsCfgHasProperFormat(object):
     def validate(self, data: dict) -> dict:
@@ -30,6 +31,7 @@ class ParsCfgHasProperFormat(object):
 
 IsNumber = Or(float, int, error='Invalid number "{}", expect int of float')
 IsNumberOrTuple = Or(IsNumber, (IsNumber,), And([IsNumber], Use(tuple)), error='Invalid number/tuple {}')
+label_keys = {'text', 'latex', 'graph', 'mark', 'name'}
 IsLabel = Or({
         'text': str,
         Optional('latex'): str,
@@ -163,14 +165,14 @@ def get_format_processor(format):
         return process_var_percent
 
 def format_latex(k, s: str, /, *args, **kwargs) -> str:
-    if k=='latex' and '$' in s:
+    if (k=='latex' and '$' in s) or '{' not in s:
         return s
 
     return s.format(*args, **kwargs)
 
 def format_dict(dct: dict, /, *args, **kwargs) -> dict:
     return {
-        k: format_latex(k, v, *args, **kwargs) for k, v in dct.items()
+        k: format_latex(k, v, *args, **kwargs) for k, v in dct.items() if k in label_keys
     }
 
 def get_label(key: tuple, labelscfg: dict) -> dict:
@@ -283,28 +285,30 @@ def load_parameters(acfg):
             key_str = '.'.join(key)
             subkey_str = '.'.join(subkey)
 
-            label = format_dict(
-                label_general.copy(),
-                subkey=subkey_str,
-                space_subkey=f' {subkey_str}',
-                subkey_space=f'{subkey_str} ',
-            )
-            varcfg['label'] = label
+            label = format_dict(label_general.copy(), subkey=subkey_str, space_subkey=f' {subkey_str}', subkey_space=f'{subkey_str} ')
+            varcfg_sub = varcfg.copy()
+            varcfg_sub['label'] = label
             label['key'] = key_str
             label.setdefault('text', key_str)
 
-            varcfgs[key] = varcfg
+            varcfgs[key] = varcfg_sub
 
     processed_cfgs = set()
     pars = NestedMKDict({})
     for key, corrcfg in cfg['correlations'].walkdicts():
+        label = get_label(key+('group',), cfg['labels'])
+
         matrixtype = corrcfg['matrix_type']
         matrix = corrcfg['matrix']
-        mark = matrixtype=='correlation' and 'C' or 'V'
-        matrix_array = Array(matrixtype, matrix, mark=mark)
+        mark_matrix = matrixtype=='correlation' and 'C' or 'V'
+        label_mat = inherit_labels(label, fmtlong=f'{matrixtype.capitalize()}'' matrix: {}', fmtshort=mark_matrix+'({})')
+        label_mat['mark'] = mark_matrix
+        label_mat = format_dict(label_mat, subkey='', space_subkey='', subkey_space='')
+        matrix_array = Array('matrixtype', matrix, label=label_mat)
 
         for subkey in subkeys:
             fullkey = key+subkey
+            subkey_str = '.'.join(subkey)
             try:
                 varcfg = varcfgs[fullkey]
             except KeyError:
@@ -321,8 +325,9 @@ def load_parameters(acfg):
                 vsigma.append(vcfg['sigma'])
                 names.append(name)
                 processed_cfgs.add(fullkey+name)
-            par = Parameters.from_numbers(**kwargs)
-            pars[fullkey] = par
+
+            labelsub = format_dict(label, subkey=subkey_str, space_subkey=f' {subkey_str}', subkey_space=f'{subkey_str} ')
+            pars[fullkey] = Parameters.from_numbers(label=labelsub, **kwargs)
 
     for key, varcfg in varcfgs.walkdicts(ignorekeys=('label',)):
         if key in processed_cfgs:
@@ -354,7 +359,7 @@ def load_parameters(acfg):
                 ret[ntarget+subname] = subpar
 
     for name, outputs in normpars.items():
-        ssq = ElSumSq(f'nuisance for {pathstr}.{name}')
+        ssq = ElSumSq(f'nuisance: {pathstr}.{name}')
         outputs >> ssq
         ssq.close()
         ret[('stat', 'nuisance_parts', path, name)] = ssq
