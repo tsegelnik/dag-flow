@@ -44,13 +44,18 @@ class Parameter:
     def output(self) -> Output:
         return self._value_output
 
+    @property
+    def is_correlated(self) -> bool:
+        return self._parent.is_correlated
+
     def label(self, source: str='text') -> str:
         return self._labelfmt.format(self._value_output.node.label(source))
 
     def to_dict(self, *, label_from: str='text') -> dict:
         return {
                 'value': self.value,
-                'label': self.label(label_from)
+                'label': self.label(label_from),
+                'flags': ''
                 }
 
 class GaussianParameter(Parameter):
@@ -128,6 +133,8 @@ class GaussianParameter(Parameter):
             'sigma': self.sigma,
             # 'normvalue': self.normvalue,
             })
+        if self.is_correlated:
+            dct['flags']+='C'
         return dct
 
 class NormalizedGaussianParameter(Parameter):
@@ -154,6 +161,10 @@ class Constraint:
 
     def __init__(self, parameters: "Parameters"):
         self._pars = parameters
+
+    @property
+    def is_correlated(self) -> bool:
+        return False
 
 class Parameters:
     __slots__ = (
@@ -227,6 +238,10 @@ class Parameters:
         return self._constraint is None
 
     @property
+    def is_correlated(self) -> bool:
+        return False if self._constraint is None else self._constraint.is_correlated
+
+    @property
     def parameters(self) -> List:
         return self._pars
 
@@ -251,7 +266,8 @@ class Parameters:
     def to_dict(self, *, label_from: str='text') -> dict:
         return {
                 'value': self.value.data[0],
-                'label': self._value_node.label(label_from)
+                'label': self._value_node.label(label_from),
+                'flags': ''
                 }
 
     def set_constraint(self, constraint: Constraint) -> None:
@@ -434,14 +450,14 @@ class GaussianConstraint(Constraint):
                     self.sigma_total,
                     i,
                     normvalue_output=self.normvalue,
-                    parent=self
+                    parent=parameters
                 )
             )
             self._pars._norm_pars.append(
                 NormalizedGaussianParameter(
                     self.normvalue,
                     i,
-                    parent=self,
+                    parent=parameters,
                     labelfmt='{}'
                 )
             )
@@ -456,7 +472,7 @@ class GaussianConstraint(Constraint):
 
     @property
     def is_correlated(self) -> bool:
-        return not self._covariance_node is not None
+        return self._covariance_node is not None
 
     @staticmethod
     def from_numbers(
@@ -499,6 +515,7 @@ class GaussianConstraint(Constraint):
         dct.update({
             'central': self.central.data[0],
             'sigma': self.sigma.data[0],
+            'flags': self.is_correlated and 'C' or ''
             # 'normvalue': self.normvalue.data[0],
             })
         return dct
