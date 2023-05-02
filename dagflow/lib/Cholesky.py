@@ -11,12 +11,12 @@ from numpy import sqrt
 class Cholesky(FunctionNode):
     """Compute the Cholesky decomposition of a matrix V=LL̃ᵀ
     1d input is considered to be a diagonal of square matrix"""
-    _mark: str = 'V→L'
     def __init__(self, *args, **kwargs):
         kwargs.setdefault(
                 "missing_input_handler", MissingInputAddPair(input_fmt='matrix', output_fmt='L')
         )
         super().__init__(*args, **kwargs)
+        self._labels.setdefault('mark', 'V→L')
 
         self._functions.update({
                 "square": self._fcn_square,

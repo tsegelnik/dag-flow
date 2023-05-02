@@ -14,9 +14,9 @@ class CovmatrixFromCormatrix(FunctionNode):
     """
 
     _mode: str
-    _mark: str = 'C→V'
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+        self._labels.setdefault('mark', 'C→V')
 
         self._add_pair("matrix", "matrix", output_kws={'positional': True})
         self._add_input("sigma", positional=False)

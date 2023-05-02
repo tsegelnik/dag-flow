@@ -22,12 +22,12 @@ class ElSumSq(FunctionNode):
     """Sum of the squared of all the inputs"""
 
     _buffer: ndarray
-    _mark = 'Σ()²'
     def __init__(self, *args, **kwargs):
         kwargs.setdefault(
             "missing_input_handler", MissingInputAddOne(output_fmt="result")
         )
         super().__init__(*args, **kwargs)
+        self._labels.setdefault('mark', 'Σ()²')
 
     def _fcn(self, _, inputs, outputs):
         out = outputs["result"].data

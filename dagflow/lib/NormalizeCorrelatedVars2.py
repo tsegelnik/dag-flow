@@ -21,8 +21,6 @@ class NormalizeCorrelatedVars2(FunctionNode):
     x = Lz + μ
     """
 
-    _mark: str = 'c↔u'
-
     _input_value: Input
     _input_normvalue: Input
     _output_value: Output
@@ -32,6 +30,7 @@ class NormalizeCorrelatedVars2(FunctionNode):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+        self._labels.setdefault('mark', 'c↔u')
 
         self._add_input("matrix", positional=False)
         self._add_input("central", positional=False)

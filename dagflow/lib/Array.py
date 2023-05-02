@@ -30,7 +30,7 @@ class Array(FunctionNode):
         super().__init__(name, **kwargs)
         self._mode = mode
         if mark is not None:
-            self._mark = mark
+            self._labels.setdefault('mark', mark)
         self._data = array(arr, copy=True)
 
         if mode == "store":

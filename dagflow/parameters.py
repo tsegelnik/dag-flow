@@ -392,7 +392,8 @@ class GaussianConstraint(Constraint):
 
         value_node = parameters._value_node
         self._sigma_total_node = sigma
-        self.sigma_total = sigma.outputs[0]
+        if sigma is not None:
+            self.sigma_total = sigma.outputs[0]
         if correlation is not None:
             self._correlation_node = correlation
             self._covariance_node = CovmatrixFromCormatrix(f"V({value_node.name})")
@@ -421,10 +422,14 @@ class GaussianConstraint(Constraint):
         self.central = self._central_node.outputs[0]
         self.sigma = self._sigma_node.outputs[0]
 
+        if (mark:=value_node.label('mark')) is not None:
+            normmark = f'norm({mark})'
+        else:
+            normmark = f'norm'
         self._normvalue_node = Array(
             f'[norm] {value_node.name}',
             zeros_like(self.central._data),
-            mark = f'norm({value_node.mark})',
+            mark=normmark,
             mode='store_weak'
         )
         self._normvalue_node._inherit_labels(self._pars._value_node, fmt='[norm] {}')

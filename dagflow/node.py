@@ -21,7 +21,6 @@ from typing import Optional, List, Dict, Union, Callable, Any, Tuple, Generator
 
 class Node(Legs):
     _name: str
-    _mark: Optional[str] = None
     _labels: Dict[str, str]
     _graph: Optional[GraphT] = None
     _fcn: Optional[Callable] = None
@@ -117,10 +116,6 @@ class Node(Legs):
     @name.setter
     def name(self, name):
         self._name = name
-
-    @property
-    def mark(self):
-        return self._mark
 
     @property
     def exception(self):
