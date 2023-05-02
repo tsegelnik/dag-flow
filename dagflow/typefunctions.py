@@ -179,6 +179,34 @@ def check_input_dimension(
             )
 
 
+def check_input_shape(
+    node: NodeT, inputkey: Union[str, int, slice, Sequence], shape: tuple
+):
+    """Checking the shape equivalence for inputs"""
+    for input in node.inputs.iter(inputkey):
+        sshape = input.dd.shape
+        if sshape != shape:
+            raise TypeFunctionError(
+                f"The node supports only inputs with shape={shape}. Got {sshape}!",
+                node=node,
+                input=input,
+            )
+
+
+def check_input_dtype(
+    node: NodeT, inputkey: Union[str, int, slice, Sequence], dtype
+):
+    """Checking the dtype equivalence for inputs"""
+    for input in node.inputs.iter(inputkey):
+        dtt = input.dd.dtype
+        if dtt != dtype:
+            raise TypeFunctionError(
+                f"The node supports only input types {dtype}. Got {dtt}!",
+                node=node,
+                input=input,
+            )
+
+
 def check_input_square(
     node: NodeT,
     inputkey: Union[str, int, slice, Sequence],
@@ -215,62 +243,6 @@ def check_input_square_or_diag(
     return dim_max
 
 
-def check_input_shape(
-    node: NodeT, inputkey: Union[str, int, slice, Sequence], shape: tuple
-):
-    """Checking the shape equivalence for inputs"""
-    for input in node.inputs.iter(inputkey):
-        sshape = input.dd.shape
-        if sshape != shape:
-            raise TypeFunctionError(
-                f"The node supports only inputs with shape={shape}. Got {sshape}!",
-                node=node,
-                input=input,
-            )
-
-
-def check_input_dtype(
-    node: NodeT, inputkey: Union[str, int, slice, Sequence], dtype
-):
-    """Checking the dtype equivalence for inputs"""
-    for input in node.inputs.iter(inputkey):
-        dtt = input.dd.dtype
-        if dtt != dtype:
-            raise TypeFunctionError(
-                f"The node supports only input types {dtype}. Got {dtt}!",
-                node=node,
-                input=input,
-            )
-
-
-def check_inputs_equivalence(
-    node: NodeT, inputkey: Union[str, int, slice, Sequence] = AllPositionals
-):
-    """Checking the equivalence of the dtype, shape, axes_edges and axes_nodes of all the inputs"""
-    inputs = tuple(node.inputs.iter(inputkey))
-    input0, inputs = inputs[0], inputs[1:]
-
-    dtype, shape, edges, nodes = (
-        input0.dd.dtype,
-        input0.dd.shape,
-        input0.dd.axes_edges,
-        input0.dd.axes_nodes,
-    )
-    for input in inputs:
-        if (
-            input.dd.dtype != dtype
-            or input.dd.shape != shape
-            or input.dd.axes_edges != edges
-            or input.dd.axes_nodes != nodes
-        ):
-            raise TypeFunctionError(
-                f"Input data [{input.dtype=}, {input.shape=}, {input.axes_edges=}, {input.axes_nodes=}]"
-                f" is inconsistent with [{dtype=}, {shape=}, {edges=}, {nodes=}]",
-                node=node,
-                input=input,
-            )
-
-
 def check_inputs_square_or_diag(
     node: NodeT,
     inputkey: Union[str, int, slice, Sequence] = AllPositionals,
@@ -295,6 +267,35 @@ def check_inputs_square_or_diag(
                 input=input,
             )
     return dim_max
+
+
+def check_inputs_equivalence(
+    node: NodeT, inputkey: Union[str, int, slice, Sequence] = AllPositionals
+):
+    """Checking the equivalence of the dtype, shape, axes_edges and axes_nodes of all the inputs"""
+    inputs = tuple(node.inputs.iter(inputkey))
+    input0, inputs = inputs[0], inputs[1:]
+
+    dtype, shape, edges, nodes = (
+        input0.dd.dtype,
+        input0.dd.shape,
+        input0.dd.axes_edges,
+        input0.dd.axes_nodes,
+    )
+    for input in inputs:
+        dd = input.dd
+        if (
+            dd.dtype != dtype
+            or dd.shape != shape
+            or dd.axes_edges != edges
+            or dd.axes_nodes != nodes
+        ):
+            raise TypeFunctionError(
+                f"Input data [{dd.dtype=}, {dd.shape=}, {dd.axes_edges=}, {dd.axes_nodes=}]"
+                f" is inconsistent with [{dtype=}, {shape=}, {edges=}, {nodes=}]",
+                node=node,
+                input=input,
+            )
 
 
 def check_inputs_same_dtype(
