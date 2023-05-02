@@ -86,21 +86,7 @@ def check_inputs_number(node: NodeT, n: int) -> None:
         )
 
 
-def eval_output_dtype(
-    node: NodeT,
-    inputkey: Union[str, int, slice, Sequence] = AllPositionals,
-    outputkey: Union[str, int, slice, Sequence] = AllPositionals,
-) -> None:
-    """Automatic calculation and setting dtype for the output"""
-    inputs = node.inputs.iter(inputkey)
-    outputs = node.outputs.iter(outputkey)
-
-    dtype = result_type(*(inp.dd.dtype for inp in inputs))
-    for output in outputs:
-        output.dd.dtype = dtype
-
-
-def copy_input_to_output(
+def copy_from_input_to_output(
     node: NodeT,
     inputkey: Union[str, int, slice, Sequence] = 0,
     outputkey: Union[str, int, slice, Sequence] = AllPositionals,
@@ -147,6 +133,20 @@ def copy_input_dtype_to_output(
 
     for input, output in zip(inputs, outputs, strict=True):
         output.dd.dtype = input.dd.dtype
+
+
+def eval_output_dtype(
+    node: NodeT,
+    inputkey: Union[str, int, slice, Sequence] = AllPositionals,
+    outputkey: Union[str, int, slice, Sequence] = AllPositionals,
+) -> None:
+    """Automatic calculation and setting dtype for the output"""
+    inputs = node.inputs.iter(inputkey)
+    outputs = node.outputs.iter(outputkey)
+
+    dtype = result_type(*(inp.dd.dtype for inp in inputs))
+    for output in outputs:
+        output.dd.dtype = dtype
 
 
 def copy_input_shape_to_output(
@@ -481,7 +481,7 @@ def check_edges_type(
                 raise TypeFunctionError(
                     f"The edge must be `Output`, but given {edge=}!",
                     node=node,
-                    iutput=output,
+                    output=output,
                 )
 
 

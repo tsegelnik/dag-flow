@@ -3,7 +3,7 @@ from ..nodes import FunctionNode
 from ..typefunctions import (
     check_has_inputs,
     check_input_square_or_diag,
-    copy_input_to_output,
+    copy_from_input_to_output,
     check_input_dimension,
     check_inputs_equivalence,
     check_inputs_multiplicable_mat
@@ -83,7 +83,7 @@ class NormalizeCorrelatedVars(FunctionNode):
         check_input_dimension(self, 'central', 1)
         check_inputs_equivalence(self, ('central', slice(None)))
         check_inputs_multiplicable_mat(self, 'matrix', slice(None))
-        copy_input_to_output(self, slice(None), slice(None))
+        copy_from_input_to_output(self, slice(None), slice(None))
 
         key = f"{self._mode}_{ndim}d"
         try:
