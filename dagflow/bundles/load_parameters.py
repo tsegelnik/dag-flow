@@ -322,7 +322,7 @@ def load_parameters(acfg):
                 names.append(name)
                 processed_cfgs.add(fullkey+name)
             par = Parameters.from_numbers(**kwargs)
-            pars[subkey] = par
+            pars[fullkey] = par
 
     for key, varcfg in varcfgs.walkdicts(ignorekeys=('label',)):
         if key in processed_cfgs:
