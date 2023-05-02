@@ -232,11 +232,11 @@ class Node(Legs):
             raise ReconnectionError(input=inp, node=self, output=output)
         return inp
 
-    def label(self, source='text'):
+    def label(self, source: str='text', default: str=None) -> Optional[str]:
         # if self._labels:
         #     kwargs.setdefault("name", self._name)
         #     return self._labels.format(*args, **kwargs)
-        label = self._labels.get(source, None)
+        label = self._labels.get(source, default)
         if label is None:
             return self._labels['text']
 
