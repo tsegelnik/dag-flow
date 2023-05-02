@@ -6,11 +6,36 @@ from dagflow.lib.Dummy import Dummy
 from dagflow.typefunctions import (
     AllPositionals,
     copy_from_input_to_output,
+    copy_input_dtype_to_output,
     copy_input_shape_to_output,
     eval_output_dtype,
 )
 from numpy import array
 from pytest import mark
+
+
+@mark.parametrize(
+    "data,dtype",
+    (
+        ([1, 2, 3], "i"),
+        ([[1, 2], [3, 4]], "d"),
+        ([[[1, 2], [3, 4], [5, 6]]], "float64"),
+    ),
+)
+def test_copy_input_dtype_and_shape(debug_graph, data, dtype):
+    with Graph(close=False, debug=debug_graph):
+        arrdata = array(data, dtype=dtype)
+        arr1 = Array("arr1", arrdata)
+        node = Dummy(
+            "node",
+            missing_input_handler=MissingInputAddOne(output_fmt="result"),
+        )
+        arr1 >> node
+    copy_input_shape_to_output(node, 0, "result")
+    copy_input_dtype_to_output(node, 0, "result")
+    assert node.close()
+    assert node.outputs["result"].dd.dtype == arrdata.dtype
+    assert node.outputs["result"].dd.shape == arrdata.shape
 
 
 @mark.parametrize("dtype", ("i", "d", "float64"))

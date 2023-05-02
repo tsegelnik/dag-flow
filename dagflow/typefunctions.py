@@ -165,34 +165,6 @@ def copy_input_shape_to_output(
         output.dd.shape = input.dd.shape
 
 
-def copy_input_edges_to_output(
-    node: NodeT,
-    inputkey: Union[str, int] = 0,
-    outputkey: Union[str, int, slice, Sequence] = AllPositionals,
-) -> None:
-    """Coping input edges and setting for the output"""
-    inputs = tuple(node.inputs.iter(inputkey))
-    outputs = tuple(node.outputs.iter(outputkey))
-
-    if len(inputs) == 1:
-        inputs = repeat(inputs[0], len(outputs))
-
-    for input, output in zip(inputs, outputs, strict=True):
-        output.dd.axes_edges = input.dd.axes_edges
-
-
-def combine_inputs_shape_to_output(
-    node: NodeT,
-    inputkey: Union[str, int, slice, Sequence] = AllPositionals,
-    outputkey: Union[str, int, slice, Sequence] = AllPositionals,
-) -> None:
-    """Combine all the inputs shape and setting for the output"""
-    inputs = node.inputs.iter(inputkey)
-    shape = tuple(inp.dd.shape for inp in inputs)
-    for output in node.outputs.iter(outputkey):
-        output.dd.shape = shape
-
-
 def check_input_dimension(
     node: NodeT, inputkey: Union[str, int, slice, Sequence], ndim: int
 ):
@@ -394,6 +366,22 @@ def check_inputs_multiplicable_mat(
                 node=node,
                 input=input,
             )
+
+
+def copy_input_edges_to_output(
+    node: NodeT,
+    inputkey: Union[str, int] = 0,
+    outputkey: Union[str, int, slice, Sequence] = AllPositionals,
+) -> None:
+    """Coping input edges and setting for the output"""
+    inputs = tuple(node.inputs.iter(inputkey))
+    outputs = tuple(node.outputs.iter(outputkey))
+
+    if len(inputs) == 1:
+        inputs = repeat(inputs[0], len(outputs))
+
+    for input, output in zip(inputs, outputs, strict=True):
+        output.dd.axes_edges = input.dd.axes_edges
 
 
 def check_input_edges_dim(
