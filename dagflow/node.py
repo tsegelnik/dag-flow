@@ -289,14 +289,12 @@ class Node(Limbs):
             return self._add_input(name, **kwargs)
         raise ClosedGraphError(node=self)
 
-    def _add_input(self, name: Union[str, Sequence[str]], **kwargs) -> Union[Input, Tuple[Input]]:
+    def _add_input(self, name: Union[str, Sequence[str]], *, positional: bool=True, keyword: bool=True, **kwargs) -> Union[Input, Tuple[Input]]:
         if IsIterable(name):
             return tuple(self._add_input(n, **kwargs) for n in name)
         self.logger.debug(f"Node '{self.name}': Add input '{name}'")
         if name in self.inputs:
             raise ReconnectionError(input=name, node=self)
-        positional = kwargs.pop("positional", True)
-        keyword = kwargs.pop("keyword", True)
         inp = Input(name, self, **kwargs)
         self.inputs.add(inp, positional=positional, keyword=keyword)
 

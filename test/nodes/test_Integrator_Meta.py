@@ -20,18 +20,34 @@ def test_Integrator_trap_meta(debug_graph):
 
         sampler = IntegratorSampler("sampler", mode="trap")
         integrator = Integrator("integrator")
+        sampler.outputs["weights"] >> integrator("weights")
+
+        metaint.add_node(sampler, kw_inputs=['ordersX'], kw_outputs=['x'])
+        metaint.add_node(integrator, kw_inputs=[('ordersX', 'ordersX1')],
+                         inputs_pos=True, outputs_pos=True, missing_inputs=True, also_missing_outputs=True)
 
         cosf = Cos("cos")
         sinf = Sin("sin")
-        ordersX >> sampler("ordersX")
-        sampler.outputs["x"] >> cosf
-        A >> sinf
-        B >> sinf
-        sampler.outputs["weights"] >> integrator("weights")
-        cosf.outputs[0] >> integrator
-        ordersX >> integrator("ordersX")
-    res = sinf.outputs[1].data - sinf.outputs[0].data
-    assert allclose(integrator.outputs[0].data, res, atol=1e-2)
+        ordersX >> metaint.inputs["ordersX"]
+        ordersX >> metaint.inputs["ordersX1"]
+
+        metaint.outputs["x"] >> cosf
+        metaint.outputs["x"] >> sinf
+
+        cosf.outputs[0] >> metaint
+        sinf.outputs[0] >> metaint
+
+        sincheck = Sin("sin")
+        coscheck = Cos("cos")
+        A >> sincheck
+        B >> sincheck
+        A >> coscheck
+        B >> coscheck
+    res1 =   sincheck.outputs[1].data - sincheck.outputs[0].data
+    res2 = - coscheck.outputs[1].data + coscheck.outputs[0].data
+    assert allclose(integrator.outputs[0].data, res1, rtol=0, atol=1e-2)
+    assert allclose(integrator.outputs[1].data, res2, rtol=0, atol=1e-2)
     assert integrator.outputs[0].dd.axes_edges == [edges["array"]]
+    assert integrator.outputs[1].dd.axes_edges == [edges["array"]]
 
     savegraph(graph, f"output/test_Integrator_trap_meta.pdf", show='all')
