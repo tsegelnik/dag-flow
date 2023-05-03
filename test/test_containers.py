@@ -3,7 +3,7 @@
 import contextlib
 
 from dagflow.input import Input, Inputs
-from dagflow.legs import Legs
+from dagflow.limbs import Limbs
 from dagflow.output import Output
 
 
@@ -64,22 +64,22 @@ def test_03():
     output1 = Output("o1", None)
     output2 = Output("o2", None)
 
-    legs = Legs((input1, input2, input3), (output1, output2))
-    print(legs)
-    legs.print()
+    limbs = Limbs((input1, input2, input3), (output1, output2))
+    print(limbs)
+    limbs.print()
     print()
 
-    legs1 = legs[None, "o1"]
-    print(legs1)
-    # legs1.print()
+    limbs1 = limbs[None, "o1"]
+    print(limbs1)
+    # limbs1.print()
     print()
 
-    legs2 = legs[:, "o1"]
-    print(legs2)
-    legs2.print()
+    limbs2 = limbs[:, "o1"]
+    print(limbs2)
+    limbs2.print()
     print()
 
-    legs3 = legs[("i1", "i3"), "o1"]
-    print(legs3)
-    legs3.print()
+    limbs3 = limbs[("i1", "i3"), "o1"]
+    print(limbs3)
+    limbs3.print()
     print()

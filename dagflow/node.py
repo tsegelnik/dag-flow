@@ -13,7 +13,7 @@ from .exception import (
 )
 from .input import Input
 from .iter import IsIterable
-from .legs import Legs
+from .limbs import Limbs
 from .logger import Logger, get_logger
 from .output import Output
 from .types import GraphT
@@ -45,7 +45,7 @@ def inherit_labels(source: dict, destination: Optional[dict]=None, *, fmtlong: U
 
     return destination
 
-class Node(Legs):
+class Node(Limbs):
     _name: str
     _labels: Dict[str, str]
     _graph: Optional[GraphT] = None

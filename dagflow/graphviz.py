@@ -128,10 +128,10 @@ else:
             else:
                 nin=f'{nin_pos}+{nin_nonpos}→'
 
-            nlegs = f' {nin}{nout}'.replace('→→', '→')
+            nlimbs = f' {nin}{nout}'.replace('→→', '→')
 
             left, right = [], []
-            info_type = f"[{shape0}]{dtype0}{nlegs}"
+            info_type = f"[{shape0}]{dtype0}{nlimbs}"
             if 'type' in self._show:
                 left.append(info_type)
             if 'mark' in self._show and (mark:=node.label('mark', fallback=None)) is not None:

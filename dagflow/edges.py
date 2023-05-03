@@ -79,16 +79,16 @@ class EdgeContainer:
     kat = get_kw
 
     def len_pos(self) -> int:
-        """Returns a number of the positional legs"""
+        """Returns a number of the positional limbs"""
         return len(self._pos_edges)
     __len__ = len_pos
 
     def len_kw(self) -> int:
-        """Returns a number of the keyword legs"""
+        """Returns a number of the keyword limbs"""
         return len(self._kw_edges)
 
     def len_all(self) -> int:
-        """Returns a number of the all legs"""
+        """Returns a number of the all limbs"""
         return len(self._all_edges)
 
     def __iter__(self):
