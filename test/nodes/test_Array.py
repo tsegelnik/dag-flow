@@ -6,14 +6,14 @@ from dagflow.lib.Sum import Sum
 from dagflow.graphviz import savegraph
 
 from numpy import arange
-import pytest
+from pytest import mark
 
 debug = False
 
-@pytest.mark.parametrize('dtype', ('d', 'f'))
-def test_Array_00(dtype):
+@mark.parametrize('dtype', ('d', 'f'))
+def test_Array_00(testname, debug_graph, dtype):
     array = arange(12.0, dtype=dtype).reshape(3,4)
-    with Graph(close=True) as graph:
+    with Graph(close=True, debug=debug_graph) as graph:
         arr1 = Array('array: store', array, mode='store')
         arr2 = Array('array: store (weak)', array, mode='store_weak')
         arr3 = Array('array: fill', array, mode='fill')
@@ -49,7 +49,7 @@ def test_Array_00(dtype):
     assert arr2.tainted==False
     assert arr3.tainted==False
 
-    savegraph(graph, f"output/test_array_00_{dtype}.png")
+    savegraph(graph, f"output/{testname}.png")
 
 def test_Array_01_set():
     value = 123.

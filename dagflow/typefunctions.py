@@ -234,6 +234,12 @@ def check_input_square_or_diag(
         shape = input.dd.shape
         dim = len(shape)
         dim_max = max(dim, dim_max)
+        if dim > 2:
+            raise TypeFunctionError(
+                f"The node supports only 1d or 2d. Got {dim}d!",
+                node=node,
+                input=input,
+            )
         if (dim == 2 and shape[0] != shape[1]) and dim != 1:
             raise TypeFunctionError(
                 f"The node supports only square inputs (or 1d as diagonal). Got {shape}!",
@@ -258,6 +264,12 @@ def check_inputs_square_or_diag(
         shape = input.dd.shape
         dim = len(shape)
         dim_max = max(dim, dim_max)
+        if dim > 2:
+            raise TypeFunctionError(
+                f"The node supports only 1d or 2d. Got {dim}d!",
+                node=node,
+                input=input,
+            )
         if shape0 != shape[0] or (
             (dim == 2 and shape[0] != shape[1]) and dim != 1
         ):
@@ -310,6 +322,23 @@ def check_inputs_same_dtype(
         if input.dd.dtype != dtype:
             raise TypeFunctionError(
                 f"Input data {input.dd.dtype} is inconsistent with {dtype}",
+                node=node,
+                input=input,
+            )
+
+
+def check_inputs_same_shape(
+    node: NodeT, inputkey: Union[str, int, slice, Sequence] = AllPositionals
+):
+    """Checking shapes of all the inputs are same"""
+    inputs = tuple(node.inputs.iter(inputkey))
+    input0, inputs = inputs[0], inputs[1:]
+
+    shape = input0.dd.shape
+    for input in inputs:
+        if input.dd.shape != shape:
+            raise TypeFunctionError(
+                f"Input data {input.dd.shape} is inconsistent with {shape}",
                 node=node,
                 input=input,
             )

@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 from dagflow.graph import Graph
+from dagflow.graphviz import savegraph
 from dagflow.input_extra import MissingInputAddEach, MissingInputAddOne
 from dagflow.lib.Array import Array
 from dagflow.lib.Dummy import Dummy
@@ -22,8 +23,8 @@ from pytest import mark
         ([[[1, 2], [3, 4], [5, 6]]], "float64"),
     ),
 )
-def test_copy_input_dtype_and_shape(debug_graph, data, dtype):
-    with Graph(close=False, debug=debug_graph):
+def test_copy_input_dtype_and_shape(testname, debug_graph, data, dtype):
+    with Graph(close=False, debug=debug_graph) as graph:
         arrdata = array(data, dtype=dtype)
         arr1 = Array("arr1", arrdata)
         node = Dummy(
@@ -36,11 +37,12 @@ def test_copy_input_dtype_and_shape(debug_graph, data, dtype):
     assert node.close()
     assert node.outputs["result"].dd.dtype == arrdata.dtype
     assert node.outputs["result"].dd.shape == arrdata.shape
+    savegraph(graph, f"output/{testname}.png")
 
 
 @mark.parametrize("dtype", ("i", "d", "float64"))
-def test_output_eval_dtype(debug_graph, dtype):
-    with Graph(close=False, debug=debug_graph):
+def test_output_eval_dtype(testname, debug_graph, dtype):
+    with Graph(close=False, debug=debug_graph) as graph:
         arr1 = Array("arr1", array([1, 2, 3, 4], dtype="i"))
         arr2 = Array("arr2", array([3, 2, 1], dtype=dtype))
         node = Dummy(
@@ -52,10 +54,11 @@ def test_output_eval_dtype(debug_graph, dtype):
     eval_output_dtype(node, AllPositionals, "result")
     assert node.close()
     assert node.outputs["result"].dd.dtype == dtype
+    savegraph(graph, f"output/{testname}.png")
 
 
-def test_copy_from_input_00(debug_graph):
-    with Graph(close=True, debug=debug_graph):
+def test_copy_from_input_00(testname, debug_graph):
+    with Graph(close=True, debug=debug_graph) as graph:
         node = Dummy("node")
     assert (
         copy_from_input_to_output(
@@ -63,12 +66,13 @@ def test_copy_from_input_00(debug_graph):
         )
         is None
     )
+    savegraph(graph, f"output/{testname}.png")
 
 
 @mark.parametrize("dtype", ("i", "d", "f"))
-def test_copy_from_input_01(debug_graph, dtype):
+def test_copy_from_input_01(testname, debug_graph, dtype):
     # TODO: adding axes_nodes check
-    with Graph(close=False, debug=debug_graph):
+    with Graph(close=False, debug=debug_graph) as graph:
         edges1 = Array("edges1", [0, 1, 2, 3, 4]).outputs["array"]
         edges2 = Array("edges2", [0, 1, 2, 3]).outputs["array"]
         # nodes1 = Array("nodes1", [0.5, 1.5, 2.5, 3.5])
@@ -97,3 +101,4 @@ def test_copy_from_input_01(debug_graph, dtype):
     assert node.outputs[1].dd.shape == out2.shape
     assert node.outputs[1].dd.axes_edges == out2.axes_edges
     assert node.outputs[1].dd.axes_nodes == out2.axes_nodes
+    savegraph(graph, f"output/{testname}.png")
