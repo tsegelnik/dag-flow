@@ -77,6 +77,9 @@ else:
 
         def _transform(self, dag):
             for nodedag in dag._nodes:
+                # if nodedag.meta_node:
+                #     self._add_node(nodedag.meta_node)
+                # else:
                 self._add_node(nodedag)
             for nodedag in dag._nodes:
                 self._add_open_inputs(nodedag)
@@ -144,12 +147,15 @@ else:
                 right.append(text)
             if 'status' in self._show:
                 status = []
-                if node.types_tainted: status.append('types_tainted')
-                if node.tainted: status.append('tainted')
-                if node.frozen: status.append('frozen')
-                if node.frozen_tainted: status.append('frozen_tainted')
-                if node.invalid: status.append('invalid')
-                if not node.closed: status.append('open')
+                try:
+                    if node.types_tainted:  status.append('types_tainted')
+                    if node.tainted:        status.append('tainted')
+                    if node.frozen:         status.append('frozen')
+                    if node.frozen_tainted: status.append('frozen_tainted')
+                    if node.invalid:        status.append('invalid')
+                    if not node.closed:     status.append('open')
+                except AttributeError:
+                    pass
                 if status:
                     right.append(status)
 
@@ -173,7 +179,7 @@ else:
                     mx = data.max()
                     right.append((f'Σ={sm:.2g}', f'Σ²={sm2:.2g}', f'min={mn:.2g}', f'max={mx:.2g}', f'{tainted}'))
 
-            if node.exception is not None:
+            if getattr(node, 'exception', None) is not None:
                 right.append(node.exception)
 
             return self._combine_labels((left, right))
@@ -308,23 +314,19 @@ else:
             if node is None:
                 attr["color"] = "gray"
             else:
-                if node.invalid:
-                    attr["color"] = "black"
-                elif node.being_evaluated:
-                    attr["color"] = "gold"
-                elif node.tainted:
-                    attr["color"] = "red"
-                elif node.frozen_tainted:
-                    attr["color"] = "blue"
-                elif node.frozen:
-                    attr["color"] = "cyan"
-                elif node.immediate:
-                    attr["color"] = "green"
-                else:
-                    attr["color"] = "forestgreen"
+                try:
+                    if   node.invalid:         attr["color"] = "black"
+                    elif node.being_evaluated: attr["color"] = "gold"
+                    elif node.tainted:         attr["color"] = "red"
+                    elif node.frozen_tainted:  attr["color"] = "blue"
+                    elif node.frozen:          attr["color"] = "cyan"
+                    elif node.immediate:       attr["color"] = "green"
+                    else:                      attr["color"] = "forestgreen"
 
-                if node.exception is not None:
-                    attr["color"] = "magenta"
+                    if node.exception is not None:
+                        attr["color"] = "magenta"
+                except AttributeError:
+                    attr["color"] = "forestgreen"
 
         def _set_style_edge(self, obj, attrin, attr, attrout):
             if isinstance(obj, Input):
