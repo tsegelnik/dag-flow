@@ -131,7 +131,11 @@ else:
             nlimbs = f' {nin}{nout}'.replace('→→', '→')
 
             left, right = [], []
-            info_type = f"[{shape0}]{dtype0}{nlimbs}"
+            if out0.dd.axes_edges:
+                br_left, br_right = '\\{', '\\}'
+            else:
+                br_left, br_right = '[', ']'
+            info_type = f"{br_left}{shape0}{br_right}{dtype0}{nlimbs}"
             if 'type' in self._show:
                 left.append(info_type)
             if 'mark' in self._show and (mark:=node.label('mark', fallback=None)) is not None:
