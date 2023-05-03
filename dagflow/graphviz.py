@@ -196,7 +196,7 @@ else:
             self._nodes[nodedag] = nodedot
 
         def _add_open_inputs(self, nodedag):
-            for input in nodedag.inputs:
+            for input in nodedag.inputs.iter_all():
                 if not input.connected():
                     self._add_open_input(input, nodedag)
 
@@ -216,7 +216,7 @@ else:
             self._edges[input] = EdgeDef(nodein, None, nodeout, edge)
 
         def _add_edges(self, nodedag):
-            for output in nodedag.outputs:
+            for output in nodedag.outputs.iter_all():
                 if output.connected():
                     if len(output.child_inputs)>1:
                         self._add_edges_multi(nodedag, output)
@@ -225,6 +225,9 @@ else:
                 else:
                     self._add_open_output(nodedag, output)
 
+                if output.dd.axes_edges:
+                    self._add_edge_hist(output)
+
         def _add_edges_multi(self, nodedag, output):
             vnode = self.get_id(output, "_mid")
             self._graph.add_node(vnode, label="", shape="none", width=0, height=0, penwidth=0, weight=10)
@@ -232,6 +235,13 @@ else:
             self._add_edge(nodedag, output, firstinput, vtarget=vnode)
             for input in output.child_inputs:
                 self._add_edge(nodedag, output, input, vsource=vnode)
+
+        def _add_edge_hist(self, output: Output) -> None:
+            if output.dd.edges_inherited:
+                return
+            eoutput = output.dd.axes_edges[0]
+
+            self._add_edge(eoutput.node, eoutput, output, style={'style': 'dotted'})
 
         def _add_open_output(self, nodedag, output):
             styledict = {}
@@ -265,8 +275,8 @@ else:
             else:
                 styledict[target] = str(idx)
 
-        def _add_edge(self, nodedag, output, input, *, vsource: Optional[str]=None, vtarget: Optional[str]=None) -> None:
-            styledict = {}
+        def _add_edge(self, nodedag, output, input, *, vsource: Optional[str]=None, vtarget: Optional[str]=None, style: Optional[dict]=None) -> None:
+            styledict = style or {}
 
             if vsource is not None:
                 source = vsource
@@ -348,10 +358,12 @@ else:
             if node:
                 if node.frozen:
                     attrin["style"] = "dashed"
-                    attr["style"] = "dashed"
+                    if attr["style"]!="dotted":
+                        attr["style"] = "dashed"
                     # attr['arrowhead']='tee'
                 else:
-                    attr["style"] = ""
+                    if attr["style"]=="dashed":
+                        attr["style"] = ""
 
         def update_style(self):
             for nodedag, nodedot in self._nodes.items():
