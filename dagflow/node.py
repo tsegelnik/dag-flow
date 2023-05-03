@@ -17,7 +17,8 @@ from .limbs import Limbs
 from .logger import Logger, get_logger
 from .output import Output
 from .types import GraphT
-from typing import Optional, List, Dict, Union, Callable, Any, Tuple, Sequence
+from typing import Optional, List, Dict, Union, Callable, Any, Tuple, Sequence, Generator
+from weakref import ref as weakref, ReferenceType
 
 def _make_formatter(fmt: Union[str, Callable, dict]) -> Callable:
     if isinstance(fmt, str):
@@ -52,6 +53,8 @@ class Node(Limbs):
     _fcn: Optional[Callable] = None
     _fcn_chain = None
     _exception: Optional[str] = None
+
+    _meta_node: Optional[ReferenceType["MetaNode"]] = None
 
     # Taintflag and status
     _tainted: bool = True
@@ -146,6 +149,16 @@ class Node(Limbs):
     @property
     def exception(self):
         return self._exception
+
+    @property
+    def meta_node(self) -> "MetaNode":
+        return self._meta_node and self._meta_node()
+
+    @meta_node.setter
+    def meta_node(self, value: "MetaNode"):
+        if self._meta_node is not None:
+            raise RuntimeError('MetaNode may be set only once')
+        self._meta_node = weakref(value)
 
     @property
     def logger(self) -> Logger:
