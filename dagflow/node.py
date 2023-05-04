@@ -265,8 +265,16 @@ class Node(Limbs):
             return self._make_input(*args, **kwargs)
         raise ClosedGraphError(node=self)
 
-    def _make_input(self, *args, **kwargs) -> Input:
-        return self._missing_input_handler(*args, **kwargs)
+    def _make_input(self, *args, exception=True, **kwargs) -> Optional[Input]:
+        handler = self._missing_input_handler
+
+        if handler is None:
+            if exception:
+                raise RuntimeError("Unable to make an input automatically as no handler is set")
+
+            return None
+
+        return handler(*args, **kwargs)
 
     def add_input(self, name: Union[str, Sequence[str]], **kwargs) -> Union[Input, Tuple[Input]]:
         if not self.closed:
