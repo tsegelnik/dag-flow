@@ -99,7 +99,9 @@ else:
             except IndexError:
                 shape0 = '?'
                 dtype0 = '?'
+                hasedges = False
             else:
+                hasedges = out0.dd.axes_edges
                 shape0 = out0.dd.shape
                 if shape0 is None:
                     shape0 = '?'
@@ -134,7 +136,7 @@ else:
             nlimbs = f' {nin}{nout}'.replace('→→', '→')
 
             left, right = [], []
-            if out0.dd.axes_edges:
+            if hasedges:
                 br_left, br_right = '\\{', '\\}'
             else:
                 br_left, br_right = '[', ']'
