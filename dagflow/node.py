@@ -54,7 +54,7 @@ class Node(Limbs):
     _fcn_chain = None
     _exception: Optional[str] = None
 
-    _meta_node: Optional[ReferenceType["MetaNode"]] = None
+    _meta_node: Optional[ReferenceType] = None
 
     # Taintflag and status
     _tainted: bool = True
