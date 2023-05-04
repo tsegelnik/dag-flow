@@ -17,34 +17,10 @@ from .limbs import Limbs
 from .logger import Logger, get_logger
 from .output import Output
 from .types import GraphT
+from .labels import inherit_labels
 from typing import Optional, List, Dict, Union, Callable, Any, Tuple, Sequence, Generator
 from weakref import ref as weakref, ReferenceType
 
-def _make_formatter(fmt: Union[str, Callable, dict]) -> Callable:
-    if isinstance(fmt, str):
-        return fmt.format
-    elif isinstance(fmt, dict):
-        return lambda s: fmt.get(s, s)
-
-    return fmt
-
-def inherit_labels(source: dict, destination: Optional[dict]=None, *, fmtlong: Union[str, Callable], fmtshort: Union[str, Callable]) -> dict:
-    if destination is None:
-        destination = {}
-
-    fmtlong = _make_formatter(fmtlong)
-    fmtshort = _make_formatter(fmtshort)
-
-    kshort = {'mark'}
-    kskip = {'key', 'name'}
-    for k, v in source.items():
-        if k in kskip:
-            continue
-        newv = fmtshort(v) if k in kshort else fmtlong(v)
-        if newv is not None:
-            destination[k] = newv
-
-    return destination
 
 class Node(Limbs):
     _name: str
@@ -283,6 +259,14 @@ class Node(Limbs):
 
     def _inherit_labels(self, source: 'Node', fmtlong: Union[str, Callable], fmtshort: Union[str, Callable]) -> dict:
         return inherit_labels(source.labels, self._labels, fmtlong=fmtlong, fmtshort=fmtshort)
+
+    def make_input(self, *args, **kwargs) -> Input:
+        if not self.closed:
+            return self._make_input(*args, **kwargs)
+        raise ClosedGraphError(node=self)
+
+    def _make_input(self, *args, **kwargs) -> Input:
+        return self._missing_input_handler(*args, **kwargs)
 
     def add_input(self, name: Union[str, Sequence[str]], **kwargs) -> Union[Input, Tuple[Input]]:
         if not self.closed:
