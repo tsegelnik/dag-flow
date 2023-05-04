@@ -3,7 +3,7 @@ from ..node import Input, Output
 from ..typefunctions import (
     check_has_inputs,
     check_input_square_or_diag,
-    copy_input_to_output,
+    copy_from_input_to_output,
     check_input_dimension,
     check_inputs_equivalence,
     check_inputs_multiplicable_mat
@@ -127,7 +127,7 @@ class NormalizeCorrelatedVars2(FunctionNode):
         check_input_dimension(self, 'central', 1)
         check_inputs_equivalence(self, ('central', slice(None)))
         check_inputs_multiplicable_mat(self, 'matrix', slice(None))
-        copy_input_to_output(self, slice(None), slice(None))
+        copy_from_input_to_output(self, slice(None), slice(None))
 
         self._inherit_labels(self._input_value.parent_node, fmt='Normalize {}')
 

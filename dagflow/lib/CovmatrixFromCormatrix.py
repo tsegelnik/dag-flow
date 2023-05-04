@@ -1,7 +1,7 @@
 from ..nodes import FunctionNode
 from ..typefunctions import (
     check_input_square,
-    copy_input_to_output,
+    copy_from_input_to_output,
     check_input_dimension,
     check_inputs_multiplicable_mat
 )
@@ -35,5 +35,5 @@ class CovmatrixFromCormatrix(FunctionNode):
         check_input_square(self, 'matrix')
         check_input_dimension(self, 'sigma', 1)
         check_inputs_multiplicable_mat(self, 'matrix', 'sigma')
-        copy_input_to_output(self, slice(None), slice(None))
+        copy_from_input_to_output(self, slice(None), slice(None))
 

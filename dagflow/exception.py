@@ -16,17 +16,17 @@ class DagflowError(Exception):
         output: Optional[OutputT] = None,
     ):
         if node:
-            message = f"{message} [node={node.name if 'name' in dir(node) else node}]"
+            message = f"{message} [node={node.name if hasattr(node, 'name') else node}]"
         if input:
-            message = f"{message} [input={input.name if 'name' in dir(input) else input}]"
+            message = f"{message} [input={input.name if hasattr(input, 'name') else input}]"
         if output:
-            message = f"{message} [output={output.name if 'name' in dir(output) else output}]"
+            message = f"{message} [output={output.name if hasattr(output, 'name') else output}]"
         super().__init__(message)
         self.node = node
         self.input = input
         self.output = output
 
-        if node is not None:
+        if node is not None and hasattr(node, '_exception'):
             node._exception = message
 
 class CriticalError(DagflowError):

@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 from dagflow.exception import TypeFunctionError
 from dagflow.graph import Graph
+from dagflow.graphviz import savegraph
 from dagflow.lib.Array import Array
 from dagflow.lib.Integrator import Integrator
 from dagflow.lib.IntegratorSampler import IntegratorSampler
@@ -12,8 +13,8 @@ from pytest import mark, raises
 
 
 @mark.parametrize("align", ("left", "center", "right"))
-def test_Integrator_rect_center(align, debug_graph):
-    with Graph(debug=debug_graph, close=True):
+def test_Integrator_rect_center(align, debug_graph, testname):
+    with Graph(debug=debug_graph, close=True) as graph:
         npoints = 10
         edges = Array("edges", linspace(0, pi, npoints + 1))
         ordersX = Array("ordersX", [1000] * npoints, edges=edges["array"])
@@ -33,10 +34,11 @@ def test_Integrator_rect_center(align, debug_graph):
     res = sinf.outputs[1].data - sinf.outputs[0].data
     assert allclose(integrator.outputs[0].data, res, atol=1e-4)
     assert integrator.outputs[0].dd.axes_edges == [edges["array"]]
+    savegraph(graph, f"output/{testname}.png")
 
 
-def test_Integrator_trap(debug_graph):
-    with Graph(debug=debug_graph, close=True):
+def test_Integrator_trap(debug_graph, testname):
+    with Graph(debug=debug_graph, close=True) as graph:
         npoints = 10
         edges = Array("edges", linspace(0, pi, npoints + 1))
         ordersX = Array("ordersX", [1000] * npoints, edges=edges["array"])
@@ -56,6 +58,7 @@ def test_Integrator_trap(debug_graph):
     res = sinf.outputs[1].data - sinf.outputs[0].data
     assert allclose(integrator.outputs[0].data, res, atol=1e-2)
     assert integrator.outputs[0].dd.axes_edges == [edges["array"]]
+    savegraph(graph, f"output/{testname}.png")
 
 
 def f0(x: float) -> float:
@@ -84,8 +87,8 @@ class PolynomialRes(NodeOneToOne):
         return list(outputs.iter_data())
 
 
-def test_Integrator_gl1d(debug_graph):
-    with Graph(debug=debug_graph, close=True):
+def test_Integrator_gl1d(debug_graph, testname):
+    with Graph(debug=debug_graph, close=True) as graph:
         npoints = 10
         edges = Array("edges", linspace(0, 10, npoints + 1))
         ordersX = Array("ordersX", [2] * npoints, edges=edges["array"])
@@ -105,9 +108,10 @@ def test_Integrator_gl1d(debug_graph):
     res = polyres.outputs[1].data - polyres.outputs[0].data
     assert allclose(integrator.outputs[0].data, res, atol=1e-10)
     assert integrator.outputs[0].dd.axes_edges == [edges["array"]]
+    savegraph(graph, f"output/{testname}.png")
 
 
-def test_Integrator_gl2d(debug_graph):
+def test_Integrator_gl2d(debug_graph, testname):
     class Polynomial1(NodeManyToOne):
         def _fcn(self, _, inputs, outputs):
             outputs["result"].data[:] = vecF0(inputs[1].data) * vecF0(
@@ -115,7 +119,7 @@ def test_Integrator_gl2d(debug_graph):
             )
             return list(outputs.iter_data())
 
-    with Graph(debug=debug_graph, close=True):
+    with Graph(debug=debug_graph, close=True) as graph:
         npointsX, npointsY = 10, 20
         edgesX = Array("edgesX", linspace(0, 10, npointsX + 1))
         edgesY = Array("edgesY", linspace(0, 10, npointsY + 1))
@@ -149,6 +153,7 @@ def test_Integrator_gl2d(debug_graph):
         edgesX["array"],
         edgesY["array"],
     ]
+    savegraph(graph, f"output/{testname}.png")
 
 
 # test wrong ordersX: edges not given

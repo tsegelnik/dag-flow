@@ -1,6 +1,6 @@
 from collections.abc import Sequence
 from itertools import repeat
-from typing import Optional, Tuple, Union
+from typing import Callable, Optional, Tuple, Union
 
 from numpy import issubdtype, result_type
 from numpy.typing import DTypeLike
@@ -29,14 +29,17 @@ except TypeError:
 class MethodSequenceCaller:
     """Class to call a sequence of methods"""
 
-    methods: list
+    __slots__ = ("methods",)
 
     def __init__(self) -> None:
         self.methods = []
 
-    def __call__(self, inputs, outputs):
+    def __call__(self, inputs, outputs) -> None:
         for method in self.methods:
             method(inputs, outputs)
+
+    def add(self, method: Callable) -> None:
+        self.methods.append(method)
 
 
 def cpy_dtype(input, output):
@@ -83,21 +86,7 @@ def check_inputs_number(node: NodeT, n: int) -> None:
         )
 
 
-def eval_output_dtype(
-    node: NodeT,
-    inputkey: Union[str, int, slice, Sequence] = AllPositionals,
-    outputkey: Union[str, int, slice, Sequence] = AllPositionals,
-) -> None:
-    """Automatic calculation and setting dtype for the output"""
-    inputs = node.inputs.iter(inputkey)
-    outputs = node.outputs.iter(outputkey)
-
-    dtype = result_type(*(inp.dd.dtype for inp in inputs))
-    for output in outputs:
-        output.dd.dtype = dtype
-
-
-def copy_input_to_output(
+def copy_from_input_to_output(
     node: NodeT,
     inputkey: Union[str, int, slice, Sequence] = 0,
     outputkey: Union[str, int, slice, Sequence] = AllPositionals,
@@ -115,13 +104,13 @@ def copy_input_to_output(
 
     caller = MethodSequenceCaller()
     if dtype:
-        caller.methods.append(cpy_dtype)
+        caller.add(cpy_dtype)
     if shape:
-        caller.methods.append(cpy_shape)
+        caller.add(cpy_shape)
     if edges:
-        caller.methods.append(cpy_edges)
+        caller.add(cpy_edges)
     if nodes:
-        caller.methods.append(cpy_nodes)
+        caller.add(cpy_nodes)
 
     if len(inputs) == 1:
         inputs = repeat(inputs[0], len(outputs))
@@ -146,6 +135,20 @@ def copy_input_dtype_to_output(
         output.dd.dtype = input.dd.dtype
 
 
+def eval_output_dtype(
+    node: NodeT,
+    inputkey: Union[str, int, slice, Sequence] = AllPositionals,
+    outputkey: Union[str, int, slice, Sequence] = AllPositionals,
+) -> None:
+    """Automatic calculation and setting dtype for the output"""
+    inputs = node.inputs.iter(inputkey)
+    outputs = node.outputs.iter(outputkey)
+
+    dtype = result_type(*(inp.dd.dtype for inp in inputs))
+    for output in outputs:
+        output.dd.dtype = dtype
+
+
 def copy_input_shape_to_output(
     node: NodeT,
     inputkey: Union[str, int] = 0,
@@ -162,34 +165,6 @@ def copy_input_shape_to_output(
         output.dd.shape = input.dd.shape
 
 
-def copy_input_edges_to_output(
-    node: NodeT,
-    inputkey: Union[str, int] = 0,
-    outputkey: Union[str, int, slice, Sequence] = AllPositionals,
-) -> None:
-    """Coping input edges and setting for the output"""
-    inputs = tuple(node.inputs.iter(inputkey))
-    outputs = tuple(node.outputs.iter(outputkey))
-
-    if len(inputs) == 1:
-        inputs = repeat(inputs[0], len(outputs))
-
-    for input, output in zip(inputs, outputs, strict=True):
-        output.dd.axes_edges = input.dd.axes_edges
-
-
-def combine_inputs_shape_to_output(
-    node: NodeT,
-    inputkey: Union[str, int, slice, Sequence] = AllPositionals,
-    outputkey: Union[str, int, slice, Sequence] = AllPositionals,
-) -> None:
-    """Combine all the inputs shape and setting for the output"""
-    inputs = node.inputs.iter(inputkey)
-    shape = tuple(inp.dd.shape for inp in inputs)
-    for output in node.outputs.iter(outputkey):
-        output.dd.shape = shape
-
-
 def check_input_dimension(
     node: NodeT, inputkey: Union[str, int, slice, Sequence], ndim: int
 ):
@@ -199,6 +174,34 @@ def check_input_dimension(
         if ndim != dim:
             raise TypeFunctionError(
                 f"The node supports only {ndim}d inputs. Got {dim}d!",
+                node=node,
+                input=input,
+            )
+
+
+def check_input_shape(
+    node: NodeT, inputkey: Union[str, int, slice, Sequence], shape: tuple
+):
+    """Checking the shape equivalence for inputs"""
+    for input in node.inputs.iter(inputkey):
+        sshape = input.dd.shape
+        if sshape != shape:
+            raise TypeFunctionError(
+                f"The node supports only inputs with shape={shape}. Got {sshape}!",
+                node=node,
+                input=input,
+            )
+
+
+def check_input_dtype(
+    node: NodeT, inputkey: Union[str, int, slice, Sequence], dtype
+):
+    """Checking the dtype equivalence for inputs"""
+    for input in node.inputs.iter(inputkey):
+        dtt = input.dd.dtype
+        if dtt != dtype:
+            raise TypeFunctionError(
+                f"The node supports only input types {dtype}. Got {dtt}!",
                 node=node,
                 input=input,
             )
@@ -231,6 +234,12 @@ def check_input_square_or_diag(
         shape = input.dd.shape
         dim = len(shape)
         dim_max = max(dim, dim_max)
+        if dim > 2:
+            raise TypeFunctionError(
+                f"The node supports only 1d or 2d. Got {dim}d!",
+                node=node,
+                input=input,
+            )
         if (dim == 2 and shape[0] != shape[1]) and dim != 1:
             raise TypeFunctionError(
                 f"The node supports only square inputs (or 1d as diagonal). Got {shape}!",
@@ -238,62 +247,6 @@ def check_input_square_or_diag(
                 input=input,
             )
     return dim_max
-
-
-def check_input_shape(
-    node: NodeT, inputkey: Union[str, int, slice, Sequence], shape: tuple
-):
-    """Checking the shape equivalence for inputs"""
-    for input in node.inputs.iter(inputkey):
-        sshape = input.dd.shape
-        if sshape != shape:
-            raise TypeFunctionError(
-                f"The node supports only inputs with shape={shape}. Got {sshape}!",
-                node=node,
-                input=input,
-            )
-
-
-def check_input_dtype(
-    node: NodeT, inputkey: Union[str, int, slice, Sequence], dtype
-):
-    """Checking the dtype equivalence for inputs"""
-    for input in node.inputs.iter(inputkey):
-        dtt = input.dd.dtype
-        if dtt != dtype:
-            raise TypeFunctionError(
-                f"The node supports only input types {dtype}. Got {dtt}!",
-                node=node,
-                input=input,
-            )
-
-
-def check_inputs_equivalence(
-    node: NodeT, inputkey: Union[str, int, slice, Sequence] = AllPositionals
-):
-    """Checking the equivalence of the dtype, shape, axes_edges and axes_nodes of all the inputs"""
-    inputs = tuple(node.inputs.iter(inputkey))
-    input0, inputs = inputs[0], inputs[1:]
-
-    dtype, shape, edges, nodes = (
-        input0.dd.dtype,
-        input0.dd.shape,
-        input0.dd.axes_edges,
-        input0.dd.axes_nodes,
-    )
-    for input in inputs:
-        if (
-            input.dd.dtype != dtype
-            or input.dd.shape != shape
-            or input.dd.axes_edges != edges
-            or input.dd.axes_nodes != nodes
-        ):
-            raise TypeFunctionError(
-                f"Input data [{input.dtype=}, {input.shape=}, {input.axes_edges=}, {input.axes_nodes=}]"
-                f" is inconsistent with [{dtype=}, {shape=}, {edges=}, {nodes=}]",
-                node=node,
-                input=input,
-            )
 
 
 def check_inputs_square_or_diag(
@@ -311,6 +264,12 @@ def check_inputs_square_or_diag(
         shape = input.dd.shape
         dim = len(shape)
         dim_max = max(dim, dim_max)
+        if dim > 2:
+            raise TypeFunctionError(
+                f"The node supports only 1d or 2d. Got {dim}d!",
+                node=node,
+                input=input,
+            )
         if shape0 != shape[0] or (
             (dim == 2 and shape[0] != shape[1]) and dim != 1
         ):
@@ -320,6 +279,35 @@ def check_inputs_square_or_diag(
                 input=input,
             )
     return dim_max
+
+
+def check_inputs_equivalence(
+    node: NodeT, inputkey: Union[str, int, slice, Sequence] = AllPositionals
+):
+    """Checking the equivalence of the dtype, shape, axes_edges and axes_nodes of all the inputs"""
+    inputs = tuple(node.inputs.iter(inputkey))
+    input0, inputs = inputs[0], inputs[1:]
+
+    dtype, shape, edges, nodes = (
+        input0.dd.dtype,
+        input0.dd.shape,
+        input0.dd.axes_edges,
+        input0.dd.axes_nodes,
+    )
+    for input in inputs:
+        dd = input.dd
+        if (
+            dd.dtype != dtype
+            or dd.shape != shape
+            or dd.axes_edges != edges
+            or dd.axes_nodes != nodes
+        ):
+            raise TypeFunctionError(
+                f"Input data [{dd.dtype=}, {dd.shape=}, {dd.axes_edges=}, {dd.axes_nodes=}]"
+                f" is inconsistent with [{dtype=}, {shape=}, {edges=}, {nodes=}]",
+                node=node,
+                input=input,
+            )
 
 
 def check_inputs_same_dtype(
@@ -334,6 +322,23 @@ def check_inputs_same_dtype(
         if input.dd.dtype != dtype:
             raise TypeFunctionError(
                 f"Input data {input.dd.dtype} is inconsistent with {dtype}",
+                node=node,
+                input=input,
+            )
+
+
+def check_inputs_same_shape(
+    node: NodeT, inputkey: Union[str, int, slice, Sequence] = AllPositionals
+):
+    """Checking shapes of all the inputs are same"""
+    inputs = tuple(node.inputs.iter(inputkey))
+    input0, inputs = inputs[0], inputs[1:]
+
+    shape = input0.dd.shape
+    for input in inputs:
+        if input.dd.shape != shape:
+            raise TypeFunctionError(
+                f"Input data {input.dd.shape} is inconsistent with {shape}",
                 node=node,
                 input=input,
             )
@@ -391,6 +396,22 @@ def check_inputs_multiplicable_mat(
                 node=node,
                 input=input,
             )
+
+
+def copy_input_edges_to_output(
+    node: NodeT,
+    inputkey: Union[str, int] = 0,
+    outputkey: Union[str, int, slice, Sequence] = AllPositionals,
+) -> None:
+    """Coping input edges and setting for the output"""
+    inputs = tuple(node.inputs.iter(inputkey))
+    outputs = tuple(node.outputs.iter(outputkey))
+
+    if len(inputs) == 1:
+        inputs = repeat(inputs[0], len(outputs))
+
+    for input, output in zip(inputs, outputs, strict=True):
+        output.dd.axes_edges = input.dd.axes_edges
 
 
 def check_input_edges_dim(
@@ -478,7 +499,7 @@ def check_edges_type(
                 raise TypeFunctionError(
                     f"The edge must be `Output`, but given {edge=}!",
                     node=node,
-                    iutput=output,
+                    output=output,
                 )
 
 
