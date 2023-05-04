@@ -2,7 +2,7 @@ from ..input_extra import MissingInputAddPair
 from ..nodes import FunctionNode
 from ..typefunctions import (
     check_has_inputs,
-    copy_input_to_output,
+    copy_from_input_to_output,
     check_input_square_or_diag
 )
 from scipy.linalg import cholesky
@@ -49,7 +49,7 @@ class Cholesky(FunctionNode):
     def _typefunc(self) -> None:
         check_has_inputs(self)
         ndim = check_input_square_or_diag(self, slice(None))
-        copy_input_to_output(self, slice(None), slice(None))
+        copy_from_input_to_output(self, slice(None), slice(None))
 
         if ndim==2:
             self.fcn = self._functions["square"]

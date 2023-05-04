@@ -1,4 +1,4 @@
-from os import chdir, getcwd, mkdir, listdir
+from os import chdir, getcwd, mkdir, listdir, environ
 from os.path import isdir
 
 from pytest import fixture
@@ -11,7 +11,7 @@ def pytest_sessionstart(session):
 
     Automatic change path to the `dag-flow/test` and create `test/output` dir
     """
-    while(path := getcwd()):
+    while path := getcwd():
         if (lastdir := path.split("/")[-1]) == "test":
             break
         elif ".git" in listdir(path):
@@ -30,3 +30,11 @@ def pytest_addoption(parser):
 @fixture(scope="session")
 def debug_graph(request):
     return request.config.option.debug_graph
+
+
+@fixture()
+def testname():
+    """Returns corrected full name of a test"""
+    name = environ.get("PYTEST_CURRENT_TEST").split(":")[-1].split(" ")[0]
+    name = name.replace("[", "_").replace("]", "")
+    return name

@@ -110,7 +110,6 @@ class Graph(NodeGroup):
 
     def close(self, **kwargs) -> bool:
         """Closes the graph"""
-        # TODO: implement cross-closure of several graphs
         if self._closed:
             return True
         self.logger.debug(f"Graph '{self.name}': Closing...")

@@ -13,7 +13,6 @@ from ..typefunctions import (
     check_input_edges_equivalence,
     check_input_shape,
     check_input_subtype,
-    check_output_subtype,
 )
 from ..types import ShapeLike
 
@@ -93,7 +92,7 @@ class Integrator(FunctionNode):
             )
         check_input_dimension(self, (slice(None), "weights"), dim)
         check_input_shape(self, (slice(None), "weights"), input0.dd.shape)
-        check_input_subtype(self, input0, floating)
+        check_input_subtype(self, 0, floating)
         dtype = input0.dd.dtype
         check_input_dtype(self, (slice(None), "weights"), dtype)
 
@@ -122,8 +121,8 @@ class Integrator(FunctionNode):
         and `sum(orders) == len(input)`
         """
         check_input_dimension(self, name, 1)
+        check_input_subtype(self, name, integer)
         orders = self.inputs[name]
-        check_output_subtype(self, orders, integer)
         if (y := sum(orders.data)) != shape:
             raise TypeFunctionError(
                 f"Orders '{name}' must be consistent with inputs len={shape}, "
