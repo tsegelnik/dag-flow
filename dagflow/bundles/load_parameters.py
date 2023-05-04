@@ -1,6 +1,5 @@
 from multikeydict.nestedmkdict import NestedMKDict
 # from multikeydict.flatmkdict import FlatMKDict # To be used later
-from gindex import GNIndex
 
 from schema import Schema, Or, Optional, Use, And, Schema, SchemaError
 from pathlib import Path
