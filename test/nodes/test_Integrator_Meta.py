@@ -22,27 +22,22 @@ def test_Integrator_trap_meta(debug_graph):
         integrator = Integrator("integrator")
         sampler.outputs["weights"] >> integrator("weights")
 
-        metaint.add_node(sampler, kw_inputs=['ordersX'], kw_outputs=['x'])
-        metaint.add_node(integrator, kw_inputs=[('ordersX', 'ordersX1')],
+        metaint.add_node(sampler, kw_inputs=['ordersX'], kw_outputs=['x'], merge_inputs=['ordersX'])
+        metaint.add_node(integrator, kw_inputs=['ordersX'], merge_inputs=['ordersX'],
                          inputs_pos=True, outputs_pos=True, missing_inputs=True, also_missing_outputs=True)
 
         cosf = Cos("cos")
         sinf = Sin("sin")
         ordersX >> metaint.inputs["ordersX"]
-        ordersX >> metaint.inputs["ordersX1"]
 
-        metaint.outputs["x"] >> cosf
-        metaint.outputs["x"] >> sinf
+        metaint.outputs["x"] >> (cosf.make_input(), sinf.make_input())
 
-        cosf.outputs[0] >> metaint
-        sinf.outputs[0] >> metaint
+        (cosf.outputs[0], sinf.outputs[0]) >> metaint
 
         sincheck = Sin("sin")
         coscheck = Cos("cos")
-        A >> sincheck
-        B >> sincheck
-        A >> coscheck
-        B >> coscheck
+        A >> (sincheck.make_input(), coscheck.make_input())
+        B >> (sincheck.make_input(), coscheck.make_input())
     res1 =   sincheck.outputs[1].data - sincheck.outputs[0].data
     res2 = - coscheck.outputs[1].data + coscheck.outputs[0].data
     assert allclose(integrator.outputs[0].data, res1, rtol=0, atol=1e-2)

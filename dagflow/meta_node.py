@@ -29,6 +29,7 @@ class MetaNode(Limbs):
 		outputs_pos: bool=False,
 		kw_inputs: Sequence[Union[str, Tuple[str, str]]]=[],
 		kw_outputs: Sequence[Union[str, Tuple[str, str]]]=[],
+		merge_inputs: Sequence[str]=[],
 		missing_inputs: bool=False,
 		also_missing_outputs: bool=False,
 	) -> None:
@@ -40,7 +41,7 @@ class MetaNode(Limbs):
 
 		if inputs_pos: self.import_pos_inputs(node)
 		if outputs_pos: self.import_pos_outputs(node)
-		self.import_kw_inputs(node, kw_inputs)
+		self.import_kw_inputs(node, kw_inputs, merge=merge_inputs)
 		self.import_kw_outputs(node, kw_outputs)
 
 		if missing_inputs:
@@ -62,12 +63,19 @@ class MetaNode(Limbs):
 		for output in node.outputs:
 			self.outputs.add(output, positional=True, keyword=True)
 
-	def import_kw_inputs(self, node: Node, kw_inputs: Sequence[Union[str, Tuple[str, str]]]=[]) -> None:
+	def import_kw_inputs(
+		self,
+		node: Node,
+		kw_inputs: Sequence[Union[str, Tuple[str, str]]]=[],
+		merge: Sequence[str]=[]
+	) -> None:
 		for iname in kw_inputs:
-			tname = None
+			tname = iname
 			if not isinstance(iname, str):
 				iname, tname = iname
-			self.inputs.add(node.inputs.get_kw(iname), name=tname)
+			newinput = node.inputs.get_kw(iname)
+			merge = tname in merge
+			self.inputs.add(newinput, name=tname, merge=merge, positional=False)
 
 	def import_kw_outputs(self, node: Node, kw_outputs: Sequence[Union[str, Tuple[str, str]]]=[]) -> None:
 		for oname in kw_outputs:
