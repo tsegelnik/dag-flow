@@ -3,8 +3,11 @@ from multikeydict.nestedmkdict import NestedMKDict
 
 from schema import Schema, Or, Optional, Use, And, Schema, SchemaError
 from pathlib import Path
+from typing import Tuple, Generator
 
-from ..tools.schema import NestedSchema, LoadFileWithExt, LoadYaml
+from ..tools.schema import NestedSchema, LoadFileWithExt, LoadYaml, MakeLoaderPy
+from ..node import inherit_labels
+from ..exception import InitializationError
 
 class ParsCfgHasProperFormat(object):
     def validate(self, data: dict) -> dict:
@@ -28,6 +31,7 @@ class ParsCfgHasProperFormat(object):
 
 IsNumber = Or(float, int, error='Invalid number "{}", expect int of float')
 IsNumberOrTuple = Or(IsNumber, (IsNumber,), And([IsNumber], Use(tuple)), error='Invalid number/tuple {}')
+label_keys = {'text', 'latex', 'graph', 'mark', 'name'}
 IsLabel = Or({
         'text': str,
         Optional('latex'): str,
@@ -62,13 +66,39 @@ def IsFormatOk(format):
 
         return f1 in ('value', 'central')
 
+def CheckCorrelationSizes(cfg):
+    nnames = len(cfg['names'])
+    matrix = cfg['matrix']
+    nrows = len(matrix)
+
+    if nrows!=nnames:
+        return False
+
+    for row in matrix:
+        if nnames!=len(row):
+            return False
+
+    return True
+
+IsCorrelationsDict = And({
+        'names': Or((str,), And([str], Use(tuple))),
+        'matrix_type': Or('correlation', 'covariance'),
+        'matrix': [[IsNumber]],
+        }, CheckCorrelationSizes)
+IsNestedCorrelationsDict = NestedSchema(IsCorrelationsDict, processdicts=True)
+
 IsFormat = Schema(IsFormatOk, error='Invalid parameter format "{}".')
+IsStrSeq = (str,)
+IsStrSeqOrStr = Or(IsStrSeq, And(str, Use(lambda s: (s,))))
 IsParsCfgDict = Schema({
     'parameters': IsValuesDict,
     'labels': IsLabelsDict,
     'format': IsFormat,
     'state': Or('fixed', 'variable', error='Invalid parameters state: {}'),
-    Optional('path', default=''): str
+    Optional('path', default=''): str,
+    Optional('replicate', default=((),)): (IsStrSeqOrStr,),
+    Optional('replica_key_offset', default=0): int,
+    Optional('correlations', default={}): IsNestedCorrelationsDict
     },
     # error = 'Invalid parameters configuration: {}'
 )
@@ -78,7 +108,12 @@ IsLoadableDict = And(
                 'load': Or(str, And(Path, Use(str))),
                 Optional(str): object
             },
-            Use(LoadFileWithExt(yaml=LoadYaml, key='load', update=True), error='Failed to load {}'),
+            Use(LoadFileWithExt(
+                yaml=LoadYaml,
+                py=MakeLoaderPy('configuration'),
+                key='load',
+                update=True
+            ), error='Failed to load {}'),
             IsProperParsCfgDict
         )
 def ValidateParsCfg(cfg):
@@ -129,7 +164,39 @@ def get_format_processor(format):
     else:
         return process_var_percent
 
-def iterate_varcfgs(cfg: NestedMKDict):
+def format_latex(k, s: str, /, *args, **kwargs) -> str:
+    if (k=='latex' and '$' in s) or '{' not in s:
+        return s
+
+    return s.format(*args, **kwargs)
+
+def format_dict(dct: dict, /, *args, **kwargs) -> dict:
+    return {
+        k: format_latex(k, v, *args, **kwargs) for k, v in dct.items() if k in label_keys
+    }
+
+def get_label(key: tuple, labelscfg: dict) -> dict:
+    try:
+        return labelscfg[key]
+    except KeyError:
+        pass
+
+    for n in range(1, len(key)+1):
+        subkey = key[:-n]
+        try:
+            lcfg = labelscfg[subkey]
+        except KeyError:
+            continue
+
+        if not subkey and 'text' not in lcfg:
+            break
+
+        sidx = '.'.join(key[n-1:])
+        return format_dict(lcfg, sidx)
+
+    return {}
+
+def iterate_varcfgs(cfg: NestedMKDict) -> Generator[Tuple[Tuple[str, ...], NestedMKDict], None, None]:
     parameterscfg = cfg['parameters']
     labelscfg = cfg['labels']
     format = cfg['format']
@@ -139,14 +206,26 @@ def iterate_varcfgs(cfg: NestedMKDict):
 
     for key, varcfg in parameterscfg.walkitems():
         varcfg = process(varcfg, format, hascentral)
-        try:
-            varcfg['label'] = labelscfg[key]
-        except KeyError:
-            varcfg['label'] = {}
+        varcfg['label'] = get_label(key, labelscfg)
         yield key, varcfg
 
-from dagflow.parameters import Parameters
-from dagflow.lib.SumSq import SumSq
+from ..lib import Array
+from ..parameters import Parameters
+from ..lib.ElSumSq import ElSumSq
+
+def check_correlations_consistent(cfg: NestedMKDict) -> None:
+    parscfg = cfg['parameters']
+    for key, corrcfg in cfg['correlations'].walkdicts():
+        # processed_cfgs.add(varcfg)
+        names = corrcfg['names']
+        try:
+            parcfg = parscfg[key]
+        except KeyError:
+            raise InitializationError(f"Failed to obtain parameters for {key}")
+
+        inames = tuple(parcfg.walkjoinedkeys())
+        if names!=inames:
+            raise InitializationError(f'Keys in {".".join(key)} are not consistent with names: {inames} and {names}')
 
 def load_parameters(acfg):
     cfg = ValidateParsCfg(acfg)
@@ -168,6 +247,7 @@ def load_parameters(acfg):
                 'constrained': {},
                 'normalized': {},
                 },
+            'correlations': {},
             'stat': {
                 'nuisance_parts': {},
                 'nuisance': {},
@@ -181,38 +261,107 @@ def load_parameters(acfg):
         sep='.'
     )
 
-    normpars = []
-    for key, varcfg in iterate_varcfgs(cfg):
-        skey = '.'.join(key)
-        label = varcfg['label']
-        label['key'] = skey
-        label.setdefault('text', skey)
+    check_correlations_consistent(cfg)
+
+    subkeys = cfg['replicate']
+    replica_key_offset = cfg['replica_key_offset']
+    if replica_key_offset>0:
+        make_key = lambda key, subkey: key[:-replica_key_offset]+subkey+key[replica_key_offset:]
+    elif replica_key_offset==0:
+        make_key = lambda key, subkey: key+subkey
+    else:
+        raise ValueError(f'{replica_key_offset=} should be non-negative')
+
+    varcfgs = NestedMKDict({})
+    normpars = {}
+    for key_general, varcfg in iterate_varcfgs(cfg):
         varcfg.setdefault(state, True)
 
+        label_general = varcfg['label']
+
+        for subkey in subkeys:
+            key = key_general + subkey
+            key = make_key(key_general, subkey)
+            key_str = '.'.join(key)
+            subkey_str = '.'.join(subkey)
+
+            label = format_dict(label_general.copy(), subkey=subkey_str, space_subkey=f' {subkey_str}', subkey_space=f'{subkey_str} ')
+            varcfg_sub = varcfg.copy()
+            varcfg_sub['label'] = label
+            label['key'] = key_str
+            label.setdefault('text', key_str)
+
+            varcfgs[key] = varcfg_sub
+
+    processed_cfgs = set()
+    pars = NestedMKDict({})
+    for key, corrcfg in cfg['correlations'].walkdicts():
+        label = get_label(key+('group',), cfg['labels'])
+
+        matrixtype = corrcfg['matrix_type']
+        matrix = corrcfg['matrix']
+        mark_matrix = matrixtype=='correlation' and 'C' or 'V'
+        label_mat = inherit_labels(label, fmtlong=f'{matrixtype.capitalize()}'' matrix: {}', fmtshort=mark_matrix+'({})')
+        label_mat['mark'] = mark_matrix
+        label_mat = format_dict(label_mat, subkey='', space_subkey='', subkey_space='')
+        matrix_array = Array('matrixtype', matrix, label=label_mat)
+
+        for subkey in subkeys:
+            fullkey = key+subkey
+            subkey_str = '.'.join(subkey)
+            try:
+                varcfg = varcfgs[fullkey]
+            except KeyError:
+                raise InitializationError(f"Failed to obtain parameters for {fullkey}")
+
+            kwargs = {matrixtype: matrix_array}
+            kwargs['value'] = (vvalue := [])
+            kwargs['central'] = (vcentral := [])
+            kwargs['sigma'] = (vsigma := [])
+            kwargs['names'] = (names := [])
+            for name, vcfg in varcfg.walkdicts(ignorekeys=('label',)):
+                vvalue.append(vcfg['value'])
+                vcentral.append(vcfg['central'])
+                vsigma.append(vcfg['sigma'])
+                names.append(name)
+                processed_cfgs.add(fullkey+name)
+
+            labelsub = format_dict(label, subkey=subkey_str, space_subkey=f' {subkey_str}', subkey_space=f'{subkey_str} ')
+            pars[fullkey] = Parameters.from_numbers(label=labelsub, **kwargs)
+
+    for key, varcfg in varcfgs.walkdicts(ignorekeys=('label',)):
+        if key in processed_cfgs:
+            continue
         par = Parameters.from_numbers(**varcfg)
+        pars[key] = par
+
+    for key, par in pars.walkitems():
         if par.is_constrained:
-            target = ('constrained', path)
+            target = ('constrained',)+path
         elif par.is_fixed:
-            target = ('constant', path)
+            target = ('constant',)+path
         else:
-            target = ('free', path)
+            target = ('free',)+path
 
-        ret[('parameter_node',)+target+key] = par
+        targetkey = target+key
+        ret[('parameter_node',)+targetkey] = par
 
-        ptarget = ('parameter', target)
-        for subpar in par.parameters:
-            ret[ptarget+key] = subpar
+        ptarget = ('parameter',)+targetkey
+        for subname, subpar in par.iteritems():
+            ret[ptarget+subname] = subpar
 
-        ntarget = ('parameter', 'normalized', path)
-        for subpar in par.norm_parameters:
-            ret[ntarget+key] = subpar
+        if (constraint:=par.constraint):
+            normpars_i = normpars.setdefault(key[0], [])
+            normpars_i.append(constraint.normvalue_final)
 
-            normpars.append(subpar)
+            ntarget = ('parameter', 'normalized', path)+key
+            for subname, subpar in par.iteritems_norm():
+                ret[ntarget+subname] = subpar
 
-    if normpars:
-        ssq = SumSq(f'nuisance for {pathstr}')
-        (n.output for n in normpars) >> ssq
+    for name, outputs in normpars.items():
+        ssq = ElSumSq(f'nuisance: {pathstr}.{name}')
+        outputs >> ssq
         ssq.close()
-        ret[('stat', 'nuisance_parts', path)] = ssq
+        ret[('stat', 'nuisance_parts', path, name)] = ssq
 
     return ret

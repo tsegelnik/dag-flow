@@ -5,7 +5,7 @@ from .output import Outputs
 from .shift import lshift, rshift
 from .iter import StopNesting
 
-class Legs:
+class Limbs:
     inputs: Inputs
     outputs: Outputs
     def __init__(self, inputs=None, outputs=None, missing_input_handler=None):
@@ -37,14 +37,14 @@ class Legs:
         if isinstance(key, (int, slice, str)):
             return self.outputs[key]
         if (y := len(key)) != 2:
-            raise ValueError(f"Legs key should be of length 2, but given {y}!")
+            raise ValueError(f"Limbs key should be of length 2, but given {y}!")
         ikey, okey = key
         if ikey and okey:
             if isinstance(ikey, (int, str)):
                 ikey = (ikey,)
             if isinstance(okey, (int, str)):
                 okey = (okey,)
-            return Legs(
+            return Limbs(
                 self.inputs[ikey],
                 self.outputs[okey],
                 missing_input_handler=self.__missing_input_handler,

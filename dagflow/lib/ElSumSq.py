@@ -27,6 +27,7 @@ class ElSumSq(FunctionNode):
             "missing_input_handler", MissingInputAddOne(output_fmt="result")
         )
         super().__init__(*args, **kwargs)
+        self._labels.setdefault('mark', 'Σ()²')
 
     def _fcn(self, _, inputs, outputs):
         out = outputs["result"].data

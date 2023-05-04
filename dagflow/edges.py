@@ -1,9 +1,7 @@
-from collections.abc import Sequence
-
 from .exception import CriticalError
 from .iter import IsIterable
 
-from typing import List, Dict, Union
+from typing import List, Dict, Union, Sequence
 
 class EdgeContainer:
     _kw_edges: Dict
@@ -18,7 +16,7 @@ class EdgeContainer:
         if iterable:
             self.add(iterable)
 
-    def add(self, value, *, positional: bool=True, keyword: bool=True):
+    def add(self, value: Union[str, Sequence[str]], *, positional: bool=True, keyword: bool=True):
         if positional==keyword==False:
             raise RuntimeError('Edge should be at least positional or a keyword')
 
@@ -79,16 +77,16 @@ class EdgeContainer:
     kat = get_kw
 
     def len_pos(self) -> int:
-        """Returns a number of the positional legs"""
+        """Returns a number of the positional limbs"""
         return len(self._pos_edges)
     __len__ = len_pos
 
     def len_kw(self) -> int:
-        """Returns a number of the keyword legs"""
+        """Returns a number of the keyword limbs"""
         return len(self._kw_edges)
 
     def len_all(self) -> int:
-        """Returns a number of the all legs"""
+        """Returns a number of the all limbs"""
         return len(self._all_edges)
 
     def __iter__(self):

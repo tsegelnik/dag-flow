@@ -21,8 +21,6 @@ class NormalizeCorrelatedVars2(FunctionNode):
     x = Lz + μ
     """
 
-    _mark: str = 'c↔u'
-
     _input_value: Input
     _input_normvalue: Input
     _output_value: Output
@@ -32,6 +30,7 @@ class NormalizeCorrelatedVars2(FunctionNode):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+        self._labels.setdefault('mark', 'c↔u')
 
         self._add_input("matrix", positional=False)
         self._add_input("central", positional=False)
@@ -129,7 +128,7 @@ class NormalizeCorrelatedVars2(FunctionNode):
         check_inputs_multiplicable_mat(self, 'matrix', slice(None))
         copy_from_input_to_output(self, slice(None), slice(None))
 
-        self._inherit_labels(self._input_value.parent_node, fmt='Normalize {}')
+        self._inherit_labels(self._input_value.parent_node, fmtlong='[norm] {}', fmtshort='n({})')
 
         self._ndim=f"{ndim}d"
         self.fcn = self._functions[f"forward_{self._ndim}"]

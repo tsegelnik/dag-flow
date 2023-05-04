@@ -2,7 +2,9 @@ contextlib2
 coverage
 numba
 numpy==1.23.5
+pandas
 pygraphviz
 pytest
 pytest-cov
 schema
+tabulate

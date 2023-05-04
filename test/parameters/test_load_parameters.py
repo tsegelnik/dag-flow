@@ -126,7 +126,7 @@ def test_load_parameters_v01():
     with Graph(close=True) as g:
         for i, cfg in enumerate(cfgs):
             vars = load_parameters(cfg)
-            print(cfg['state'])
+            # print(cfg['state'])
             print(i, end=' ')
             pprint(vars.object)
 
