@@ -1,9 +1,7 @@
-from collections.abc import Sequence
-
 from .exception import CriticalError
 from .iter import IsIterable
 
-from typing import List, Dict, Union
+from typing import List, Dict, Union, Sequence
 
 class EdgeContainer:
     _kw_edges: Dict
@@ -18,7 +16,7 @@ class EdgeContainer:
         if iterable:
             self.add(iterable)
 
-    def add(self, value, *, positional: bool=True, keyword: bool=True):
+    def add(self, value: Union[str, Sequence[str]], *, positional: bool=True, keyword: bool=True):
         if positional==keyword==False:
             raise RuntimeError('Edge should be at least positional or a keyword')
 

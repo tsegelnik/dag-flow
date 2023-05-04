@@ -1,6 +1,4 @@
-
 from .iter import IsIterable, StopNesting
-
 
 def get_proper_iterator(obj, methodname, onerror, **kwargs):
     if methodname:

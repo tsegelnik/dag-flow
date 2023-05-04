@@ -151,7 +151,6 @@ class NormalizedGaussianParameter(Parameter):
         dct.update({
             'central': 0.0,
             'sigma': 1.0,
-            # 'normvalue': self.value,
             })
         return dct
 
@@ -196,7 +195,10 @@ class Parameters:
         close: bool=True
     ):
         self._value_node = value
-        self.value = value.outputs[0]
+        try:
+            self.value = value.outputs[0]
+        except IndexError:
+            raise InitializationError("Parameters: value node has no outputs")
 
         if all(f is not None for f in (variable, fixed)):
             raise RuntimeError("Parameter may not be set to variable and fixed at the same time")
@@ -362,9 +364,9 @@ class GaussianConstraint(Constraint):
         central: Node,
         *,
         parameters: Parameters,
-        sigma: Node=None,
-        covariance: Node=None,
-        correlation: Node=None,
+        sigma: Optional[Node]=None,
+        covariance: Optional[Node]=None,
+        correlation: Optional[Node]=None,
         constrained: Optional[bool]=None,
         free: Optional[bool]=None,
         **_
@@ -372,10 +374,10 @@ class GaussianConstraint(Constraint):
         super().__init__(parameters=parameters)
         self._central_node = central
 
-        self._cholesky_node: Node = None
-        self._covariance_node: Node = None
-        self._correlation_node: Node = None
-        self._sigma_total_node: Node = None
+        self._cholesky_node = None
+        self._covariance_node = None
+        self._correlation_node = None
+        self._sigma_total_node = None
 
         if all(f is not None for f in (constrained, free)):
             raise InitializationError("GaussianConstraint may not be set to constrained and free at the same time")
@@ -426,7 +428,7 @@ class GaussianConstraint(Constraint):
         if (mark:=value_node.label('mark', fallback=None)) is not None:
             normmark = f'norm({mark})'
         else:
-            normmark = f'norm'
+            normmark = 'norm'
         self._normvalue_node = Array(
             f'[norm] {value_node.name}',
             zeros_like(self.central._data),
@@ -520,16 +522,6 @@ class GaussianConstraint(Constraint):
         )
 
         return GaussianConstraint(central=node_central, sigma=node_sigma, **kwargs)
-
-    def to_dict(self, **kwargs) -> dict:
-        dct = super().to_dict(**kwargs)
-        dct.update({
-            'central': self.central.data[0],
-            'sigma': self.sigma.data[0],
-            'flags': self.is_correlated and 'C' or ''
-            # 'normvalue': self.normvalue.data[0],
-            })
-        return dct
 
 def GaussianParameters(names: Tuple[Tuple[str]], value: Node, *args, **kwargs) -> Parameters:
     pars = Parameters(names, value, close=False)

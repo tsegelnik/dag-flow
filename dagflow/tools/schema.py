@@ -13,10 +13,10 @@ def IsReadable(filename: str):
 def IsFilewithExt(*exts: str):
     """Returns a function that retunts True if the file extension is consistent"""
     def checkfilename(filename: str):
-        return any(filename.endswith(f'.{ext}' for ext in exts))
+        return filename.endswith(f'.{ext}' for ext in exts)
     return checkfilename
 
-def LoadFileWithExt(*, key: Union[str, dict]=None, update: bool=False, **kwargs: Callable):
+def LoadFileWithExt(*, key: Union[str, dict, None]=None, update: bool=False, **kwargs: Callable):
     """Returns a function that retunts True if the file extension is consistent"""
     def checkfilename(filename: Union[str, dict]):
         if key is not None:

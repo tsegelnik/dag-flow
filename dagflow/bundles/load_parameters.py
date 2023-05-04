@@ -7,6 +7,7 @@ from typing import Tuple, Generator
 
 from ..tools.schema import NestedSchema, LoadFileWithExt, LoadYaml, MakeLoaderPy
 from ..node import inherit_labels
+from ..exception import InitializationError
 
 class ParsCfgHasProperFormat(object):
     def validate(self, data: dict) -> dict:
@@ -187,7 +188,7 @@ def get_label(key: tuple, labelscfg: dict) -> dict:
         except KeyError:
             continue
 
-        if not subkey and not 'text' in lcfg:
+        if not subkey and 'text' not in lcfg:
             break
 
         sidx = '.'.join(key[n-1:])
@@ -269,7 +270,7 @@ def load_parameters(acfg):
     elif replica_key_offset==0:
         make_key = lambda key, subkey: key+subkey
     else:
-        raise ValueError('{replica_key_offset=} should be non-negative')
+        raise ValueError(f'{replica_key_offset=} should be non-negative')
 
     varcfgs = NestedMKDict({})
     normpars = {}

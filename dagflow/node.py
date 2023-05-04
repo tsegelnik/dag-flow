@@ -17,7 +17,7 @@ from .limbs import Limbs
 from .logger import Logger, get_logger
 from .output import Output
 from .types import GraphT
-from typing import Optional, List, Dict, Union, Callable, Any, Tuple, Generator
+from typing import Optional, List, Dict, Union, Callable, Any, Tuple, Sequence
 
 def _make_formatter(fmt: Union[str, Callable, dict]) -> Callable:
     if isinstance(fmt, str):
@@ -246,7 +246,7 @@ class Node(Limbs):
     #
     # Methods
     #
-    def __call__(self, name, child_output: Optional[Output] = None, **kwargs):
+    def __call__(self, name: str, child_output: Optional[Output] = None, **kwargs):
         self.logger.debug(f"Node '{self.name}': Get input '{name}'")
         kwargs.setdefault("positional", False)
         inp = self.inputs.get(name, None)
@@ -258,7 +258,7 @@ class Node(Limbs):
             raise ReconnectionError(input=inp, node=self, output=output)
         return inp
 
-    def label(self, source: str='text', default: str=None, *, fallback: Optional[str]='text') -> Optional[str]:
+    def label(self, source: str='text', default: Optional[str]=None, *, fallback: Optional[str]='text') -> Optional[str]:
         # if self._labels:
         #     kwargs.setdefault("name", self._name)
         #     return self._labels.format(*args, **kwargs)
@@ -271,12 +271,12 @@ class Node(Limbs):
     def _inherit_labels(self, source: 'Node', fmtlong: Union[str, Callable], fmtshort: Union[str, Callable]) -> dict:
         return inherit_labels(source.labels, self._labels, fmtlong=fmtlong, fmtshort=fmtshort)
 
-    def add_input(self, name, **kwargs) -> Union[Input, Tuple[Input]]:
+    def add_input(self, name: Union[str, Sequence[str]], **kwargs) -> Union[Input, Tuple[Input]]:
         if not self.closed:
             return self._add_input(name, **kwargs)
         raise ClosedGraphError(node=self)
 
-    def _add_input(self, name, **kwargs) -> Union[Input, Tuple[Input]]:
+    def _add_input(self, name: Union[str, Sequence[str]], **kwargs) -> Union[Input, Tuple[Input]]:
         if IsIterable(name):
             return tuple(self._add_input(n, **kwargs) for n in name)
         self.logger.debug(f"Node '{self.name}': Add input '{name}'")
@@ -297,7 +297,7 @@ class Node(Limbs):
         raise ClosedGraphError(node=self)
 
     def _add_output(
-        self, name, *, keyword: bool = True, positional: bool = True, **kwargs
+        self, name: Union[str, Sequence[str]], *, keyword: bool = True, positional: bool = True, **kwargs
     ) -> Union[Output, Tuple[Output]]:
         if IsIterable(name):
             return tuple(self._add_output(n, **kwargs) for n in name)
