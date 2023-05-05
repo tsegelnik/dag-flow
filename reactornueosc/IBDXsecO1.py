@@ -1,0 +1,38 @@
+from numpy.typing import ArrayLike
+from numpy import sin
+from numba import njit
+
+from dagflow.typefunctions import check_input_dtype
+from dagflow.input_extra import MissingInputAddPair
+from dagflow.nodes import FunctionNode
+
+def _ibdxsecO1(enu, costheta, result):
+    pass
+
+class IBDXsecO1(FunctionNode):
+    """Inverse beta decay cross section by Vogel and Beacom"""
+
+    def __init__(self, name, *args, **kwargs):
+        kwargs.setdefault("missing_input_handler", MissingInputAddPair())
+        super().__init__(name, *args, **kwargs)
+
+        self.add_input('enu', positional=True, keyword=True)
+        # self.add_input('costheta', positional=True, keyword=True)
+        self.add_output('result', positional=True, keyword=True)
+
+        self.add_input('ElectronMass', positional=False, keyword=True)
+
+    def _fcn(self, _, inputs, outputs):
+        for inp, out in zip(inputs, outputs):
+            _ibdxsecO1()
+
+    def _typefunc(self) -> None:
+        """A output takes this function to determine the dtype and shape"""
+        check_input_dtype(self, slice(None), 'd')
+
+        for inp, out in zip(self.inputs, self.outputs):
+            out.dd.axes_edges = inp.dd.axes_edges
+            out.dd.axes_nodes = inp.dd.axes_nodes
+            out.dd.dtype = inp.dd.dtype
+            out.dd.shape = inp.dd.shape
+
