@@ -30,14 +30,14 @@ def test_Integrator_trap_meta(debug_graph):
         sinf = Sin("sin")
         ordersX >> metaint.inputs["ordersX"]
 
-        metaint.outputs["x"] >> (cosf.make_input(), sinf.make_input())
+        metaint.outputs["x"] >> (cosf(), sinf())
 
         (cosf.outputs[0], sinf.outputs[0]) >> metaint
 
         sincheck = Sin("sin")
         coscheck = Cos("cos")
-        A >> (sincheck.make_input(), coscheck.make_input())
-        B >> (sincheck.make_input(), coscheck.make_input())
+        A >> (sincheck(), coscheck())
+        B >> (sincheck(), coscheck())
     res1 =   sincheck.outputs[1].data - sincheck.outputs[0].data
     res2 = - coscheck.outputs[1].data + coscheck.outputs[0].data
     assert allclose(integrator.outputs[0].data, res1, rtol=0, atol=1e-2)
