@@ -6,8 +6,8 @@ from pathlib import Path
 from typing import Tuple, Generator
 
 from ..tools.schema import NestedSchema, LoadFileWithExt, LoadYaml, MakeLoaderPy
-from ..node import inherit_labels
 from ..exception import InitializationError
+from ..labels import inherit_labels
 
 class ParsCfgHasProperFormat(object):
     def validate(self, data: dict) -> dict:

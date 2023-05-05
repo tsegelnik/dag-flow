@@ -11,11 +11,14 @@ class DataDescriptor:
     `axes_edges` and `axes_nodes` information.
     """
 
-    __slots__ = ("dtype", "shape", "axes_edges", "axes_nodes")
+    __slots__ = ("dtype", "shape", "axes_edges", "axes_nodes", "edges_inherited", "nodes_inherited")
     dtype: DTypeLike  # DTypeLike is already Optional
     shape: Optional[ShapeLike]
     axes_edges: Optional[List[EdgesLike]]
     axes_nodes: Optional[List[EdgesLike]]
+
+    edges_inherited: bool
+    nodes_inherited: bool
 
     def __init__(
         self,
@@ -31,6 +34,9 @@ class DataDescriptor:
         self.shape = shape
         self.axes_edges = axes_edges or []
         self.axes_nodes = axes_nodes or []
+
+        self.edges_inherited = True
+        self.nodes_inherited = True
 
     @property
     def dim(self) -> int:

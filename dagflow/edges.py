@@ -1,7 +1,7 @@
 from .exception import CriticalError
 from .iter import IsIterable
 
-from typing import List, Dict, Union, Sequence
+from typing import List, Dict, Union, Optional, Sequence
 
 class EdgeContainer:
     _kw_edges: Dict
@@ -16,9 +16,19 @@ class EdgeContainer:
         if iterable:
             self.add(iterable)
 
-    def add(self, value: Union[str, Sequence[str]], *, positional: bool=True, keyword: bool=True):
+    def add(
+        self,
+        value: Union[str, Sequence[str]],
+        *,
+        name: Optional[str]=None,
+        positional: bool=True,
+        keyword: bool=True,
+        merge: bool=False
+    ):
         if positional==keyword==False:
             raise RuntimeError('Edge should be at least positional or a keyword')
+        if positional and merge:
+            raise RuntimeError('May not merge positional limbs')
 
         if IsIterable(value):
             for v in value:
@@ -29,16 +39,21 @@ class EdgeContainer:
                 f"The type {type(value)} of the data doesn't correpond "
                 f"to {self._dtype}!"
             )
-        name = value.name
+        name = name or value.name
         if not name:
             raise RuntimeError("May not add objects with undefined name")
-        if name in self._all_edges:
+        if name in self._all_edges and not (name in self._kw_edges and merge):
             raise RuntimeError("May not add duplicated items")
 
         if positional:
             self._pos_edges.append(value)
         if keyword:
-            self._kw_edges[name] = value
+            if merge:
+                prevlimb = self._kw_edges.get(name, ())
+                self._kw_edges[name] = prevlimb+(value,)
+            else:
+                self._kw_edges[name] = value
+
         self._all_edges[name]=value
         return self
 

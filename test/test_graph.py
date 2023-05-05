@@ -77,7 +77,7 @@ def test_02a():
     in3, out3 = n3._add_pair("i1", "o1", output_kws={"allocatable": False})
     in4, out4 = n4._add_pair("i1", "o1", output_kws={"allocatable": False})
 
-    out1.repeat() >> (in2, in3, in4)
+    out1 >> (in2, in3, in4)
     g.close()
 
     d = GraphDot(g)

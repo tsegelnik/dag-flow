@@ -77,6 +77,9 @@ else:
 
         def _transform(self, dag):
             for nodedag in dag._nodes:
+                # if nodedag.meta_node:
+                #     self._add_node(nodedag.meta_node)
+                # else:
                 self._add_node(nodedag)
             for nodedag in dag._nodes:
                 self._add_open_inputs(nodedag)
@@ -96,7 +99,9 @@ else:
             except IndexError:
                 shape0 = '?'
                 dtype0 = '?'
+                hasedges = False
             else:
+                hasedges = out0.dd.axes_edges
                 shape0 = out0.dd.shape
                 if shape0 is None:
                     shape0 = '?'
@@ -131,7 +136,11 @@ else:
             nlimbs = f' {nin}{nout}'.replace('→→', '→')
 
             left, right = [], []
-            info_type = f"[{shape0}]{dtype0}{nlimbs}"
+            if hasedges:
+                br_left, br_right = '\\{', '\\}'
+            else:
+                br_left, br_right = '[', ']'
+            info_type = f"{br_left}{shape0}{br_right}{dtype0}{nlimbs}"
             if 'type' in self._show:
                 left.append(info_type)
             if 'mark' in self._show and (mark:=node.label('mark', fallback=None)) is not None:
@@ -140,12 +149,15 @@ else:
                 right.append(text)
             if 'status' in self._show:
                 status = []
-                if node.types_tainted: status.append('types_tainted')
-                if node.tainted: status.append('tainted')
-                if node.frozen: status.append('frozen')
-                if node.frozen_tainted: status.append('frozen_tainted')
-                if node.invalid: status.append('invalid')
-                if not node.closed: status.append('open')
+                try:
+                    if node.types_tainted:  status.append('types_tainted')
+                    if node.tainted:        status.append('tainted')
+                    if node.frozen:         status.append('frozen')
+                    if node.frozen_tainted: status.append('frozen_tainted')
+                    if node.invalid:        status.append('invalid')
+                    if not node.closed:     status.append('open')
+                except AttributeError:
+                    pass
                 if status:
                     right.append(status)
 
@@ -169,7 +181,7 @@ else:
                     mx = data.max()
                     right.append((f'Σ={sm:.2g}', f'Σ²={sm2:.2g}', f'min={mn:.2g}', f'max={mx:.2g}', f'{tainted}'))
 
-            if node.exception is not None:
+            if getattr(node, 'exception', None) is not None:
                 right.append(node.exception)
 
             return self._combine_labels((left, right))
@@ -192,7 +204,7 @@ else:
             self._nodes[nodedag] = nodedot
 
         def _add_open_inputs(self, nodedag):
-            for input in nodedag.inputs:
+            for input in nodedag.inputs.iter_all():
                 if not input.connected():
                     self._add_open_input(input, nodedag)
 
@@ -212,7 +224,7 @@ else:
             self._edges[input] = EdgeDef(nodein, None, nodeout, edge)
 
         def _add_edges(self, nodedag):
-            for output in nodedag.outputs:
+            for output in nodedag.outputs.iter_all():
                 if output.connected():
                     if len(output.child_inputs)>1:
                         self._add_edges_multi(nodedag, output)
@@ -221,6 +233,9 @@ else:
                 else:
                     self._add_open_output(nodedag, output)
 
+                if output.dd.axes_edges:
+                    self._add_edge_hist(output)
+
         def _add_edges_multi(self, nodedag, output):
             vnode = self.get_id(output, "_mid")
             self._graph.add_node(vnode, label="", shape="none", width=0, height=0, penwidth=0, weight=10)
@@ -228,6 +243,13 @@ else:
             self._add_edge(nodedag, output, firstinput, vtarget=vnode)
             for input in output.child_inputs:
                 self._add_edge(nodedag, output, input, vsource=vnode)
+
+        def _add_edge_hist(self, output: Output) -> None:
+            if output.dd.edges_inherited:
+                return
+            eoutput = output.dd.axes_edges[0]
+
+            self._add_edge(eoutput.node, eoutput, output, style={'style': 'dotted'})
 
         def _add_open_output(self, nodedag, output):
             styledict = {}
@@ -261,8 +283,8 @@ else:
             else:
                 styledict[target] = str(idx)
 
-        def _add_edge(self, nodedag, output, input, *, vsource: Optional[str]=None, vtarget: Optional[str]=None) -> None:
-            styledict = {}
+        def _add_edge(self, nodedag, output, input, *, vsource: Optional[str]=None, vtarget: Optional[str]=None, style: Optional[dict]=None) -> None:
+            styledict = style or {}
 
             if vsource is not None:
                 source = vsource
@@ -294,23 +316,19 @@ else:
             if node is None:
                 attr["color"] = "gray"
             else:
-                if node.invalid:
-                    attr["color"] = "black"
-                elif node.being_evaluated:
-                    attr["color"] = "gold"
-                elif node.tainted:
-                    attr["color"] = "red"
-                elif node.frozen_tainted:
-                    attr["color"] = "blue"
-                elif node.frozen:
-                    attr["color"] = "cyan"
-                elif node.immediate:
-                    attr["color"] = "green"
-                else:
-                    attr["color"] = "forestgreen"
+                try:
+                    if   node.invalid:         attr["color"] = "black"
+                    elif node.being_evaluated: attr["color"] = "gold"
+                    elif node.tainted:         attr["color"] = "red"
+                    elif node.frozen_tainted:  attr["color"] = "blue"
+                    elif node.frozen:          attr["color"] = "cyan"
+                    elif node.immediate:       attr["color"] = "green"
+                    else:                      attr["color"] = "forestgreen"
 
-                if node.exception is not None:
-                    attr["color"] = "magenta"
+                    if node.exception is not None:
+                        attr["color"] = "magenta"
+                except AttributeError:
+                    attr["color"] = "forestgreen"
 
         def _set_style_edge(self, obj, attrin, attr, attrout):
             if isinstance(obj, Input):
@@ -344,9 +362,10 @@ else:
             if node:
                 if node.frozen:
                     attrin["style"] = "dashed"
-                    attr["style"] = "dashed"
+                    if attr["style"]!="dotted":
+                        attr["style"] = "dashed"
                     # attr['arrowhead']='tee'
-                else:
+                elif attr["style"]=="dashed":
                     attr["style"] = ""
 
         def update_style(self):

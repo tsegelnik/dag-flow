@@ -3,7 +3,7 @@ from numpy import empty, floating, integer, multiply
 from numpy.typing import NDArray
 
 from ..exception import TypeFunctionError
-from ..input_extra import MissingInputAddEach
+from ..input_extra import MissingInputAddPair
 from ..nodes import FunctionNode
 from ..typefunctions import (
     check_has_inputs,
@@ -68,7 +68,7 @@ class Integrator(FunctionNode):
     __slots__ = ("__buffer",)
 
     def __init__(self, *args, **kwargs):
-        kwargs.setdefault("missing_input_handler", MissingInputAddEach())
+        kwargs.setdefault("missing_input_handler", MissingInputAddPair())
         super().__init__(*args, **kwargs)
         self._add_input("weights", positional=False)
         self._add_input("ordersX", positional=False)

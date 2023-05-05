@@ -57,13 +57,15 @@ class Array(FunctionNode):
         )
         self.fcn = self._functions[self._mode]
 
+        dd = self._output.dd
         if edges is not None:
+            dd.edges_inherited = False
             if isinstance(edges, Output):
-                self._output.dd.axes_edges.append(edges)
+                dd.axes_edges.append(edges)
             else:
                 # assume that the edges are Sequence[Output]
                 try:
-                    self._output.dd.axes_edges.extend(edges)
+                    dd.axes_edges.extend(edges)
                 except Exception as exc:
                     raise InitializationError(
                         "Array: edges must be `Output` or `Sequence[Output]`, "

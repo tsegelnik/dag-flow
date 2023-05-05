@@ -17,41 +17,20 @@ from .limbs import Limbs
 from .logger import Logger, get_logger
 from .output import Output
 from .types import GraphT
+from .labels import inherit_labels
 from typing import Optional, List, Dict, Union, Callable, Any, Tuple, Sequence
+from weakref import ref as weakref, ReferenceType
 
-def _make_formatter(fmt: Union[str, Callable, dict]) -> Callable:
-    if isinstance(fmt, str):
-        return fmt.format
-    elif isinstance(fmt, dict):
-        return lambda s: fmt.get(s, s)
-
-    return fmt
-
-def inherit_labels(source: dict, destination: Optional[dict]=None, *, fmtlong: Union[str, Callable], fmtshort: Union[str, Callable]) -> dict:
-    if destination is None:
-        destination = {}
-
-    fmtlong = _make_formatter(fmtlong)
-    fmtshort = _make_formatter(fmtshort)
-
-    kshort = {'mark'}
-    kskip = {'key', 'name'}
-    for k, v in source.items():
-        if k in kskip:
-            continue
-        newv = fmtshort(v) if k in kshort else fmtlong(v)
-        if newv is not None:
-            destination[k] = newv
-
-    return destination
 
 class Node(Limbs):
     _name: str
     _labels: Dict[str, str]
     _graph: Optional[GraphT] = None
-    _fcn: Optional[Callable] = None
+    _fcn: Optional[Callable]
     _fcn_chain = None
     _exception: Optional[str] = None
+
+    _meta_node: Optional[ReferenceType] = None
 
     # Taintflag and status
     _tainted: bool = True
@@ -146,6 +125,16 @@ class Node(Limbs):
     @property
     def exception(self):
         return self._exception
+
+    @property
+    def meta_node(self) -> "MetaNode":
+        return self._meta_node and self._meta_node()
+
+    @meta_node.setter
+    def meta_node(self, value: "MetaNode"):
+        if self._meta_node is not None:
+            raise RuntimeError('MetaNode may be set only once')
+        self._meta_node = weakref(value)
 
     @property
     def logger(self) -> Logger:
@@ -271,19 +260,33 @@ class Node(Limbs):
     def _inherit_labels(self, source: 'Node', fmtlong: Union[str, Callable], fmtshort: Union[str, Callable]) -> dict:
         return inherit_labels(source.labels, self._labels, fmtlong=fmtlong, fmtshort=fmtshort)
 
+    def make_input(self, *args, **kwargs) -> Input:
+        if not self.closed:
+            return self._make_input(*args, **kwargs)
+        raise ClosedGraphError(node=self)
+
+    def _make_input(self, *args, exception=True, **kwargs) -> Optional[Input]:
+        handler = self._missing_input_handler
+
+        if handler is None:
+            if exception:
+                raise RuntimeError("Unable to make an input automatically as no handler is set")
+
+            return None
+
+        return handler(*args, **kwargs)
+
     def add_input(self, name: Union[str, Sequence[str]], **kwargs) -> Union[Input, Tuple[Input]]:
         if not self.closed:
             return self._add_input(name, **kwargs)
         raise ClosedGraphError(node=self)
 
-    def _add_input(self, name: Union[str, Sequence[str]], **kwargs) -> Union[Input, Tuple[Input]]:
+    def _add_input(self, name: Union[str, Sequence[str]], *, positional: bool=True, keyword: bool=True, **kwargs) -> Union[Input, Tuple[Input]]:
         if IsIterable(name):
             return tuple(self._add_input(n, **kwargs) for n in name)
         self.logger.debug(f"Node '{self.name}': Add input '{name}'")
         if name in self.inputs:
             raise ReconnectionError(input=name, node=self)
-        positional = kwargs.pop("positional", True)
-        keyword = kwargs.pop("keyword", True)
         inp = Input(name, self, **kwargs)
         self.inputs.add(inp, positional=positional, keyword=keyword)
 

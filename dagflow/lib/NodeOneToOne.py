@@ -1,4 +1,4 @@
-from ..input_extra import MissingInputAddEach
+from ..input_extra import MissingInputAddPair
 from ..nodes import FunctionNode
 from ..typefunctions import check_has_inputs
 
@@ -9,7 +9,7 @@ class NodeOneToOne(FunctionNode):
     """
 
     def __init__(self, *args, **kwargs):
-        kwargs.setdefault("missing_input_handler", MissingInputAddEach())
+        kwargs.setdefault("missing_input_handler", MissingInputAddPair())
         super().__init__(*args, **kwargs)
 
     def _typefunc(self) -> None:
