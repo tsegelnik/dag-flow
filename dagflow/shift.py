@@ -4,7 +4,6 @@ from .exception import ConnectionError
 from .iterators import iter_child_outputs, iter_inputs, iter_outputs
 
 from itertools import repeat
-from typing import Sequence
 
 _rshift_scope_id = 0
 
@@ -48,14 +47,14 @@ def rshift(outputs, inputs):
                 val >> inputs(key)
             continue
         if inp is None:
-            if permit_multiple_expansion or not already_expanded:
-                missing_input_handler = getattr(
-                    inputs, "_missing_input_handler", lambda *args, **kwargs: None
-                )
-                already_expanded = True
-                if not (inp := missing_input_handler(scope=scope_id)):
-                    break
-            else:
+            if not permit_multiple_expansion and already_expanded:
+                break
+
+            missing_input_handler = getattr(
+                inputs, "_missing_input_handler", lambda *args, **kwargs: None
+            )
+            already_expanded = True
+            if not (inp := missing_input_handler(scope=scope_id)):
                 break
         output.connect_to(inp)
 

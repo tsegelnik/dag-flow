@@ -365,9 +365,8 @@ else:
                     if attr["style"]!="dotted":
                         attr["style"] = "dashed"
                     # attr['arrowhead']='tee'
-                else:
-                    if attr["style"]=="dashed":
-                        attr["style"] = ""
+                elif attr["style"]=="dashed":
+                    attr["style"] = ""
 
         def update_style(self):
             for nodedag, nodedot in self._nodes.items():

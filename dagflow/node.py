@@ -18,7 +18,7 @@ from .logger import Logger, get_logger
 from .output import Output
 from .types import GraphT
 from .labels import inherit_labels
-from typing import Optional, List, Dict, Union, Callable, Any, Tuple, Sequence, Generator
+from typing import Optional, List, Dict, Union, Callable, Any, Tuple, Sequence
 from weakref import ref as weakref, ReferenceType
 
 
@@ -26,7 +26,7 @@ class Node(Limbs):
     _name: str
     _labels: Dict[str, str]
     _graph: Optional[GraphT] = None
-    _fcn: Optional[Callable] = None
+    _fcn: Optional[Callable]
     _fcn_chain = None
     _exception: Optional[str] = None
 

@@ -45,4 +45,4 @@ def test_Integrator_trap_meta(debug_graph):
     assert integrator.outputs[0].dd.axes_edges == [edges["array"]]
     assert integrator.outputs[1].dd.axes_edges == [edges["array"]]
 
-    savegraph(graph, f"output/test_Integrator_trap_meta.pdf", show='all')
+    savegraph(graph, "output/test_Integrator_trap_meta.pdf", show='all')

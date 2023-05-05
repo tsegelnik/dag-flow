@@ -1,6 +1,5 @@
 from .node import Node
 from .limbs import Limbs
-from .input_extra import MissingInputHandler
 
 from typing import Sequence, List, Optional, Union, Tuple, Callable
 
@@ -87,7 +86,7 @@ class MetaNode(Limbs):
 class MissingInputInherit:
 	__slots__ = ('_source_node', '_target_node', '_source_handler', '_inherit_outputs')
 	_source_node: Node
-	_target_node: Node
+	_target_node: MetaNode
 	_source_handler: Callable
 	_inherit_outputs: bool
 
