@@ -1,9 +1,9 @@
 from numpy import arctan, cos, sin, tan, arccos, arcsin
 
-from .NodeOneToOne import NodeOneToOne
+from .OneToOneNode import OneToOneNode
 
 
-class Cos(NodeOneToOne):
+class Cos(OneToOneNode):
     """Cos function"""
 
     def _fcn(self, _, inputs, outputs):
@@ -12,7 +12,7 @@ class Cos(NodeOneToOne):
         return list(outputs.iter_data())
 
 
-class Sin(NodeOneToOne):
+class Sin(OneToOneNode):
     """Sin function"""
 
     def _fcn(self, _, inputs, outputs):
@@ -20,7 +20,8 @@ class Sin(NodeOneToOne):
             sin(inp.data, out=out.data)
         return list(outputs.iter_data())
 
-class ArcCos(NodeOneToOne):
+
+class ArcCos(OneToOneNode):
     """ArcCos function"""
 
     def _fcn(self, _, inputs, outputs):
@@ -29,7 +30,7 @@ class ArcCos(NodeOneToOne):
         return list(outputs.iter_data())
 
 
-class ArcSin(NodeOneToOne):
+class ArcSin(OneToOneNode):
     """ArcSin function"""
 
     def _fcn(self, _, inputs, outputs):
@@ -38,7 +39,7 @@ class ArcSin(NodeOneToOne):
         return list(outputs.iter_data())
 
 
-class Tan(NodeOneToOne):
+class Tan(OneToOneNode):
     """Tan function"""
 
     def _fcn(self, _, inputs, outputs):
@@ -47,7 +48,7 @@ class Tan(NodeOneToOne):
         return list(outputs.iter_data())
 
 
-class Arctan(NodeOneToOne):
+class ArcTan(OneToOneNode):
     """Arctan function"""
 
     def _fcn(self, _, inputs, outputs):
