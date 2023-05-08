@@ -5,7 +5,7 @@ from dagflow.lib.Array import Array
 from dagflow.lib.trigonometry import Cos, Sin, Tan, ArcCos, ArcSin, ArcTan
 from dagflow.graphviz import savegraph
 
-from numpy import allclose, arange, cos, sin, tan, arccos, arcsin, arctan
+from numpy import allclose, arange, cos, sin, tan, arccos, arcsin, arctan, finfo
 from pytest import mark
 
 
@@ -25,7 +25,7 @@ def test_Cos_01(testname, debug_graph, dtype):
 
     assert ccos.tainted == True
     assert all(output.dd.dtype == dtype for output in outputs)
-    assert allclose(tuple(outputs.iter_data()), ress)
+    assert allclose(tuple(outputs.iter_data()), ress, rtol=0, atol=finfo(dtype).resolution)
     assert ccos.tainted == False
 
     savegraph(graph, f"output/{testname}.png")
@@ -47,7 +47,7 @@ def test_Sin_01(testname, debug_graph, dtype):
 
     assert ssin.tainted == True
     assert all(output.dd.dtype == dtype for output in outputs)
-    assert allclose(tuple(outputs.iter_data()), ress)
+    assert allclose(tuple(outputs.iter_data()), ress, rtol=0, atol=finfo(dtype).resolution)
     assert ssin.tainted == False
 
     savegraph(graph, f"output/{testname}.png")
@@ -69,7 +69,7 @@ def test_Tan_01(testname, debug_graph, dtype):
 
     assert ttan.tainted == True
     assert all(output.dd.dtype == dtype for output in outputs)
-    assert allclose(tuple(outputs.iter_data()), ress)
+    assert allclose(tuple(outputs.iter_data()), ress, rtol=0, atol=finfo(dtype).resolution)
     assert ttan.tainted == False
 
     savegraph(graph, f"output/{testname}.png")
@@ -91,7 +91,7 @@ def test_ArcCos_01(testname, debug_graph, dtype):
 
     assert aarccos.tainted == True
     assert all(output.dd.dtype == dtype for output in outputs)
-    assert allclose(tuple(outputs.iter_data()), ress)
+    assert allclose(tuple(outputs.iter_data()), ress, rtol=0, atol=finfo(dtype).resolution)
     assert aarccos.tainted == False
 
     savegraph(graph, f"output/{testname}.png")
@@ -113,7 +113,7 @@ def test_ArcSin_01(testname, debug_graph, dtype):
 
     assert aarcsin.tainted == True
     assert all(output.dd.dtype == dtype for output in outputs)
-    assert allclose(tuple(outputs.iter_data()), ress)
+    assert allclose(tuple(outputs.iter_data()), ress, rtol=0, atol=finfo(dtype).resolution)
     assert aarcsin.tainted == False
 
     savegraph(graph, f"output/{testname}.png")
@@ -135,7 +135,7 @@ def test_ArcTan_01(testname, debug_graph, dtype):
 
     assert aarctan.tainted == True
     assert all(output.dd.dtype == dtype for output in outputs)
-    assert allclose(tuple(outputs.iter_data()), ress)
+    assert allclose(tuple(outputs.iter_data()), ress, rtol=0, atol=finfo(dtype).resolution)
     assert aarctan.tainted == False
 
     savegraph(graph, f"output/{testname}.png")
