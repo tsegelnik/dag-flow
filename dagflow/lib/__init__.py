@@ -1,4 +1,4 @@
-from .arithmetic import *
+from .arithmetic import Sum, Product, Division
+from .trigonometry import Cos, Sin, Tan, ArcCos, ArcSin, ArcTan
 from .Array import Array
-from .trigonometry import *
 from .WeightedSum import WeightedSum
