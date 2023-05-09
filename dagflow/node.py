@@ -1,4 +1,6 @@
-from typing import Any, Callable, Dict, List, Optional, Tuple, Union
+from typing import Any, Callable, Dict, List, Optional, Sequence, Tuple, Union
+from weakref import ReferenceType
+from weakref import ref as weakref
 
 from .exception import (
     AllocationError,
@@ -13,13 +15,11 @@ from .exception import (
 )
 from .input import Input
 from .iter import IsIterable
+from .labels import inherit_labels
 from .limbs import Limbs
 from .logger import Logger, get_logger
 from .output import Output
 from .types import GraphT
-from .labels import inherit_labels
-from typing import Optional, List, Dict, Union, Callable, Any, Tuple, Sequence
-from weakref import ref as weakref, ReferenceType
 
 
 class Node(Limbs):
@@ -88,11 +88,11 @@ class Node(Limbs):
             self._debug = bool(debug)
 
         if isinstance(label, str):
-            self._labels = {'text': label}
+            self._labels = {"text": label}
         elif isinstance(label, dict):
             self._labels = label
         else:
-            self._labels = {'text': name}
+            self._labels = {"text": name}
 
         if logger is not None:
             self._logger = logger
@@ -133,7 +133,7 @@ class Node(Limbs):
     @meta_node.setter
     def meta_node(self, value: "MetaNode"):
         if self._meta_node is not None:
-            raise RuntimeError('MetaNode may be set only once')
+            raise RuntimeError("MetaNode may be set only once")
         self._meta_node = weakref(value)
 
     @property
@@ -235,19 +235,54 @@ class Node(Limbs):
     #
     # Methods
     #
-    def __call__(self, name: str, child_output: Optional[Output] = None, **kwargs):
-        self.logger.debug(f"Node '{self.name}': Get input '{name}'")
+    def __call__(
+        self, name: Optional[str] = None, *args, **kwargs
+    ) -> Optional[Input]:
+        """
+        Returns an existing input by `name`, else try to create new one.
+        If `name` is given, creates an input by the default way,
+        otherwise tries to use `missing_input_handler`.
+
+        .. note:: creation of a new input is restricted for a *closed* graph
+        """
+        if name is None:
+            self.logger.debug(
+                f"Node '{self.name}': Try to create an input with `missing_input_handler`"
+            )
+            if not self.closed:
+                return self._make_input(*args, **kwargs)
+            raise ClosedGraphError(node=self)
+
+        self.logger.debug(
+            f"Node '{self.name}': Try to get or create the input '{name}'"
+        )
         kwargs.setdefault("positional", False)
         inp = self.inputs.get(name, None)
         if inp is None:
             if self.closed:
                 raise ClosedGraphError(node=self)
-            return self._add_input(name, child_output=child_output, **kwargs)
+            return self._add_input(name, **kwargs)
         elif inp.connected and (output := inp.parent_output):
             raise ReconnectionError(input=inp, node=self, output=output)
         return inp
 
-    def label(self, source: str='text', default: Optional[str]=None, *, fallback: Optional[str]='text') -> Optional[str]:
+    def _make_input(self, *args, exception=True, **kwargs) -> Optional[Input]:
+        handler = self._missing_input_handler
+        if handler is None:
+            if exception:
+                raise RuntimeError(
+                    "Unable to make an input automatically as no handler is set"
+                )
+            return None
+        return handler(*args, **kwargs)
+
+    def label(
+        self,
+        source: str = "text",
+        default: Optional[str] = None,
+        *,
+        fallback: Optional[str] = "text",
+    ) -> Optional[str]:
         # if self._labels:
         #     kwargs.setdefault("name", self._name)
         #     return self._labels.format(*args, **kwargs)
@@ -257,73 +292,73 @@ class Node(Limbs):
 
         return label
 
-    def _inherit_labels(self, source: 'Node', fmtlong: Union[str, Callable], fmtshort: Union[str, Callable]) -> dict:
-        return inherit_labels(source.labels, self._labels, fmtlong=fmtlong, fmtshort=fmtshort)
+    def _inherit_labels(
+        self,
+        source: "Node",
+        fmtlong: Union[str, Callable],
+        fmtshort: Union[str, Callable],
+    ) -> dict:
+        return inherit_labels(
+            source.labels, self._labels, fmtlong=fmtlong, fmtshort=fmtshort
+        )
 
-    def make_input(self, *args, **kwargs) -> Input:
-        if not self.closed:
-            return self._make_input(*args, **kwargs)
-        raise ClosedGraphError(node=self)
-
-    def _make_input(self, *args, exception=True, **kwargs) -> Optional[Input]:
-        handler = self._missing_input_handler
-
-        if handler is None:
-            if exception:
-                raise RuntimeError("Unable to make an input automatically as no handler is set")
-
-            return None
-
-        return handler(*args, **kwargs)
-
-    def add_input(self, name: Union[str, Sequence[str]], **kwargs) -> Union[Input, Tuple[Input]]:
-        if not self.closed:
+    def add_input(
+        self, name: Union[str, Sequence[str]], **kwargs
+    ) -> Union[Input, Tuple[Input]]:
+        if self.closed:
+            raise ClosedGraphError(node=self)
+        if isinstance(name, str):
             return self._add_input(name, **kwargs)
-        raise ClosedGraphError(node=self)
-
-    def _add_input(self, name: Union[str, Sequence[str]], *, positional: bool=True, keyword: bool=True, **kwargs) -> Union[Input, Tuple[Input]]:
         if IsIterable(name):
             return tuple(self._add_input(n, **kwargs) for n in name)
+        raise CriticalError(
+            f"'name' of the input must be `str` or `Sequence[str]`, but given {name}",
+            node=self,
+        )
+
+    def _add_input(
+        self,
+        name: str,
+        *,
+        positional: bool = True,
+        keyword: bool = True,
+        **kwargs,
+    ) -> Input:
         self.logger.debug(f"Node '{self.name}': Add input '{name}'")
         if name in self.inputs:
             raise ReconnectionError(input=name, node=self)
         inp = Input(name, self, **kwargs)
         self.inputs.add(inp, positional=positional, keyword=keyword)
-
         if self._graph:
             self._graph._add_input(inp)
         return inp
 
-    def add_output(self, name, **kwargs) -> Union[Output, Tuple[Output]]:
-        if not self.closed:
-            return self._add_output(name, **kwargs)
-        raise ClosedGraphError(node=self)
-
-    def _add_output(
-        self, name: Union[str, Sequence[str]], *, keyword: bool = True, positional: bool = True, **kwargs
+    def add_output(
+        self, name: Union[str, Sequence[str]], **kwargs
     ) -> Union[Output, Tuple[Output]]:
+        if self.closed:
+            raise ClosedGraphError(node=self)
+        if isinstance(name, str):
+            return self._add_output(name, **kwargs)
         if IsIterable(name):
             return tuple(self._add_output(n, **kwargs) for n in name)
-        self.logger.debug(f"Node '{self.name}': Add output '{name}'")
-        if isinstance(name, Output):
-            if name.name in self.outputs or name.node:
-                raise ReconnectionError(output=name, node=self)
-            name._node = self
-            return self.__add_output(
-                name, positional=positional, keyword=keyword
-            )
-        if name in self.outputs:
-            raise ReconnectionError(output=name, node=self)
-
-        return self.__add_output(
-            Output(name, self, **kwargs),
-            positional=positional,
-            keyword=keyword,
+        raise CriticalError(
+            f"'name' of the output must be `str` or `Sequence[str]`, but given {name=}",
+            node=self,
         )
 
-    def __add_output(
-        self, out, positional: bool = True, keyword: bool = True
-    ) -> Union[Output, Tuple[Output]]:
+    def _add_output(
+        self,
+        name: str,
+        *,
+        keyword: bool = True,
+        positional: bool = True,
+        **kwargs,
+    ) -> Output:
+        self.logger.debug(f"Node '{self.name}': Add output '{name}'")
+        if name in self.outputs:
+            raise ReconnectionError(output=name, node=self)
+        out = Output(name, self, **kwargs)
         self.outputs.add(out, positional=positional, keyword=keyword)
         if self._graph:
             self._graph._add_output(out)
@@ -331,10 +366,10 @@ class Node(Limbs):
 
     def add_pair(
         self, iname: str, oname: str, **kwargs
-    ) -> Tuple[Input, Output]:
-        if not self.closed:
-            return self._add_pair(iname, oname, **kwargs)
-        raise ClosedGraphError(node=self)
+    ) -> Tuple[Union[Input, Tuple[Input]], Union[Output, Tuple[Output]]]:
+        if self.closed:
+            raise ClosedGraphError(node=self)
+        return self._add_pair(iname, oname, **kwargs)
 
     def _add_pair(
         self,
@@ -342,11 +377,11 @@ class Node(Limbs):
         oname: str,
         input_kws: Optional[dict] = None,
         output_kws: Optional[dict] = None,
-    ) -> Tuple[Input, Output]:
+    ) -> Tuple[Union[Input, Tuple[Input]], Union[Output, Tuple[Output]]]:
         input_kws = input_kws or {}
         output_kws = output_kws or {}
-        output = self._add_output(oname, **output_kws)
-        input = self._add_input(iname, child_output=output, **input_kws)
+        output = self.add_output(oname, **output_kws)
+        input = self.add_input(iname, child_output=output, **input_kws)
         return input, output
 
     def _wrap_fcn(self, wrap_fcn, *other_fcns):
@@ -563,11 +598,8 @@ class Node(Limbs):
     def get_input_data(self, key):
         return self.inputs[key].data()
 
-    def to_dict(self, *, label_from: str='text') -> dict:
+    def to_dict(self, *, label_from: str = "text") -> dict:
         data = self.get_data()
-        if data.size>1:
-            raise AttributeError('to_dict')
-        return {
-                'value': data[0],
-                'label': self.label(label_from)
-                }
+        if data.size > 1:
+            raise AttributeError("to_dict")
+        return {"value": data[0], "label": self.label(label_from)}

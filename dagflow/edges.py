@@ -1,7 +1,7 @@
 from .exception import CriticalError
 from .iter import IsIterable
 
-from typing import List, Dict, Union, Optional, Sequence
+from typing import Any, List, Dict, Union, Optional, Sequence
 
 class EdgeContainer:
     _kw_edges: Dict
@@ -18,7 +18,7 @@ class EdgeContainer:
 
     def add(
         self,
-        value: Union[str, Sequence[str]],
+        value: Any,
         *,
         name: Optional[str]=None,
         positional: bool=True,

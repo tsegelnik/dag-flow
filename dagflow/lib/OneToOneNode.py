@@ -3,7 +3,7 @@ from ..nodes import FunctionNode
 from ..typefunctions import check_has_inputs
 
 
-class NodeOneToOne(FunctionNode):
+class OneToOneNode(FunctionNode):
     """
     The abstract node with an output for every positional input
     """

@@ -53,9 +53,8 @@ class WeightedSum(FunctionNode):
         out = outputs[0].data
         weight = self.inputs["weight"].data
         copyto(out, inputs[0].data.copy())
-        if len(inputs) > 1:
-            for input in inputs[1:]:
-                out += input.data
+        for input in inputs[1:]:
+            out += input.data
         out *= weight
         return out
 
@@ -67,7 +66,6 @@ class WeightedSum(FunctionNode):
         out = outputs[0].data
         weights = self.inputs["weight"].data
         copyto(out, inputs[0].data * weights[0])
-        if len(inputs) > 1:
-            for input, weight in zip(inputs[1:], weights[1:]):
-                out += input.data * weight
+        for input, weight in zip(inputs[1:], weights[1:]):
+            out += input.data * weight
         return out

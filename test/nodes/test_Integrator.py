@@ -5,8 +5,8 @@ from dagflow.graphviz import savegraph
 from dagflow.lib.Array import Array
 from dagflow.lib.Integrator import Integrator
 from dagflow.lib.IntegratorSampler import IntegratorSampler
-from dagflow.lib.NodeManyToOne import NodeManyToOne
-from dagflow.lib.NodeOneToOne import NodeOneToOne
+from dagflow.lib.ManyToOneNode import ManyToOneNode
+from dagflow.lib.OneToOneNode import OneToOneNode
 from dagflow.lib.trigonometry import Cos, Sin
 from numpy import allclose, linspace, meshgrid, pi, vectorize
 from pytest import mark, raises
@@ -73,14 +73,14 @@ vecF0 = vectorize(f0)
 vecFres = vectorize(fres)
 
 
-class Polynomial0(NodeOneToOne):
+class Polynomial0(OneToOneNode):
     def _fcn(self, _, inputs, outputs):
         for inp, out in zip(inputs, outputs):
             out.data[:] = vecF0(inp.data)
         return list(outputs.iter_data())
 
 
-class PolynomialRes(NodeOneToOne):
+class PolynomialRes(OneToOneNode):
     def _fcn(self, _, inputs, outputs):
         for inp, out in zip(inputs, outputs):
             out.data[:] = vecFres(inp.data)
@@ -112,7 +112,7 @@ def test_Integrator_gl1d(debug_graph, testname):
 
 
 def test_Integrator_gl2d(debug_graph, testname):
-    class Polynomial1(NodeManyToOne):
+    class Polynomial1(ManyToOneNode):
         def _fcn(self, _, inputs, outputs):
             outputs["result"].data[:] = vecF0(inputs[1].data) * vecF0(
                 inputs[0].data
