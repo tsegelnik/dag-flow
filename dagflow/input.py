@@ -70,11 +70,7 @@ class Input:
             self.set_own_data(data, owns_buffer=True)
 
     def __str__(self) -> str:
-        return (
-            f"→○ {self._name}"
-            if self._owns_buffer is None
-            else f"→● {self._name}"
-        )
+        return self.connected() and f"→● {self._name}" or f"→○ {self._name}"
 
     def __repr__(self) -> str:
         return self.__str__()

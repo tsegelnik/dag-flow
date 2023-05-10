@@ -73,7 +73,7 @@ class Output:
                 raise InitializationError(output=self, node=node)
 
     def __str__(self):
-        return f"●→ {self._name}" if self.owns_buffer else f"○→ {self._name}"
+        return self.connected() and f"●→ {self._name}" or f"○→ {self._name}"
 
     def __repr__(self):
         return self.__str__()
