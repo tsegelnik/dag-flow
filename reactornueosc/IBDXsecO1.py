@@ -1,5 +1,3 @@
-from numpy.typing import ArrayLike
-from numpy import sin
 from numba import njit, void, float64
 
 from dagflow.typefunctions import check_input_dtype
@@ -10,11 +8,26 @@ from dagflow.output import Output
 
 class IBDXsecO1(FunctionNode):
     """Inverse beta decay cross section by Vogel and Beacom"""
-    __slots__ = ('_enu', '_ctheta', '_result')
+    __slots__ = (
+        '_enu', '_ctheta',
+        '_result',
+        '_const_me', '_const_mp', '_const_mn',
+        '_const_taun',
+        '_const_fps', '_const_g', '_const_f', '_const_f2',
+    )
 
     _enu: Input
     _ctheta: Input
     _result: Output
+
+    _const_me: Input
+    _const_mp: Input
+    _const_mn: Input
+    _const_taun: Input
+    _const_fps: Input
+    _const_g: Input
+    _const_f: Input
+    _const_f2: Input
 
     def __init__(self, name, *args, **kwargs):
         kwargs.setdefault("missing_input_handler", MissingInputAddPair())
@@ -24,18 +37,22 @@ class IBDXsecO1(FunctionNode):
         self._ctheta = self.add_input('costheta', positional=True, keyword=True)
         self._result = self.add_output('result', positional=True, keyword=True)
 
-        self._me = self.add_input('ElectronMass', positional=False, keyword=True)
-        self._mp = self.add_input('ProtonMass', positional=False, keyword=True)
-        self._mn = self.add_input('NeutronMass', positional=False, keyword=True)
+        self._const_me   = self.add_input('ElectronMass', positional=False, keyword=True)
+        self._const_mp   = self.add_input('ProtonMass', positional=False, keyword=True)
+        self._const_mn   = self.add_input('NeutronMass', positional=False, keyword=True)
+        self._const_taun = self.add_input('NeutronLifeTime', positional=False, keyword=True)
+        self._const_fps  = self.add_input('PhaseSpaceFactor', positional=False, keyword=True)
+        self._const_g    = self.add_input('g', positional=False, keyword=True)
+        self._const_f    = self.add_input('f', positional=False, keyword=True)
+        self._const_f2   = self.add_input('f2', positional=False, keyword=True)
 
     def _fcn(self, _, inputs, outputs):
         _ibdxsecO1(
                 self._enu.data.ravel(),
                 self._ctheta.data.ravel(),
                 self._result.data.ravel(),
-                self._me.data[0],
-                self._mp.data[0],
-                self._mn.data[0]
+                self._const_me.data[0], self._const_mp.data[0], self._const_mn.data[0], self._const_taun.data[0],
+                self._const_fps.data[0], self._const_g.data[0], self._const_f.data[0], self._const_f2.data[0],
                 )
 
     def _typefunc(self) -> None:
@@ -52,39 +69,31 @@ class IBDXsecO1(FunctionNode):
 from numpy.typing import NDArray
 from numpy import double
 from numpy import sqrt, power as pow, pi
-@njit(void(float64[:], float64[:], float64[:], float64, float64, float64), cache=True)
+@njit(void(float64[:], float64[:], float64[:],
+           float64, float64, float64, float64,
+           float64, float64, float64, float64), cache=True)
 def _ibdxsecO1(
-    EnuIn: NDArray[double],
-    CosThetaIn: NDArray[double],
-    Result: NDArray[double],
-    ElectronMass: float,
-    ProtonMass: float,
-    NeutronMass: float
+    EnuIn: NDArray[double], CosThetaIn: NDArray[double], Result: NDArray[double],
+    ElectronMass: float, ProtonMass: float, NeutronMass: float, NeutronLifeTime: float,
+    const_fps: float, const_g: float, const_f: float, const_f2: float
 ):
     ElectronMass2 = pow(ElectronMass, 2)
     NeutronMass2 = pow(NeutronMass, 2)
-    # ProtonMass2 = pow(ProtonMass, 2)
     NucleonMass = 0.5*(NeutronMass + ProtonMass)
     EnuThreshold = 0.5 * (NeutronMass2 / (ProtonMass - ElectronMass) - ProtonMass + ElectronMass)
 
     DeltaNP = NeutronMass-ProtonMass
-    y2 = 0.5*(pow(DeltaNP, 2)-ElectronMass2)
+    const_y2 = 0.5*(pow(DeltaNP, 2)-ElectronMass2)
 
-    # TODO: pass as input
-    PhaseFactor = 1.7152
-    g = 1.2601
-    f = 1.
-    f2 = 3.706
-    gsq = g*g
-    fsq = f*f
-    # f2sq = f2*f2
+    const_gsq = const_g*const_g
+    const_fsq = const_f*const_f
 
     Qe=1.
     Hbar=1.
-    NeutronLifeTime=1.
 
     for i, (Enu, ctheta) in enumerate(zip(EnuIn, CosThetaIn)):
         if Enu<EnuThreshold:
+            Result[i]=0.0
             continue
 
         Ee0 = Enu - DeltaNP
@@ -95,22 +104,22 @@ def _ibdxsecO1(
         pe0 = sqrt(Ee0*Ee0 - ElectronMass2)
         ve0 = pe0 / Ee0
         ElectronMass5 = ElectronMass2 * ElectronMass2 * ElectronMass
-        sigma0 = 2.* pi * pi / (PhaseFactor*(fsq+3.*gsq)*ElectronMass5*NeutronLifeTime/(1.E-6*Hbar/Qe))
+        sigma0 = 2.* pi * pi / (const_fps*(const_fsq+3.*const_gsq)*ElectronMass5*NeutronLifeTime/(1.E-6*Hbar/Qe))
 
-        Ee1 = Ee0 * ( 1.0 - Enu/NucleonMass * ( 1.0 - ve0*ctheta ) ) - y2/NucleonMass
+        Ee1 = Ee0 * ( 1.0 - Enu/NucleonMass * ( 1.0 - ve0*ctheta ) ) - const_y2/NucleonMass
         if Ee1 <= ElectronMass:
             Result[i]=0.0
             continue
         pe1 = sqrt(Ee1*Ee1 - ElectronMass2)
         ve1 = pe1/Ee1
 
-        sigma1a = sigma0*0.5 * ( ( fsq + 3.*gsq ) + ( fsq - gsq ) * ve1 * ctheta ) * Ee1 * pe1
+        sigma1a = sigma0*0.5 * ( ( const_fsq + 3.*const_gsq ) + ( const_fsq - const_gsq ) * ve1 * ctheta ) * Ee1 * pe1
 
-        gamma_1 = 2.0 * g * ( f + f2 ) * ( ( 2.0 * Ee0 + DeltaNP ) * ( 1.0 - ve0 * ctheta ) - ElectronMass2/Ee0 )
-        gamma_2 = ( fsq + gsq ) * ( DeltaNP * ( 1.0 + ve0*ctheta ) + ElectronMass2/Ee0 )
+        gamma_1 = 2.0 * const_g * ( const_f + const_f2 ) * ( ( 2.0 * Ee0 + DeltaNP ) * ( 1.0 - ve0 * ctheta ) - ElectronMass2/Ee0 )
+        gamma_2 = ( const_fsq + const_gsq ) * ( DeltaNP * ( 1.0 + ve0*ctheta ) + ElectronMass2/Ee0 )
         A = ( ( Ee0 + DeltaNP ) * ( 1.0 - ctheta/ve0 ) - DeltaNP )
-        gamma_3 = ( fsq + 3.0*gsq )*A
-        gamma_4 = ( fsq -     gsq )*A*ve0*ctheta
+        gamma_3 = ( const_fsq + 3.0*const_gsq )*A
+        gamma_4 = ( const_fsq -     const_gsq )*A*ve0*ctheta
 
         sigma1b = -0.5 * sigma0 * Ee0 * pe0 * ( gamma_1 + gamma_2 + gamma_3 + gamma_4 ) / NucleonMass
 

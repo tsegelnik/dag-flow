@@ -1,16 +1,12 @@
 #!/usr/bin/env python
-from dagflow.exception import TypeFunctionError
 from dagflow.graph import Graph
 from dagflow.graphviz import savegraph
 from dagflow.lib.Array import Array
-from dagflow.lib.Integrator import Integrator
-from dagflow.lib.IntegratorSampler import IntegratorSampler
-from dagflow.lib.trigonometry import Cos, Sin
 from dagflow.bundles.load_parameters import load_parameters
-from numpy import allclose, linspace, arange, meshgrid, pi, vectorize, meshgrid
-from pytest import mark, raises
+from numpy import linspace, meshgrid, meshgrid
 
 from reactornueosc.IBDXsecO1 import IBDXsecO1
+from reactornueosc.EeToEnu import EeToEnu
 
 def test_IBDXsecO1(debug_graph, testname):
     data = {
@@ -21,49 +17,50 @@ def test_IBDXsecO1(debug_graph, testname):
                 'NeutronMass':     939.565413,   # MeV, page 165
                 'ProtonMass':      938.272081,   # MeV, page 163
                 'ElectronMass':    0.5109989461, # MeV, page 16
+                'PhaseSpaceFactor': 1.71465,
+                'g':                1.2701,
+                'f':                1.0,
+                'f2':               3.706,
                 },
             'labels': {
                 'NeutronLifeTime': 'neutron lifetime, s (PDG2014)',
                 'NeutronMass': 'neutron mass, MeV (PDG2012)',
                 'ProtonMass': 'proton mass, MeV (PDG2012)',
-                'ElectronMass': 'electron mass, MeV (PDG2012)'
+                'ElectronMass': 'electron mass, MeV (PDG2012)',
+                'PhaseSpaceFactor': "IBD phase space factor",
+                'f': "vector coupling constant f",
+                'g': "axial-vector coupling constant g",
+                'f2': "anomalous nucleon isovector magnetic moment f₂",
                 }
             }
+
     enu1 = linspace(1, 12.0, 111)
+    ee1 = enu1.copy()
     ctheta1 = linspace(-1, 1, 5)
     enu2, ctheta2 = meshgrid(enu1, ctheta1, indexing='ij')
+    ee2, _ = meshgrid(ee1, ctheta1, indexing='ij')
 
     with Graph(debug=debug_graph, close=True) as graph:
         storage = load_parameters(data)
 
         enu = Array('enu', enu2)
+        ee = Array('ee', ee2)
         ctheta = Array('ctheta', ctheta2)
-        ibdxsec = IBDXsecO1('ibd')
+        ibdxsec_enu = IBDXsecO1('ibd_enu')
+        ibdxsec_ee = IBDXsecO1('ibd_ee')
+        eetoenu = EeToEnu('Enu')
 
-        (enu, ctheta) >> ibdxsec
-        ibdxsec << storage['parameter.constant']
+        ibdxsec_enu << storage['parameter.constant']
+        ibdxsec_ee << storage['parameter.constant']
+        eetoenu << storage['parameter.constant']
 
-    csc = ibdxsec.get_data()
-    print(csc)
+        (enu, ctheta) >> ibdxsec_enu
+        (ee, ctheta) >> eetoenu
+        (eetoenu, ctheta) >> ibdxsec_ee
 
-    #     npoints = 10
-    #     edges = Array("edges", linspace(0, pi, npoints + 1))
-    #     ordersX = Array("ordersX", [1000] * npoints, edges=edges["array"])
-    #     A = Array("A", edges._data[:-1])
-    #     B = Array("B", edges._data[1:])
-    #     sampler = IntegratorSampler("sampler", mode="trap")
-    #     integrator = Integrator("integrator")
-    #     cosf = Cos("cos")
-    #     sinf = Sin("sin")
-    #     ordersX >> sampler("ordersX")
-    #     sampler.outputs["x"] >> cosf
-    #     A >> sinf
-    #     B >> sinf
-    #     sampler.outputs["weights"] >> integrator("weights")
-    #     cosf.outputs[0] >> integrator
-    #     ordersX >> integrator("ordersX")
-    # res = sinf.outputs[1].data - sinf.outputs[0].data
-    # assert allclose(integrator.outputs[0].data, res, atol=1e-2)
-    # assert integrator.outputs[0].dd.axes_edges == [edges["array"]]
+    csc_enu = ibdxsec_enu.get_data()
+    csc_ee = ibdxsec_ee.get_data()
+    enu = eetoenu.get_data()
+
     savegraph(graph, f"output/{testname}.pdf")
 
