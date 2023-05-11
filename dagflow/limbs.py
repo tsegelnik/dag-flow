@@ -1,9 +1,12 @@
-
 from . import input_extra
 from .input import Inputs
-from .output import Outputs
-from .shift import lshift, rshift
+from .output import Outputs, Output
+from .shift import rshift
 from .iter import StopNesting
+from .exception import ConnectionError
+from .logger import logger
+
+from typing import Mapping
 
 class Limbs:
     inputs: Inputs
@@ -88,20 +91,28 @@ class Limbs:
         """
         return rshift(self, other)
 
-    def __rlshift__(self, other):
-        """
-        other << self
-        """
-        return rshift(self, other)
-
-    def __lshift__(self, other):
-        """
-        self << other
-        """
-        return lshift(self, other)
-
     def __rrshift__(self, other):
         """
         other >> self
         """
-        return lshift(self, other)
+        return rshift(other, self)
+
+    def __lshift__(self, storage: Mapping[str, Output]) -> None:
+        """
+        self << other
+
+        For each not connected input try to find output with the same name in storage, then connect.
+        """
+        for name, input in self.inputs.all_edges.items():
+            output = storage.get(name, None)
+            if output is None:
+                continue
+            elif not isinstance(output, Output):
+                output = getattr(output, 'output', None) # TODO: ugly, try something else
+                if not isinstance(output, Output):
+                    raise ConnectionError('[<<] invalid "output"', input=input, output=output)
+
+            if not input.connected():
+                logger.debug(f'[<<] connect {name}')
+                output >> input
+

@@ -69,6 +69,22 @@ class EdgeContainer:
             return tuple(self.__getitem__(k) for k in key)
         raise TypeError(f"Unsupported key type: {type(key).__name__}")
 
+    @property
+    def kw(self) -> Dict:
+        return self._kw_edges
+
+    @property
+    def kw_edges(self) -> Dict:
+        return self._kw_edges
+
+    @property
+    def all_edges(self) -> Dict:
+        return self._all_edges
+
+    @property
+    def pos_edges(self) -> List:
+        return self._pos_edges
+
     def get(self, key, default = None):
         try:
             return self.__getitem__(key)

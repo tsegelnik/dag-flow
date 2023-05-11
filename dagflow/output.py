@@ -13,7 +13,7 @@ from .exception import (
     ConnectionError,
     UnclosedGraphError,
 )
-from .shift import lshift, rshift
+from .shift import rshift
 from .iter import StopNesting
 from .types import EdgesLike, InputT, NodeT, ShapeLike
 from .datadescriptor import DataDescriptor
@@ -245,10 +245,16 @@ class Output:
         return input
 
     def __rshift__(self, other):
+        """
+        self >> other
+        """
         return rshift(self, other)
 
-    def __rlshift__(self, other):
-        return lshift(self, other)
+    # def __rlshift__(self, other):
+    #     """
+    #     other << self
+    #     """
+    #     return rshift(other, self)
 
     def taint_children(self, **kwargs) -> None:
         for input in self._child_inputs:

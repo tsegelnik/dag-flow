@@ -13,7 +13,7 @@ from .exception import (
 )
 from .iter import StopNesting
 from .output import Output
-from .shift import lshift
+from .shift import rshift
 from .types import EdgesLike, InputT, NodeT, ShapeLike
 
 
@@ -237,17 +237,17 @@ class Input:
             raise StopNesting(self._child_output)
         return iter(tuple())
 
-    def __lshift__(self, other):
-        """
-        self << other
-        """
-        return lshift(self, other)
-
+    # def __lshift__(self, other):
+    #     """
+    #     self << other
+    #     """
+    #     return lshift(self, other)
+    #
     def __rrshift__(self, other):
         """
         other >> self
         """
-        return lshift(self, other)
+        return rshift(other, self)
 
     def allocate(self, **kwargs) -> bool:
         if not self._allocatable or self.has_data:
