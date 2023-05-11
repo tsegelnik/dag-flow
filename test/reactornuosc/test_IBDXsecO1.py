@@ -7,6 +7,7 @@ from numpy import linspace, meshgrid, meshgrid
 
 from reactornueosc.IBDXsecO1 import IBDXsecO1
 from reactornueosc.EeToEnu import EeToEnu
+from reactornueosc.Jacobian_dEnu_dEe import Jacobian_dEnu_dEe
 
 def test_IBDXsecO1(debug_graph, testname):
     data = {
@@ -46,21 +47,26 @@ def test_IBDXsecO1(debug_graph, testname):
         enu = Array('enu', enu2)
         ee = Array('ee', ee2)
         ctheta = Array('ctheta', ctheta2)
-        ibdxsec_enu = IBDXsecO1('ibd_enu')
-        ibdxsec_ee = IBDXsecO1('ibd_ee')
+
+        ibdxsec_enu = IBDXsecO1('ibd_Eν')
+        ibdxsec_ee = IBDXsecO1('ibd_Ee')
         eetoenu = EeToEnu('Enu')
+        jacobian = Jacobian_dEnu_dEe('dEν/dEe')
 
         ibdxsec_enu << storage['parameter.constant']
         ibdxsec_ee << storage['parameter.constant']
         eetoenu << storage['parameter.constant']
+        jacobian << storage['parameter.constant']
 
         (enu, ctheta) >> ibdxsec_enu
         (ee, ctheta) >> eetoenu
+        (eetoenu, ee, ctheta) >> jacobian
         (eetoenu, ctheta) >> ibdxsec_ee
 
     csc_enu = ibdxsec_enu.get_data()
     csc_ee = ibdxsec_ee.get_data()
     enu = eetoenu.get_data()
+    jac= jacobian.get_data()
 
     savegraph(graph, f"output/{testname}.pdf")
 

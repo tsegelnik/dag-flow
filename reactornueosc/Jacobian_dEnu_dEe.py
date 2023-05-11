@@ -6,7 +6,7 @@ from dagflow.nodes import FunctionNode
 from dagflow.input import Input
 from dagflow.output import Output
 
-class EeToEnu(FunctionNode):
+class Jacobian_dEnu_dEe(FunctionNode):
     """Enu(Ee, cosθ)"""
     __slots__ = (
         '_enu', '_ctheta',
@@ -14,6 +14,7 @@ class EeToEnu(FunctionNode):
         '_const_me', '_const_mp', '_const_mn',
     )
 
+    _enu: Input
     _ee: Input
     _ctheta: Input
     _result: Output
@@ -26,6 +27,7 @@ class EeToEnu(FunctionNode):
         kwargs.setdefault("missing_input_handler", MissingInputAddPair())
         super().__init__(name, *args, **kwargs)
 
+        self._enu = self.add_input('enu', positional=True, keyword=True)
         self._ee = self.add_input('ee', positional=True, keyword=True)
         self._ctheta = self.add_input('costheta', positional=True, keyword=True)
         self._result = self.add_output('result', positional=True, keyword=True)
@@ -35,7 +37,8 @@ class EeToEnu(FunctionNode):
         self._const_mn   = self.add_input('NeutronMass', positional=False, keyword=True)
 
     def _fcn(self, _, inputs, outputs):
-        _enu(
+        _jacobian_dEnu_dEe(
+            self._enu.data.ravel(),
             self._ee.data.ravel(),
             self._ctheta.data.ravel(),
             self._result.data.ravel(),
@@ -57,12 +60,17 @@ class EeToEnu(FunctionNode):
 # NOTE: these functions are used only in non-numba case
 from numpy.typing import NDArray
 from numpy import double
-from numpy import sqrt, power as pow
-@njit(void(float64[:], float64[:], float64[:],
+from numpy import sqrt, power as pow, square
+@njit(void(float64[:], float64[:], float64[:], float64[:],
            float64, float64, float64), cache=True)
-def _enu(
-    EeIn: NDArray[double], CosThetaIn: NDArray[double], Result: NDArray[double],
-    ElectronMass: float, ProtonMass: float, NeutronMass: float
+def _jacobian_dEnu_dEe(
+    EnuIn: NDArray[double],
+    EeIn: NDArray[double],
+    CosThetaIn: NDArray[double],
+    Result: NDArray[double],
+    ElectronMass: float,
+    ProtonMass: float,
+    NeutronMass: float
 ):
     ElectronMass2 = pow(ElectronMass, 2)
     NeutronMass2 = pow(NeutronMass, 2)
@@ -70,13 +78,16 @@ def _enu(
 
     delta = 0.5*(NeutronMass2-ProtonMass2-ElectronMass2)/ProtonMass
 
-    for i, (Ee, ctheta) in enumerate(zip(EeIn, CosThetaIn)):
-        epsilon_e = Ee / ProtonMass
+    for i, (Enu, Ee, ctheta) in enumerate(zip(EnuIn, EeIn, CosThetaIn)):
         Ve2 = 1.0 - ElectronMass2 / (Ee*Ee)
-        if Ve2>0:
-            Ve = sqrt(Ve2)
+        if Ve2<=0:
+            Result[i] = 0.0
+            continue
+
+        Ve = sqrt(Ve2)
+        nominator = ProtonMass + Enu*(1.0-ctheta/Ve)
+        denominator = ProtonMass - Ee*(1-Ve*ctheta)
+        if denominator>0:
+            Result[i] = nominator/denominator
         else:
-            Ve = 0.0
-        Ee0 = Ee + delta
-        corr = 1.0 - epsilon_e*(1.0 - Ve*ctheta)
-        Result[i] = Ee0/corr
+            Result[i] = 0.0
