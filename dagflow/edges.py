@@ -126,6 +126,12 @@ class EdgeContainer:
     def iter_all(self):
         return iter(self._all_edges.values())
 
+    def iter_kw(self):
+        return iter(self._kw_edges.values())
+
+    def iter_nonpos(self):
+        return (edge for edge in self._all_edges.values() if not edge in self._pos_edges)
+
     def iter_data(self):
         for edge in self._pos_edges:
             yield edge.data

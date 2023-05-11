@@ -487,8 +487,12 @@ class Node(Limbs):
         )
         for i, input in enumerate(self.inputs):
             print("  ", i, input)
+        for input in self.inputs.iter_nonpos():
+            print("    ", input)
         for i, output in enumerate(self.outputs):
             print("  ", i, output)
+        for input in self.outputs.iter_nonpos():
+            print("    ", output)
 
     def _typefunc(self) -> bool:
         """A output takes this function to determine the dtype and shape"""
