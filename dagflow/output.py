@@ -126,7 +126,7 @@ class Output:
             input.invalid = invalid
 
     @property
-    def data(self):
+    def data(self) -> NDArray:
         if self.node.being_evaluated:
             return self._data
         if not self.closed:
