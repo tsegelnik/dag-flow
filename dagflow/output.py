@@ -17,7 +17,7 @@ from .shift import rshift
 from .iter import StopNesting
 from .types import EdgesLike, InputT, NodeT, ShapeLike
 from .datadescriptor import DataDescriptor
-
+from .labels import repr_pretty
 
 class Output:
     _data: Optional[NDArray] = None
@@ -75,8 +75,7 @@ class Output:
     def __str__(self):
         return self.connected() and f"●→ {self._name}" or f"○→ {self._name}"
 
-    def __repr__(self):
-        return self.__str__()
+    _repr_pretty_ = repr_pretty
 
     @property
     def name(self):
@@ -381,5 +380,4 @@ class Outputs(EdgeContainer):
     def __str__(self) -> str:
         return f"○[{tuple(obj.name for obj in self)}]→"
 
-    def __repr__(self) -> str:
-        return self.__str__()
+    _repr_pretty_ = repr_pretty

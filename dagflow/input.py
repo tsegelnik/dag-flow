@@ -15,7 +15,7 @@ from .iter import StopNesting
 from .output import Output
 from .shift import rshift
 from .types import EdgesLike, InputT, NodeT, ShapeLike
-
+from .labels import repr_pretty
 
 class Input:
     _own_data: Optional[NDArray] = None
@@ -72,8 +72,7 @@ class Input:
     def __str__(self) -> str:
         return self.connected() and f"→● {self._name}" or f"→○ {self._name}"
 
-    def __repr__(self) -> str:
-        return self.__str__()
+    _repr_pretty_ = repr_pretty
 
     @property
     def own_data(self) -> Optional[NDArray]:
@@ -280,8 +279,7 @@ class Inputs(EdgeContainer):
     def __str__(self):
         return f"→[{tuple(obj.name for obj in self)}]○"
 
-    def __repr__(self) -> str:
-        return self.__str__()
+    _repr_pretty_ = repr_pretty
 
     def deep_iter_inputs(
         self, disconnected_only: bool = False

@@ -288,7 +288,7 @@ class Node(Limbs):
         #     return self._labels.format(*args, **kwargs)
         label = self._labels.get(source, default)
         if label is None and fallback is not None:
-            return self._labels[fallback]
+            return self._labels.get(fallback, '')
 
         return label
 
@@ -593,17 +593,3 @@ class Node(Limbs):
         self._closed = False
         return not self._closed
 
-    #
-    # Accessors
-    #
-    def get_data(self, key=0):
-        return self.outputs[key].data
-
-    def get_input_data(self, key):
-        return self.inputs[key].data()
-
-    def to_dict(self, *, label_from: str = "text") -> dict:
-        data = self.get_data()
-        if data.size > 1:
-            raise AttributeError("to_dict")
-        return {"value": data[0], "label": self.label(label_from)}

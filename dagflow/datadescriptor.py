@@ -1,9 +1,8 @@
 from typing import List, Optional
-
 from numpy.typing import DTypeLike
 
 from .types import EdgesLike, ShapeLike
-
+from .labels import repr_pretty
 
 class DataDescriptor:
     """
@@ -37,6 +36,13 @@ class DataDescriptor:
 
         self.edges_inherited = True
         self.nodes_inherited = True
+
+    def __str__(self):
+        return (f'{self.dtype} {self.shape}'
+                f'{bool(self.axes_edges) and " [edges]" or ""}'
+                f'{bool(self.axes_nodes) and " [nodes]" or ""}')
+
+    _repr_pretty_ = repr_pretty
 
     @property
     def dim(self) -> int:
