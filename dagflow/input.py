@@ -271,10 +271,9 @@ class Input:
 
 
 class Inputs(EdgeContainer):
-    _dtype = Input
-
     def __init__(self, iterable=None):
         super().__init__(iterable)
+        self._dtype=Input
 
     def __str__(self):
         return f"→[{tuple(obj.name for obj in self)}]○"

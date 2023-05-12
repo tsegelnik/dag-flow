@@ -372,10 +372,9 @@ class RepeatedOutput:
 
 
 class Outputs(EdgeContainer):
-    _dtype = Output
-
     def __init__(self, iterable=None) -> None:
         super().__init__(iterable)
+        self._dtype = Output
 
     def __str__(self) -> str:
         return f"○[{tuple(obj.name for obj in self)}]→"

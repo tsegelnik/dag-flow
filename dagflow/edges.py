@@ -4,15 +4,24 @@ from .iter import IsIterable
 from typing import Any, List, Dict, Union, Optional, Sequence
 
 class EdgeContainer:
-    _kw_edges: Dict
+    __slots__ = (
+        '_kw_edges',
+        '_pos_edges',
+        '_nonpos_edges',
+        '_all_edges',
+        '_dtype'
+    )
+    _kw_edges: Dict[str, Any]
     _pos_edges: List
-    _all_edges: Dict
-    _dtype = None
+    _nonpos_edges: Dict[str, Any]
+    _all_edges: Dict[str, Any]
 
     def __init__(self, iterable=None):
         self._kw_edges = {}
         self._pos_edges = []
+        self._nonpos_edges = {}
         self._all_edges = {}
+        self._dtype = None
         if iterable:
             self.add(iterable)
 
@@ -54,6 +63,8 @@ class EdgeContainer:
         self._all_edges[name]=value
         if positional:
             self._pos_edges.append(value)
+        else:
+            self._nonpos_edges[name]=value
         return self
 
     def make_positional(self, name: str) -> Any:
@@ -66,6 +77,7 @@ class EdgeContainer:
             raise RuntimeError(f"Limb {name} is already positional")
 
         self._pos_edges.append(limb)
+        del self._nonpos_edges[name]
         return limb
 
     def make_positionals(self, *names) -> List[Any]:
@@ -98,6 +110,10 @@ class EdgeContainer:
     @property
     def pos_edges(self) -> List:
         return self._pos_edges
+
+    @property
+    def nonpos_edges(self) -> Dict:
+        return self._nonpos_edges
 
     def get(self, key, default = None):
         try:
@@ -144,10 +160,7 @@ class EdgeContainer:
         return iter(self._kw_edges.values())
 
     def iter_nonpos(self):
-        return (edge for edge in self._all_edges.values() if not edge in self._pos_edges)
-
-    def items_nonpos(self):
-        return ((name, edge) for name, edge in self._all_edges.items() if not edge in self._pos_edges)
+        return iter(self._nonpos_edges.values())
 
     def iter_data(self):
         for edge in self._pos_edges:
