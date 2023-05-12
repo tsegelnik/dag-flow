@@ -181,7 +181,7 @@ class Output:
         self._forbid_reallocation = forbid_reallocation
 
     @property
-    def dd(self) -> Optional[DataDescriptor]:
+    def dd(self) -> DataDescriptor:
         return self._dd
 
     @property

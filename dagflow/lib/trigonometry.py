@@ -2,7 +2,6 @@ from numpy import arctan, cos, sin, tan, arccos, arcsin
 
 from .OneToOneNode import OneToOneNode
 
-
 class Cos(OneToOneNode):
     """Cos function"""
 
