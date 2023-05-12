@@ -100,8 +100,10 @@ else:
                 shape0 = '?'
                 dtype0 = '?'
                 hasedges = False
+                hasnodes = False
             else:
-                hasedges = out0.dd.axes_edges
+                hasedges = bool(out0.dd.axes_edges)
+                hasnodes = bool(out0.dd.axes_nodes)
                 shape0 = out0.dd.shape
                 if shape0 is None:
                     shape0 = '?'
@@ -140,6 +142,8 @@ else:
                 br_left, br_right = '\\{', '\\}'
             else:
                 br_left, br_right = '[', ']'
+            if hasnodes:
+                br_right+='…'
             info_type = f"{br_left}{shape0}{br_right}{dtype0}{nlimbs}"
             if 'type' in self._show:
                 left.append(info_type)
