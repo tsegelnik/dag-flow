@@ -46,13 +46,17 @@ class EeToEnu(FunctionNode):
 
     def _typefunc(self) -> None:
         """A output takes this function to determine the dtype and shape"""
-        check_input_dtype(self, slice(None), 'd')
+        from dagflow.typefunctions import (
+            check_input_dimension,
+            check_inputs_equivalence,
+            copy_from_input_to_output,
+            assign_output_axes_from_inputs
+        )
 
-        for inp, out in zip(self.inputs, self.outputs):
-            out.dd.axes_edges = inp.dd.axes_edges
-            out.dd.axes_nodes = inp.dd.axes_nodes
-            out.dd.dtype = inp.dd.dtype
-            out.dd.shape = inp.dd.shape
+        check_input_dimension(self, slice(0, 2), 2)
+        check_inputs_equivalence(self, slice(0, 2))
+        copy_from_input_to_output(self, 'ee', 'result', edges=False, nodes=False)
+        assign_output_axes_from_inputs(self, ('ee', 'costheta'), 'result', assign_nodes=True)
 
 # NOTE: these functions are used only in non-numba case
 from numpy.typing import NDArray

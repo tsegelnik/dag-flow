@@ -1,15 +1,7 @@
-from numba import njit, void, float64
-
-from dagflow.typefunctions import check_input_dtype
 from dagflow.input_extra import MissingInputAddPair
 from dagflow.nodes import FunctionNode
 from dagflow.input import Input
 from dagflow.output import Output
-
-from scipy.constants import value as constant
-
-_constant_hbar = constant('reduced Planck constant')
-_constant_qe = constant('elementary charge')
 
 class IBDXsecO1(FunctionNode):
     """Inverse beta decay cross section by Vogel and Beacom"""
@@ -62,21 +54,35 @@ class IBDXsecO1(FunctionNode):
 
     def _typefunc(self) -> None:
         """A output takes this function to determine the dtype and shape"""
+        from dagflow.typefunctions import (
+            check_input_dtype,
+            check_input_dimension,
+            check_inputs_equivalence,
+            copy_from_input_to_output,
+            assign_output_axes_from_inputs
+        )
+
         check_input_dtype(self, slice(None), 'd')
+        check_input_dimension(self, slice(0, 1), 2)
+        check_inputs_equivalence(self, slice(0, 1))
+        copy_from_input_to_output(self, 'enu', 'result', edges=False, nodes=False)
+        assign_output_axes_from_inputs(self, ('enu', 'costheta'), 'result', assign_nodes=True)
 
-        for inp, out in zip(self.inputs, self.outputs):
-            out.dd.axes_edges = inp.dd.axes_edges
-            out.dd.axes_nodes = inp.dd.axes_nodes
-            out.dd.dtype = inp.dd.dtype
-            out.dd.shape = inp.dd.shape
-
-# NOTE: these functions are used only in non-numba case
+from scipy.constants import value as constant
+_constant_hbar = constant('reduced Planck constant')
+_constant_qe = constant('elementary charge')
+from numba import njit, void, float64, float32
 from numpy.typing import NDArray
-from numpy import double
-from numpy import sqrt, power as pow, pi
-@njit(void(float64[:], float64[:], float64[:],
-           float64, float64, float64, float64,
-           float64, float64, float64, float64), cache=True)
+from numpy import double, pi, sqrt, power as pow
+@njit([
+    void(float64[:], float64[:], float64[:],
+         float64, float64, float64, float64,
+         float64, float64, float64, float64),
+    void(float64[:], float64[:], float64[:],
+         float32, float32, float32, float32,
+         float32, float32, float32, float32),
+    ],
+    cache=True)
 def _ibdxsecO1(
     EnuIn: NDArray[double], CosThetaIn: NDArray[double], Result: NDArray[double],
     ElectronMass: float, ProtonMass: float, NeutronMass: float, NeutronLifeTime: float,
