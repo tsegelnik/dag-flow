@@ -1,5 +1,5 @@
 from typing import List, Optional
-from numpy.typing import DTypeLike
+from numpy.typing import DTypeLike, NDArray
 
 from .types import EdgesLike, ShapeLike
 from .labels import repr_pretty
@@ -48,3 +48,11 @@ class DataDescriptor:
     def dim(self) -> int:
         """ Return the dimension of the data """
         return len(self.shape)
+
+    @property
+    def edges_arrays(self) -> List[NDArray]:
+        return self.axes_edges and [o.data for o in self.axes_edges] or None
+
+    @property
+    def nodes_arrays(self) -> List[NDArray]:
+        return self.axes_nodes and [o.data for o in self.axes_nodes] or None
