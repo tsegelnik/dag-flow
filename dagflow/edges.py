@@ -43,19 +43,33 @@ class EdgeContainer:
         if not name:
             raise RuntimeError("May not add objects with undefined name")
         if name in self._all_edges and not (name in self._kw_edges and merge):
-            raise RuntimeError("May not add duplicated items")
+            raise RuntimeError(f"May not add duplicated items: {name}")
 
-        if positional:
-            self._pos_edges.append(value)
         if keyword:
             if merge:
                 prevlimb = self._kw_edges.get(name, ())
-                self._kw_edges[name] = prevlimb+(value,)
-            else:
-                self._kw_edges[name] = value
+                value = prevlimb+(value,)
+            self._kw_edges[name] = value
 
         self._all_edges[name]=value
+        if positional:
+            self._pos_edges.append(value)
         return self
+
+    def make_positional(self, name: str) -> Any:
+        try:
+            limb = self._kw_edges[name]
+        except KeyError:
+            raise RuntimeError(f"Invalid keyword limb {name}")
+
+        if limb in self._pos_edges:
+            raise RuntimeError(f"Limb {name} is already positional")
+
+        self._pos_edges.append(limb)
+        return limb
+
+    def make_positionals(self, *names) -> List[Any]:
+        return [self.make_positional(name) for name in names]
 
     def allocate(self) -> bool:
         return all(edge.allocate() for edge in self._all_edges.values())
@@ -131,6 +145,9 @@ class EdgeContainer:
 
     def iter_nonpos(self):
         return (edge for edge in self._all_edges.values() if not edge in self._pos_edges)
+
+    def items_nonpos(self):
+        return ((name, edge) for name, edge in self._all_edges.items() if not edge in self._pos_edges)
 
     def iter_data(self):
         for edge in self._pos_edges:
