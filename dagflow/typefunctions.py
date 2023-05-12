@@ -7,6 +7,7 @@ from numpy.typing import DTypeLike
 
 from .exception import TypeFunctionError
 from .output import Output
+from .input import Input
 from .types import NodeT
 
 AllPositionals = slice(None)
@@ -49,10 +50,8 @@ def cpy_dtype(input, output):
 def cpy_shape(input, output):
     output.dd.shape = input.dd.shape
 
-
 def cpy_edges(input, output):
     output.dd.axes_edges = input.dd.axes_edges
-
 
 def cpy_nodes(input, output):
     output.dd.axes_nodes = input.dd.axes_nodes
@@ -84,7 +83,6 @@ def check_inputs_number(node: NodeT, n: int) -> None:
         raise TypeFunctionError(
             f"The node must have only {n} inputs, but given {ninp}!", node=node
         )
-
 
 def copy_from_input_to_output(
     node: NodeT,
@@ -166,10 +164,10 @@ def copy_input_shape_to_output(
 
 
 def check_input_dimension(
-    node: NodeT, inputkey: Union[str, int, slice, Sequence], ndim: int
+    node: NodeT, inputkey: Union[str, int, slice, Sequence], ndim: int, **kwargs
 ):
     """Checking the dimension of the input"""
-    for input in node.inputs.iter(inputkey):
+    for input in node.inputs.iter(inputkey, **kwargs):
         dim = len(input.dd.shape)
         if ndim != dim:
             raise TypeFunctionError(
@@ -180,10 +178,10 @@ def check_input_dimension(
 
 
 def check_input_shape(
-    node: NodeT, inputkey: Union[str, int, slice, Sequence], shape: tuple
+    node: NodeT, inputkey: Union[str, int, slice, Sequence], shape: tuple, **kwargs
 ):
     """Checking the shape equivalence for inputs"""
-    for input in node.inputs.iter(inputkey):
+    for input in node.inputs.iter(inputkey, **kwargs):
         sshape = input.dd.shape
         if sshape != shape:
             raise TypeFunctionError(
@@ -194,10 +192,10 @@ def check_input_shape(
 
 
 def check_input_dtype(
-    node: NodeT, inputkey: Union[str, int, slice, Sequence], dtype
+    node: NodeT, inputkey: Union[str, int, slice, Sequence], dtype, **kwargs
 ):
     """Checking the dtype equivalence for inputs"""
-    for input in node.inputs.iter(inputkey):
+    for input in node.inputs.iter(inputkey, **kwargs):
         dtt = input.dd.dtype
         if dtt != dtype:
             raise TypeFunctionError(
@@ -299,8 +297,8 @@ def check_inputs_equivalence(
         if (
             dd.dtype != dtype
             or dd.shape != shape
-            or dd.axes_edges != edges
-            or dd.axes_nodes != nodes
+            or (dd.axes_edges and edges and dd.axes_edges != edges)
+            or (dd.axes_nodes and nodes and dd.axes_nodes != nodes)
         ):
             raise TypeFunctionError(
                 f"Input data [{dd.dtype=}, {dd.shape=}, {dd.axes_edges=}, {dd.axes_nodes=}]"
@@ -413,6 +411,127 @@ def copy_input_edges_to_output(
     for input, output in zip(inputs, outputs, strict=True):
         output.dd.axes_edges = input.dd.axes_edges
 
+def assign_output_edges(input: Union[Input, Sequence[Input]], output: Output, ignore_assigned: bool = False):
+    """Assign output's edges from input's parent output"""
+    dd = output.dd
+
+    if dd.axes_edges:
+        if ignore_assigned:
+            return
+        raise TypeFunctionError("Edges already assigned", output=output, input=input)
+
+    if isinstance(input, Input):
+        edges = [input.parent_output]
+    else:
+        edges = [inp.parent_output for inp in input]
+
+    if len(dd.shape)!=len(edges):
+        raise TypeFunctionError(
+            f"Output ndim={len(dd.shape)} is inconsistent with edges ndim={len(edges)}",
+            output=output,
+            input=input
+        )
+
+    for i, (dimsize, edgeoutput) in enumerate(zip(dd.shape, edges)):
+        shapeedges = edgeoutput.dd.shape
+        if len(shapeedges)!=1:
+            raise TypeFunctionError(
+                    f"Edges of {i}th dimension has non-1d shape",
+                    output=output,
+                    input=input
+                    )
+        dimedges = shapeedges[0]
+        if dimsize!=(dimedges-1):
+            raise TypeFunctionError(
+                f"Output dimension {i} size={dimsize} is inconsistent with edges size={len(dimedges)}",
+                output=output,
+                input=input
+            )
+
+    output.dd.axes_edges = edges
+
+def assign_output_nodes(input: Union[Input, Sequence[Input]], output: Output, *, ignore_assigned: bool = False):
+    """Assign output's edges from input's parent output"""
+    dd = output.dd
+
+    if dd.axes_nodes:
+        if ignore_assigned:
+            return
+        raise TypeFunctionError("Nodes already assigned", output=output, input=input)
+
+    if isinstance(input, Input):
+        nodes = [input.parent_output]
+    else:
+        nodes = [inp.parent_output for inp in input]
+
+    if len(dd.shape)!=len(nodes):
+        raise TypeFunctionError(
+            f"Output ndim={len(dd.shape)} is inconsistent with nodes ndim={len(nodes)}",
+            output=output,
+            input=input
+        )
+
+    for i, nodesoutput in enumerate(nodes):
+        if dd.shape!=nodesoutput.dd.shape:
+            raise TypeFunctionError(
+                f"Output shape={dd.shape} is inconsistent with nodes {i} shape={nodesoutput.dd.shape}",
+                output=output,
+                input=input
+            )
+
+    output.dd.axes_nodes = nodes
+
+def assign_output_axes_from_inputs(
+    node: NodeT,
+    inputkey: Union[str, int, slice, Sequence] = 0,
+    outputkey: Union[str, int, slice, Sequence] = AllPositionals,
+    *,
+    assign_edges: bool = False,
+    assign_nodes: bool = False,
+    **kwargs
+) -> None:
+    """Set output edges/nodes based on inputs (take parent_output)"""
+    if not (assign_edges^assign_nodes):
+        raise TypeFunctionError("assign_output_axes_from_input: may not assign {assign_edges=} and {assign_nodes=}")
+
+    inputs = tuple(node.inputs.iter(inputkey))
+    outputs = tuple(node.outputs.iter(outputkey))
+
+    for output in outputs:
+        if assign_edges:
+            assign_output_edges(inputs, output, **kwargs)
+
+        if assign_nodes:
+            assign_output_nodes(inputs, output, **kwargs)
+
+def assign_outputs_axes_from_inputs(
+    node: NodeT,
+    inputkey: Union[str, int, slice, Sequence] = 0,
+    outputkey: Union[str, int, slice, Sequence] = AllPositionals,
+    *,
+    assign_edges: bool = False,
+    assign_nodes: bool = False,
+    ignore_Nd: bool = False,
+    **kwargs
+) -> None:
+    """Set outputs' edges/nodes based on inputs (take parent_output). Process each pair."""
+    if not (assign_edges^assign_nodes):
+        raise TypeFunctionError("assign_output_axes_from_input: may not assign {assign_edges=} and {assign_nodes=}")
+
+    inputs = tuple(node.inputs.iter(inputkey))
+    outputs = tuple(node.outputs.iter(outputkey))
+
+    if len(inputs) == 1:
+        inputs = repeat(inputs[0], len(outputs))
+
+    for input, output in zip(inputs, outputs):
+        if ignore_Nd and len(output.dd.shape)!=1:
+            continue
+        if assign_edges:
+            assign_output_edges(input, output, **kwargs)
+
+        if assign_nodes:
+            assign_output_nodes(input, output, **kwargs)
 
 def check_input_edges_dim(
     node: NodeT,

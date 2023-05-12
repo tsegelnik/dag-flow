@@ -136,13 +136,30 @@ class EdgeContainer:
         for edge in self._pos_edges:
             yield edge.data
 
-    def iter(self, key: Union[int, str, slice, Sequence]):
+    def iter(
+        self,
+        key: Union[int, str, slice, Sequence],
+        *,
+        include_kw: bool=False,
+        exclude_pos: bool=False
+    ):
+        if include_kw==False and exclude_pos==True:
+            raise RuntimeError("EdgeContainer.iter(): unable to set {include_kw=} and {exclude_pos=}")
         if isinstance(key, int):
             yield self._pos_edges[key]
         elif isinstance(key, str):
             yield self._kw_edges[key]
         elif isinstance(key, slice):
-            yield from self._pos_edges[key]
+            if key==slice(None):
+                if include_kw:
+                    if exclude_pos:
+                        yield from self.iter_nonpos()
+                    else:
+                        yield from self._all_edges.values()
+                else:
+                    yield from self._pos_edges
+            else:
+                yield from self._pos_edges[key]
         elif isinstance(key, Sequence):
             for subkey in key:
                 if isinstance(subkey, int):

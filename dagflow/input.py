@@ -280,6 +280,9 @@ class Inputs(EdgeContainer):
     def __str__(self):
         return f"→[{tuple(obj.name for obj in self)}]○"
 
+    def __repr__(self) -> str:
+        return self.__str__()
+
     def deep_iter_inputs(
         self, disconnected_only: bool = False
     ) -> Iterator[Input]:
