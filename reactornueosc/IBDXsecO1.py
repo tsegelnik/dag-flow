@@ -6,6 +6,11 @@ from dagflow.nodes import FunctionNode
 from dagflow.input import Input
 from dagflow.output import Output
 
+from scipy.constants import value as constant
+
+_constant_hbar = constant('reduced Planck constant')
+_constant_qe = constant('elementary charge')
+
 class IBDXsecO1(FunctionNode):
     """Inverse beta decay cross section by Vogel and Beacom"""
     __slots__ = (
@@ -88,8 +93,9 @@ def _ibdxsecO1(
     const_gsq = const_g*const_g
     const_fsq = const_f*const_f
 
-    Qe=1.
-    Hbar=1.
+    sigma0_constant = 1.e6*_constant_qe/_constant_hbar
+    ElectronMass5 = ElectronMass2 * ElectronMass2 * ElectronMass
+    sigma0 = (2.* pi * pi) / (const_fps*(const_fsq+3.*const_gsq)*ElectronMass5*NeutronLifeTime*sigma0_constant)
 
     for i, (Enu, ctheta) in enumerate(zip(EnuIn, CosThetaIn)):
         if Enu<EnuThreshold:
@@ -103,8 +109,6 @@ def _ibdxsecO1(
 
         pe0 = sqrt(Ee0*Ee0 - ElectronMass2)
         ve0 = pe0 / Ee0
-        ElectronMass5 = ElectronMass2 * ElectronMass2 * ElectronMass
-        sigma0 = 2.* pi * pi / (const_fps*(const_fsq+3.*const_gsq)*ElectronMass5*NeutronLifeTime/(1.E-6*Hbar/Qe))
 
         Ee1 = Ee0 * ( 1.0 - Enu/NucleonMass * ( 1.0 - ve0*ctheta ) ) - const_y2/NucleonMass
         if Ee1 <= ElectronMass:
