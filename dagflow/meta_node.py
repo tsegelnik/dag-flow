@@ -94,12 +94,12 @@ class MetaNode(Limbs):
 
     def print(self, recursive: bool=False):
         print(f"MetaNode: →[{len(self.inputs)}],[{len(self.outputs)}]→")
-        for i, input in enumerate(self.inputs):
-            print("  ", i, input)
+        for i, (name, input) in enumerate(self.inputs.pos_edges.items()):
+            print("  ", i, input, f'[{name}]')
         for name, input in self.inputs.nonpos_edges.items():
             print(f"     {input} [{name}]")
-        for i, output in enumerate(self.outputs):
-            print("  ", i, output)
+        for i, (name, output) in enumerate(self.outputs.pos_edges.items()):
+            print("  ", i, output, f'[{name}]')
         for name, input in self.outputs.nonpos_edges.items():
             print(f"     {output} [{name}]")
 

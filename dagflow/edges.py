@@ -7,18 +7,21 @@ class EdgeContainer:
     __slots__ = (
         '_kw_edges',
         '_pos_edges',
+        '_pos_edges_list',
         '_nonpos_edges',
         '_all_edges',
         '_dtype'
     )
     _kw_edges: Dict[str, Any]
+    _pos_edges_list: List
     _pos_edges: List
     _nonpos_edges: Dict[str, Any]
     _all_edges: Dict[str, Any]
 
     def __init__(self, iterable=None):
         self._kw_edges = {}
-        self._pos_edges = []
+        self._pos_edges_list = []
+        self._pos_edges = {}
         self._nonpos_edges = {}
         self._all_edges = {}
         self._dtype = None
@@ -62,7 +65,8 @@ class EdgeContainer:
 
         self._all_edges[name]=value
         if positional:
-            self._pos_edges.append(value)
+            self._pos_edges_list.append(value)
+            self._pos_edges[name]=value
         else:
             self._nonpos_edges[name]=value
         return self
@@ -73,10 +77,11 @@ class EdgeContainer:
         except KeyError:
             raise RuntimeError(f"Invalid keyword limb {name}")
 
-        if limb in self._pos_edges:
+        if limb in self._pos_edges_list:
             raise RuntimeError(f"Limb {name} is already positional")
 
-        self._pos_edges.append(limb)
+        self._pos_edges_list.append(limb)
+        self._pos_edges[name]=limb
         del self._nonpos_edges[name]
         return limb
 
@@ -90,7 +95,7 @@ class EdgeContainer:
         if isinstance(key, str):
             return self._kw_edges[key]
         elif isinstance(key, (int, slice)):
-            return self._pos_edges[key]
+            return self._pos_edges_list[key]
         elif isinstance(key, Sequence):
             return tuple(self.__getitem__(k) for k in key)
         raise TypeError(f"Unsupported key type: {type(key).__name__}")
@@ -112,6 +117,10 @@ class EdgeContainer:
         return self._pos_edges
 
     @property
+    def pos_edges_list(self) -> List:
+        return self._pos_edges_list
+
+    @property
     def nonpos_edges(self) -> Dict:
         return self._nonpos_edges
 
@@ -126,11 +135,11 @@ class EdgeContainer:
 
     def get_pos(self, idx: int):
         """Get positional leg"""
-        return self._pos_edges[idx]
+        return self._pos_edges_list[idx]
     iat = get_pos
 
     def index(self, arg):
-        return self._pos_edges.index(arg)
+        return self._pos_edges_list.index(arg)
 
     def get_kw(self, key: str):
         """Return keyword leg"""
@@ -139,7 +148,7 @@ class EdgeContainer:
 
     def len_pos(self) -> int:
         """Returns a number of the positional limbs"""
-        return len(self._pos_edges)
+        return len(self._pos_edges_list)
     __len__ = len_pos
 
     def len_kw(self) -> int:
@@ -151,7 +160,7 @@ class EdgeContainer:
         return len(self._all_edges)
 
     def __iter__(self):
-        return iter(self._pos_edges)
+        return iter(self._pos_edges_list)
 
     def iter_all(self):
         return iter(self._all_edges.values())
@@ -163,7 +172,7 @@ class EdgeContainer:
         return iter(self._nonpos_edges.values())
 
     def iter_data(self):
-        for edge in self._pos_edges:
+        for edge in self._pos_edges_list:
             yield edge.data
 
     def iter(
@@ -176,7 +185,7 @@ class EdgeContainer:
         if include_kw==False and exclude_pos==True:
             raise RuntimeError("EdgeContainer.iter(): unable to set {include_kw=} and {exclude_pos=}")
         if isinstance(key, int):
-            yield self._pos_edges[key]
+            yield self._pos_edges_list[key]
         elif isinstance(key, str):
             yield self._kw_edges[key]
         elif isinstance(key, slice):
@@ -187,17 +196,17 @@ class EdgeContainer:
                     else:
                         yield from self._all_edges.values()
                 else:
-                    yield from self._pos_edges
+                    yield from self._pos_edges_list
             else:
-                yield from self._pos_edges[key]
+                yield from self._pos_edges_list[key]
         elif isinstance(key, Sequence):
             for subkey in key:
                 if isinstance(subkey, int):
-                    yield self._pos_edges[subkey]
+                    yield self._pos_edges_list[subkey]
                 elif isinstance(subkey, str):
                     yield self._kw_edges[subkey]
                 elif isinstance(subkey, slice):
-                    yield from self._pos_edges[subkey]
+                    yield from self._pos_edges_list[subkey]
                 else:
                     raise CriticalError(f'Invalid subkey type {type(subkey).__name__}')
         else:
@@ -214,9 +223,9 @@ class EdgeContainer:
                 self._kw_edges[k] = new
                 replaced = True
 
-        for i, v in enumerate(self._pos_edges):
+        for i, v in enumerate(self._pos_edges_list):
             if old is v:
-                self._pos_edges[i] = new
+                self._pos_edges_list[i] = new
                 replaced = True
 
         if not replaced:
