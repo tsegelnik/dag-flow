@@ -56,3 +56,18 @@ class DataDescriptor:
     @property
     def nodes_arrays(self) -> List[NDArray]:
         return self.axes_nodes and [o.data for o in self.axes_nodes] or None
+
+    def axis_label(self, axis: int=0, axistype: str='any', *, fallback='text') -> str:
+        if self.axes_edges and axistype in ('any', 'edges'):
+            try:
+                return self.axes_edges[axis].node.label('axis', fallback=fallback)
+            except IndexError as e:
+                raise RuntimeError(f'Invalid axis index {axis}') from e
+
+        if self.axes_nodes and axistype in ('any', 'nodes'):
+            try:
+                return self.axes_nodes[axis].node.label('axis', fallback=fallback)
+            except IndexError as e:
+                raise RuntimeError(f'Invalid axis index {axis}') from e
+
+        return ''
