@@ -61,6 +61,3 @@ def rshift(outputs, inputs):
     child_outputs = tuple(iter_child_outputs(inputs))
     return child_outputs[0] if len(child_outputs) == 1 else child_outputs
 
-# def lshift(inputs, outputs):
-#     """`<<` operator"""
-#     return rshift(outputs, inputs)

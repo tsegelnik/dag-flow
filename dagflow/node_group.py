@@ -1,5 +1,3 @@
-# from .shift import lshift
-
 class NodeGroup:
     _nodes: list = None
 
@@ -21,12 +19,6 @@ class NodeGroup:
         print(f"Group of {len(self._nodes)} nodes:")
         for node in self._nodes:
             node.print()
-
-    # def __lshift__(self, other):
-    #     """
-    #     self << other
-    #     """
-    #     return lshift(self, other)
 
     def __rrshift__(self, other):
         """

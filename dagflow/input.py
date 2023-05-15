@@ -236,12 +236,6 @@ class Input:
             raise StopNesting(self._child_output)
         return iter(tuple())
 
-    # def __lshift__(self, other):
-    #     """
-    #     self << other
-    #     """
-    #     return lshift(self, other)
-    #
     def __rrshift__(self, other):
         """
         other >> self

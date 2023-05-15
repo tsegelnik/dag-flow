@@ -249,12 +249,6 @@ class Output:
         """
         return rshift(self, other)
 
-    # def __rlshift__(self, other):
-    #     """
-    #     other << self
-    #     """
-    #     return rshift(other, self)
-
     def taint_children(self, **kwargs) -> None:
         for input in self._child_inputs:
             input.taint(**kwargs)
