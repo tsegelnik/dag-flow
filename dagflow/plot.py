@@ -59,7 +59,11 @@ def annotate_axes(output: Output, ax: Optional[Axes]=None) -> None:
     if title: ax.set_title(title)
     if xlabel: ax.set_xlabel(xlabel)
     if ylabel: ax.set_ylabel(ylabel)
-    if zlabel: ax.set_zlabel(zlabel)
+    if zlabel:
+        try:
+            ax.set_zlabel(zlabel)
+        except AttributeError:
+            pass
 
 def plot_array_1d(
     array: NDArray,
@@ -127,6 +131,48 @@ def plot_array_2d_hist(
     dZ: NDArray,
     edges: List[NDArray],
     *args,
+    mode: str = 'pcolormesh',
+    **kwargs
+) -> Tuple:
+    fcn = {
+            'pcolor': plot_array_2d_hist_pcolor,
+            'pcolorfast': plot_array_2d_hist_pcolorfast,
+            'pcolormesh': plot_array_2d_hist_pcolormesh,
+            'imshow': plot_array_2d_hist_imshow,
+            'matshow': plot_array_2d_hist_matshow,
+            'bar3d': plot_array_2d_hist_bar3d,
+            }.get(mode, None)
+
+    if fcn is None:
+        raise RuntimeError(f'Invlid 2d hist mode: {mode}')
+
+    return fcn(dZ, edges, *args, **kwargs)
+
+def plot_array_2d_vs(
+    array: NDArray,
+    nodes: List[NDArray],
+    *args,
+    mode: str = 'surface',
+    **kwargs
+) -> Tuple:
+    if mode=='surface':
+        return plot_surface(nodes[0], nodes[1], array, *args, **kwargs)
+    elif mode=='wireframe':
+        return plot_array_2d_vs_wireframe(array, nodes, *args, **kwargs)
+    raise RuntimeError("unimplemented")
+
+def plot_array_2d_array(
+    array: NDArray,
+    nodes: List[NDArray],
+    *args,
+    **kwargs
+) -> Tuple:
+    return plot_array_2d_hist_matshow(array, None, *args, **kwargs)
+
+def plot_array_2d_hist_bar3d(
+    dZ: NDArray,
+    edges: List[NDArray],
+    *args,
     cmap: Optional[str] = None,
     **kwargs
 ) -> Tuple:
@@ -144,30 +190,40 @@ def plot_array_2d_hist(
     _, cmapper = apply_colors(dZ, cmap, kwargs, 'color')
     colorbar = kwargs.pop('colorbar', False)
 
-    # if colorizetop:
-        # nel, ncol = colors.shape
-        # newcolors = N.ones( (nel, 6, ncol), dtype=colors.dtype )
-        # newcolors[:,1,:]=colors
-        # newcolors.shape=(nel*6, ncol)
-        # kwargs['color']=newcolors
-
     ax = gca()
     res = ax.bar3d(X, Y, Z, dX, dY, dZ, *args, **kwargs)
 
     return _colorbar_or_not_3d(res, colorbar, dZ, cmap=cmapper)
 
-def plot_array_2d_vs(
-    array: NDArray,
-    nodes: List[NDArray],
-    *args,
-    mode: str = 'surface',
-    **kwargs
-) -> Tuple:
-    if mode=='surface':
-        return plot_surface(nodes[0], nodes[1], array, *args, **kwargs)
-    elif mode=='wireframe':
-        return plot_array_2d_vs_wireframe(array, nodes, *args, **kwargs)
-    raise RuntimeError("unimplemented")
+def plot_array_2d_hist_pcolorfast(Z: NDArray, edges: List[NDArray], *args, cmap: Optional[str] = None, **kwargs) -> Tuple:
+    xedges, yedges = edges
+    x = [yedges[0], xedges[-1]]
+    y = [yedges[0], yedges[-1]]
+    return pcolorfast(x, y, Z.T, *args, **kwargs)
+
+def plot_array_2d_hist_pcolormesh(Z: NDArray, edges: List[NDArray], *args, cmap: Optional[str] = None, **kwargs) -> Tuple:
+    x, y = meshgrid(edges[0], edges[1], indexing='ij')
+    return pcolormesh(x, y, Z, *args, **kwargs)
+
+def plot_array_2d_hist_pcolor(Z: NDArray, edges: List[NDArray], *args, cmap: Optional[str] = None, **kwargs) -> Tuple:
+    x, y = meshgrid(edges[0], edges[1], indexing='ij')
+    return pcolor(x, y, Z, *args, **kwargs)
+
+def plot_array_2d_hist_imshow(Z: NDArray, edges: Optional[List[NDArray]]=None, *args, **kwargs):
+    if edges:
+        xedges, yedges = edges
+        extent = [xedges[0], xedges[-1], yedges[0], yedges[-1]]
+        kwargs.setdefault('extent', extent)
+    kwargs.setdefault('origin', 'lower')
+    return imshow(Z.T, *args, **kwargs)
+
+def plot_array_2d_hist_matshow(Z: NDArray, edges: Optional[List[NDArray]]=None, *args, **kwargs):
+    kwargs.setdefault('fignum', False)
+    if edges:
+        xedges, yedges = edges
+        extent = [xedges[0], xedges[-1], yedges[-1], yedges[0]]
+        kwargs.setdefault('extent', extent)
+    return matshow(Z.T, *args, **kwargs)
 
 def plot_array_2d_vs_wireframe(
     Z: NDArray,

@@ -124,7 +124,7 @@ def test_Integrator_gl2d(debug_graph, testname):
     with Graph(debug=debug_graph, close=True) as graph:
         npointsX, npointsY = 10, 20
         edgesX = Array("edgesX", linspace(0, 10, npointsX + 1), label={'axis': 'Label for axis X'})
-        edgesY = Array("edgesY", linspace(0, 10, npointsY + 1), label={'axis': 'Label for axis Y'})
+        edgesY = Array("edgesY", linspace(2, 12, npointsY + 1), label={'axis': 'Label for axis Y'})
         ordersX = Array("ordersX", [2] * npointsX, edges=edgesX["array"])
         ordersY = Array("ordersY", [2] * npointsY, edges=edgesY["array"])
         x0, y0 = meshgrid(edgesX._data[:-1], edgesY._data[:-1], indexing="ij")
@@ -158,8 +158,28 @@ def test_Integrator_gl2d(debug_graph, testname):
 
     from mpl_toolkits.mplot3d import axes3d
     subplots(1, 1, subplot_kw={'projection': '3d'})
-    plot_auto(integrator, colorbar=True)
-    close()
+    plot_auto(integrator, mode='bar3d', colorbar=True)
+
+    subplots(1, 1)
+    plot_auto(integrator, mode='pcolormesh', colorbar=True)
+
+    subplots(1, 1)
+    plot_auto(integrator, mode='pcolor', colorbar=True)
+
+    subplots(1, 1)
+    plot_auto(integrator, mode='pcolorfast', colorbar=True)
+
+    subplots(1, 1)
+    plot_auto(integrator, mode='imshow', colorbar=True)
+
+    subplots(1, 1)
+    plot_auto(integrator, mode='matshow', colorbar=True)
+
+    subplots(1, 1)
+    plot_auto(integrator, mode='matshow', extent=None, colorbar=True)
+
+    for i in range(7):
+        close()
 
     savegraph(graph, f"output/{testname}.png")
 
