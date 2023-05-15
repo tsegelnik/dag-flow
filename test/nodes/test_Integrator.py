@@ -12,7 +12,7 @@ from numpy import allclose, linspace, meshgrid, pi, vectorize
 from pytest import mark, raises
 
 from dagflow.plot import plot_auto
-from matplotlib.pyplot import subplots, show, close
+from matplotlib.pyplot import subplots, close
 
 @mark.parametrize("align", ("left", "center", "right"))
 def test_Integrator_rect_center(align, debug_graph, testname):
@@ -178,7 +178,7 @@ def test_Integrator_gl2d(debug_graph, testname):
     subplots(1, 1)
     plot_auto(integrator, mode='matshow', extent=None, colorbar=True)
 
-    for i in range(7):
+    for _ in range(7):
         close()
 
     savegraph(graph, f"output/{testname}.png")

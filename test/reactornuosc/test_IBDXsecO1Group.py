@@ -47,10 +47,11 @@ def test_IBDXsecO1Group(debug_graph, testname):
 
         ee = Array(
             'ee', ee2,
-            label={'axis': r'$E_{\mathrm pos}$, MeV'}
+            label={'axis': r'$E_{\rm pos}$, MeV'}
         )
         ctheta = Array('ctheta', ctheta2,
-                       label={'axis': r'$\cos\theta$'})
+                       label={'axis': r'$\cos\theta$'}
+                       )
 
         ibdxsec = IBDXsecO1Group()
 
@@ -63,16 +64,31 @@ def test_IBDXsecO1Group(debug_graph, testname):
 
     from mpl_toolkits.mplot3d import axes3d
     subplots(1, 1, subplot_kw={'projection': '3d'})
-    plot_auto(ibdxsec, mode='surface', colorbar=True)
+    plot_auto(ibdxsec, mode='surface', cmap=True, colorbar=True)
 
     subplots(1, 1, subplot_kw={'projection': '3d'})
-    plot_auto(ibdxsec, mode='wireframe', cmap='', colorbar=True)
+    plot_auto(ibdxsec, mode='wireframe', cmap=True, colorbar=True)
 
     subplots(1, 1, subplot_kw={'projection': '3d'})
     plot_auto(ibdxsec, mode='wireframe')
-    close()
-    close()
-    close()
+
+    subplots(1, 1)
+    plot_auto(ibdxsec, mode='pcolormesh', colorbar=True)
+
+    subplots(1, 1)
+    plot_auto(ibdxsec.outputs['enu'], mode='pcolormesh', colorbar=True)
+
+    subplots(1, 1, subplot_kw={'projection': '3d'})
+    plot_auto(ibdxsec.outputs['enu'], mode='surface', cmap=True, colorbar=True)
+
+    subplots(1, 1)
+    plot_auto(ibdxsec.outputs['jacobian'], mode='pcolormesh', colorbar=True)
+
+    subplots(1, 1, subplot_kw={'projection': '3d'})
+    plot_auto(ibdxsec.outputs['jacobian'], mode='surface', cmap=True, colorbar=True)
+
+    for _ in range(8):
+        close()
 
     savegraph(graph, f"output/{testname}.pdf")
 

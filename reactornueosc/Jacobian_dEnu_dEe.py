@@ -28,8 +28,8 @@ class Jacobian_dEnu_dEe(FunctionNode):
         kwargs.setdefault("missing_input_handler", MissingInputAddPair())
         label = {
                 'text': r'Energy conversion Jacobian dEν/dEdep',
-                'latex': r'$dE_{\nu}/dE_{\mathrm dep}$',
-                'axis': r'$dE_{\nu}/dE_{\mathrm dep}$',
+                'latex': r'$dE_{\nu}/dE_{\rm dep}$',
+                'axis': r'$dE_{\nu}/dE_{\rm dep}$',
                 }
         label.update(label)
         super().__init__(name, *args, label=label, **kwargs)
