@@ -1,4 +1,4 @@
-from collections.abc import Iterable
+from typing import Iterable
 from itertools import islice
 
 class StopNesting(Exception):

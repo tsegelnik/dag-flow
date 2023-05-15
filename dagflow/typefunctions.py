@@ -1,6 +1,5 @@
-from collections.abc import Sequence
 from itertools import repeat
-from typing import Callable, Optional, Tuple, Union
+from typing import Callable, Optional, Tuple, Union, Sequence
 
 from numpy import issubdtype, result_type
 from numpy.typing import DTypeLike

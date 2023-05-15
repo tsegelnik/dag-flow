@@ -4,8 +4,7 @@ from .printl import printl
 from .types import NodeT
 
 from numpy import square
-from collections.abc import Sequence
-from typing import Union, Set, Optional, Dict
+from typing import Union, Set, Optional, Dict, Sequence
 
 try:
     import pygraphviz as G
