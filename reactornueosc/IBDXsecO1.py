@@ -79,6 +79,7 @@ class IBDXsecO1(FunctionNode):
 from scipy.constants import value as constant
 _constant_hbar = constant('reduced Planck constant')
 _constant_qe = constant('elementary charge')
+_constant_c = constant('speed of light in vacuum')
 from numba import njit, void, float64, float32
 from numpy.typing import NDArray
 from numpy import double, pi, sqrt, power as pow
@@ -111,6 +112,10 @@ def _ibdxsecO1(
     ElectronMass5 = ElectronMass2 * ElectronMass2 * ElectronMass
     sigma0 = (2.* pi * pi) / (const_fps*(const_fsq+3.*const_gsq)*ElectronMass5*NeutronLifeTime*sigma0_constant)
 
+    MeV2J = 1.E6 * _constant_qe
+    J2MeV = 1./MeV2J
+    MeV2cm = pow(_constant_hbar*_constant_c*J2MeV, 2) * 1.E4
+
     for i, (Enu, ctheta) in enumerate(zip(EnuIn, CosThetaIn)):
         if Enu<EnuThreshold:
             Result[i]=0.0
@@ -141,5 +146,5 @@ def _ibdxsecO1(
 
         sigma1b = -0.5 * sigma0 * Ee0 * pe0 * ( gamma_1 + gamma_2 + gamma_3 + gamma_4 ) / NucleonMass
 
-        Result[i]=sigma1a + sigma1b
+        Result[i]=MeV2cm*(sigma1a + sigma1b)
 
