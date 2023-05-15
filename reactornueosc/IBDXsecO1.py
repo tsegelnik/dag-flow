@@ -32,6 +32,7 @@ class IBDXsecO1(FunctionNode):
         kwargs.setdefault("missing_input_handler", MissingInputAddPair())
         label = {
                 'text':  r'IBD cross section σ(Eν,cosθ), cm⁻²',
+                'plottitle': r'IBD cross section $\sigma(E_{\nu}, \cos\theta)$, cm$^{-2}$',
                 'latex': r'IBD cross section $\sigma(E_{\nu}, \cos\theta)$, cm$^{-2}$',
                 'axis':  r'$\sigma(E_{\nu}, \cos\theta)$, cm$^{-2}$'
                 }

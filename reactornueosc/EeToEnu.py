@@ -27,7 +27,8 @@ class EeToEnu(FunctionNode):
     def __init__(self, name, *args, label: Mapping={}, **kwargs):
         kwargs.setdefault("missing_input_handler", MissingInputAddPair())
         label = {
-                'text': r'Eν, MeV',
+                'text': r'Neutrino energy Eν, MeV',
+                'axis': r'Plot title $E_{\nu}$, MeV',
                 'latex': r'$E_{\nu}$, MeV',
                 'axis': r'$E_{\nu}$, MeV',
                 }
