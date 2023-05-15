@@ -6,6 +6,9 @@ from dagflow.bundles.load_parameters import load_parameters
 from numpy import linspace, meshgrid, meshgrid
 
 from reactornueosc.IBDXsecO1Group import IBDXsecO1Group
+from dagflow.plot import plot_auto
+
+from matplotlib.pyplot import show, close, subplots
 
 def test_IBDXsecO1Group(debug_graph, testname):
     data = {
@@ -42,8 +45,12 @@ def test_IBDXsecO1Group(debug_graph, testname):
     with Graph(debug=debug_graph, close=True) as graph:
         storage = load_parameters(data)
 
-        ee = Array('ee', ee2)
-        ctheta = Array('ctheta', ctheta2)
+        ee = Array(
+            'ee', ee2,
+            label={'axis': r'$E_{\mathrm pos}$, MeV'}
+        )
+        ctheta = Array('ctheta', ctheta2,
+                       label={'axis': r'$\cos\theta$'})
 
         ibdxsec = IBDXsecO1Group()
 
@@ -53,6 +60,20 @@ def test_IBDXsecO1Group(debug_graph, testname):
         ibdxsec.print(recursive=True)
 
     csc_ee = ibdxsec.get_data()
+
+    from mpl_toolkits.mplot3d import axes3d
+    subplots(1, 1, subplot_kw={'projection': '3d'})
+    plot_auto(ibdxsec, mode='surface', colorbar=True)
+
+    subplots(1, 1, subplot_kw={'projection': '3d'})
+    plot_auto(ibdxsec, mode='wireframe', cmap='', colorbar=True)
+
+    subplots(1, 1, subplot_kw={'projection': '3d'})
+    plot_auto(ibdxsec, mode='wireframe')
+    show()
+    close()
+    close()
+    close()
 
     savegraph(graph, f"output/{testname}.pdf")
 
