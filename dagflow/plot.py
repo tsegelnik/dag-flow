@@ -1,5 +1,6 @@
-from matplotlib.pyplot import stairs, plot, gca, gcf, cm, colorbar, sca
+from matplotlib.pyplot import stairs, plot, gca, gcf, colorbar as plot_colorbar, sca, cm
 from matplotlib.pyplot import Axes
+from matplotlib import colormaps
 from .output import Output
 from .limbs import Limbs
 
@@ -290,7 +291,6 @@ def apply_colors(
     kwargs: dict,
     colorsname: str
 ) -> Tuple:
-    from matplotlib import cm
 
     if cmap==True:
         cmap='viridis'
@@ -300,7 +300,7 @@ def apply_colors(
     bmin, bmax = buf.min(), buf.max()
     norm = (buf-bmin)/(bmax-bmin)
 
-    cmap = cm.get_cmap(cmap)
+    cmap = colormaps.get_cmap(cmap)
     res = cmap(norm)
     kwargs[colorsname] = res
     return res, cmap
@@ -347,11 +347,11 @@ def add_colorbar_3d(res, cbaropt: dict={}, mappable=None):
     cbaropt.setdefault('shrink', 0.5)
 
     if mappable is None:
-        cbar = colorbar(res, **cbaropt)
+        cbar = plot_colorbar(res, **cbaropt)
     else:
         colourMap = cm.ScalarMappable()
         colourMap.set_array(mappable)
-        cbar = colorbar(colourMap, **cbaropt)
+        cbar = plot_colorbar(colourMap, **cbaropt)
 
     return res, cbar
 
@@ -377,11 +377,11 @@ def _colorbar_or_not_3d(res, cbaropt: Union[Mapping, bool, None], mappable=None)
     cbaropt.setdefault('shrink', 0.5)
 
     if mappable is None:
-        cbar = colorbar(res, **cbaropt)
+        cbar = plot_colorbar(res, ax=gca(), **cbaropt)
     else:
         colourMap = cm.ScalarMappable()
         colourMap.set_array(mappable)
-        cbar = colorbar(colourMap, **cbaropt)
+        cbar = plot_colorbar(colourMap, ax=gca(), **cbaropt)
 
     return res, cbar
 
