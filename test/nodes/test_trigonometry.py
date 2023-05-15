@@ -5,10 +5,10 @@ from dagflow.lib.Array import Array
 from dagflow.lib.trigonometry import Cos, Sin, Tan, ArcCos, ArcSin, ArcTan # Accessed via globals()
 from dagflow.graphviz import savegraph
 from dagflow.plot import plot_auto
-from matplotlib.pyplot import show
 
 from numpy import allclose, pi, linspace
 from numpy import cos, sin, tan, arccos, arcsin, arctan # accessed via globals()
+from matplotlib.pyplot import close
 from pytest import mark
 
 @mark.parametrize("dtype", ("d", "f"))
@@ -43,5 +43,6 @@ def test_Cos_01(testname, debug_graph, fcnname, dtype):
     plot_auto(node.outputs[0], label='input 0')
     plot_auto(node.outputs[1], label='input 1')
     plot_auto(node.outputs[2], label='input 2')
+    close()
 
     savegraph(graph, f"output/{testname}.png")

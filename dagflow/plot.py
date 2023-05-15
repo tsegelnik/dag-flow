@@ -1,12 +1,13 @@
 from matplotlib.pyplot import stairs, plot, gca
 from matplotlib.pyplot import Axes
-from .node import Node, Output
+from .output import Output
+from .limbs import Limbs
 
 from typing import Union, List, Optional, Tuple
 from numpy.typing import ArrayLike, NDArray
 from numpy import asanyarray
 
-def _get_node_data(node: Node) -> Tuple[Optional[Output], NDArray, Optional[List[NDArray]], Optional[List[NDArray]]]:
+def _get_node_data(node: Limbs) -> Tuple[Optional[Output], NDArray, Optional[List[NDArray]], Optional[List[NDArray]]]:
 	return _get_output_data(node.outputs[0])
 
 def _get_output_data(output: Output) -> Tuple[Optional[Output], NDArray, Optional[List[NDArray]], Optional[List[NDArray]]]:
@@ -15,15 +16,15 @@ def _get_output_data(output: Output) -> Tuple[Optional[Output], NDArray, Optiona
 def _get_array_data(array: ArrayLike) -> Tuple[Optional[Output], NDArray, Optional[List[NDArray]], Optional[List[NDArray]]]:
 	return None, asanyarray(array), None, None
 
-def _get_data(object: Union[Output, Node, ArrayLike]) -> Tuple[Optional[Output], NDArray, Optional[List[NDArray]], Optional[List[NDArray]]]:
+def _get_data(object: Union[Output, Limbs, ArrayLike]) -> Tuple[Optional[Output], NDArray, Optional[List[NDArray]], Optional[List[NDArray]]]:
 	if isinstance(object, Output):
 		return _get_output_data(object)
-	elif isinstance(object, Node):
+	elif isinstance(object, Limbs):
 		return _get_node_data(object)
 	else:
 		return _get_array_data(object)
 
-def plot_auto(object: Union[Output, Node, ArrayLike], *args, **kwargs) -> Tuple[tuple, ...]:
+def plot_auto(object: Union[Output, Limbs, ArrayLike], *args, **kwargs) -> Tuple[tuple, ...]:
 	output, array, edges, nodes = _get_data(object)
 
 	ndim = len(array.shape)
@@ -45,13 +46,13 @@ def annotate_axes(output: Output, ax: Optional[Axes]=None) -> None:
 	ax = ax or gca()
 	node = output.node
 
-	title = node.label('title', fallback=('text'))
+	title = node.label('plottitle', fallback=('text'))
 	xlabel = output.dd.axis_label(0)
 
 	if output.dd.dim==2:
 		ylabel = output.dd.axis_label(1)
 	else:
-		ylabel = node.label('axis', fallback=('title', 'text'))
+		ylabel = node.label('axis', fallback=('plottitle', 'text'))
 
 	if title: ax.set_title(title)
 	if xlabel: ax.set_xlabel(xlabel)
