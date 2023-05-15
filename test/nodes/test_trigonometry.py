@@ -2,140 +2,46 @@
 
 from dagflow.graph import Graph
 from dagflow.lib.Array import Array
-from dagflow.lib.trigonometry import Cos, Sin, Tan, ArcCos, ArcSin, ArcTan
+from dagflow.lib.trigonometry import Cos, Sin, Tan, ArcCos, ArcSin, ArcTan # Accessed via globals()
 from dagflow.graphviz import savegraph
+from dagflow.plot import plot_auto
+from matplotlib.pyplot import show
 
-from numpy import allclose, arange, cos, sin, tan, arccos, arcsin, arctan, finfo
+from numpy import allclose, pi, linspace
+from numpy import cos, sin, tan, arccos, arcsin, arctan # accessed via globals()
 from pytest import mark
 
-
 @mark.parametrize("dtype", ("d", "f"))
-def test_Cos_01(testname, debug_graph, dtype):
-    arrays_in = tuple(arange(12, dtype=dtype) * i for i in (1, 2, 3))
+@mark.parametrize("fcnname", ("cos", "sin", "tan", "arccos", "arcsin", "arctan"))
+def test_Cos_01(testname, debug_graph, fcnname, dtype):
+    fcn_np = globals()[fcnname]
+    fcn_node = globals()[f"{fcnname[:3].capitalize()}{fcnname[3:].capitalize()}"]
+    if fcnname in ("cos", "sin", "tan"):
+        arrays_in = tuple(linspace(-2*pi, 2*pi, 101, dtype=dtype) * i for i in (1, 2, 3))
+    elif fcnname=="arctan":
+        arrays_in = tuple(linspace(-10, 10, 101, dtype=dtype) * i for i in (1, 2, 3))
+    else:
+        arrays_in = tuple(linspace(-1, 1, 101, dtype=dtype)/i for i in (1, 2, 3))
 
     with Graph(close=True, debug=debug_graph) as graph:
         arrays = tuple(
-            Array(f"arr_{i}", array_in) for i, array_in in enumerate(arrays_in)
+            Array(f"arr_{i}", array_in, label={
+                'text': f'X axis {i}'
+            }) for i, array_in in enumerate(arrays_in)
         )
-        ccos = Cos("cos")
-        arrays >> ccos
+        node = fcn_node(fcnname)
+        arrays >> node
 
-    outputs = ccos.outputs
-    ress = cos(arrays_in)
+    outputs = node.outputs
+    ress = fcn_np(arrays_in)
 
-    assert ccos.tainted == True
+    assert node.tainted == True
     assert all(output.dd.dtype == dtype for output in outputs)
-    assert allclose(tuple(outputs.iter_data()), ress, rtol=0, atol=finfo(dtype).resolution)
-    assert ccos.tainted == False
+    assert allclose(tuple(outputs.iter_data()), ress, rtol=0, atol=0)
+    assert node.tainted == False
 
-    savegraph(graph, f"output/{testname}.png")
-
-
-@mark.parametrize("dtype", ("d", "f"))
-def test_Sin_01(testname, debug_graph, dtype):
-    arrays_in = tuple(arange(12, dtype=dtype) * i for i in (1, 2, 3))
-
-    with Graph(close=True, debug=debug_graph) as graph:
-        arrays = tuple(
-            Array(f"arr_{i}", array_in) for i, array_in in enumerate(arrays_in)
-        )
-        ssin = Sin("sin")
-        arrays >> ssin
-
-    outputs = ssin.outputs
-    ress = sin(arrays_in)
-
-    assert ssin.tainted == True
-    assert all(output.dd.dtype == dtype for output in outputs)
-    assert allclose(tuple(outputs.iter_data()), ress, rtol=0, atol=finfo(dtype).resolution)
-    assert ssin.tainted == False
-
-    savegraph(graph, f"output/{testname}.png")
-
-
-@mark.parametrize("dtype", ("d", "f"))
-def test_Tan_01(testname, debug_graph, dtype):
-    arrays_in = tuple(arange(12, dtype=dtype) * i for i in (1, 2, 3))
-
-    with Graph(close=True, debug=debug_graph) as graph:
-        arrays = tuple(
-            Array(f"arr_{i}", array_in) for i, array_in in enumerate(arrays_in)
-        )
-        ttan = Tan("tan")
-        arrays >> ttan
-
-    outputs = ttan.outputs
-    ress = tan(arrays_in)
-
-    assert ttan.tainted == True
-    assert all(output.dd.dtype == dtype for output in outputs)
-    assert allclose(tuple(outputs.iter_data()), ress, rtol=0, atol=finfo(dtype).resolution)
-    assert ttan.tainted == False
-
-    savegraph(graph, f"output/{testname}.png")
-
-
-@mark.parametrize("dtype", ("d", "f"))
-def test_ArcCos_01(testname, debug_graph, dtype):
-    arrays_in = tuple(arange(12, dtype=dtype) / 12 / i for i in (1, 2, 3))
-
-    with Graph(close=True, debug=debug_graph) as graph:
-        arrays = tuple(
-            Array(f"arr_{i}", array_in) for i, array_in in enumerate(arrays_in)
-        )
-        aarccos = ArcCos("arccos")
-        arrays >> aarccos
-
-    outputs = aarccos.outputs
-    ress = arccos(arrays_in)
-
-    assert aarccos.tainted == True
-    assert all(output.dd.dtype == dtype for output in outputs)
-    assert allclose(tuple(outputs.iter_data()), ress, rtol=0, atol=finfo(dtype).resolution)
-    assert aarccos.tainted == False
-
-    savegraph(graph, f"output/{testname}.png")
-
-
-@mark.parametrize("dtype", ("d", "f"))
-def test_ArcSin_01(testname, debug_graph, dtype):
-    arrays_in = tuple(arange(12, dtype=dtype) / 12 / i for i in (1, 2, 3))
-
-    with Graph(close=True, debug=debug_graph) as graph:
-        arrays = tuple(
-            Array(f"arr_{i}", array_in) for i, array_in in enumerate(arrays_in)
-        )
-        aarcsin = ArcSin("sin")
-        arrays >> aarcsin
-
-    outputs = aarcsin.outputs
-    ress = arcsin(arrays_in)
-
-    assert aarcsin.tainted == True
-    assert all(output.dd.dtype == dtype for output in outputs)
-    assert allclose(tuple(outputs.iter_data()), ress, rtol=0, atol=finfo(dtype).resolution)
-    assert aarcsin.tainted == False
-
-    savegraph(graph, f"output/{testname}.png")
-
-
-@mark.parametrize("dtype", ("d", "f"))
-def test_ArcTan_01(testname, debug_graph, dtype):
-    arrays_in = tuple(arange(12, dtype=dtype) * i for i in (1, 2, 3))
-
-    with Graph(close=True, debug=debug_graph) as graph:
-        arrays = tuple(
-            Array(f"arr_{i}", array_in) for i, array_in in enumerate(arrays_in)
-        )
-        aarctan = ArcTan("arctan")
-        arrays >> aarctan
-
-    outputs = aarctan.outputs
-    ress = arctan(arrays_in)
-
-    assert aarctan.tainted == True
-    assert all(output.dd.dtype == dtype for output in outputs)
-    assert allclose(tuple(outputs.iter_data()), ress, rtol=0, atol=finfo(dtype).resolution)
-    assert aarctan.tainted == False
+    plot_auto(node.outputs[0], label='input 0')
+    plot_auto(node.outputs[1], label='input 1')
+    plot_auto(node.outputs[2], label='input 2')
 
     savegraph(graph, f"output/{testname}.png")
