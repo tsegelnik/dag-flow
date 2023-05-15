@@ -155,11 +155,16 @@ def plot_array_2d_vs(
     mode: str = 'surface',
     **kwargs
 ) -> Tuple:
-    if mode=='surface':
-        return plot_surface(nodes[0], nodes[1], array, *args, **kwargs)
-    elif mode=='wireframe':
-        return plot_array_2d_vs_wireframe(array, nodes, *args, **kwargs)
-    raise RuntimeError("unimplemented")
+    fcn = {
+            'surface': plot_array_2d_vs_surface,
+            'wireframe': plot_array_2d_vs_wireframe,
+            'pcolormesh': plot_array_2d_vs_pcolormesh,
+            'pcolor': plot_array_2d_vs_pcolor
+            }.get(mode, None)
+    if fcn is None:
+        raise RuntimeError("unimplemented")
+
+    return fcn(array, nodes, *args, **kwargs)
 
 def plot_array_2d_array(
     array: NDArray,
@@ -193,19 +198,17 @@ def plot_array_2d_hist_bar3d(
     ax = gca()
     res = ax.bar3d(X, Y, Z, dX, dY, dZ, *args, **kwargs)
 
-    return _colorbar_or_not_3d(res, colorbar, dZ, cmap=cmapper)
+    return _colorbar_or_not_3d(res, colorbar, dZ)
 
-def plot_array_2d_hist_pcolorfast(Z: NDArray, edges: List[NDArray], *args, cmap: Optional[str] = None, **kwargs) -> Tuple:
+def plot_array_2d_hist_pcolorfast(Z: NDArray, edges: List[NDArray], *args, **kwargs) -> Tuple:
     xedges, yedges = edges
-    x = [yedges[0], xedges[-1]]
-    y = [yedges[0], yedges[-1]]
-    return pcolorfast(x, y, Z.T, *args, **kwargs)
+    return pcolorfast(xedges, yedges, Z.T, *args, **kwargs)
 
-def plot_array_2d_hist_pcolormesh(Z: NDArray, edges: List[NDArray], *args, cmap: Optional[str] = None, **kwargs) -> Tuple:
+def plot_array_2d_hist_pcolormesh(Z: NDArray, edges: List[NDArray], *args, **kwargs) -> Tuple:
     x, y = meshgrid(edges[0], edges[1], indexing='ij')
     return pcolormesh(x, y, Z, *args, **kwargs)
 
-def plot_array_2d_hist_pcolor(Z: NDArray, edges: List[NDArray], *args, cmap: Optional[str] = None, **kwargs) -> Tuple:
+def plot_array_2d_hist_pcolor(Z: NDArray, edges: List[NDArray], *args, **kwargs) -> Tuple:
     x, y = meshgrid(edges[0], edges[1], indexing='ij')
     return pcolor(x, y, Z, *args, **kwargs)
 
@@ -225,13 +228,26 @@ def plot_array_2d_hist_matshow(Z: NDArray, edges: Optional[List[NDArray]]=None, 
         kwargs.setdefault('extent', extent)
     return matshow(Z.T, *args, **kwargs)
 
+def plot_array_2d_vs_pcolormesh(Z: NDArray, nodes: List[NDArray], *args, **kwargs) -> Tuple:
+    x, y = nodes
+    kwargs.setdefault('shading', 'nearest')
+    return pcolormesh(x, y, Z, *args, **kwargs)
+
+def plot_array_2d_vs_pcolor(Z: NDArray, nodes: List[NDArray], *args, **kwargs) -> Tuple:
+    x, y = nodes
+    kwargs.setdefault('shading', 'nearest')
+    return pcolormesh(x, y, Z, *args, **kwargs)
+
+def plot_array_2d_vs_surface(Z: NDArray, nodes: List[NDArray], *args, **kwargs) -> Tuple:
+    return plot_surface(nodes[0], nodes[1], Z, *args, **kwargs)
+
 def plot_array_2d_vs_wireframe(
     Z: NDArray,
     nodes: List[NDArray],
     *args,
     facecolors: Optional[str] = None,
-    cmap: Optional[str] = None,
-    colorbar: bool = False,
+    cmap: Union[str, bool, None] = None,
+    colorbar: Union[dict, bool] = False,
     **kwargs
 ) -> Tuple:
     X, Y = nodes
@@ -246,7 +262,7 @@ def plot_array_2d_vs_wireframe(
             res = ax.plot_surface(X, Y, Z, **kwargs)
             res.set_facecolor((0, 0, 0, 0))
 
-        return _colorbar_or_not_3d(res, colorbar, Z, cmap=cmapper)
+        return _colorbar_or_not_3d(res, colorbar, Z)
 
     return ax.plot_wireframe(X, Y, Z, *args, **kwargs)
 
@@ -254,13 +270,15 @@ def _patch_with_colorbar(fcn, mode3d=False):
     '''Patch pyplot.function or ax.method by adding a "colorbar" option'''
     returner = mode3d and _colorbar_or_not_3d or _colorbar_or_not
     if isinstance(fcn, str):
-        def newfcn(*args, colorbar: Optional[bool]=None, **kwargs):
+        def newfcn(*args, cmap: Union[bool, str, None]=None, colorbar: Optional[bool]=None, **kwargs):
             ax = gca()
             actual_fcn = getattr(ax, fcn)
+            kwargs['cmap'] = cmap==True and 'viridis' or cmap
             res = actual_fcn(*args, **kwargs)
             return returner(res, colorbar)
     else:
-        def newfcn(*args, colorbar: Optional[bool]=None, **kwargs):
+        def newfcn(*args, cmap: Union[bool, str, None]=None, colorbar: Optional[bool]=None, **kwargs):
+            kwargs['cmap'] = cmap==True and 'viridis' or cmap
             res = fcn(*args, **kwargs)
             return returner(res, colorbar)
 
@@ -268,14 +286,16 @@ def _patch_with_colorbar(fcn, mode3d=False):
 
 def apply_colors(
     buf: NDArray,
-    cmap: str,
+    cmap: Union[str, bool, None],
     kwargs: dict,
     colorsname: str
 ) -> Tuple:
     from matplotlib import cm
 
-    if cmap=='':
+    if cmap==True:
         cmap='viridis'
+    elif not cmap:
+        return None, None
 
     bmin, bmax = buf.min(), buf.max()
     norm = (buf-bmin)/(bmax-bmin)
@@ -321,7 +341,7 @@ def add_colorbar(
     sca( ax )
     return cbar
 
-def add_colorbar_3d(res, cbaropt={}, mappable=None):
+def add_colorbar_3d(res, cbaropt: dict={}, mappable=None):
     """Add a colorbar to the 3d axis with height aligned to the axis"""
     cbaropt.setdefault('aspect', 4)
     cbaropt.setdefault('shrink', 0.5)
@@ -335,7 +355,7 @@ def add_colorbar_3d(res, cbaropt={}, mappable=None):
 
     return res, cbar
 
-def _colorbar_or_not(res, cbaropt: Optional[Mapping]):
+def _colorbar_or_not(res, cbaropt: Union[Mapping, bool, None]):
     if not cbaropt:
         return res
 
@@ -346,7 +366,7 @@ def _colorbar_or_not(res, cbaropt: Optional[Mapping]):
 
     return res, cbar
 
-def _colorbar_or_not_3d(res, cbaropt, mappable=None, cmap=None):
+def _colorbar_or_not_3d(res, cbaropt: Union[Mapping, bool, None], mappable=None):
     if not cbaropt:
         return res
 
