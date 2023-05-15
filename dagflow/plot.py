@@ -5,7 +5,7 @@ from .limbs import Limbs
 
 from typing import Union, List, Optional, Tuple, Mapping
 from numpy.typing import ArrayLike, NDArray
-from numpy import asanyarray
+from numpy import asanyarray, meshgrid, zeros_like
 
 def _get_node_data(node: Limbs) -> Tuple[Optional[Output], NDArray, Optional[List[NDArray]], Optional[List[NDArray]]]:
     return _get_output_data(node.outputs[0])
@@ -123,8 +123,38 @@ def plot_array_2d(
 
     return tuple(rets)
 
-def plot_array_2d_hist(array: NDArray, edges: List[NDArray], *args, **kwargs) -> Tuple:
-    raise RuntimeError("unimplemented")
+def plot_array_2d_hist(
+    dZ: NDArray,
+    edges: List[NDArray],
+    *args,
+    cmap: Optional[str] = None,
+    **kwargs
+) -> Tuple:
+    xedges, yedges = edges
+    xw=xedges[1:]-xedges[:-1]
+    yw=yedges[1:]-yedges[:-1]
+
+    X, Y = meshgrid(xedges[:-1], yedges[:-1], indexing='ij')
+    X, Y = X.ravel(), Y.ravel()
+
+    dX, dY = meshgrid(xw, yw, indexing='ij')
+    dX, dY, dZ = dX.ravel(), dY.ravel(), dZ.ravel()
+    Z = zeros_like(dZ)
+
+    _, cmapper = apply_colors(dZ, cmap, kwargs, 'color')
+    colorbar = kwargs.pop('colorbar', False)
+
+    # if colorizetop:
+        # nel, ncol = colors.shape
+        # newcolors = N.ones( (nel, 6, ncol), dtype=colors.dtype )
+        # newcolors[:,1,:]=colors
+        # newcolors.shape=(nel*6, ncol)
+        # kwargs['color']=newcolors
+
+    ax = gca()
+    res = ax.bar3d(X, Y, Z, dX, dY, dZ, *args, **kwargs)
+
+    return _colorbar_or_not_3d(res, colorbar, dZ, cmap=cmapper)
 
 def plot_array_2d_vs(
     array: NDArray,
@@ -160,7 +190,7 @@ def plot_array_2d_vs_wireframe(
             res = ax.plot_surface(X, Y, Z, **kwargs)
             res.set_facecolor((0, 0, 0, 0))
 
-        return _colorbar_or_not_3d(res, colorbar, Z, cmap=cmap)
+        return _colorbar_or_not_3d(res, colorbar, Z, cmap=cmapper)
 
     return ax.plot_wireframe(X, Y, Z, *args, **kwargs)
 

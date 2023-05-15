@@ -11,6 +11,8 @@ from dagflow.lib.trigonometry import Cos, Sin
 from numpy import allclose, linspace, meshgrid, pi, vectorize
 from pytest import mark, raises
 
+from dagflow.plot import plot_auto
+from matplotlib.pyplot import subplots, show, close
 
 @mark.parametrize("align", ("left", "center", "right"))
 def test_Integrator_rect_center(align, debug_graph, testname):
@@ -121,8 +123,8 @@ def test_Integrator_gl2d(debug_graph, testname):
 
     with Graph(debug=debug_graph, close=True) as graph:
         npointsX, npointsY = 10, 20
-        edgesX = Array("edgesX", linspace(0, 10, npointsX + 1))
-        edgesY = Array("edgesY", linspace(0, 10, npointsY + 1))
+        edgesX = Array("edgesX", linspace(0, 10, npointsX + 1), label={'axis': 'Label for axis X'})
+        edgesY = Array("edgesY", linspace(0, 10, npointsY + 1), label={'axis': 'Label for axis Y'})
         ordersX = Array("ordersX", [2] * npointsX, edges=edgesX["array"])
         ordersY = Array("ordersY", [2] * npointsY, edges=edgesY["array"])
         x0, y0 = meshgrid(edgesX._data[:-1], edgesY._data[:-1], indexing="ij")
@@ -130,7 +132,7 @@ def test_Integrator_gl2d(debug_graph, testname):
         X0, X1 = Array("X0", x0), Array("X1", x1)
         Y0, Y1 = Array("Y0", y0), Array("Y1", y1)
         sampler = IntegratorSampler("sampler", mode="2d")
-        integrator = Integrator("integrator")
+        integrator = Integrator("integrator", label={'plottitle': f'Integrator test: {testname}', 'axis': 'integral'})
         poly0 = Polynomial1("poly0")
         polyres = PolynomialRes("polyres")
         ordersX >> sampler("ordersX")
@@ -153,8 +155,13 @@ def test_Integrator_gl2d(debug_graph, testname):
         edgesX["array"],
         edgesY["array"],
     ]
-    savegraph(graph, f"output/{testname}.png")
 
+    from mpl_toolkits.mplot3d import axes3d
+    subplots(1, 1, subplot_kw={'projection': '3d'})
+    plot_auto(integrator, colorbar=True)
+    close()
+
+    savegraph(graph, f"output/{testname}.png")
 
 # test wrong ordersX: edges not given
 def test_Integrator_edges_0(debug_graph):
