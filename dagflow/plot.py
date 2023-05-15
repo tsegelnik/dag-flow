@@ -25,7 +25,12 @@ def _get_data(object: Union[Output, Limbs, ArrayLike]) -> Tuple[Optional[Output]
     else:
         return _get_array_data(object)
 
-def plot_auto(object: Union[Output, Limbs, ArrayLike], *args, **kwargs) -> Tuple[tuple, ...]:
+def plot_auto(
+    object: Union[Output, Limbs, ArrayLike],
+    *args,
+    colorbar: Union[bool,Mapping,None] = None,
+    **kwargs
+) -> Tuple[tuple, ...]:
     output, array, edges, nodes = _get_data(object)
 
     ndim = len(array.shape)
@@ -34,7 +39,11 @@ def plot_auto(object: Union[Output, Limbs, ArrayLike], *args, **kwargs) -> Tuple
         if nodes is not None: nodes = nodes[0]
         ret = plot_array_1d(array, edges, nodes, *args, **kwargs)
     elif ndim==2:
-        ret = plot_array_2d(array, edges, nodes, *args, **kwargs)
+        if colorbar==True:
+            colorbar={}
+        if isinstance(colorbar, Mapping):
+            colorbar.setdefault('label', get_colorbar_label(output))
+        ret = plot_array_2d(array, edges, nodes, *args, colorbar=colorbar, **kwargs)
     else:
         raise RuntimeError(f"Do not know how to plot {ndim}d")
 
@@ -42,6 +51,9 @@ def plot_auto(object: Union[Output, Limbs, ArrayLike], *args, **kwargs) -> Tuple
         annotate_axes(output)
 
     return ret
+
+def get_colorbar_label(output: Output) -> None:
+    return output.node.label('axis', fallback=None)
 
 def annotate_axes(output: Output, ax: Optional[Axes]=None) -> None:
     ax = ax or gca()
