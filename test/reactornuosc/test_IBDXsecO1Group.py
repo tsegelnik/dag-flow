@@ -70,7 +70,6 @@ def test_IBDXsecO1Group(debug_graph, testname):
 
     subplots(1, 1, subplot_kw={'projection': '3d'})
     plot_auto(ibdxsec, mode='wireframe')
-    show()
     close()
     close()
     close()

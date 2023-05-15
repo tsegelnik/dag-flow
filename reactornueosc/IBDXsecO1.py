@@ -3,6 +3,8 @@ from dagflow.nodes import FunctionNode
 from dagflow.input import Input
 from dagflow.output import Output
 
+from typing import Mapping
+
 class IBDXsecO1(FunctionNode):
     """Inverse beta decay cross section by Vogel and Beacom"""
     __slots__ = (
@@ -26,9 +28,15 @@ class IBDXsecO1(FunctionNode):
     _const_f: Input
     _const_f2: Input
 
-    def __init__(self, name, *args, **kwargs):
+    def __init__(self, name, *args, label: Mapping={}, **kwargs):
         kwargs.setdefault("missing_input_handler", MissingInputAddPair())
-        super().__init__(name, *args, **kwargs)
+        label = {
+                'text':  r'IBD cross section σ(Eν,cosθ), cm⁻²',
+                'latex': r'IBD cross section $\sigma(E_{\nu}, \cos\theta)$, cm$^{-2}$',
+                'axis':  r'$\sigma(E_{\nu}, \cos\theta)$, cm$^{-2}$'
+                }
+        label.update(label)
+        super().__init__(name, *args, label=label, **kwargs)
 
         self._enu = self.add_input('enu', positional=True, keyword=True)
         self._ctheta = self.add_input('costheta', positional=True, keyword=True)

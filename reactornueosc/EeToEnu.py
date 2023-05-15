@@ -6,6 +6,8 @@ from dagflow.nodes import FunctionNode
 from dagflow.input import Input
 from dagflow.output import Output
 
+from typing import Mapping
+
 class EeToEnu(FunctionNode):
     """Enu(Ee, cosθ)"""
     __slots__ = (
@@ -22,9 +24,15 @@ class EeToEnu(FunctionNode):
     _const_mp: Input
     _const_mn: Input
 
-    def __init__(self, name, *args, **kwargs):
+    def __init__(self, name, *args, label: Mapping={}, **kwargs):
         kwargs.setdefault("missing_input_handler", MissingInputAddPair())
-        super().__init__(name, *args, **kwargs)
+        label = {
+                'text': r'Eν, MeV',
+                'latex': r'$E_{\nu}$, MeV',
+                'axis': r'$E_{\nu}$, MeV',
+                }
+        label.update(label)
+        super().__init__(name, *args, label=label, **kwargs)
 
         self._ee = self.add_input('ee', positional=True, keyword=True)
         self._ctheta = self.add_input('costheta', positional=True, keyword=True)

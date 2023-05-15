@@ -5,6 +5,8 @@ from dagflow.nodes import FunctionNode
 from dagflow.input import Input
 from dagflow.output import Output
 
+from typing import Mapping
+
 class Jacobian_dEnu_dEe(FunctionNode):
     """Enu(Ee, cosθ)"""
     __slots__ = (
@@ -22,9 +24,15 @@ class Jacobian_dEnu_dEe(FunctionNode):
     _const_mp: Input
     _const_mn: Input
 
-    def __init__(self, name, *args, **kwargs):
+    def __init__(self, name, *args, label: Mapping={}, **kwargs):
         kwargs.setdefault("missing_input_handler", MissingInputAddPair())
-        super().__init__(name, *args, **kwargs)
+        label = {
+                'text': r'Energy conversion Jacobian dEν/dEdep',
+                'latex': r'$dE_{\nu}/dE_{\mathrm dep}$',
+                'axis': r'$dE_{\nu}/dE_{\mathrm dep}$',
+                }
+        label.update(label)
+        super().__init__(name, *args, label=label, **kwargs)
 
         self._enu = self.add_input('enu', positional=True, keyword=True)
         self._ee = self.add_input('ee', positional=True, keyword=True)

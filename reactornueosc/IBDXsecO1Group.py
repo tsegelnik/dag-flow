@@ -5,24 +5,9 @@ from .Jacobian_dEnu_dEe import Jacobian_dEnu_dEe
 from dagflow.meta_node import MetaNode
 
 def IBDXsecO1Group(*, labels: dict={}):
-    lenu = labels.setdefault('enu', {})
-    lenu.setdefault('text', r'Eν, MeV')
-    lenu.setdefault('latex', r'$E_{\nu}$, MeV')
-    lenu.setdefault('axis', r'$E_{\nu}$, MeV')
-
-    ljacobian = labels.setdefault('jacobian', {})
-    ljacobian.setdefault('text', r'Energy conversion Jacobian dEν/dEdep')
-    ljacobian.setdefault('latex', r'$dE_{\nu}/dE_{\mathrm dep}$')
-    ljacobian.setdefault('axis', r'$dE_{\nu}/dE_{\mathrm dep}$')
-
-    lxsec = labels.setdefault('xsec', {})
-    lxsec.setdefault('text', r'IBD cross section σ(Eν,cosθ), cm⁻²')
-    lxsec.setdefault('latex', r'IBD cross section $\sigma(E_{\nu}, \cos\theta)$, cm$^{-2}$')
-    lxsec.setdefault('axis', r'$\sigma(E_{\nu}, \cos\theta)$, cm$^{-2}$')
-
-    ibdxsec_ee = IBDXsecO1('ibd_Ee', label=lxsec)
-    eetoenu = EeToEnu('Enu', label=lenu)
-    jacobian = Jacobian_dEnu_dEe('dEν/dEe', label=ljacobian)
+    ibdxsec_ee = IBDXsecO1('ibd_Ee', label=labels.get('xsec', {}))
+    eetoenu = EeToEnu('Enu', label=labels.get('enu', {}))
+    jacobian = Jacobian_dEnu_dEe('dEν/dEe', label=labels.get('jacobian', {}))
 
     eetoenu.outputs['result'] >> (jacobian.inputs['enu'], ibdxsec_ee.inputs['enu'])
 
