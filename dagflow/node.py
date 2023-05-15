@@ -281,16 +281,23 @@ class Node(Limbs):
         source: str = "text",
         default: Optional[str] = None,
         *,
-        fallback: Optional[str] = "text",
+        fallback: Union[str, Sequence[str], None] = "text",
     ) -> Optional[str]:
         # if self._labels:
         #     kwargs.setdefault("name", self._name)
         #     return self._labels.format(*args, **kwargs)
         label = self._labels.get(source, default)
-        if label is None and fallback is not None:
-            return self._labels.get(fallback, '')
 
-        return label
+        if isinstance(fallback, str):
+            fallback = fallback,
+
+        if fallback:
+            for fallbackfield in fallback:
+                if label is not None:
+                    return label
+                label = self._labels.get(fallbackfield, None)
+
+        return label or ''
 
     def _inherit_labels(
         self,
