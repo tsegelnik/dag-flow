@@ -6,6 +6,9 @@ from .types import NodeT
 from numpy import square
 from typing import Union, Set, Optional, Dict, Sequence
 
+from .graph import Graph
+from .node import Node
+
 try:
     import pygraphviz as G
 except ImportError:
@@ -29,13 +32,23 @@ else:
             self.edges.append(edge)
 
     class GraphDot:
-        _graph = None
+        __slots__ = (
+                '_graph',
+                '_node_id_map',
+                '_show',
+                '_nodes_map_dag',
+                '_nodes_open_input',
+                '_nodes_open_output',
+                '_edges'
+                )
+        _graph: G.AGraph
         _node_id_map: dict
+        _nodes_map_dag: Dict[Node, G.agraph.Node]
 
         _show: Set[str]
         def __init__(
             self,
-            dag,
+            graph_or_node: Union[Graph, Node, None],
             graphattr: dict={}, edgeattr: dict={}, nodeattr: dict={},
             show: Union[Sequence,str] = ['type', 'mark', 'label'],
             **kwargs
@@ -57,7 +70,7 @@ else:
             nodeattr = dict(nodeattr)
 
             self._node_id_map = {}
-            self._nodes = {}
+            self._nodes_map_dag = {}
             self._nodes_open_input = {}
             self._nodes_open_output = {}
             self._edges: Dict[str, EdgeDef] = {}
@@ -70,11 +83,24 @@ else:
             if nodeattr:
                 self._graph.node_attr.update(nodeattr)
 
-            if label := kwargs.pop("label", dag.label()):
-                self.set_label(label)
-            self._transform(dag)
+            if isinstance(graph_or_node, Graph):
+                if label := kwargs.pop("label", graph_or_node.label()):
+                    self.set_label(label)
+                self._transform_graph(graph_or_node)
+            elif isinstance(graph_or_node, Node):
+                self._transform_from_node(graph_or_node)
+            elif graph_or_node!=None:
+                raise RuntimeError("Invalid graph entry point")
 
-        def _transform(self, dag):
+        @classmethod
+        def from_graph(cls, graph: Graph, *args, **kwargs) -> 'GraphDot':
+            gd = cls(None, *args, **kwargs)
+            if (label := kwargs.pop("label", graph.label())):
+                gd.set_label(label)
+            gd._transform_graph(graph)
+            return gd
+
+        def _transform_graph(self, dag: Graph) -> None:
             for nodedag in dag._nodes:
                 # if nodedag.meta_node:
                 #     self._add_node(nodedag.meta_node)
@@ -85,126 +111,155 @@ else:
                 self._add_edges(nodedag)
             self.update_style()
 
-        def get_id(self, object, suffix: str="") -> str:
-            name = type(object).__name__
-            omap = self._node_id_map.setdefault(name, {})
-            onum = omap.setdefault(object, len(omap))
-            return f"{name}_{onum}{suffix}"
+        @classmethod
+        def from_output(cls, output: Output, *args, **kwargs) -> 'GraphDot':
+            return cls.from_node(output.node, *args, **kwargs)
 
-        def get_label(self, node: NodeT) -> str:
-            text = node.label('graph') or node.name
-            try:
-                out0 = node.outputs[0]
-            except IndexError:
-                shape0 = '?'
-                dtype0 = '?'
-                hasedges = False
-                hasnodes = False
-            else:
-                hasedges = bool(out0.dd.axes_edges)
-                hasnodes = bool(out0.dd.axes_nodes)
-                shape0 = out0.dd.shape
-                if shape0 is None:
-                    shape0 = '?'
-                shape0="x".join(str(s) for s in shape0)
+        @classmethod
+        def from_node(
+            cls,
+            node: Node,
+            *args,
+            mindepth: Optional[int] = None,
+            maxdepth: Optional[int] = None,
+            minsize: Optional[int] = None,
+            **kwargs
+        ) -> 'GraphDot':
+            gd = cls(None, *args, **kwargs)
+            label = [node.name]
+            if mindepth is not None: label.append(f'{mindepth=:+d}')
+            if maxdepth is not None: label.append(f'{maxdepth=:+d}')
+            if minsize is not None: label.append(f'{minsize=:d}')
+            gd.set_label(', '.join(label))
+            gd._transform_from_node(node, mindepth=mindepth, maxdepth=maxdepth, minsize=minsize)
+            return gd
 
-                dtype0 = out0.dd.dtype
-                if dtype0 is None:
-                    dtype0 = '?'
-                else:
-                    dtype0 = dtype0.char
+        def _transform_from_node(
+            self,
+            node: Node,
+            mindepth: Optional[int] = None,
+            maxdepth: Optional[int] = None,
+            minsize: Optional[int] = None,
+        ) -> None:
+            self._add_nodes_backward_recursive(node, including_self=True, mindepth=mindepth, maxdepth=maxdepth, minsize=minsize)
 
-            nout_pos = len(node.outputs)
-            nout_nonpos = node.outputs.len_all()-nout_pos
-            if nout_nonpos==0:
-                if nout_pos>1:
-                    nout = f'→{nout_pos}'
-                else:
-                    nout = ''
-            else:
-                nout=f'→{nout_pos}+{nout_nonpos}'
+            for nodedag in self._nodes_map_dag:
+                self._add_open_inputs(nodedag)
+                self._add_edges(nodedag)
 
-            nin_pos = len(node.inputs)
-            nin_nonpos = node.inputs.len_all() - nin_pos
-            if nin_nonpos==0:
-                if nin_pos>1:
-                    nin = f'{nin_pos}→'
-                else:
-                    nin = ''
-            else:
-                nin=f'{nin_pos}+{nin_nonpos}→'
+            self.update_style()
 
-            nlimbs = f' {nin}{nout}'.replace('→→', '→')
+        def _add_node(self, nodedag: Node, *, depth: Optional[int]=None) -> None:
+            if nodedag in self._nodes_map_dag:
+                return
 
-            left, right = [], []
-            if hasedges:
-                br_left, br_right = '\\{', '\\}'
-            else:
-                br_left, br_right = '[', ']'
-            if hasnodes:
-                br_right+='…'
-            info_type = f"{br_left}{shape0}{br_right}{dtype0}{nlimbs}"
-            if 'type' in self._show:
-                left.append(info_type)
-            if 'mark' in self._show and (mark:=node.label('mark', fallback=None)) is not None:
-                left.append(mark)
-            if 'label' in self._show:
-                right.append(text)
-            if 'status' in self._show:
-                status = []
-                try:
-                    if node.types_tainted:  status.append('types_tainted')
-                    if node.tainted:        status.append('tainted')
-                    if node.frozen:         status.append('frozen')
-                    if node.frozen_tainted: status.append('frozen_tainted')
-                    if node.invalid:        status.append('invalid')
-                    if not node.closed:     status.append('open')
-                except AttributeError:
-                    pass
-                if status:
-                    right.append(status)
-
-            show_data = 'data' in self._show
-            show_data_summary = 'data_summary' in self._show
-            if show_data or show_data_summary:
-                data = None
-                tainted = out0.tainted and 'tainted' or 'updated'
-                try:
-                    data = out0.data
-                except Exception:
-                    right.append('cought exception')
-                    data = out0._data
-
-                if show_data:
-                    right.append(str(data).replace('\n', '\\l')+'\\l')
-                if show_data_summary:
-                    sm = data.sum()
-                    sm2 = square(data).sum()
-                    mn = data.min()
-                    mx = data.max()
-                    right.append((f'Σ={sm:.2g}', f'Σ²={sm2:.2g}', f'min={mn:.2g}', f'max={mx:.2g}', f'{tainted}'))
-
-            if getattr(node, 'exception', None) is not None:
-                right.append(node.exception)
-
-            return self._combine_labels((left, right))
-
-        def _combine_labels(self, labels: Union[Sequence,str]) -> str:
-            if isinstance(labels, str):
-                return labels
-
-            slabels = [self._combine_labels(l) for l in labels]
-            return f"{{{'|'.join(slabels)}}}"
-
-        def _add_node(self, nodedag):
             styledict = {
                 "shape": "Mrecord",
-                "label": self.get_label(nodedag)
+                "label": self.get_label(nodedag, depth=depth)
             }
             target = self.get_id(nodedag)
             self._graph.add_node(target, **styledict)
             nodedot = self._graph.get_node(target)
-            self._nodes[nodedag] = nodedot
+            nodedot.attr['nodedag'] = nodedag
+            nodedot.attr['depth'] = depth
+            self._nodes_map_dag[nodedag] = nodedot
+
+        def _add_nodes_backward_recursive(
+            self,
+            node: Node,
+            *,
+            including_self: bool=False,
+            mindepth: Optional[int] = None,
+            maxdepth: Optional[int] = None,
+            minsize: Optional[int] = None,
+            depth: int=0,
+            visited_nodes: Set[Node] = set()
+        ) -> None:
+            if node in visited_nodes:
+                pass
+                # return
+            visited_nodes.add(node)
+
+            if including_self:
+                if node in self._nodes_map_dag:
+                    return
+                if not num_in_range(depth, mindepth, maxdepth):
+                    return
+                if depth>0 or num_in_range(node.outputs[0].dd.size, minsize):
+                    self._add_node(node, depth=depth)
+                else:
+                    return
+            depth-=1
+            for input in node.inputs.iter_all():
+                self._add_nodes_backward_recursive(
+                    input.parent_node,
+                    including_self=True,
+                    depth=depth,
+                    mindepth=mindepth,
+                    maxdepth=maxdepth,
+                    minsize=minsize,
+                    visited_nodes=visited_nodes
+                )
+
+            self._add_nodes_forward_recursive(
+                node,
+                including_self=False,
+                depth=depth+1,
+                mindepth=mindepth,
+                maxdepth=maxdepth,
+                minsize=minsize,
+                ignore_visit=True,
+                visited_nodes=visited_nodes
+            )
+
+        def _add_nodes_forward_recursive(
+            self,
+            node: Node,
+            *,
+            including_self: bool=False,
+            mindepth: Optional[int] = None,
+            maxdepth: Optional[int] = None,
+            minsize: Optional[int] = None,
+            depth: int=0,
+            visited_nodes: Set[Node] = set(),
+            ignore_visit: bool = False
+        ) -> None:
+            if node in visited_nodes and not ignore_visit:
+                pass
+                # return
+            visited_nodes.add(node)
+
+            if including_self:
+                if node in self._nodes_map_dag:
+                    return
+                if not num_in_range(depth, mindepth, maxdepth):
+                    return
+                if depth>0 or num_in_range(node.outputs[0].dd.size, minsize):
+                    self._add_node(node, depth=depth)
+                else:
+                    return
+            depth+=1
+            for output in node.outputs.iter_all():
+                for child_input in output.child_inputs:
+                    self._add_nodes_backward_recursive(
+                        child_input.node,
+                        including_self=True,
+                        depth=depth,
+                        mindepth=mindepth,
+                        maxdepth=maxdepth,
+                        minsize=minsize,
+                        visited_nodes=visited_nodes
+                    )
+                    self._add_nodes_forward_recursive(
+                        child_input.node,
+                        including_self=False,
+                        depth=depth,
+                        mindepth=mindepth,
+                        maxdepth=maxdepth,
+                        minsize=minsize,
+                        visited_nodes=visited_nodes,
+                        ignore_visit=True
+                    )
 
         def _add_open_inputs(self, nodedag):
             for input in nodedag.inputs.iter_all():
@@ -372,7 +427,7 @@ else:
                     attr["style"] = ""
 
         def update_style(self):
-            for nodedag, nodedot in self._nodes.items():
+            for nodedag, nodedot in self._nodes_map_dag.items():
                 self._set_style_node(nodedag, nodedot.attr)
 
             for object, edgedef in self._edges.items():
@@ -381,7 +436,7 @@ else:
                         object, edgedef.nodein.attr, edge.attr, edgedef.nodeout.attr
                     )
 
-        def set_label(self, label):
+        def set_label(self, label: str):
             self._graph.graph_attr["label"] = label
 
         def savegraph(self, fname, verbose=True):
@@ -393,3 +448,124 @@ else:
             else:
                 self._graph.layout(prog="dot")
                 self._graph.draw(fname)
+
+        def get_id(self, object, suffix: str="") -> str:
+            name = type(object).__name__
+            omap = self._node_id_map.setdefault(name, {})
+            onum = omap.setdefault(object, len(omap))
+            return f"{name}_{onum}{suffix}"
+
+        def get_label(self, node: NodeT, *, depth: Optional[int]=None) -> str:
+            text = node.label('graph') or node.name
+            try:
+                out0 = node.outputs[0]
+            except IndexError:
+                shape0 = '?'
+                dtype0 = '?'
+                hasedges = False
+                hasnodes = False
+            else:
+                hasedges = bool(out0.dd.axes_edges)
+                hasnodes = bool(out0.dd.axes_nodes)
+                shape0 = out0.dd.shape
+                if shape0 is None:
+                    shape0 = '?'
+                shape0="x".join(str(s) for s in shape0)
+
+                dtype0 = out0.dd.dtype
+                if dtype0 is None:
+                    dtype0 = '?'
+                else:
+                    dtype0 = dtype0.char
+
+            nout_pos = len(node.outputs)
+            nout_nonpos = node.outputs.len_all()-nout_pos
+            if nout_nonpos==0:
+                if nout_pos>1:
+                    nout = f'→{nout_pos}'
+                else:
+                    nout = ''
+            else:
+                nout=f'→{nout_pos}+{nout_nonpos}'
+
+            nin_pos = len(node.inputs)
+            nin_nonpos = node.inputs.len_all() - nin_pos
+            if nin_nonpos==0:
+                if nin_pos>1:
+                    nin = f'{nin_pos}→'
+                else:
+                    nin = ''
+            else:
+                nin=f'{nin_pos}+{nin_nonpos}→'
+
+            nlimbs = f' {nin}{nout}'.replace('→→', '→')
+
+            left, right = [], []
+            if hasedges:
+                br_left, br_right = '\\{', '\\}'
+            else:
+                br_left, br_right = '[', ']'
+            if hasnodes:
+                br_right+='…'
+            info_type = f"{br_left}{shape0}{br_right}{dtype0}{nlimbs}"
+            if 'type' in self._show:
+                left.append(info_type)
+            if 'mark' in self._show and (mark:=node.label('mark', fallback=None)) is not None:
+                left.append(mark)
+            if 'label' in self._show:
+                right.append(text)
+            if 'status' in self._show:
+                status = []
+                try:
+                    if node.types_tainted:  status.append('types_tainted')
+                    if node.tainted:        status.append('tainted')
+                    if node.frozen:         status.append('frozen')
+                    if node.frozen_tainted: status.append('frozen_tainted')
+                    if node.invalid:        status.append('invalid')
+                    if not node.closed:     status.append('open')
+                except AttributeError:
+                    pass
+                if status:
+                    right.append(status)
+
+            show_data = 'data' in self._show
+            show_data_summary = 'data_summary' in self._show
+            if show_data or show_data_summary:
+                data = None
+                tainted = out0.tainted and 'tainted' or 'updated'
+                try:
+                    data = out0.data
+                except Exception:
+                    right.append('cought exception')
+                    data = out0._data
+
+                if show_data:
+                    right.append(str(data).replace('\n', '\\l')+'\\l')
+                if show_data_summary:
+                    sm = data.sum()
+                    sm2 = square(data).sum()
+                    mn = data.min()
+                    mx = data.max()
+                    block = [f'Σ={sm:.2g}', f'Σ²={sm2:.2g}', f'min={mn:.2g}', f'max={mx:.2g}', f'{tainted}']
+                    if depth is not None:
+                        block.append(f'd: {depth:+d}'.replace('-', '−'))
+                    right.append(block)
+
+            if getattr(node, 'exception', None) is not None:
+                right.append(node.exception)
+
+            return self._combine_labels((left, right))
+
+        def _combine_labels(self, labels: Union[Sequence,str]) -> str:
+            if isinstance(labels, str):
+                return labels
+
+            slabels = [self._combine_labels(l) for l in labels]
+            return f"{{{'|'.join(slabels)}}}"
+
+def num_in_range(num: int, minnum: Optional[int], maxnum: Optional[int]=None) -> False:
+    if minnum is not None and num<minnum:
+        return False
+    if maxnum is not None and num>maxnum:
+        return False
+    return True
