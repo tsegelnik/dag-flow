@@ -28,19 +28,19 @@ class EeToEnu(FunctionNode):
         label = dict(label)
         label.update({
                 'text': r'Neutrino energy Eν, MeV',
-                'axis': r'Plot title $E_{\nu}$, MeV',
+                'plottitle': r'Neutrino energy $E_{\nu}$, MeV',
                 'latex': r'$E_{\nu}$, MeV',
                 'axis': r'$E_{\nu}$, MeV',
                 })
         super().__init__(name, *args, label=label, **kwargs)
 
-        self._ee = self.add_input('ee', positional=True, keyword=True)
-        self._ctheta = self.add_input('costheta', positional=True, keyword=True)
-        self._result = self.add_output('result', positional=True, keyword=True)
+        self._ee = self._add_input('ee', positional=True, keyword=True)
+        self._ctheta = self._add_input('costheta', positional=True, keyword=True)
+        self._result = self._add_output('result', positional=True, keyword=True)
 
-        self._const_me   = self.add_input('ElectronMass', positional=False, keyword=True)
-        self._const_mp   = self.add_input('ProtonMass', positional=False, keyword=True)
-        self._const_mn   = self.add_input('NeutronMass', positional=False, keyword=True)
+        self._const_me   = self._add_input('ElectronMass', positional=False, keyword=True)
+        self._const_mp   = self._add_input('ProtonMass', positional=False, keyword=True)
+        self._const_mn   = self._add_input('NeutronMass', positional=False, keyword=True)
 
     def _fcn(self, _, inputs, outputs):
         _enu(
@@ -85,10 +85,7 @@ def _enu(
     for i, (Ee, ctheta) in enumerate(zip(EeIn, CosThetaIn)):
         epsilon_e = Ee / ProtonMass
         Ve2 = 1.0 - ElectronMass2 / (Ee*Ee)
-        if Ve2>0:
-            Ve = sqrt(Ve2)
-        else:
-            Ve = 0.0
+        Ve = sqrt(Ve2) if Ve2>0.0 else 0.0
         Ee0 = Ee + delta
         corr = 1.0 - epsilon_e*(1.0 - Ve*ctheta)
         Result[i] = Ee0/corr

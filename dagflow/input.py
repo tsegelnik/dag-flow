@@ -166,7 +166,7 @@ class Input:
         return self._node.logger
 
     @property
-    def child_output(self) -> Optional[InputT]:
+    def child_output(self) -> Optional[Output]:
         return self._child_output
 
     @property

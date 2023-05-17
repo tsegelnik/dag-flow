@@ -3,21 +3,22 @@ from matplotlib.pyplot import Axes
 from matplotlib import colormaps
 from .output import Output
 from .limbs import Limbs
+from .types import EdgesLike, NodesLike
 
 from typing import Union, List, Optional, Tuple, Mapping
 from numpy.typing import ArrayLike, NDArray
 from numpy import asanyarray, meshgrid, zeros_like
 
-def _get_node_data(node: Limbs) -> Tuple[Optional[Output], NDArray, Optional[List[NDArray]], Optional[List[NDArray]]]:
+def _get_node_data(node: Limbs) -> Tuple[Optional[Output], NDArray, EdgesLike, NodesLike]:
     return _get_output_data(node.outputs[0])
 
-def _get_output_data(output: Output) -> Tuple[Optional[Output], NDArray, Optional[List[NDArray]], Optional[List[NDArray]]]:
+def _get_output_data(output: Output) -> Tuple[Optional[Output], NDArray, EdgesLike, NodesLike]:
     return output, output.data, output.dd.edges_arrays, output.dd.nodes_arrays
 
-def _get_array_data(array: ArrayLike) -> Tuple[Optional[Output], NDArray, Optional[List[NDArray]], Optional[List[NDArray]]]:
+def _get_array_data(array: ArrayLike) -> Tuple[Optional[Output], NDArray, EdgesLike, NodesLike]:
     return None, asanyarray(array), None, None
 
-def _get_data(object: Union[Output, Limbs, ArrayLike]) -> Tuple[Optional[Output], NDArray, Optional[List[NDArray]], Optional[List[NDArray]]]:
+def _get_data(object: Union[Output, Limbs, ArrayLike]) -> Tuple[Optional[Output], NDArray, EdgesLike, NodesLike]:
     if isinstance(object, Output):
         return _get_output_data(object)
     elif isinstance(object, Limbs):
@@ -35,8 +36,8 @@ def plot_auto(
 
     ndim = len(array.shape)
     if ndim==1:
-        if edges is not None: edges = edges[0]
-        if nodes is not None: nodes = nodes[0]
+        edges = edges[0] if edges else None
+        nodes = nodes[0] if nodes else None
         ret = plot_array_1d(array, edges, nodes, *args, **kwargs)
     elif ndim==2:
         if colorbar==True:
@@ -123,15 +124,15 @@ def plot_output_1d_array(output: Output, args, **kwargs) -> Tuple:
 
 def plot_array_2d(
     array: NDArray,
-    edges: Optional[List[NDArray]],
-    nodes: Optional[List[NDArray]],
+    edges: EdgesLike,
+    nodes: NodesLike,
     *args, **kwargs
 ) -> Tuple[tuple, ...]:
     rets = []
-    if edges is not None:
+    if edges:
         ret = plot_array_2d_hist(array, edges, *args, **kwargs)
         rets.append(ret)
-    elif nodes is not None:
+    elif nodes:
         ret = plot_array_2d_vs(array, nodes, *args, **kwargs)
         rets.append(ret)
     else:
@@ -225,7 +226,7 @@ def plot_array_2d_hist_pcolor(Z: NDArray, edges: List[NDArray], *args, **kwargs)
     x, y = meshgrid(edges[0], edges[1], indexing='ij')
     return pcolor(x, y, Z, *args, **kwargs)
 
-def plot_array_2d_hist_imshow(Z: NDArray, edges: Optional[List[NDArray]]=None, *args, **kwargs):
+def plot_array_2d_hist_imshow(Z: NDArray, edges: EdgesLike=None, *args, **kwargs):
     if edges:
         xedges, yedges = edges
         extent = [xedges[0], xedges[-1], yedges[0], yedges[-1]]
@@ -233,7 +234,7 @@ def plot_array_2d_hist_imshow(Z: NDArray, edges: Optional[List[NDArray]]=None, *
     kwargs.setdefault('origin', 'lower')
     return imshow(Z.T, *args, **kwargs)
 
-def plot_array_2d_hist_matshow(Z: NDArray, edges: Optional[List[NDArray]]=None, *args, **kwargs):
+def plot_array_2d_hist_matshow(Z: NDArray, edges: EdgesLike=None, *args, **kwargs):
     kwargs.setdefault('fignum', False)
     if edges:
         xedges, yedges = edges

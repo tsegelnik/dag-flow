@@ -175,10 +175,8 @@ else:
             depth: int=0,
             visited_nodes: Set[Node] = set()
         ) -> None:
-            if node in visited_nodes:
-                pass
-                # return
-            visited_nodes.add(node)
+            if node not in visited_nodes:
+                visited_nodes.add(node)
 
             if including_self:
                 if node in self._nodes_map_dag:
@@ -225,8 +223,7 @@ else:
             ignore_visit: bool = False
         ) -> None:
             if node in visited_nodes and not ignore_visit:
-                pass
-                # return
+                return
             visited_nodes.add(node)
 
             if including_self:

@@ -35,13 +35,13 @@ class Jacobian_dEnu_dEe(FunctionNode):
                 })
         super().__init__(name, *args, label=label, **kwargs)
 
-        self._enu = self.add_input('enu', positional=True, keyword=True)
-        self._ee = self.add_input('ee', positional=True, keyword=True)
-        self._ctheta = self.add_input('costheta', positional=True, keyword=True)
-        self._result = self.add_output('result', positional=True, keyword=True)
+        self._enu = self._add_input('enu', positional=True, keyword=True)
+        self._ee = self._add_input('ee', positional=True, keyword=True)
+        self._ctheta = self._add_input('costheta', positional=True, keyword=True)
+        self._result = self._add_output('result', positional=True, keyword=True)
 
-        self._const_me   = self.add_input('ElectronMass', positional=False, keyword=True)
-        self._const_mp   = self.add_input('ProtonMass', positional=False, keyword=True)
+        self._const_me   = self._add_input('ElectronMass', positional=False, keyword=True)
+        self._const_mp   = self._add_input('ProtonMass', positional=False, keyword=True)
 
     def _fcn(self, _, inputs, outputs):
         _jacobian_dEnu_dEe(

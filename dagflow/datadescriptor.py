@@ -24,8 +24,8 @@ class DataDescriptor:
         self,
         dtype: DTypeLike,  # DTypeLike is already Optional
         shape: Optional[ShapeLike],
-        axes_edges: EdgesLike = None,
-        axes_nodes: EdgesLike = None,
+        axes_edges: Optional[EdgesLike] = None,
+        axes_nodes: Optional[EdgesLike] = None,
     ) -> None:
         """
         Sets the attributes

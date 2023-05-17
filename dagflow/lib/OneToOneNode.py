@@ -1,6 +1,5 @@
 from ..input_extra import MissingInputAddPair
 from ..nodes import FunctionNode
-from ..typefunctions import check_has_inputs
 
 class OneToOneNode(FunctionNode):
     """

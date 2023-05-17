@@ -39,18 +39,18 @@ class IBDXsecO1(FunctionNode):
                 })
         super().__init__(name, *args, label=label, **kwargs)
 
-        self._enu = self.add_input('enu', positional=True, keyword=True)
-        self._ctheta = self.add_input('costheta', positional=True, keyword=True)
-        self._result = self.add_output('result', positional=True, keyword=True)
+        self._enu = self._add_input('enu', positional=True, keyword=True)
+        self._ctheta = self._add_input('costheta', positional=True, keyword=True)
+        self._result = self._add_output('result', positional=True, keyword=True)
 
-        self._const_me   = self.add_input('ElectronMass', positional=False, keyword=True)
-        self._const_mp   = self.add_input('ProtonMass', positional=False, keyword=True)
-        self._const_mn   = self.add_input('NeutronMass', positional=False, keyword=True)
-        self._const_taun = self.add_input('NeutronLifeTime', positional=False, keyword=True)
-        self._const_fps  = self.add_input('PhaseSpaceFactor', positional=False, keyword=True)
-        self._const_g    = self.add_input('g', positional=False, keyword=True)
-        self._const_f    = self.add_input('f', positional=False, keyword=True)
-        self._const_f2   = self.add_input('f2', positional=False, keyword=True)
+        self._const_me   = self._add_input('ElectronMass', positional=False, keyword=True)
+        self._const_mp   = self._add_input('ProtonMass', positional=False, keyword=True)
+        self._const_mn   = self._add_input('NeutronMass', positional=False, keyword=True)
+        self._const_taun = self._add_input('NeutronLifeTime', positional=False, keyword=True)
+        self._const_fps  = self._add_input('PhaseSpaceFactor', positional=False, keyword=True)
+        self._const_g    = self._add_input('g', positional=False, keyword=True)
+        self._const_f    = self._add_input('f', positional=False, keyword=True)
+        self._const_f2   = self._add_input('f2', positional=False, keyword=True)
 
     def _fcn(self, _, inputs, outputs):
         _ibdxsecO1(

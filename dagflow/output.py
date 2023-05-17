@@ -1,4 +1,3 @@
-from itertools import cycle
 from typing import List, Optional, Tuple
 
 from numpy import zeros
@@ -47,8 +46,8 @@ class Output:
         owns_buffer: Optional[bool] = None,
         dtype: DTypeLike = None,
         shape: Optional[ShapeLike] = None,
-        axes_edges: Optional[Tuple[EdgesLike]] = None,
-        axes_nodes: Optional[Tuple[EdgesLike]] = None,
+        axes_edges: Optional[EdgesLike] = None,
+        axes_nodes: Optional[EdgesLike] = None,
         forbid_reallocation: bool = False,
     ):
         self._name = name

@@ -9,3 +9,4 @@ OutputsT = TypeVar("OutputsT", bound="Outputs")
 
 ShapeLike = Tuple[int, ...]
 EdgesLike = Tuple[OutputT]
+NodesLike = Tuple[OutputT]
