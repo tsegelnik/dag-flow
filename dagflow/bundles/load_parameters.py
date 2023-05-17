@@ -219,7 +219,7 @@ def check_correlations_consistent(cfg: NestedMKDict) -> None:
         # processed_cfgs.add(varcfg)
         names = corrcfg['names']
         try:
-            parcfg = parscfg[key]
+            parcfg = parscfg(key)
         except KeyError:
             raise InitializationError(f"Failed to obtain parameters for {key}")
 
@@ -310,7 +310,7 @@ def load_parameters(acfg):
             fullkey = key+subkey
             subkey_str = '.'.join(subkey)
             try:
-                varcfg = varcfgs[fullkey]
+                varcfg = varcfgs(fullkey)
             except KeyError:
                 raise InitializationError(f"Failed to obtain parameters for {fullkey}")
 
