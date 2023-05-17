@@ -57,8 +57,8 @@ class Array(FunctionNode):
         )
         self.fcn = self._functions[self._mode]
 
-        dd = self._output.dd
         if edges is not None:
+            dd = self._output.dd
             dd.edges_inherited = False
             if isinstance(edges, Output):
                 dd.axes_edges+=(edges,)

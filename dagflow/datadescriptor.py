@@ -14,8 +14,8 @@ class DataDescriptor:
     __slots__ = ("dtype", "shape", "axes_edges", "axes_nodes", "edges_inherited", "nodes_inherited")
     dtype: DTypeLike  # DTypeLike is already Optional
     shape: Optional[ShapeLike]
-    axes_edges: Optional[EdgesLike]
-    axes_nodes: Optional[EdgesLike]
+    axes_edges: EdgesLike
+    axes_nodes: EdgesLike
 
     edges_inherited: bool
     nodes_inherited: bool
@@ -24,8 +24,8 @@ class DataDescriptor:
         self,
         dtype: DTypeLike,  # DTypeLike is already Optional
         shape: Optional[ShapeLike],
-        axes_edges: Optional[EdgesLike] = None,
-        axes_nodes: Optional[EdgesLike] = None,
+        axes_edges: EdgesLike = None,
+        axes_nodes: EdgesLike = None,
     ) -> None:
         """
         Sets the attributes
@@ -57,11 +57,11 @@ class DataDescriptor:
 
     @property
     def edges_arrays(self) -> Optional[List[NDArray]]:
-        return self.axes_edges and tuple(o.data for o in self.axes_edges) or None
+        return tuple(o.data for o in self.axes_edges)
 
     @property
     def nodes_arrays(self) -> Optional[List[NDArray]]:
-        return self.axes_nodes and tuple(o.data for o in self.axes_nodes) or None
+        return tuple(o.data for o in self.axes_nodes)
 
     def axis_label(self, axis: int=0, axistype: str='any', *, fallback='text') -> str:
         if self.axes_edges and axistype in {'any', 'edges'}:
