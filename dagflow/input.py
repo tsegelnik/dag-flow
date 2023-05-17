@@ -44,8 +44,8 @@ class Input:
         data: Optional[NDArray] = None,
         dtype: DTypeLike = None,
         shape: Optional[ShapeLike] = None,
-        axes_edges: Optional[Tuple[EdgesLike]] = None,
-        axes_nodes: Optional[Tuple[EdgesLike]] = None,
+        axes_edges: Optional[EdgesLike] = None,
+        axes_nodes: Optional[EdgesLike] = None,
     ):
         if data is not None and (
             allocatable or dtype is not None or shape is not None
@@ -91,8 +91,8 @@ class Input:
         data,
         *,
         owns_buffer: bool,
-        axes_edges: EdgesLike = None,
-        axes_nodes: EdgesLike = None,
+        axes_edges: Optional[EdgesLike] = None,
+        axes_nodes: Optional[EdgesLike] = None,
     ):
         if self.closed:
             raise ClosedGraphError(
@@ -146,7 +146,7 @@ class Input:
         self._parent_output = parent_output
 
     @property
-    def name(self) -> str:
+    def name(self) -> Optional[str]:
         return self._name
 
     @name.setter
@@ -154,11 +154,11 @@ class Input:
         self._name = name
 
     @property
-    def node(self) -> NodeT:
+    def node(self) -> Optional[NodeT]:
         return self._node
 
     @property
-    def parent_node(self) -> NodeT:
+    def parent_node(self) -> Optional[NodeT]:
         return self._parent_output.node
 
     @property
@@ -166,7 +166,7 @@ class Input:
         return self._node.logger
 
     @property
-    def child_output(self) -> InputT:
+    def child_output(self) -> Optional[InputT]:
         return self._child_output
 
     @property

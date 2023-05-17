@@ -1,5 +1,4 @@
 from typing import Iterable
-from itertools import islice
 
 class StopNesting(Exception):
     def __init__(self, object):

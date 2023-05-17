@@ -14,8 +14,8 @@ class DataDescriptor:
     __slots__ = ("dtype", "shape", "axes_edges", "axes_nodes", "edges_inherited", "nodes_inherited")
     dtype: DTypeLike  # DTypeLike is already Optional
     shape: Optional[ShapeLike]
-    axes_edges: Optional[List[EdgesLike]]
-    axes_nodes: Optional[List[EdgesLike]]
+    axes_edges: Optional[EdgesLike]
+    axes_nodes: Optional[EdgesLike]
 
     edges_inherited: bool
     nodes_inherited: bool
@@ -24,16 +24,16 @@ class DataDescriptor:
         self,
         dtype: DTypeLike,  # DTypeLike is already Optional
         shape: Optional[ShapeLike],
-        axes_edges: Optional[List[EdgesLike]] = None,
-        axes_nodes: Optional[List[EdgesLike]] = None,
+        axes_edges: Optional[EdgesLike] = None,
+        axes_nodes: Optional[EdgesLike] = None,
     ) -> None:
         """
         Sets the attributes
         """
         self.dtype = dtype
         self.shape = shape
-        self.axes_edges = axes_edges or []
-        self.axes_nodes = axes_nodes or []
+        self.axes_edges = axes_edges or ()
+        self.axes_nodes = axes_nodes or ()
 
         self.edges_inherited = True
         self.nodes_inherited = True
@@ -56,21 +56,21 @@ class DataDescriptor:
         return product(self.shape)
 
     @property
-    def edges_arrays(self) -> List[NDArray]:
-        return self.axes_edges and [o.data for o in self.axes_edges] or None
+    def edges_arrays(self) -> Optional[List[NDArray]]:
+        return self.axes_edges and tuple(o.data for o in self.axes_edges) or None
 
     @property
-    def nodes_arrays(self) -> List[NDArray]:
-        return self.axes_nodes and [o.data for o in self.axes_nodes] or None
+    def nodes_arrays(self) -> Optional[List[NDArray]]:
+        return self.axes_nodes and tuple(o.data for o in self.axes_nodes) or None
 
     def axis_label(self, axis: int=0, axistype: str='any', *, fallback='text') -> str:
-        if self.axes_edges and axistype in ('any', 'edges'):
+        if self.axes_edges and axistype in {'any', 'edges'}:
             try:
                 return self.axes_edges[axis].node.label('axis', fallback=fallback)
             except IndexError as e:
                 raise RuntimeError(f'Invalid axis index {axis}') from e
 
-        if self.axes_nodes and axistype in ('any', 'nodes'):
+        if self.axes_nodes and axistype in {'any', 'nodes'}:
             try:
                 return self.axes_nodes[axis].node.label('axis', fallback=fallback)
             except IndexError as e:

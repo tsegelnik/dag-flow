@@ -2,7 +2,6 @@ from ..input_extra import MissingInputAddPair
 from ..nodes import FunctionNode
 from ..typefunctions import check_has_inputs
 
-
 class OneToOneNode(FunctionNode):
     """
     The abstract node with an output for every positional input
@@ -14,7 +13,7 @@ class OneToOneNode(FunctionNode):
 
     def _typefunc(self) -> None:
         """A output takes this function to determine the dtype and shape"""
-        from dagflow.typefunctions import (
+        from ..typefunctions import (
             check_has_inputs,
             copy_from_input_to_output,
             assign_outputs_axes_from_inputs

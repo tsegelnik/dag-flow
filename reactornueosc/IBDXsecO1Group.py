@@ -18,7 +18,7 @@ def IBDXsecO1Group(*, labels: dict={}):
     ibd.add_node(ibdxsec_ee, kw_inputs=['costheta']+inputs_ibd,                 merge_inputs=merge_inputs, outputs_pos=True)
     ibd.add_node(eetoenu,    kw_inputs=['ee', 'costheta']+inputs_common,        merge_inputs=merge_inputs,
                  kw_outputs={'result': 'enu'})
-    ibd.add_node(jacobian,   kw_inputs=['enu', 'ee', 'costheta']+inputs_common, merge_inputs=merge_inputs,
+    ibd.add_node(jacobian,   kw_inputs=['enu', 'ee', 'costheta']+inputs_common[:-1], merge_inputs=merge_inputs[:-1],
                  kw_outputs={'result': 'jacobian'})
     ibd.inputs.make_positionals('ee', 'costheta')
 

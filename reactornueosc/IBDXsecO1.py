@@ -30,13 +30,13 @@ class IBDXsecO1(FunctionNode):
 
     def __init__(self, name, *args, label: Mapping={}, **kwargs):
         kwargs.setdefault("missing_input_handler", MissingInputAddPair())
-        label = {
+        label = dict(label)
+        label.update({
                 'text':  r'IBD cross section σ(Eν,cosθ), cm⁻²',
                 'plottitle': r'IBD cross section $\sigma(E_{\nu}, \cos\theta)$, cm$^{-2}$',
                 'latex': r'IBD cross section $\sigma(E_{\nu}, \cos\theta)$, cm$^{-2}$',
                 'axis':  r'$\sigma(E_{\nu}, \cos\theta)$, cm$^{-2}$'
-                }
-        label.update(label)
+                })
         super().__init__(name, *args, label=label, **kwargs)
 
         self._enu = self.add_input('enu', positional=True, keyword=True)

@@ -271,9 +271,6 @@ class Output:
     def deep_iter_child_outputs(self):
         raise StopNesting(self)
 
-    def repeat(self):
-        return RepeatedOutput(self)
-
     def allocate(self, **kwargs):
         if not self._allocatable:
             return True
@@ -349,21 +346,6 @@ class Output:
             self.node._tainted = False
 
         return tainted
-
-
-class RepeatedOutput:
-    def __init__(self, output):
-        self._output = output
-
-    def __iter__(self):
-        return cycle((self._output,))
-
-    def __rshift__(self, other):
-        return rshift(self, other)
-
-    def __rlshift__(self, other):
-        return lshift(self, other)
-
 
 class Outputs(EdgeContainer):
     def __init__(self, iterable=None) -> None:

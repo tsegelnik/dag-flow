@@ -258,7 +258,7 @@ def plot_array_2d_vs_wireframe(
     Z: NDArray,
     nodes: List[NDArray],
     *args,
-    facecolors: Optional[str] = None,
+    # facecolors: Optional[str] = None,
     cmap: Union[str, bool, None] = None,
     colorbar: Union[dict, bool] = False,
     **kwargs
@@ -267,7 +267,7 @@ def plot_array_2d_vs_wireframe(
 
     ax = gca()
     if cmap is not None:
-        colors, cmapper = apply_colors(Z, cmap, kwargs, 'facecolors')
+        colors, _ = apply_colors(Z, cmap, kwargs, 'facecolors')
         if colors is not None:
             kwargs['rcount']=Z.shape[0]
             kwargs['ccount']=Z.shape[1]
@@ -275,7 +275,7 @@ def plot_array_2d_vs_wireframe(
             res = ax.plot_surface(X, Y, Z, **kwargs)
             res.set_facecolor((0, 0, 0, 0))
 
-        return _colorbar_or_not_3d(res, colorbar, Z)
+            return _colorbar_or_not_3d(res, colorbar, Z)
 
     return ax.plot_wireframe(X, Y, Z, *args, **kwargs)
 
@@ -321,7 +321,7 @@ def add_colorbar(
     colormapable,
     rasterized: bool=True,
     minorticks: bool=False,
-    minortick_values: Optional[NDArray]=None,
+    minorticks_values: Optional[NDArray]=None,
     label: Optional[str]=None,
     **kwargs
 ):
@@ -334,10 +334,10 @@ def add_colorbar(
 
     if minorticks:
         if isinstance(minorticks, str):
-            if minorticks=='linear':
-                pass
-            elif minorticks=='log':
+            if minorticks=='log':
                 minorticks_values = colormapable.norm(minorticks_values)
+            # elif minorticks=='linear':
+            #     pass
 
             l1, l2 = cax.get_ylim()
             minorticks_values = minorticks_values[ (minorticks_values>=l1)*(minorticks_values<=l2) ]

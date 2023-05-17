@@ -61,11 +61,11 @@ class Array(FunctionNode):
         if edges is not None:
             dd.edges_inherited = False
             if isinstance(edges, Output):
-                dd.axes_edges.append(edges)
+                dd.axes_edges+=(edges,)
             else:
                 # assume that the edges are Sequence[Output]
                 try:
-                    dd.axes_edges.extend(edges)
+                    dd.axes_edges=dd.axes_edges + tuple(edges)
                 except Exception as exc:
                     raise InitializationError(
                         "Array: edges must be `Output` or `Sequence[Output]`, "

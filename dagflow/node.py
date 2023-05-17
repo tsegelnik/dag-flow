@@ -498,7 +498,7 @@ class Node(Limbs):
             print("    ", input)
         for i, output in enumerate(self.outputs):
             print("  ", i, output)
-        for input in self.outputs.iter_nonpos():
+        for output in self.outputs.iter_nonpos():
             print("    ", output)
 
     def _typefunc(self) -> bool:

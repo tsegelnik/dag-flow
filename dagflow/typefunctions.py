@@ -590,7 +590,7 @@ def check_edges_type(
     # check inputs
     for input in node.inputs.iter(inputkey):
         edges = input.dd.axes_edges
-        if not isinstance(edges, list):
+        if not isinstance(edges, tuple):
             raise TypeFunctionError(
                 f"The `input.dd.axes_edges` must be `List[Output]`, but given {edges=}!",
                 node=node,
@@ -606,7 +606,7 @@ def check_edges_type(
     # check outputs
     for output in node.outputs.iter(outputkey):
         edges = output.dd.axes_edges
-        if not isinstance(edges, list):
+        if not isinstance(edges, tuple):
             raise TypeFunctionError(
                 f"The `output.dd.axes_edges` must be `List[Output]`, but given {edges=}!",
                 node=node,

@@ -1,5 +1,8 @@
+from .shift import rshift
+
 class NodeGroup:
-    _nodes: list = None
+    __slots__ = ('_nodes',)
+    _nodes: list
 
     def __init__(self, *args):
         self._nodes = list(args)

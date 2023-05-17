@@ -100,7 +100,7 @@ class MetaNode(Limbs):
             print(f"     {input} [{name}]")
         for i, (name, output) in enumerate(self.outputs.pos_edges.items()):
             print("  ", i, output, f'[{name}]')
-        for name, input in self.outputs.nonpos_edges.items():
+        for name, output in self.outputs.nonpos_edges.items():
             print(f"     {output} [{name}]")
 
         if recursive:
@@ -118,7 +118,7 @@ class MissingInputInherit:
     def __init__(
         self,
         source_node: Node,
-        target_node: Node,
+        target_node: MetaNode,
         *,
         inherit_outputs: bool=False
     ):

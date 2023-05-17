@@ -14,7 +14,7 @@ class EdgeContainer:
     )
     _kw_edges: Dict[str, Any]
     _pos_edges_list: List
-    _pos_edges: List
+    _pos_edges: Dict
     _nonpos_edges: Dict[str, Any]
     _all_edges: Dict[str, Any]
 
@@ -182,7 +182,7 @@ class EdgeContainer:
         include_kw: bool=False,
         exclude_pos: bool=False
     ):
-        if include_kw==False and exclude_pos==True:
+        if not include_kw and exclude_pos:
             raise RuntimeError("EdgeContainer.iter(): unable to set {include_kw=} and {exclude_pos=}")
         if isinstance(key, int):
             yield self._pos_edges_list[key]
