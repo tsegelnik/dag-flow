@@ -1,4 +1,4 @@
-from typing import Iterator, Optional, Tuple, Union
+from typing import Iterator, Optional, Union
 
 from numpy import zeros
 from numpy.typing import DTypeLike, NDArray
