@@ -53,10 +53,10 @@ def test_IBDXsecO1(debug_graph, testname):
         eetoenu = EeToEnu('Enu')
         jacobian = Jacobian_dEnu_dEe('dEν/dEe')
 
-        ibdxsec_enu << storage['parameter.constant']
-        ibdxsec_ee << storage['parameter.constant']
-        eetoenu << storage['parameter.constant']
-        jacobian << storage['parameter.constant']
+        ibdxsec_enu << storage('parameter.constant')
+        ibdxsec_ee << storage('parameter.constant')
+        eetoenu << storage('parameter.constant')
+        jacobian << storage('parameter.constant')
 
         (enu, ctheta) >> ibdxsec_enu
         (ee, ctheta) >> eetoenu

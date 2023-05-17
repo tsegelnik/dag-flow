@@ -55,7 +55,7 @@ def test_IBDXsecO1Group(debug_graph, testname):
 
         ibdxsec = IBDXsecO1Group()
 
-        ibdxsec << storage['parameter.constant']
+        ibdxsec << storage('parameter.constant')
         ee >> ibdxsec.inputs['ee']
         ctheta >> ibdxsec.inputs['costheta']
         ibdxsec.print(recursive=True)
