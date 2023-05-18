@@ -1,4 +1,3 @@
-from itertools import cycle
 from typing import List, Optional, Tuple
 
 from numpy import zeros
@@ -13,11 +12,11 @@ from .exception import (
     ConnectionError,
     UnclosedGraphError,
 )
-from .shift import lshift, rshift
+from .shift import rshift
 from .iter import StopNesting
 from .types import EdgesLike, InputT, NodeT, ShapeLike
 from .datadescriptor import DataDescriptor
-
+from .labels import repr_pretty
 
 class Output:
     _data: Optional[NDArray] = None
@@ -47,8 +46,8 @@ class Output:
         owns_buffer: Optional[bool] = None,
         dtype: DTypeLike = None,
         shape: Optional[ShapeLike] = None,
-        axes_edges: Optional[Tuple[EdgesLike]] = None,
-        axes_nodes: Optional[Tuple[EdgesLike]] = None,
+        axes_edges: Optional[EdgesLike] = None,
+        axes_nodes: Optional[EdgesLike] = None,
         forbid_reallocation: bool = False,
     ):
         self._name = name
@@ -73,10 +72,9 @@ class Output:
                 raise InitializationError(output=self, node=node)
 
     def __str__(self):
-        return f"●→ {self._name}" if self.owns_buffer else f"○→ {self._name}"
+        return self.connected() and f"●→ {self._name}" or f"○→ {self._name}"
 
-    def __repr__(self):
-        return self.__str__()
+    _repr_pretty_ = repr_pretty
 
     @property
     def name(self):
@@ -126,7 +124,7 @@ class Output:
             input.invalid = invalid
 
     @property
-    def data(self):
+    def data(self) -> NDArray:
         if self.node.being_evaluated:
             return self._data
         if not self.closed:
@@ -182,7 +180,7 @@ class Output:
         self._forbid_reallocation = forbid_reallocation
 
     @property
-    def dd(self) -> Optional[DataDescriptor]:
+    def dd(self) -> DataDescriptor:
         return self._dd
 
     @property
@@ -245,10 +243,10 @@ class Output:
         return input
 
     def __rshift__(self, other):
+        """
+        self >> other
+        """
         return rshift(self, other)
-
-    def __rlshift__(self, other):
-        return lshift(self, other)
 
     def taint_children(self, **kwargs) -> None:
         for input in self._child_inputs:
@@ -271,9 +269,6 @@ class Output:
 
     def deep_iter_child_outputs(self):
         raise StopNesting(self)
-
-    def repeat(self):
-        return RepeatedOutput(self)
 
     def allocate(self, **kwargs):
         if not self._allocatable:
@@ -351,29 +346,12 @@ class Output:
 
         return tainted
 
-
-class RepeatedOutput:
-    def __init__(self, output):
-        self._output = output
-
-    def __iter__(self):
-        return cycle((self._output,))
-
-    def __rshift__(self, other):
-        return rshift(self, other)
-
-    def __rlshift__(self, other):
-        return lshift(self, other)
-
-
 class Outputs(EdgeContainer):
-    _dtype = Output
-
     def __init__(self, iterable=None) -> None:
         super().__init__(iterable)
+        self._dtype = Output
 
     def __str__(self) -> str:
         return f"○[{tuple(obj.name for obj in self)}]→"
 
-    def __repr__(self) -> str:
-        return self.__str__()
+    _repr_pretty_ = repr_pretty

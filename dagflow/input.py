@@ -1,4 +1,4 @@
-from typing import Iterator, Optional, Tuple, Union
+from typing import Iterator, Optional, Union
 
 from numpy import zeros
 from numpy.typing import DTypeLike, NDArray
@@ -13,9 +13,9 @@ from .exception import (
 )
 from .iter import StopNesting
 from .output import Output
-from .shift import lshift
-from .types import EdgesLike, InputT, NodeT, ShapeLike
-
+from .shift import rshift
+from .types import EdgesLike, NodeT, ShapeLike
+from .labels import repr_pretty
 
 class Input:
     _own_data: Optional[NDArray] = None
@@ -44,8 +44,8 @@ class Input:
         data: Optional[NDArray] = None,
         dtype: DTypeLike = None,
         shape: Optional[ShapeLike] = None,
-        axes_edges: Optional[Tuple[EdgesLike]] = None,
-        axes_nodes: Optional[Tuple[EdgesLike]] = None,
+        axes_edges: Optional[EdgesLike] = None,
+        axes_nodes: Optional[EdgesLike] = None,
     ):
         if data is not None and (
             allocatable or dtype is not None or shape is not None
@@ -70,14 +70,9 @@ class Input:
             self.set_own_data(data, owns_buffer=True)
 
     def __str__(self) -> str:
-        return (
-            f"→○ {self._name}"
-            if self._owns_buffer is None
-            else f"→● {self._name}"
-        )
+        return self.connected() and f"→● {self._name}" or f"→○ {self._name}"
 
-    def __repr__(self) -> str:
-        return self.__str__()
+    _repr_pretty_ = repr_pretty
 
     @property
     def own_data(self) -> Optional[NDArray]:
@@ -96,8 +91,8 @@ class Input:
         data,
         *,
         owns_buffer: bool,
-        axes_edges: EdgesLike = None,
-        axes_nodes: EdgesLike = None,
+        axes_edges: Optional[EdgesLike] = None,
+        axes_nodes: Optional[EdgesLike] = None,
     ):
         if self.closed:
             raise ClosedGraphError(
@@ -112,8 +107,8 @@ class Input:
         self._owns_buffer = owns_buffer
         self.own_dd.dtype = data.dtype
         self.own_dd.shape = data.shape
-        self.own_dd.axes_edges = axes_edges
-        self.own_dd.axes_nodes = axes_nodes
+        self.own_dd.axes_edges = axes_edges or ()
+        self.own_dd.axes_nodes = axes_nodes or ()
 
     @property
     def closed(self):
@@ -151,7 +146,7 @@ class Input:
         self._parent_output = parent_output
 
     @property
-    def name(self) -> str:
+    def name(self) -> Optional[str]:
         return self._name
 
     @name.setter
@@ -159,11 +154,11 @@ class Input:
         self._name = name
 
     @property
-    def node(self) -> NodeT:
+    def node(self) -> Optional[NodeT]:
         return self._node
 
     @property
-    def parent_node(self) -> NodeT:
+    def parent_node(self) -> Optional[NodeT]:
         return self._parent_output.node
 
     @property
@@ -171,7 +166,7 @@ class Input:
         return self._node.logger
 
     @property
-    def child_output(self) -> InputT:
+    def child_output(self) -> Optional[Output]:
         return self._child_output
 
     @property
@@ -241,17 +236,11 @@ class Input:
             raise StopNesting(self._child_output)
         return iter(tuple())
 
-    def __lshift__(self, other):
-        """
-        self << other
-        """
-        return lshift(self, other)
-
     def __rrshift__(self, other):
         """
         other >> self
         """
-        return lshift(self, other)
+        return rshift(other, self)
 
     def allocate(self, **kwargs) -> bool:
         if not self._allocatable or self.has_data:
@@ -276,13 +265,14 @@ class Input:
 
 
 class Inputs(EdgeContainer):
-    _dtype = Input
-
     def __init__(self, iterable=None):
         super().__init__(iterable)
+        self._dtype=Input
 
     def __str__(self):
         return f"→[{tuple(obj.name for obj in self)}]○"
+
+    _repr_pretty_ = repr_pretty
 
     def deep_iter_inputs(
         self, disconnected_only: bool = False

@@ -7,19 +7,29 @@ from dagflow.lib.trigonometry import Cos, Sin
 from numpy import allclose, linspace, pi
 
 from dagflow.graphviz import savegraph
+from dagflow.plot import plot_auto
+from matplotlib.pyplot import show, gca, close
 
 def test_Integrator_trap_meta(debug_graph):
     metaint = MetaNode()
 
+    xlabel = 'Edges for the integrator'
     with Graph(debug=debug_graph, close=True) as graph:
         npoints = 10
-        edges = Array("edges", linspace(0, pi, npoints + 1))
+        edges = Array(
+            "edges",
+            linspace(0, pi, npoints + 1),
+            label={'axis': xlabel}
+        )
         ordersX = Array("ordersX", [1000] * npoints, edges=edges["array"])
         A = Array("A", edges._data[:-1])
         B = Array("B", edges._data[1:])
 
         sampler = IntegratorSampler("sampler", mode="trap")
-        integrator = Integrator("integrator")
+        integrator = Integrator(
+            "integrator",
+            label = {'plottitle': 'Integrator', 'axis': 'integral'}
+        )
         sampler.outputs["weights"] >> integrator("weights")
 
         metaint.add_node(sampler, kw_inputs=['ordersX'], kw_outputs=['x'], merge_inputs=['ordersX'])
@@ -44,5 +54,12 @@ def test_Integrator_trap_meta(debug_graph):
     assert allclose(integrator.outputs[1].data, res2, rtol=0, atol=1e-2)
     assert integrator.outputs[0].dd.axes_edges == [edges["array"]]
     assert integrator.outputs[1].dd.axes_edges == [edges["array"]]
+
+    plot_auto(metaint)
+    ax=gca()
+    assert ax.get_xlabel()==xlabel
+    assert ax.get_ylabel()=='integral'
+    assert ax.get_title()=='Integrator'
+    close()
 
     savegraph(graph, "output/test_Integrator_trap_meta.pdf", show='all')

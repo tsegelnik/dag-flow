@@ -18,7 +18,7 @@ class ParsCfgHasProperFormat(object):
             nelements = len(format)
 
         dtin = NestedMKDict(data)
-        for key, subdata in dtin['parameters'].walkitems():
+        for key, subdata in dtin('parameters').walkitems():
             if isinstance(subdata, tuple):
                 if len(subdata)==nelements: continue
             else:
@@ -177,14 +177,14 @@ def format_dict(dct: dict, /, *args, **kwargs) -> dict:
 
 def get_label(key: tuple, labelscfg: dict) -> dict:
     try:
-        return labelscfg[key]
+        return labelscfg.any(key)
     except KeyError:
         pass
 
     for n in range(1, len(key)+1):
         subkey = key[:-n]
         try:
-            lcfg = labelscfg[subkey]
+            lcfg = labelscfg.any(subkey)
         except KeyError:
             continue
 
@@ -197,8 +197,8 @@ def get_label(key: tuple, labelscfg: dict) -> dict:
     return {}
 
 def iterate_varcfgs(cfg: NestedMKDict) -> Generator[Tuple[Tuple[str, ...], NestedMKDict], None, None]:
-    parameterscfg = cfg['parameters']
-    labelscfg = cfg['labels']
+    parameterscfg = cfg('parameters')
+    labelscfg = cfg('labels')
     format = cfg['format']
 
     hascentral = 'central' in format
@@ -214,12 +214,12 @@ from ..parameters import Parameters
 from ..lib.ElSumSq import ElSumSq
 
 def check_correlations_consistent(cfg: NestedMKDict) -> None:
-    parscfg = cfg['parameters']
-    for key, corrcfg in cfg['correlations'].walkdicts():
+    parscfg = cfg('parameters')
+    for key, corrcfg in cfg('correlations').walkdicts():
         # processed_cfgs.add(varcfg)
         names = corrcfg['names']
         try:
-            parcfg = parscfg[key]
+            parcfg = parscfg(key)
         except KeyError:
             raise InitializationError(f"Failed to obtain parameters for {key}")
 
@@ -295,8 +295,8 @@ def load_parameters(acfg):
 
     processed_cfgs = set()
     pars = NestedMKDict({})
-    for key, corrcfg in cfg['correlations'].walkdicts():
-        label = get_label(key+('group',), cfg['labels'])
+    for key, corrcfg in cfg('correlations').walkdicts():
+        label = get_label(key+('group',), cfg('labels'))
 
         matrixtype = corrcfg['matrix_type']
         matrix = corrcfg['matrix']
@@ -310,7 +310,7 @@ def load_parameters(acfg):
             fullkey = key+subkey
             subkey_str = '.'.join(subkey)
             try:
-                varcfg = varcfgs[fullkey]
+                varcfg = varcfgs(fullkey)
             except KeyError:
                 raise InitializationError(f"Failed to obtain parameters for {fullkey}")
 
@@ -332,7 +332,7 @@ def load_parameters(acfg):
     for key, varcfg in varcfgs.walkdicts(ignorekeys=('label',)):
         if key in processed_cfgs:
             continue
-        par = Parameters.from_numbers(**varcfg)
+        par = Parameters.from_numbers(**varcfg.object)
         pars[key] = par
 
     for key, par in pars.walkitems():

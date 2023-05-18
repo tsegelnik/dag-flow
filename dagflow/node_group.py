@@ -1,8 +1,8 @@
-from .shift import lshift
-
+from .shift import rshift
 
 class NodeGroup:
-    _nodes: list = None
+    __slots__ = ('_nodes',)
+    _nodes: list
 
     def __init__(self, *args):
         self._nodes = list(args)
@@ -23,17 +23,11 @@ class NodeGroup:
         for node in self._nodes:
             node.print()
 
-    def __lshift__(self, other):
-        """
-        self << other
-        """
-        return lshift(self, other)
-
     def __rrshift__(self, other):
         """
         other >> self
         """
-        return lshift(self, other)
+        return rshift(other, self)
 
     def __iter__(self):
         """

@@ -1,5 +1,9 @@
 from typing import Optional, Union, Callable
 
+def repr_pretty(self, p, cycle):
+    """Pretty repr for IPython. To be used as __repr__ method"""
+    p.text(str(self) if not cycle else '...')
+
 def _make_formatter(fmt: Union[str, Callable, dict]) -> Callable:
     if isinstance(fmt, str):
         return fmt.format

@@ -1,7 +1,5 @@
 from ..input_extra import MissingInputAddPair
 from ..nodes import FunctionNode
-from ..typefunctions import check_has_inputs
-
 
 class OneToOneNode(FunctionNode):
     """
@@ -14,9 +12,11 @@ class OneToOneNode(FunctionNode):
 
     def _typefunc(self) -> None:
         """A output takes this function to determine the dtype and shape"""
+        from ..typefunctions import (
+            check_has_inputs,
+            copy_from_input_to_output,
+            assign_outputs_axes_from_inputs
+        )
         check_has_inputs(self)
-        for inp, out in zip(self.inputs, self.outputs):
-            out.dd.axes_edges = inp.dd.axes_edges
-            out.dd.axes_nodes = inp.dd.axes_nodes
-            out.dd.dtype = inp.dd.dtype
-            out.dd.shape = inp.dd.shape
+        copy_from_input_to_output(self, slice(None), slice(None), edges=True, nodes=True)
+        assign_outputs_axes_from_inputs(self, slice(None), slice(None), assign_nodes=True, ignore_assigned=True, ignore_Nd=True)
