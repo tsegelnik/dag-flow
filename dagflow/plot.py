@@ -12,11 +12,11 @@ from numpy import asanyarray, meshgrid, zeros_like
 def _get_node_data(node: Limbs) -> Tuple[Optional[Output], NDArray, EdgesLike, NodesLike]:
     return _get_output_data(node.outputs[0])
 
-def _get_output_data(output: Output) -> Tuple[Optional[Output], NDArray, EdgesLike, NodesLike]:
+def _get_output_data(output: Output) -> Tuple[Output, NDArray, EdgesLike, NodesLike]:
     return output, output.data, output.dd.edges_arrays, output.dd.nodes_arrays
 
 def _get_array_data(array: ArrayLike) -> Tuple[Optional[Output], NDArray, EdgesLike, NodesLike]:
-    return None, asanyarray(array), None, None
+    return None, asanyarray(array), (), ()
 
 def _get_data(object: Union[Output, Limbs, ArrayLike]) -> Tuple[Optional[Output], NDArray, EdgesLike, NodesLike]:
     if isinstance(object, Output):

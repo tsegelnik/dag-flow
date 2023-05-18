@@ -14,7 +14,7 @@ from .exception import (
 from .iter import StopNesting
 from .output import Output
 from .shift import rshift
-from .types import EdgesLike, InputT, NodeT, ShapeLike
+from .types import EdgesLike, NodeT, ShapeLike
 from .labels import repr_pretty
 
 class Input:
@@ -107,8 +107,8 @@ class Input:
         self._owns_buffer = owns_buffer
         self.own_dd.dtype = data.dtype
         self.own_dd.shape = data.shape
-        self.own_dd.axes_edges = axes_edges
-        self.own_dd.axes_nodes = axes_nodes
+        self.own_dd.axes_edges = axes_edges or ()
+        self.own_dd.axes_nodes = axes_nodes or ()
 
     @property
     def closed(self):
