@@ -8,6 +8,9 @@ from numpy import linspace, meshgrid, meshgrid
 from reactornueosc.IBDXsecO1 import IBDXsecO1
 from reactornueosc.EeToEnu import EeToEnu
 from reactornueosc.Jacobian_dEnu_dEe import Jacobian_dEnu_dEe
+from dagflow.plot import plot_auto
+
+from matplotlib.pyplot import close, subplots
 
 def test_IBDXsecO1(debug_graph, testname):
     data = {
@@ -35,7 +38,7 @@ def test_IBDXsecO1(debug_graph, testname):
                 }
             }
 
-    enu1 = linspace(1, 12.0, 111)
+    enu1 = linspace(0, 12.0, 121)
     ee1 = enu1.copy()
     ctheta1 = linspace(-1, 1, 5)
     enu2, ctheta2 = meshgrid(enu1, ctheta1, indexing='ij')
@@ -66,7 +69,12 @@ def test_IBDXsecO1(debug_graph, testname):
     csc_enu = ibdxsec_enu.get_data()
     csc_ee = ibdxsec_ee.get_data()
     enu = eetoenu.get_data()
-    jac= jacobian.get_data()
+    jac = jacobian.get_data()
+
+    subplots(1, 1)
+    plot_auto(ibdxsec_enu, mode='pcolormesh', colorbar=True, filter_kw={'masked_value': 0})
+
+    close()
 
     savegraph(graph, f"output/{testname}.pdf")
 
