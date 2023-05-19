@@ -8,31 +8,43 @@ from .types import EdgesLike, NodesLike
 from typing import Union, List, Optional, Tuple, Mapping
 from numpy.typing import ArrayLike, NDArray
 from numpy import asanyarray, meshgrid, zeros_like
+from numpy.ma import array as masked_array
 
-def _get_node_data(node: Limbs) -> Tuple[Optional[Output], NDArray, EdgesLike, NodesLike]:
-    return _get_output_data(node.outputs[0])
+def _mask_if_needed(datain: ArrayLike, /, *, masked_value: Optional[float]=None) -> NDArray:
+    data = asanyarray(datain)
+    if masked_value is None:
+        return data
 
-def _get_output_data(output: Output) -> Tuple[Output, NDArray, EdgesLike, NodesLike]:
-    return output, output.data, output.dd.edges_arrays, output.dd.nodes_arrays
+    mask = (data==masked_value)
+    return masked_array(data, mask=mask)
 
-def _get_array_data(array: ArrayLike) -> Tuple[Optional[Output], NDArray, EdgesLike, NodesLike]:
-    return None, asanyarray(array), (), ()
+def _get_node_data(node: Limbs, *args, **kwargs) -> Tuple[Optional[Output], NDArray, EdgesLike, NodesLike]:
+    return _get_output_data(node.outputs[0], *args, **kwargs)
 
-def _get_data(object: Union[Output, Limbs, ArrayLike]) -> Tuple[Optional[Output], NDArray, EdgesLike, NodesLike]:
+def _get_output_data(output: Output, *args, **kwargs) -> Tuple[Output, NDArray, EdgesLike, NodesLike]:
+    data = _mask_if_needed(output.data, *args, **kwargs)
+    return output, data, output.dd.edges_arrays, output.dd.nodes_arrays
+
+def _get_array_data(array: ArrayLike, *args, **kwargs) -> Tuple[Optional[Output], NDArray, EdgesLike, NodesLike]:
+    data = _mask_if_needed(array, *args, **kwargs)
+    return None, data, (), ()
+
+def _get_data(object: Union[Output, Limbs, ArrayLike], *args, **kwargs) -> Tuple[Optional[Output], NDArray, EdgesLike, NodesLike]:
     if isinstance(object, Output):
-        return _get_output_data(object)
+        return _get_output_data(object, *args, **kwargs)
     elif isinstance(object, Limbs):
-        return _get_node_data(object)
+        return _get_node_data(object, *args, **kwargs)
     else:
-        return _get_array_data(object)
+        return _get_array_data(object, *args, **kwargs)
 
 def plot_auto(
     object: Union[Output, Limbs, ArrayLike],
     *args,
     colorbar: Union[bool,Mapping,None] = None,
+    filter_kw: dict = {},
     **kwargs
 ) -> Tuple[tuple, ...]:
-    output, array, edges, nodes = _get_data(object)
+    output, array, edges, nodes = _get_data(object, **filter_kw)
 
     ndim = len(array.shape)
     if ndim==1:
