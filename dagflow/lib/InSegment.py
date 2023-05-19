@@ -55,8 +55,9 @@ class InSegment(FunctionNode):
         # NOTE: Now InSegment supports only 1d arrays
         check_inputs_number(self, 2)
         check_input_dimension(self, slice(None), 1)
-        copy_from_input_to_output(self, 1, 0)  # use fine points
         check_if_input_sorted(self, 0)
+        copy_from_input_to_output(self, 1, 0, False, True, False, False)  # use fine points shape
+        self.outputs[0].dd.dtype = "i"
 
     def _fcn(self, _, inputs, outputs) -> Optional[list]:
         """Uses `numpy.searchsorted`"""
