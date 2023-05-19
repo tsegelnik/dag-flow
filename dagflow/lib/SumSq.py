@@ -38,4 +38,4 @@ class SumSq(FunctionNode):
         eval_output_dtype(self, AllPositionals, "result")
 
     def _post_allocate(self) -> None:
-        self._buffer = empty_like(self.inputs[0].get_data_unsafe())
+        self._buffer = empty_like(self.inputs[0].data_unsafe)

@@ -135,7 +135,7 @@ class Output:
             )
         try:
             self.touch()
-            return self.get_data_unsafe()
+            return self.data_unsafe
         except Exception as exc:
             raise CriticalError(
                 "An exception occured during touching of the parent node!",
@@ -203,7 +203,12 @@ class Output:
     def debug(self) -> bool:
         return self._debug
 
-    def get_data_unsafe(self):
+    @property
+    def labels(self) -> dict:
+        return self._node.labels
+
+    @property
+    def data_unsafe(self):
         return self._data
 
     def connect_to(self, input) -> InputT:

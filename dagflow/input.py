@@ -201,10 +201,11 @@ class Input:
         #       (trigger deep evaluation), else we get the data directly
         if self.node.being_evaluated:
             return self._parent_output.data
-        return self._parent_output.get_data_unsafe()
+        return self._parent_output.data_unsafe
 
-    def get_data_unsafe(self):
-        return self._parent_output.get_data_unsafe()
+    @property
+    def data_unsafe(self):
+        return self._parent_output.data_unsafe
 
     @property
     def dd(self):
