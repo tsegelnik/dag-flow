@@ -83,9 +83,12 @@ def _enu(
     delta = 0.5*(NeutronMass2-ProtonMass2-ElectronMass2)/ProtonMass
 
     for i, (Ee, ctheta) in enumerate(zip(EeIn, CosThetaIn)):
+        if Ee>ElectronMass:
+            Ve = sqrt(1.0 - ElectronMass2 / (Ee*Ee))
+        else:
+            Ee = ElectronMass
+            Ve = 0.0
         epsilon_e = Ee / ProtonMass
-        Ve2 = 1.0 - ElectronMass2 / (Ee*Ee)
-        Ve = sqrt(Ve2) if Ve2>0.0 else 0.0
         Ee0 = Ee + delta
         corr = 1.0 - epsilon_e*(1.0 - Ve*ctheta)
         Result[i] = Ee0/corr

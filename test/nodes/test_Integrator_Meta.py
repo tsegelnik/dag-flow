@@ -8,7 +8,7 @@ from numpy import allclose, linspace, pi
 
 from dagflow.graphviz import savegraph
 from dagflow.plot import plot_auto
-from matplotlib.pyplot import show, gca, close
+from matplotlib.pyplot import gca, close
 
 def test_Integrator_trap_meta(debug_graph):
     metaint = MetaNode()
