@@ -84,15 +84,13 @@ def _jacobian_dEnu_dEe(
     ElectronMass2 = pow(ElectronMass, 2)
 
     for i, (Enu, Ee, ctheta) in enumerate(zip(EnuIn, EeIn, CosThetaIn)):
-        Ve2 = 1.0 - ElectronMass2 / (Ee*Ee)
-        if Ve2<=0:
+        if Ee<=ElectronMass:
             Result[i] = 0.0
             continue
-
-        Ve = sqrt(Ve2)
+        Ve = sqrt(1.0 - ElectronMass2 / (Ee*Ee))
         nominator = ProtonMass + Enu*(1.0-ctheta/Ve)
         denominator = ProtonMass - Ee*(1-Ve*ctheta)
-        if denominator>0:
-            Result[i] = nominator/denominator
-        else:
+        if denominator<=0:
             Result[i] = 0.0
+            continue
+        Result[i] = nominator/denominator
