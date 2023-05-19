@@ -1,4 +1,4 @@
-from matplotlib.pyplot import stairs, plot, gca, gcf, colorbar as plot_colorbar, sca, cm
+from matplotlib.pyplot import stairs, plot, gca, gcf, colorbar as plot_colorbar, sca, cm, text
 from matplotlib.pyplot import Axes
 from matplotlib import colormaps
 from .output import Output
@@ -42,6 +42,7 @@ def plot_auto(
     *args,
     colorbar: Union[bool,Mapping,None] = None,
     filter_kw: dict = {},
+    show_path: bool = True,
     **kwargs
 ) -> Tuple[tuple, ...]:
     output, array, edges, nodes = _get_data(object, **filter_kw)
@@ -61,14 +62,14 @@ def plot_auto(
         raise RuntimeError(f"Do not know how to plot {ndim}d")
 
     if output is not None:
-        annotate_axes(output)
+        annotate_axes(output, show_path=show_path)
 
     return ret
 
-def get_colorbar_label(output: Output) -> None:
+def get_colorbar_label(output: Output, /) -> None:
     return output.node.label('axis', fallback=None)
 
-def annotate_axes(output: Output, ax: Optional[Axes]=None) -> None:
+def annotate_axes(output: Output, /, ax: Optional[Axes]=None, *, show_path: bool=True) -> None:
     ax = ax or gca()
     node = output.node
 
@@ -90,6 +91,14 @@ def annotate_axes(output: Output, ax: Optional[Axes]=None) -> None:
             ax.set_zlabel(zlabel)
         except AttributeError:
             pass
+
+    if show_path:
+        path = node.label('paths', [], fallback=None)
+        if not path:
+            return
+
+        fig = gcf()
+        text(0.05, 0.05, path[0], transform=fig.dpi_scale_trans)
 
 def plot_array_1d(
     array: NDArray,
