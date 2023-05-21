@@ -1,7 +1,5 @@
 from typing import Literal, Optional
 
-from numpy import searchsorted
-
 from ..exception import InitializationError
 from ..nodes import FunctionNode
 from ..typefunctions import (
@@ -19,7 +17,7 @@ class InSegment(FunctionNode):
         `1` or  `fine`: array of the fine x points
 
     outputs:
-        `0` or `indices`: array of the indices of the segments
+        `0` or `indices`: array of the indices of the coarse segments for every fine point
 
     The node finds an index of the segment in the coarse array for every fine point.
     The node uses `numpy.searchsorted` method. There is an extra argument `mode`:
@@ -30,7 +28,7 @@ class InSegment(FunctionNode):
     def __init__(
         self,
         *args,
-        mode: Literal["left", "right"] = "left",
+        mode: Literal["left", "right"] = "right",
         **kwargs,
     ) -> None:
         super().__init__(*args, **kwargs)
@@ -56,14 +54,14 @@ class InSegment(FunctionNode):
         check_inputs_number(self, 2)
         check_input_dimension(self, slice(None), 1)
         check_if_input_sorted(self, 0)
-        copy_from_input_to_output(self, 1, 0, False, True, False, False)  # use fine points shape
+        copy_from_input_to_output(self, 1, 0, False, True, False, False)
         self.outputs[0].dd.dtype = "i"
 
     def _fcn(self, _, inputs, outputs) -> Optional[list]:
-        """Uses `numpy.searchsorted`"""
+        """Uses `numpy.ndarray.searchsorted`"""
         out = outputs[0].data
         coarse = inputs[0].data
         fine = inputs[1].data
-        out[:] = searchsorted(coarse, fine, side=self.mode)
+        out[:] = coarse.searchsorted(fine, side=self.mode)
         if self.debug:
             return out
