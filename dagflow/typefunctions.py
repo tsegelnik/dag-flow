@@ -650,16 +650,17 @@ def check_array_edges_consistency(
                     )
 
 
-def check_if_input_sorted(
-    node: NodeT,
-    inputkey: Union[str, int, slice, Sequence] = AllPositionals,
-):
-    """Checking if the inputs are sorted arrays"""
-    is_sorted = lambda a: all(a[:-1] <= a[1:])
-    for input in node.inputs.iter(inputkey):
-        if not is_sorted(input.data):
-            raise TypeFunctionError(
-                "The `input` must be a sorted array!",
-                node=node,
-                input=input,
-            )
+# NOTE: may be it will be needed later, but for now is not
+#def check_if_input_sorted(
+#    node: NodeT,
+#    inputkey: Union[str, int, slice, Sequence] = AllPositionals,
+#):
+#    """Checking if the inputs are sorted arrays"""
+#    is_sorted = lambda a: all(a[:-1] <= a[1:])
+#    for input in node.inputs.iter(inputkey):
+#        if not is_sorted(input.data):
+#            raise TypeFunctionError(
+#                "The `input` must be a sorted array!",
+#                node=node,
+#                input=input,
+#            )
