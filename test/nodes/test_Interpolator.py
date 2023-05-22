@@ -4,7 +4,7 @@ from dagflow.lib import Array
 from dagflow.lib.InSegment import InSegment
 from dagflow.lib.Interpolator import Interpolator
 from dagflow.lib.trigonometry import Sin
-from numpy import allclose, finfo, linspace, searchsorted, sin
+from numpy import allclose, finfo, linspace, log, searchsorted, sin
 from numpy.random import shuffle
 from pytest import mark
 
@@ -38,7 +38,7 @@ def test_interpolation_linear_01(debug_graph, testname, k, b):
         fine = Array("fine", fineX)
         yc = Array("yc", ycX)
         insegment = InSegment("insegment")
-        interpolator = Interpolator("interpolator")
+        interpolator = Interpolator("interpolator", method="linear")
         (coarse, fine) >> insegment
         (coarse, yc, fine, insegment.outputs[0]) >> interpolator
     assert allclose(
@@ -60,7 +60,7 @@ def test_interpolation_linear_02(debug_graph, testname):
         fine = Array("fine", fineX)
         ssin = Sin("sin")
         insegment = InSegment("insegment")
-        interpolator = Interpolator("interpolator")
+        interpolator = Interpolator("interpolator", method="linear")
         (coarse, fine) >> insegment
         coarse >> ssin
         (coarse, ssin.outputs[0], fine, insegment.outputs[0]) >> interpolator
@@ -68,5 +68,30 @@ def test_interpolation_linear_02(debug_graph, testname):
         interpolator.outputs[0].data,
         sin(fineX),
         atol=1e-4,
+    )
+    savegraph(graph, f"output/{testname}.png")
+
+
+@mark.parametrize("k", (10.234, 0.578))
+@mark.parametrize("b", (15.432, 0.742))
+def test_interpolation_log_01(debug_graph, testname, k, b):
+    with Graph(debug=debug_graph, close=True) as graph:
+        nc, nf = 100, 100
+        coarseX = linspace(1e-1, 1e1, nc + 1)
+        ycX = log(k * coarseX + b)
+        fineX = linspace(1e-2, 1e2, nf + 1)
+        shuffle(fineX)
+        coarse = Array("coarse", coarseX)
+        fine = Array("fine", fineX)
+        yc = Array("yc", ycX)
+        insegment = InSegment("insegment")
+        interpolator = Interpolator("interpolator", method="log")
+        (coarse, fine) >> insegment
+        (coarse, yc, fine, insegment.outputs[0]) >> interpolator
+    assert allclose(
+        interpolator.outputs[0].data,
+        log(k * fineX + b),
+        rtol=finfo("d").resolution * 10,
+        atol=0,
     )
     savegraph(graph, f"output/{testname}.png")

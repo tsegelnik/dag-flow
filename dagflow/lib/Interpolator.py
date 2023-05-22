@@ -2,7 +2,7 @@ from typing import Callable, Literal
 
 from numba import float64, int32, njit, void
 from numba.core.types import FunctionType
-from numpy import float_, integer
+from numpy import exp, float_, integer, log
 from numpy.typing import NDArray
 
 from ..exception import InitializationError
@@ -29,8 +29,9 @@ class Interpolator(FunctionNode):
         `0` or `result`: array of the `y≈f(fine)`
 
     extra arguments:
+        `method`: defines an interpolation method ("linear", "log"); default: `linear`
         `tolerance`: determines the accuracy with which the point will be identified
-        with the segment boundary
+        with the segment boundary; default: `1e-10`
         `underflow`: defines the underflow strategy: `constant` or `extrapolate`;
         default: `extrapolate`
         `overflow`: defines the overflow strategy: `constant` or `extrapolate`;
@@ -40,15 +41,14 @@ class Interpolator(FunctionNode):
 
     The node performs interpolation of the `coarse` points with `y=f(coarse)`
     to `fine` points and calculates `y≈f(fine)`.
-
-    .. note:: now supports only linear interpolation!
     """
 
-    __slots__ = ("_strategies",)
+    __slots__ = ("_strategies", "_methods", "_method")
 
     def __init__(
         self,
         *args,
+        method: Literal["linear", "log"] = "linear",
         tolerance: float = 1e-10,
         underflow: Literal["constant", "extrapolate"] = "extrapolate",
         overflow: Literal["constant", "extrapolate"] = "extrapolate",
@@ -56,19 +56,28 @@ class Interpolator(FunctionNode):
         **kwargs,
     ) -> None:
         super().__init__(*args, **kwargs)
-        # use this dict to increase a performance in a strategy selection
-        self._strategies = {"constant": 0, "extrapolate": 1}
-        self._tolerance = tolerance
-        if underflow not in {"constant", "extrapolate"}:
+        # TODO: implement other interpolation methods
+        self._methods = {
+            "linear": _linear_interpolation,
+            "log": _log_interpolation,
+        }
+        if (mlist := self._methods.keys()) and method not in mlist:
             raise InitializationError(
-                "Argument 'underflow' must be 'constant' or 'extrapolate', "
-                f"but given {underflow}!",
+                f"Argument 'method' must be in {mlist}, but given {method}!",
                 node=self,
             )
-        if overflow not in {"constant", "extrapolate"}:
+        self._method = self._methods[method]
+        self._strategies = {"constant": 0, "extrapolate": 1}
+        self._tolerance = tolerance
+        slist = self.strategies.keys()
+        if underflow not in slist:
             raise InitializationError(
-                "Argument 'overflow' must be 'constant' or 'extrapolate', "
-                f"but given {overflow}!",
+                f"Argument 'underflow' must be in {slist}, but given {underflow}!",
+                node=self,
+            )
+        if overflow not in slist:
+            raise InitializationError(
+                f"Argument 'overflow' must be in {slist}, but given {overflow}!",
                 node=self,
             )
         self._underflow = underflow
@@ -76,16 +85,18 @@ class Interpolator(FunctionNode):
         self._fillvalue = fillvalue
         self.add_input(("coarse", "y", "fine", "indices"))
         self.add_output("result")
-        self._functions.update({"linear": self._fcn_linear})
-        # TODO: implement other interpolation methods
 
     @property
-    def tolerance(self) -> float:
-        return self._tolerance
+    def methods(self) -> dict:
+        return self._methods
 
     @property
     def strategies(self) -> dict:
         return self._strategies
+
+    @property
+    def tolerance(self) -> float:
+        return self._tolerance
 
     @property
     def underflow(self) -> str:
@@ -112,12 +123,9 @@ class Interpolator(FunctionNode):
         coarsedd = self.inputs["coarse"].dd
         check_input_shape(self, "y", coarsedd.shape)
         copy_from_input_to_output(self, "fine", 0)
-        self.fcn = self._fcn_linear
-        # TODO: implement other interpolation methods
-        # self.fcn = self._functions[self.mode]
 
-    def _fcn_linear(self, _, inputs, outputs):
-        """Linear interpolation"""
+    def _fcn(self, _, inputs, outputs):
+        """Runs interpolation method choosen within `method` arg"""
         coarse = inputs["coarse"].data
         yc = inputs["y"].data
         fine = inputs["fine"].data
@@ -125,7 +133,7 @@ class Interpolator(FunctionNode):
         out = outputs[0].data
 
         _interpolation(
-            _linear_interpolation,
+            self._method,
             coarse,
             yc,
             fine,
@@ -220,3 +228,26 @@ def _linear_interpolation(
     fine: float,
 ) -> float:
     return yc0 + (fine - coarse0) * (yc1 - yc0) / (coarse1 - coarse0)
+
+
+@njit(
+    float64(
+        float64,
+        float64,
+        float64,
+        float64,
+        float64,
+    ),
+    cache=True,
+)
+def _log_interpolation(
+    coarse0: float,
+    coarse1: float,
+    yc0: float,
+    yc1: float,
+    fine: float,
+) -> float:
+    return log(
+        exp(yc0)
+        + (fine - coarse0) * (exp(yc1) - exp(yc0)) / (coarse1 - coarse0)
+    )
