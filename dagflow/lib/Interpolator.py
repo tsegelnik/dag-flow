@@ -121,7 +121,6 @@ class Interpolator(FunctionNode):
         """
         check_inputs_number(self, 4)
         check_has_inputs(self, ("coarse", "y", "fine", "indices"))
-        check_input_dimension(self, ("coarse", "y", "fine", "indices"), 1)
         check_input_dtype(self, "indices", "i")
         coarsedd = self.inputs["coarse"].dd
         check_input_shape(self, "y", coarsedd.shape)
@@ -129,16 +128,17 @@ class Interpolator(FunctionNode):
 
     def _fcn(self, _, inputs, outputs):
         """Runs interpolation method choosen within `method` arg"""
-        coarse = inputs["coarse"].data
-        yc = inputs["y"].data
-        fine = inputs["fine"].data
-        indices = inputs["indices"].data
-        out = outputs[0].data
+        coarse = inputs["coarse"].data.ravel()
+        yc = inputs["y"].data.ravel()
+        fine = inputs["fine"].data.ravel()
+        indices = inputs["indices"].data.ravel()
+        out = outputs[0].data.ravel()
 
+        sortedindices = coarse.argsort() # indices to sort the arrays
         _interpolation(
             self._method,
-            coarse,
-            yc,
+            coarse[sortedindices],
+            yc[sortedindices],
             fine,
             indices,
             out,

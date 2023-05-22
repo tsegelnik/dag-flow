@@ -87,6 +87,7 @@ def copy_from_input_to_output(
     node: NodeT,
     inputkey: Union[str, int, slice, Sequence] = 0,
     outputkey: Union[str, int, slice, Sequence] = AllPositionals,
+    *,
     dtype: bool = True,
     shape: bool = True,
     edges: bool = True,

@@ -3,8 +3,6 @@ from typing import Literal, Optional
 from ..exception import InitializationError
 from ..nodes import FunctionNode
 from ..typefunctions import (
-    check_if_input_sorted,
-    check_input_dimension,
     check_inputs_number,
     copy_from_input_to_output,
 )
@@ -50,18 +48,20 @@ class InSegment(FunctionNode):
         """
         The function to determine the dtype and shape of the ouput.
         """
-        # NOTE: Now InSegment supports only 1d arrays
         check_inputs_number(self, 2)
-        check_input_dimension(self, slice(None), 1)
-        check_if_input_sorted(self, 0)
-        copy_from_input_to_output(self, 1, 0, False, True, False, False)
+        copy_from_input_to_output(
+            self, 1, 0, dtype=False, shape=True, edges=False, nodes=False
+        )
         self.outputs[0].dd.dtype = "i"
 
     def _fcn(self, _, inputs, outputs) -> Optional[list]:
-        """Uses `numpy.ndarray.searchsorted`"""
-        out = outputs[0].data
-        coarse = inputs[0].data
-        fine = inputs[1].data
-        out[:] = coarse.searchsorted(fine, side=self.mode)
+        """Uses `numpy.ndarray.searchsorted` and `numpy.ndarray.argsort`"""
+        out = outputs[0].data.ravel()
+        coarse = inputs[0].data.ravel()
+        fine = inputs[1].data.ravel()
+        # NOTE: `searchsorted` and `argsort` allocate a memory!
+        #       it is better to use another algorithm if possible
+        sorter = coarse.argsort()
+        out[:] = coarse.searchsorted(fine, side=self.mode, sorter=sorter)
         if self.debug:
             return out
