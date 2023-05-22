@@ -4,7 +4,7 @@ from dagflow.lib import Array
 from dagflow.lib.InSegment import InSegment
 from dagflow.lib.Interpolator import Interpolator
 from dagflow.lib.trigonometry import Sin
-from numpy import allclose, finfo, linspace, log, searchsorted, sin
+from numpy import allclose, exp, finfo, linspace, log, searchsorted, sin
 from numpy.random import shuffle
 from pytest import mark
 
@@ -117,6 +117,31 @@ def test_interpolation_logx_01(debug_graph, testname, k, b):
         interpolator.outputs[0].data,
         k * log(fineX) + b,
         rtol=finfo("d").resolution * 10,
+        atol=0,
+    )
+    savegraph(graph, f"output/{testname}.png")
+
+
+@mark.parametrize("k", (0.234, 1.578))
+@mark.parametrize("b", (1.432, 0.742))
+def test_interpolation_exp_01(debug_graph, testname, k, b):
+    with Graph(debug=debug_graph, close=True) as graph:
+        nc, nf = 100, 100
+        coarseX = linspace(0, 0.5, nc + 1)
+        ycX = exp(k*coarseX+b)
+        fineX = linspace(0, 1, nf + 1)
+        shuffle(fineX)
+        coarse = Array("coarse", coarseX)
+        fine = Array("fine", fineX)
+        yc = Array("yc", ycX)
+        insegment = InSegment("insegment")
+        interpolator = Interpolator("interpolator", method="exp")
+        (coarse, fine) >> insegment
+        (coarse, yc, fine, insegment.outputs[0]) >> interpolator
+    assert allclose(
+        interpolator.outputs[0].data,
+        exp(k*fineX+b),
+        rtol=finfo("d").resolution * 100,
         atol=0,
     )
     savegraph(graph, f"output/{testname}.png")

@@ -29,7 +29,7 @@ class Interpolator(FunctionNode):
         `0` or `result`: array of the `y≈f(fine)`
 
     extra arguments:
-        `method`: defines an interpolation method ("linear", "log", "logx");
+        `method`: defines an interpolation method ("linear", "log", "logx", "exp");
         default: `linear`
         `tolerance`: determines the accuracy with which the point will be identified
         with the segment boundary; default: `1e-10`
@@ -49,7 +49,7 @@ class Interpolator(FunctionNode):
     def __init__(
         self,
         *args,
-        method: Literal["linear", "log", "logx"] = "linear",
+        method: Literal["linear", "log", "logx", "exp"] = "linear",
         tolerance: float = 1e-10,
         underflow: Literal["constant", "extrapolate"] = "extrapolate",
         overflow: Literal["constant", "extrapolate"] = "extrapolate",
@@ -62,6 +62,7 @@ class Interpolator(FunctionNode):
             "linear": _linear_interpolation,
             "log": _log_interpolation,
             "logx": _logx_interpolation,
+            "exp": _exp_interpolation,
         }
         if (mlist := self._methods.keys()) and method not in mlist:
             raise InitializationError(
@@ -273,3 +274,23 @@ def _logx_interpolation(
     fine: float,
 ) -> float:
     return yc0 + log(fine / coarse0) * (yc1 - yc0) / log(coarse1 / coarse0)
+
+
+@njit(
+    float64(
+        float64,
+        float64,
+        float64,
+        float64,
+        float64,
+    ),
+    cache=True,
+)
+def _exp_interpolation(
+    coarse0: float,
+    coarse1: float,
+    yc0: float,
+    yc1: float,
+    fine: float,
+) -> float:
+    return yc0 * exp((coarse0 - fine) * log(yc0 / yc1) / (coarse1 - coarse0))
