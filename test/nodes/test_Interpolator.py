@@ -1,3 +1,4 @@
+from dagflow.exception import InitializationError
 from dagflow.graph import Graph
 from dagflow.graphviz import savegraph
 from dagflow.lib import Array
@@ -6,7 +7,7 @@ from dagflow.lib.Interpolator import Interpolator
 from dagflow.lib.trigonometry import Sin
 from numpy import allclose, exp, finfo, linspace, log, searchsorted, sin
 from numpy.random import shuffle
-from pytest import mark
+from pytest import mark, raises
 
 
 @mark.parametrize("mode", ("left", "right"))
@@ -128,7 +129,7 @@ def test_interpolation_exp_01(debug_graph, testname, k, b):
     with Graph(debug=debug_graph, close=True) as graph:
         nc, nf = 100, 100
         coarseX = linspace(0, 0.5, nc + 1)
-        ycX = exp(k*coarseX+b)
+        ycX = exp(k * coarseX + b)
         fineX = linspace(0, 1, nf + 1)
         shuffle(fineX)
         coarse = Array("coarse", coarseX)
@@ -140,8 +141,32 @@ def test_interpolation_exp_01(debug_graph, testname, k, b):
         (coarse, yc, fine, insegment.outputs[0]) >> interpolator
     assert allclose(
         interpolator.outputs[0].data,
-        exp(k*fineX+b),
+        exp(k * fineX + b),
         rtol=finfo("d").resolution * 100,
         atol=0,
     )
     savegraph(graph, f"output/{testname}.png")
+
+
+def test_interpolation_exception(debug_graph):
+    from random import choice
+    from string import ascii_lowercase
+
+    with Graph(debug=debug_graph, close=False) as graph:
+        with raises(InitializationError):
+            Interpolator(
+                "interpolator",
+                method="".join(choice(ascii_lowercase) for _ in range(5)),
+            )
+
+        with raises(InitializationError):
+            Interpolator(
+                "interpolator",
+                underflow="".join(choice(ascii_lowercase) for _ in range(5)),
+            )
+
+        with raises(InitializationError):
+            Interpolator(
+                "interpolator",
+                overflow="".join(choice(ascii_lowercase) for _ in range(5)),
+            )
