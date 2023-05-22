@@ -2,8 +2,8 @@ from dagflow.exception import InitializationError
 from dagflow.graph import Graph
 from dagflow.graphviz import savegraph
 from dagflow.lib import Array
-from dagflow.lib.InSegment import InSegment
 from dagflow.lib.Interpolator import Interpolator
+from dagflow.lib.SegmentIndex import SegmentIndex
 from dagflow.lib.trigonometry import Sin
 from numpy import allclose, exp, finfo, linspace, log, sin
 from numpy.random import shuffle
@@ -23,10 +23,10 @@ def test_interpolation_linear_01(debug_graph, testname, k, b):
         coarse = Array("coarse", coarseX)
         fine = Array("fine", fineX)
         yc = Array("yc", ycX)
-        insegment = InSegment("insegment")
+        segmentIndex = SegmentIndex("segmentIndex")
         interpolator = Interpolator("interpolator", method="linear")
-        (coarse, fine) >> insegment
-        (coarse, yc, fine, insegment.outputs[0]) >> interpolator
+        (coarse, fine) >> segmentIndex
+        (coarse, yc, fine, segmentIndex.outputs[0]) >> interpolator
     assert allclose(
         interpolator.outputs[0].data,
         k * fineX + b,
@@ -46,11 +46,16 @@ def test_interpolation_linear_02(debug_graph, testname):
         coarse = Array("coarse", coarseX)
         fine = Array("fine", fineX)
         ssin = Sin("sin")
-        insegment = InSegment("insegment")
+        segmentIndex = SegmentIndex("segmentIndex")
         interpolator = Interpolator("interpolator", method="linear")
-        (coarse, fine) >> insegment
+        (coarse, fine) >> segmentIndex
         coarse >> ssin
-        (coarse, ssin.outputs[0], fine, insegment.outputs[0]) >> interpolator
+        (
+            coarse,
+            ssin.outputs[0],
+            fine,
+            segmentIndex.outputs[0],
+        ) >> interpolator
     assert allclose(
         interpolator.outputs[0].data,
         sin(fineX),
@@ -70,11 +75,16 @@ def test_interpolation_ndim(debug_graph, testname, shape):
         coarse = Array("coarse", coarseX)
         fine = Array("fine", fineX)
         ssin = Sin("sin")
-        insegment = InSegment("insegment")
+        segmentIndex = SegmentIndex("segmentIndex")
         interpolator = Interpolator("interpolator", method="linear")
-        (coarse, fine) >> insegment
+        (coarse, fine) >> segmentIndex
         coarse >> ssin
-        (coarse, ssin.outputs[0], fine, insegment.outputs[0]) >> interpolator
+        (
+            coarse,
+            ssin.outputs[0],
+            fine,
+            segmentIndex.outputs[0],
+        ) >> interpolator
     assert allclose(
         interpolator.outputs[0].data,
         sin(fineX),
@@ -96,10 +106,10 @@ def test_interpolation_log_01(debug_graph, testname, k, b):
         coarse = Array("coarse", coarseX)
         fine = Array("fine", fineX)
         yc = Array("yc", ycX)
-        insegment = InSegment("insegment")
+        segmentIndex = SegmentIndex("segmentIndex")
         interpolator = Interpolator("interpolator", method="log")
-        (coarse, fine) >> insegment
-        (coarse, yc, fine, insegment.outputs[0]) >> interpolator
+        (coarse, fine) >> segmentIndex
+        (coarse, yc, fine, segmentIndex.outputs[0]) >> interpolator
     assert allclose(
         interpolator.outputs[0].data,
         log(k * fineX + b),
@@ -122,10 +132,10 @@ def test_interpolation_logx_01(debug_graph, testname, k, b):
         coarse = Array("coarse", coarseX)
         fine = Array("fine", fineX)
         yc = Array("yc", ycX)
-        insegment = InSegment("insegment")
+        segmentIndex = SegmentIndex("segmentIndex")
         interpolator = Interpolator("interpolator", method="logx")
-        (coarse, fine) >> insegment
-        (coarse, yc, fine, insegment.outputs[0]) >> interpolator
+        (coarse, fine) >> segmentIndex
+        (coarse, yc, fine, segmentIndex.outputs[0]) >> interpolator
     assert allclose(
         interpolator.outputs[0].data,
         k * log(fineX) + b,
@@ -147,10 +157,10 @@ def test_interpolation_exp_01(debug_graph, testname, k, b):
         coarse = Array("coarse", coarseX)
         fine = Array("fine", fineX)
         yc = Array("yc", ycX)
-        insegment = InSegment("insegment")
+        segmentIndex = SegmentIndex("segmentIndex")
         interpolator = Interpolator("interpolator", method="exp")
-        (coarse, fine) >> insegment
-        (coarse, yc, fine, insegment.outputs[0]) >> interpolator
+        (coarse, fine) >> segmentIndex
+        (coarse, yc, fine, segmentIndex.outputs[0]) >> interpolator
     assert allclose(
         interpolator.outputs[0].data,
         exp(k * fineX + b),

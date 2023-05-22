@@ -8,7 +8,7 @@ from ..typefunctions import (
 )
 
 
-class InSegment(FunctionNode):
+class SegmentIndex(FunctionNode):
     """
     inputs:
         `0` or `coarse`: array of the coarse x points

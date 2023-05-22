@@ -8,7 +8,8 @@ from numpy.typing import NDArray
 
 from ..exception import InitializationError
 from ..nodes import FunctionNode
-from ..typefunctions import (  # assign_output_axes_from_inputs,
+from ..typefunctions import (
+    assign_output_axes_from_inputs,
     check_has_inputs,
     check_input_dtype,
     check_input_shape,
@@ -39,9 +40,9 @@ class Interpolator(FunctionNode):
         default: `linear`
         `tolerance`: determines the accuracy with which the point will be identified
         with the segment boundary; default: `1e-10`
-        `underflow`: defines the underflow strategy: `constant` or `extrapolate`;
+        `underflow`: defines the underflow strategy: `constant`, `nearestedge`, or `extrapolate`;
         default: `extrapolate`
-        `overflow`: defines the overflow strategy: `constant` or `extrapolate`;
+        `overflow`: defines the overflow strategy: `constant`, `nearestedge`, or `extrapolate`;
         default: `extrapolate`
         `fillvalue`: defines the filling value for the `constant` strategy;
         default: `0.0`
@@ -67,7 +68,6 @@ class Interpolator(FunctionNode):
         **kwargs,
     ) -> None:
         super().__init__(*args, **kwargs)
-        # TODO: implement other interpolation methods
         self._methods = {
             "linear": _linear_interpolation,
             "log": _log_interpolation,
@@ -135,7 +135,10 @@ class Interpolator(FunctionNode):
         check_input_shape(self, "y", self.inputs["coarse"].dd.shape)
         check_input_shape(self, "fine", self.inputs["indices"].dd.shape)
         copy_from_input_to_output(self, "fine", "result")
-        # assign_output_axes_from_inputs(self, "fine", 'result', assign_nodes=True)
+        if self.inputs["fine"].dd.dim == 1:
+            assign_output_axes_from_inputs(
+                self, "fine", "result", assign_nodes=True
+            )
 
     def _fcn(self, _, inputs, outputs):
         """Runs interpolation method choosen within `method` arg"""
