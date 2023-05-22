@@ -425,7 +425,7 @@ class GaussianConstraint(Constraint):
         self.central = self._central_node.outputs[0]
         self.sigma = self._sigma_node.outputs[0]
 
-        if (mark:=value_node.label('mark', fallback=None)) is not None:
+        if (mark:=value_node.labels.mark) is not None:
             normmark = f'norm({mark})'
         else:
             normmark = 'norm'

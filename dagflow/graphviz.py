@@ -453,7 +453,7 @@ else:
             return f"{name}_{onum}{suffix}"
 
         def get_label(self, node: NodeT, *, depth: Optional[int]=None) -> str:
-            text = node.label('graph') or node.name
+            text = node.labels.graph or node.name
             try:
                 out0 = node.outputs[0]
             except IndexError:
@@ -507,7 +507,7 @@ else:
             info_type = f"{br_left}{shape0}{br_right}{dtype0}{nlimbs}"
             if 'type' in self._show:
                 left.append(info_type)
-            if 'mark' in self._show and (mark:=node.label('mark', fallback=None)) is not None:
+            if 'mark' in self._show and (mark:=node.labels.mark) is not None:
                 left.append(mark)
             if 'label' in self._show:
                 right.append(text)

@@ -67,16 +67,16 @@ def plot_auto(
     return ret
 
 def get_colorbar_label(output: Output, /) -> None:
-    return output.node.label('axis', fallback=None)
+    return output.node.labels.axis
 
 def annotate_axes(output: Output, /, ax: Optional[Axes]=None, *, show_path: bool=True) -> None:
     ax = ax or gca()
     node = output.node
 
-    title = node.label('plottitle', fallback=('text'))
+    title = node.labels.plottitle
     xlabel = output.dd.axis_label(0)
 
-    ylabel = node.label('axis', fallback=('plottitle', 'text'))
+    ylabel = node.labels.axis
     if output.dd.dim==2:
         zlabel = ylabel
         ylabel = output.dd.axis_label(1)
@@ -93,7 +93,7 @@ def annotate_axes(output: Output, /, ax: Optional[Axes]=None, *, show_path: bool
             pass
 
     if show_path:
-        path = node.label('paths', [], fallback=None)
+        path = node.labels.paths
         if not path:
             return
 

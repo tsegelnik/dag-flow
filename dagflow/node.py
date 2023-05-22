@@ -20,11 +20,12 @@ from .limbs import Limbs
 from .logger import Logger, get_logger
 from .output import Output
 from .types import GraphT
+from .labels import Labels
 
 
 class Node(Limbs):
     _name: str
-    _labels: Dict[str, str]
+    _labels: Labels
     _graph: Optional[GraphT] = None
     _fcn: Optional[Callable]
     _fcn_chain = None
@@ -87,12 +88,7 @@ class Node(Limbs):
         else:
             self._debug = bool(debug)
 
-        if isinstance(label, str):
-            self._labels = {"text": label}
-        elif isinstance(label, dict):
-            self._labels = label
-        else:
-            self._labels = {"text": name}
+        self._labels = Labels(label or name)
 
         if logger is not None:
             self._logger = logger
@@ -229,7 +225,7 @@ class Node(Limbs):
         self._graph.register_node(self)
 
     @property
-    def labels(self) -> dict:
+    def labels(self) -> Labels:
         return self._labels
 
     #
@@ -276,28 +272,8 @@ class Node(Limbs):
             return None
         return handler(*args, **kwargs)
 
-    def label(
-        self,
-        source: str = "text",
-        default: Optional[str] = None,
-        *,
-        fallback: Union[str, Sequence[str], None] = "text",
-    ) -> Optional[str]:
-        # if self._labels:
-        #     kwargs.setdefault("name", self._name)
-        #     return self._labels.format(*args, **kwargs)
-        label = self._labels.get(source, default)
-
-        if isinstance(fallback, str):
-            fallback = fallback,
-
-        if fallback:
-            for fallbackfield in fallback:
-                if label is not None:
-                    return label
-                label = self._labels.get(fallbackfield, None)
-
-        return label or ''
+    def label(self) -> Optional[str]:
+        return self._labels.text
 
     def _inherit_labels(
         self,
