@@ -170,11 +170,58 @@ def test_interpolation_exp_01(debug_graph, testname, k, b):
     savegraph(graph, f"output/{testname}.png")
 
 
+@mark.parametrize("strategy", ("constant", "nearestedge"))
+@mark.parametrize("fillvalue", (0, 1))
+@mark.parametrize("k", (1.234, -0.578))
+def test_interpolation_extrapolation_strategy(
+    debug_graph, testname, k, strategy, fillvalue
+):
+    b = 5.137
+    with Graph(debug=debug_graph, close=True) as graph:
+        nc, nf = 10, 20
+        coarseX = linspace(0, 10, nc + 1)
+        shuffle(coarseX)
+        fineX = linspace(-2, 12, nf + 1)
+        shuffle(fineX)
+        ycX = k * coarseX + b
+        coarse = Array("coarse", coarseX)
+        fine = Array("fine", fineX)
+        yc = Array("yc", ycX)
+        segmentIndex = SegmentIndex("segmentIndex")
+        interpolator = Interpolator(
+            "interpolator",
+            method="linear",
+            underflow=strategy,
+            overflow=strategy,
+            fillvalue=fillvalue,
+        )
+        (coarse, fine) >> segmentIndex
+        (coarse, yc, fine, segmentIndex.outputs[0]) >> interpolator
+    res = []
+    for x in fineX:
+        if x >= 0 and x <= 10:
+            res.append(k * x + b)
+        elif strategy == "nearestedge":
+            if x < 0:
+                res.append(b)
+            else:
+                res.append(k* 10 + b)
+        elif strategy == "constant":
+            res.append(fillvalue)
+    assert allclose(
+        interpolator.outputs[0].data,
+        res,
+        rtol=finfo("d").resolution * 5,
+        atol=0,
+    )
+    savegraph(graph, f"output/{testname}.png")
+
+
 def test_interpolation_exception(debug_graph):
     from random import choice
     from string import ascii_lowercase
 
-    with Graph(debug=debug_graph, close=False) as graph:
+    with Graph(debug=debug_graph, close=False):
         with raises(InitializationError):
             Interpolator(
                 "interpolator",

@@ -195,7 +195,10 @@ def _interpolation(
 ) -> None:
     nseg = coarse.size - 1
     for i, j in enumerate(indices):
-        if j >= nseg:  # overflow
+        if abs(fine[i] - coarse[j]) < tolerance:
+            # get precise value from coarse
+            result[i] = yc[j]
+        elif j > nseg:  # overflow
             if overflow == Strategy.constant:  # constant
                 result[i] = fillvalue
             elif overflow == Strategy.nearestedge:  # nearestedge
@@ -208,7 +211,7 @@ def _interpolation(
                     yc[nseg],
                     fine[i],
                 )
-        elif j < 0:  # underflow
+        elif j <= 0:  # underflow
             if underflow == Strategy.constant:  # constant
                 result[i] = fillvalue
             elif underflow == Strategy.nearestedge:  # nearestedge
@@ -219,15 +222,12 @@ def _interpolation(
                     coarse[1],
                     yc[0],
                     yc[1],
-                    fine[0],
+                    fine[i],
                 )
-        elif abs(fine[i] - coarse[j]) < tolerance:
-            # get precise value from coarse
-            result[i] = yc[j]
         else:
             # interpolate
             result[i] = method(
-                coarse[j], coarse[j + 1], yc[j], yc[j + 1], fine[i]
+                coarse[j - 1], coarse[j], yc[j - 1], yc[j], fine[i]
             )
 
 
