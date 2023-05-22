@@ -1,3 +1,4 @@
+from enum import IntEnum
 from typing import Callable, Literal
 
 from numba import float64, int32, njit, void
@@ -7,14 +8,19 @@ from numpy.typing import NDArray
 
 from ..exception import InitializationError
 from ..nodes import FunctionNode
-from ..typefunctions import (
+from ..typefunctions import (  # assign_output_axes_from_inputs,
     check_has_inputs,
-    check_input_dimension,
     check_input_dtype,
     check_input_shape,
     check_inputs_number,
     copy_from_input_to_output,
 )
+
+
+class Strategy(IntEnum):
+    constant = 0
+    nearestedge = 1
+    extrapolate = 2
 
 
 class Interpolator(FunctionNode):
@@ -51,8 +57,12 @@ class Interpolator(FunctionNode):
         *args,
         method: Literal["linear", "log", "logx", "exp"] = "linear",
         tolerance: float = 1e-10,
-        underflow: Literal["constant", "extrapolate"] = "extrapolate",
-        overflow: Literal["constant", "extrapolate"] = "extrapolate",
+        underflow: Literal[
+            "constant", "nearestedge", "extrapolate"
+        ] = "extrapolate",
+        overflow: Literal[
+            "constant", "nearestedge", "extrapolate"
+        ] = "extrapolate",
         fillvalue: float = 0.0,
         **kwargs,
     ) -> None:
@@ -70,7 +80,7 @@ class Interpolator(FunctionNode):
                 node=self,
             )
         self._method = self._methods[method]
-        self._strategies = {"constant": 0, "extrapolate": 1}
+        self._strategies = {"constant": 0, "nearestedge": 1, "extrapolate": 2}
         self._tolerance = tolerance
         slist = self.strategies.keys()
         if underflow not in slist:
@@ -122,9 +132,10 @@ class Interpolator(FunctionNode):
         check_inputs_number(self, 4)
         check_has_inputs(self, ("coarse", "y", "fine", "indices"))
         check_input_dtype(self, "indices", "i")
-        coarsedd = self.inputs["coarse"].dd
-        check_input_shape(self, "y", coarsedd.shape)
-        copy_from_input_to_output(self, "fine", 0)
+        check_input_shape(self, "y", self.inputs["coarse"].dd.shape)
+        check_input_shape(self, "fine", self.inputs["indices"].dd.shape)
+        copy_from_input_to_output(self, "fine", "result")
+        # assign_output_axes_from_inputs(self, "fine", 'result', assign_nodes=True)
 
     def _fcn(self, _, inputs, outputs):
         """Runs interpolation method choosen within `method` arg"""
@@ -132,9 +143,9 @@ class Interpolator(FunctionNode):
         yc = inputs["y"].data.ravel()
         fine = inputs["fine"].data.ravel()
         indices = inputs["indices"].data.ravel()
-        out = outputs[0].data.ravel()
+        out = outputs["result"].data.ravel()
 
-        sortedindices = coarse.argsort() # indices to sort the arrays
+        sortedindices = coarse.argsort()  # indices to sort the arrays
         _interpolation(
             self._method,
             coarse[sortedindices],
@@ -182,8 +193,10 @@ def _interpolation(
     nseg = coarse.size - 1
     for i, j in enumerate(indices):
         if j >= nseg:  # overflow
-            if overflow == 0:  # constant
+            if overflow == Strategy.constant:  # constant
                 result[i] = fillvalue
+            elif overflow == Strategy.nearestedge:  # nearestedge
+                result[i] = yc[nseg]
             else:  # extrapolate
                 result[i] = method(
                     coarse[nseg - 1],
@@ -193,8 +206,10 @@ def _interpolation(
                     fine[i],
                 )
         elif j < 0:  # underflow
-            if underflow == 0:  # constant
+            if underflow == Strategy.constant:  # constant
                 result[i] = fillvalue
+            elif underflow == Strategy.nearestedge:  # nearestedge
+                result[i] = yc[0]
             else:  # extrapolate
                 result[i] = method(
                     coarse[0],
