@@ -108,3 +108,16 @@ class Labels:
 
         setattr(self, k, default)
         return default
+
+    def inherit(self, source: "Labels", fmtlong: Union[str, Callable], fmtshort: Union[str, Callable]):
+        fmtlong = _make_formatter(fmtlong)
+        fmtshort = _make_formatter(fmtshort)
+
+        inherit = ('text', '_graph', 'latex', 'mark', '_axis', '_plottitle')
+        kshort = {'mark'}
+        for key in inherit:
+            label = getattr(source, key, None)
+            if label is None: continue
+            newv = fmtshort(label) if key in kshort else fmtlong(label)
+            if newv is not None:
+                self[key] = newv

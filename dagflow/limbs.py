@@ -133,4 +133,4 @@ class Limbs:
         data = self.get_data()
         if data.size > 1:
             raise AttributeError("to_dict")
-        return {"value": data[0], "label": self.label(label_from)}
+        return {"value": data[0], "label": self.labels[label_from]}

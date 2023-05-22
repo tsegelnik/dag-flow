@@ -15,7 +15,6 @@ from .exception import (
 )
 from .input import Input
 from .iter import IsIterable
-from .labels import inherit_labels
 from .limbs import Limbs
 from .logger import Logger, get_logger
 from .output import Output
@@ -274,16 +273,6 @@ class Node(Limbs):
 
     def label(self) -> Optional[str]:
         return self._labels.text
-
-    def _inherit_labels(
-        self,
-        source: "Node",
-        fmtlong: Union[str, Callable],
-        fmtshort: Union[str, Callable],
-    ) -> dict:
-        return inherit_labels(
-            source.labels, self._labels, fmtlong=fmtlong, fmtshort=fmtshort
-        )
 
     def add_input(
         self, name: Union[str, Sequence[str]], **kwargs
