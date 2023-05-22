@@ -62,7 +62,7 @@ def test_copy_from_input_00(testname, debug_graph):
         node = Dummy("node")
     assert (
         copy_from_input_to_output(
-            node, slice(None), slice(None), False, False, False, False
+            node, slice(None), slice(None), dtype=False, shape=False, edges=False, nodes=False
         )
         is None
     )
