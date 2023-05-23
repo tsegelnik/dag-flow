@@ -24,16 +24,15 @@ class Jacobian_dEnu_dEe(FunctionNode):
     _const_mp: Input
     _const_mn: Input
 
-    def __init__(self, name, *args, label: Mapping={}, **kwargs):
+    def __init__(self, name, *args, **kwargs):
         kwargs.setdefault("missing_input_handler", MissingInputAddPair())
-        label = dict(label)
-        label.update({
+        super().__init__(name, *args, **kwargs)
+        self.labels.setdefaults({
                 'text': r'Energy conversion Jacobian dEν/dEdep',
                 'plottitle': r'Energy conversion Jacobian $dE_{\nu}/dE_{\rm dep}$',
                 'latex': r'$dE_{\nu}/dE_{\rm dep}$',
                 'axis': r'$dE_{\nu}/dE_{\rm dep}$',
                 })
-        super().__init__(name, *args, label=label, **kwargs)
 
         self._enu = self._add_input('enu', positional=True, keyword=True)
         self._ee = self._add_input('ee', positional=True, keyword=True)

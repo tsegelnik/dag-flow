@@ -84,11 +84,6 @@ class Labels:
     def axis(self, value: Optional[str]):
         self._axis = value
 
-    def setdefaults(self, labels: dict):
-        for k, v in labels.items():
-            if getattr(self, k) is None:
-                setattr(self, k, v)
-
     def items(self):
         for k in self.__slots__:
             yield k, getattr(self, k)
@@ -108,6 +103,11 @@ class Labels:
 
         setattr(self, k, default)
         return default
+
+    def setdefaults(self, labels: dict):
+        for k, v in labels.items():
+            if getattr(self, k) is None:
+                setattr(self, k, v)
 
     def inherit(self, source: "Labels", fmtlong: Union[str, Callable], fmtshort: Union[str, Callable]):
         fmtlong = _make_formatter(fmtlong)

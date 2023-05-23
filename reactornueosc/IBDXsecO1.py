@@ -28,16 +28,15 @@ class IBDXsecO1(FunctionNode):
     _const_f: Input
     _const_f2: Input
 
-    def __init__(self, name, *args, label: Mapping={}, **kwargs):
+    def __init__(self, name, *args, **kwargs):
         kwargs.setdefault("missing_input_handler", MissingInputAddPair())
-        label = dict(label)
-        label.update({
+        super().__init__(name, *args, **kwargs)
+        self.labels.setdefaults({
                 'text':  r'IBD cross section σ(Eν,cosθ), cm⁻²',
                 'plottitle': r'IBD cross section $\sigma(E_{\nu}, \cos\theta)$, cm$^{-2}$',
                 'latex': r'IBD cross section $\sigma(E_{\nu}, \cos\theta)$, cm$^{-2}$',
                 'axis':  r'$\sigma(E_{\nu}, \cos\theta)$, cm$^{-2}$'
                 })
-        super().__init__(name, *args, label=label, **kwargs)
 
         self._enu = self._add_input('enu', positional=True, keyword=True)
         self._ctheta = self._add_input('costheta', positional=True, keyword=True)

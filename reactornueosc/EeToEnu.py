@@ -23,16 +23,15 @@ class EeToEnu(FunctionNode):
     _const_mp: Input
     _const_mn: Input
 
-    def __init__(self, name, *args, label: Mapping={}, **kwargs):
+    def __init__(self, name, *args, **kwargs):
         kwargs.setdefault("missing_input_handler", MissingInputAddPair())
-        label = dict(label)
-        label.update({
+        super().__init__(name, *args, **kwargs)
+        self.labels.setdefaults({
                 'text': r'Neutrino energy Eν, MeV',
                 'plottitle': r'Neutrino energy $E_{\nu}$, MeV',
                 'latex': r'$E_{\nu}$, MeV',
                 'axis': r'$E_{\nu}$, MeV',
                 })
-        super().__init__(name, *args, label=label, **kwargs)
 
         self._ee = self._add_input('ee', positional=True, keyword=True)
         self._ctheta = self._add_input('costheta', positional=True, keyword=True)
