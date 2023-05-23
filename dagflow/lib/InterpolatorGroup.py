@@ -40,8 +40,7 @@ def InterpolatorGroup(
     )
     metaint.add_node(
         interpolator,
-        kw_inputs=["coarse", "fine", "yc"],
-        kw_outputs=["result"],
+        kw_inputs=["coarse", "fine"],
         merge_inputs=["coarse", "fine"],
         inputs_pos=True,
         outputs_pos=True,

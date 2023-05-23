@@ -27,10 +27,10 @@ class Strategy(IntEnum):
 class Interpolator(FunctionNode):
     """
     inputs:
-        `0` or `coarse`: array of the coarse x points
-        `1` or `y`: array of the `y=f(coarse)`
-        `2` or  `fine`: array of the fine x points
-        `3` or `indices`: array of the indices of the coarse segments for every fine point
+        `0` or `y`: array of the `y=f(coarse)`
+        `coarse`: array of the coarse x points
+        `fine`: array of the fine x points
+        `indices`: array of the indices of the coarse segments for every fine point
 
     outputs:
         `0` or `result`: array of the `y≈f(fine)`
@@ -96,7 +96,8 @@ class Interpolator(FunctionNode):
         self._underflow = underflow
         self._overflow = overflow
         self._fillvalue = fillvalue
-        self.add_input(("coarse", "y", "fine", "indices"))
+        self.add_input("y")
+        self.add_input(("coarse", "fine", "indices"), positional=False)
         self.add_output("result")
 
     @property
@@ -129,7 +130,7 @@ class Interpolator(FunctionNode):
         Checks inputs dimension and, selects an interpolation algorithm,
         determines dtype and shape for outputs
         """
-        check_inputs_number(self, 4)
+        check_inputs_number(self, 1)
         check_has_inputs(self, ("coarse", "y", "fine", "indices"))
         check_input_dtype(self, "indices", "i")
         check_input_shape(self, "y", self.inputs["coarse"].dd.shape)
@@ -137,7 +138,7 @@ class Interpolator(FunctionNode):
         copy_from_input_to_output(self, "fine", "result")
         if self.inputs["fine"].dd.dim == 1:
             assign_output_axes_from_inputs(
-                self, "fine", "result", assign_nodes=True
+                self, "fine", "result", assign_nodes=True, ignore_assigned=True
             )
 
     def _fcn(self, _, inputs, outputs):

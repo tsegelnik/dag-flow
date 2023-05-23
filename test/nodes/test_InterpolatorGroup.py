@@ -42,10 +42,8 @@ def test_InterpolatorGroup(debug_graph, testname):
         fine = Array(
             "fine",
             fineX,
-            label={"axis": coarse["array"]},
+            label={"axis": xlabel},
         )
-        # TODO: use assigning in the Array()
-        fine.outputs[0].dd.axes_nodes = [coarse["array"]]
         yc = Array("yc", ycX)
         metaint = InterpolatorGroup(
             method="linear",
@@ -53,7 +51,9 @@ def test_InterpolatorGroup(debug_graph, testname):
                 "interpolator": {"plottitle": "Interpolator", "axis": "y"}
             },
         )
-        (coarse, yc, fine) >> metaint.inputs["coarse", "yc", "fine"]
+        coarse >> metaint.inputs["coarse"]
+        yc >> metaint.inputs["y"]
+        fine >> metaint.inputs["fine"]
 
         fcheck = LinearF("k*x+b", k=k, b=b)
         fine >> fcheck
@@ -66,7 +66,7 @@ def test_InterpolatorGroup(debug_graph, testname):
         rtol=0,
         atol=finfo("d").resolution * 5,
     )
-    assert metaint.outputs[0].dd.axes_nodes == [nodes["array"]]
+    assert metaint.outputs[0].dd.axes_nodes == [fine["array"]]
 
     plot_auto(metaint)
     ax = gca()

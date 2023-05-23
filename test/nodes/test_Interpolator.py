@@ -21,13 +21,19 @@ def test_interpolation_linear_01(debug_graph, testname, k, b):
         fineX = linspace(-2, 12, nf + 1)
         shuffle(fineX)
         ycX = k * coarseX + b
+
         coarse = Array("coarse", coarseX)
         fine = Array("fine", fineX)
         yc = Array("yc", ycX)
         segmentIndex = SegmentIndex("segmentIndex")
         interpolator = Interpolator("interpolator", method="linear")
+
         (coarse, fine) >> segmentIndex
-        (coarse, yc, fine, segmentIndex.outputs[0]) >> interpolator
+        yc >> interpolator
+        coarse >> interpolator("coarse")
+        fine >> interpolator("fine")
+        segmentIndex.outputs[0] >> interpolator("indices")
+
     assert allclose(
         interpolator.outputs[0].data,
         k * fineX + b,
@@ -45,19 +51,20 @@ def test_interpolation_linear_02(debug_graph, testname):
         shuffle(coarseX)
         fineX = linspace(-0.1, 0.1, nf + 1)
         shuffle(fineX)
+
         coarse = Array("coarse", coarseX)
         fine = Array("fine", fineX)
         ssin = Sin("sin")
         segmentIndex = SegmentIndex("segmentIndex")
         interpolator = Interpolator("interpolator", method="linear")
+
         (coarse, fine) >> segmentIndex
         coarse >> ssin
-        (
-            coarse,
-            ssin.outputs[0],
-            fine,
-            segmentIndex.outputs[0],
-        ) >> interpolator
+        ssin.outputs[0] >> interpolator
+        coarse >> interpolator("coarse")
+        fine >> interpolator("fine")
+        segmentIndex.outputs[0] >> interpolator("indices")
+
     assert allclose(
         interpolator.outputs[0].data,
         sin(fineX),
@@ -75,19 +82,20 @@ def test_interpolation_ndim(debug_graph, testname, shape):
         shuffle(coarseX)
         fineX = linspace(-0.1, 0.1, nf).reshape(shape)
         shuffle(fineX)
+
         coarse = Array("coarse", coarseX)
         fine = Array("fine", fineX)
         ssin = Sin("sin")
         segmentIndex = SegmentIndex("segmentIndex")
         interpolator = Interpolator("interpolator", method="linear")
+
         (coarse, fine) >> segmentIndex
         coarse >> ssin
-        (
-            coarse,
-            ssin.outputs[0],
-            fine,
-            segmentIndex.outputs[0],
-        ) >> interpolator
+        ssin.outputs[0] >> interpolator
+        coarse >> interpolator("coarse")
+        fine >> interpolator("fine")
+        segmentIndex.outputs[0] >> interpolator("indices")
+
     assert allclose(
         interpolator.outputs[0].data,
         sin(fineX),
@@ -107,13 +115,19 @@ def test_interpolation_log_01(debug_graph, testname, k, b):
         fineX = linspace(1e-2, 1e2, nf + 1)
         shuffle(fineX)
         ycX = log(k * coarseX + b)
+
         coarse = Array("coarse", coarseX)
         fine = Array("fine", fineX)
         yc = Array("yc", ycX)
         segmentIndex = SegmentIndex("segmentIndex")
         interpolator = Interpolator("interpolator", method="log")
+
         (coarse, fine) >> segmentIndex
-        (coarse, yc, fine, segmentIndex.outputs[0]) >> interpolator
+        yc >> interpolator
+        coarse >> interpolator("coarse")
+        fine >> interpolator("fine")
+        segmentIndex.outputs[0] >> interpolator("indices")
+
     assert allclose(
         interpolator.outputs[0].data,
         log(k * fineX + b),
@@ -134,13 +148,19 @@ def test_interpolation_logx_01(debug_graph, testname, k, b):
         fineX = linspace(1e-2, 1e2, nf + 1)
         shuffle(fineX)
         ycX = k * log(coarseX) + b
+
         coarse = Array("coarse", coarseX)
         fine = Array("fine", fineX)
         yc = Array("yc", ycX)
         segmentIndex = SegmentIndex("segmentIndex")
         interpolator = Interpolator("interpolator", method="logx")
+
         (coarse, fine) >> segmentIndex
-        (coarse, yc, fine, segmentIndex.outputs[0]) >> interpolator
+        yc >> interpolator
+        coarse >> interpolator("coarse")
+        fine >> interpolator("fine")
+        segmentIndex.outputs[0] >> interpolator("indices")
+
     assert allclose(
         interpolator.outputs[0].data,
         k * log(fineX) + b,
@@ -160,13 +180,19 @@ def test_interpolation_exp_01(debug_graph, testname, k, b):
         ycX = exp(k * coarseX + b)
         fineX = linspace(0, 1, nf + 1)
         shuffle(fineX)
+
         coarse = Array("coarse", coarseX)
         fine = Array("fine", fineX)
         yc = Array("yc", ycX)
         segmentIndex = SegmentIndex("segmentIndex")
         interpolator = Interpolator("interpolator", method="exp")
+
         (coarse, fine) >> segmentIndex
-        (coarse, yc, fine, segmentIndex.outputs[0]) >> interpolator
+        yc >> interpolator
+        coarse >> interpolator("coarse")
+        fine >> interpolator("fine")
+        segmentIndex.outputs[0] >> interpolator("indices")
+
     assert allclose(
         interpolator.outputs[0].data,
         exp(k * fineX + b),
@@ -191,6 +217,7 @@ def test_interpolation_extrapolation_strategy(
         fineX = linspace(-2, 12, nf + 1)
         shuffle(fineX)
         ycX = k * coarseX + b
+
         coarse = Array("coarse", coarseX)
         fine = Array("fine", fineX)
         yc = Array("yc", ycX)
@@ -202,8 +229,13 @@ def test_interpolation_extrapolation_strategy(
             overflow=strategy,
             fillvalue=fillvalue,
         )
+
         (coarse, fine) >> segmentIndex
-        (coarse, yc, fine, segmentIndex.outputs[0]) >> interpolator
+        yc >> interpolator
+        coarse >> interpolator("coarse")
+        fine >> interpolator("fine")
+        segmentIndex.outputs[0] >> interpolator("indices")
+
     res = []
     for x in fineX:
         if x >= 0 and x <= 10:
@@ -215,6 +247,7 @@ def test_interpolation_extrapolation_strategy(
                 res.append(k * 10 + b)
         elif strategy == "constant":
             res.append(fillvalue)
+
     assert allclose(
         interpolator.outputs[0].data,
         res,
