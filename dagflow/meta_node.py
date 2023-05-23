@@ -48,19 +48,19 @@ class MetaNode(Limbs):
         if not missing_inputs and also_missing_outputs:
             raise RuntimeError('also_missiong_outputs=True option makes no sense')
 
-    def import_pos_inputs(self, node: Node) -> None:
+    def import_pos_inputs(self, node: Node, *, keyword: bool=True) -> None:
         if self._node_inputs_pos is not None:
             raise RuntimeError("Positional inputs already inherited")
         self._node_inputs_pos = node
         for input in node.inputs:
-            self.inputs.add(input, positional=True, keyword=True)
+            self.inputs.add(input, positional=True, keyword=keyword)
 
-    def import_pos_outputs(self, node: Node) -> None:
+    def import_pos_outputs(self, node: Node, *, keyword: bool=True) -> None:
         if self._node_outputs_pos is not None:
             raise RuntimeError("Positional outputs already inherited")
         self._node_outputs_pos = node
         for output in node.outputs:
-            self.outputs.add(output, positional=True, keyword=True)
+            self.outputs.add(output, positional=True, keyword=keyword)
 
     def import_kw_inputs(
         self,

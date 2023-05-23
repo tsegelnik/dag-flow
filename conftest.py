@@ -24,7 +24,7 @@ def pytest_sessionstart(session):
 
 
 def pytest_addoption(parser):
-    parser.addoption("--debug_graph", action="store_true", default=False)
+    parser.addoption("--debug-graph", action="store_true", default=False)
 
 
 @fixture(scope="session")
