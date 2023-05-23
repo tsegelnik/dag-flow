@@ -9,6 +9,7 @@ from matplotlib import colormaps
 from .output import Output
 from .limbs import Limbs
 from .types import EdgesLike, NodesLike
+from .logger import logger, SUBINFO
 
 from typing import Union, List, Optional, Tuple, Mapping
 from numpy.typing import ArrayLike, NDArray
@@ -73,7 +74,9 @@ def plot_auto(
     if output is not None:
         annotate_axes(output, show_path=show_path)
 
-    if save: savefig(save, **save_kw)
+    if save:
+        logger.log(SUBINFO, f'Write: {save}')
+        savefig(save, **save_kw)
     if show: showfig()
     if close: closefig()
 

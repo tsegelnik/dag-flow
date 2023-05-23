@@ -1,7 +1,7 @@
 from .input import Input
 from .output import Output
-from .printl import printl
 from .types import NodeT
+from .logger import logger, SUBINFO
 
 from numpy import square
 from typing import Union, Set, Optional, Dict, Sequence, Literal
@@ -457,10 +457,8 @@ else:
         def set_label(self, label: str):
             self._graph.graph_attr["label"] = label
 
-        def savegraph(self, fname, verbose=True):
-            if verbose:
-                printl("Write output file:", fname)
-
+        def savegraph(self, fname):
+            logger.log(SUBINFO, f'Write: {fname}')
             if fname.endswith(".dot"):
                 self._graph.write(fname)
             else:
