@@ -1,4 +1,9 @@
-from matplotlib.pyplot import stairs, plot, gca, gcf, colorbar as plot_colorbar, sca, cm, text
+from matplotlib.pyplot import (
+    stairs, plot, colorbar as plot_colorbar,
+    gca, gcf, sca,
+    cm, text,
+    close as closefig, savefig, show as showfig
+)
 from matplotlib.pyplot import Axes
 from matplotlib import colormaps
 from .output import Output
@@ -43,6 +48,10 @@ def plot_auto(
     colorbar: Union[bool,Mapping,None] = None,
     filter_kw: dict = {},
     show_path: bool = True,
+    save: Optional[str] = None,
+    close: bool = False,
+    show: bool = False,
+    save_kw: dict = {},
     **kwargs
 ) -> Tuple[tuple, ...]:
     output, array, edges, nodes = _get_data(object, **filter_kw)
@@ -63,6 +72,10 @@ def plot_auto(
 
     if output is not None:
         annotate_axes(output, show_path=show_path)
+
+    if save: savefig(save, **save_kw)
+    if show: showfig()
+    if close: closefig()
 
     return ret
 
@@ -371,7 +384,7 @@ def add_colorbar(
         cbar.solids.set_rasterized( True )
 
     if label is not None:
-        cbar.set_label(label, rotation=270)
+        cbar.set_label(label, rotation=270, labelpad=15)
     sca( ax )
     return cbar
 
