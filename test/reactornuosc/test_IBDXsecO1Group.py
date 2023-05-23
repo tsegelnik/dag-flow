@@ -64,7 +64,7 @@ def test_IBDXsecO1Group(debug_graph, testname):
 
     show = True
     close = not show
-    from mpl_toolkits.mplot3d import axes3d
+    from mpl_toolkits.mplot3d import axes3d # accessed implicitly in `subplots()`
     subplots(1, 1, subplot_kw={'projection': '3d'})
     plot_auto(ibdxsec, mode='surface', cmap=True, colorbar=True,
               show=False, close=close, save=f"output/{testname}_xsec_surf.pdf")
