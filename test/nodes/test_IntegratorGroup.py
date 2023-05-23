@@ -1,8 +1,7 @@
 from dagflow.graph import Graph
 from dagflow.meta_node import MetaNode
 from dagflow.lib.Array import Array
-from dagflow.lib.Integrator import Integrator
-from dagflow.lib.IntegratorSampler import IntegratorSampler
+from dagflow.lib.IntegratorGroup import IntegratorGroup
 from dagflow.lib.trigonometry import Cos, Sin
 from numpy import allclose, linspace, pi
 
@@ -25,16 +24,7 @@ def test_Integrator_trap_meta(debug_graph):
         A = Array("A", edges._data[:-1])
         B = Array("B", edges._data[1:])
 
-        sampler = IntegratorSampler("sampler", mode="trap")
-        integrator = Integrator(
-            "integrator",
-            label = {'plottitle': 'Integrator', 'axis': 'integral'}
-        )
-        sampler.outputs["weights"] >> integrator("weights")
-
-        metaint.add_node(sampler, kw_inputs=['ordersX'], kw_outputs=['x'], merge_inputs=['ordersX'])
-        metaint.add_node(integrator, kw_inputs=['ordersX'], merge_inputs=['ordersX'],
-                         inputs_pos=True, outputs_pos=True, missing_inputs=True, also_missing_outputs=True)
+        metaint = IntegratorGroup('trap', labels={"integrator": {'plottitle': 'Integrator', 'axis': 'integral'}})
 
         cosf = Cos("cos")
         sinf = Sin("sin")
@@ -48,12 +38,14 @@ def test_Integrator_trap_meta(debug_graph):
         coscheck = Cos("cos")
         A >> (sincheck(), coscheck())
         B >> (sincheck(), coscheck())
+
+        metaint.print()
     res1 =   sincheck.outputs[1].data - sincheck.outputs[0].data
     res2 = - coscheck.outputs[1].data + coscheck.outputs[0].data
-    assert allclose(integrator.outputs[0].data, res1, rtol=0, atol=1e-2)
-    assert allclose(integrator.outputs[1].data, res2, rtol=0, atol=1e-2)
-    assert integrator.outputs[0].dd.axes_edges == [edges["array"]]
-    assert integrator.outputs[1].dd.axes_edges == [edges["array"]]
+    assert allclose(metaint.outputs[0].data, res1, rtol=0, atol=1e-2)
+    assert allclose(metaint.outputs[1].data, res2, rtol=0, atol=1e-2)
+    assert metaint.outputs[0].dd.axes_edges == [edges["array"]]
+    assert metaint.outputs[1].dd.axes_edges == [edges["array"]]
 
     plot_auto(metaint)
     ax=gca()

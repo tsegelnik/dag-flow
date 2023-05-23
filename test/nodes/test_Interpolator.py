@@ -30,8 +30,8 @@ def test_interpolation_linear_01(debug_graph, testname, k, b):
     assert allclose(
         interpolator.outputs[0].data,
         k * fineX + b,
-        rtol=finfo("d").resolution * 2,
-        atol=0,
+        atol=finfo("d").resolution * 2,
+        rtol=0,
     )
     savegraph(graph, f"output/{testname}.png")
 
@@ -113,8 +113,8 @@ def test_interpolation_log_01(debug_graph, testname, k, b):
     assert allclose(
         interpolator.outputs[0].data,
         log(k * fineX + b),
-        rtol=finfo("d").resolution * 10,
-        atol=0,
+        atol=finfo("d").resolution * 10,
+        rtol=0,
     )
     savegraph(graph, f"output/{testname}.png")
 
@@ -139,8 +139,8 @@ def test_interpolation_logx_01(debug_graph, testname, k, b):
     assert allclose(
         interpolator.outputs[0].data,
         k * log(fineX) + b,
-        rtol=finfo("d").resolution * 10,
-        atol=0,
+        atol=finfo("d").resolution * 10,
+        rtol=0,
     )
     savegraph(graph, f"output/{testname}.png")
 
@@ -164,8 +164,8 @@ def test_interpolation_exp_01(debug_graph, testname, k, b):
     assert allclose(
         interpolator.outputs[0].data,
         exp(k * fineX + b),
-        rtol=finfo("d").resolution * 100,
-        atol=0,
+        atol=finfo("d").resolution * 100,
+        rtol=0,
     )
     savegraph(graph, f"output/{testname}.png")
 
@@ -211,8 +211,8 @@ def test_interpolation_extrapolation_strategy(
     assert allclose(
         interpolator.outputs[0].data,
         res,
-        rtol=finfo("d").resolution * 5,
-        atol=0,
+        atol=finfo("d").resolution * 5,
+        rtol=0,
     )
     savegraph(graph, f"output/{testname}.png")
 
