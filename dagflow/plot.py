@@ -90,7 +90,7 @@ def annotate_axes(output: Output, /, ax: Optional[Axes]=None, *, show_path: bool
     node = output.node
 
     title = node.labels.plottitle
-    xlabel = output.dd.axis_label(0)
+    xlabel = output.dd.axis_label(0) or node.labels.xaxis or 'Index'
 
     ylabel = node.labels.axis
     if output.dd.dim==2:

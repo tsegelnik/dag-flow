@@ -288,7 +288,7 @@ def load_parameters(acfg):
             label = format_dict(label_general.copy(), subkey=subkey_str, space_subkey=f' {subkey_str}', subkey_space=f'{subkey_str} ')
             varcfg_sub = varcfg.copy()
             varcfg_sub['label'] = label
-            label['key'] = key_str
+            label['paths'] = [key_str]
             label.setdefault('text', key_str)
 
             varcfgs[key] = varcfg_sub
