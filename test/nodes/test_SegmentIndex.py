@@ -7,12 +7,13 @@ from dagflow.graphviz import savegraph
 from dagflow.lib import Array
 from dagflow.lib.SegmentIndex import SegmentIndex
 from numpy import linspace
-from numpy.random import shuffle
+from numpy.random import seed, shuffle
 from pytest import mark, raises
 
 
 @mark.parametrize("mode", ("left", "right"))
 def test_segmentIndex_01(debug_graph, testname, mode):
+    seed(10)
     with Graph(debug=debug_graph, close=True) as graph:
         nc, nf = 10, 100
         coarseX = linspace(0, 10, nc + 1)
@@ -30,6 +31,7 @@ def test_segmentIndex_01(debug_graph, testname, mode):
 
 @mark.parametrize("mode", ("left", "right"))
 def test_segmentIndex_02(debug_graph, testname, mode):
+    seed(10)
     with Graph(debug=debug_graph, close=True) as graph:
         nc, nf = 10, 100
         coarseX = linspace(0, 10, nc).reshape(2, nc // 2)
@@ -49,6 +51,7 @@ def test_segmentIndex_02(debug_graph, testname, mode):
 
 @mark.parametrize("mode", ("left", "right"))
 def test_segmentIndex_03(debug_graph, testname, mode):
+    seed(10)
     with Graph(debug=debug_graph, close=True) as graph:
         nc, nf = 10, 100
         coarseX = linspace(0, 10, nc).reshape(nc // 2, 2)
