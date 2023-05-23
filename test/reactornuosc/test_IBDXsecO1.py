@@ -72,9 +72,8 @@ def test_IBDXsecO1(debug_graph, testname):
     jac = jacobian.get_data()
 
     subplots(1, 1)
-    plot_auto(ibdxsec_enu, mode='pcolormesh', colorbar=True, filter_kw={'masked_value': 0})
-
-    close()
+    plot_auto(ibdxsec_enu, mode='pcolormesh', colorbar=True, filter_kw={'masked_value': 0},
+              show=True, close=True, save=f"output/{testname}_plot.pdf")
 
     savegraph(graph, f"output/{testname}.pdf")
 
