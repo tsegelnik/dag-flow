@@ -6,7 +6,6 @@ from dagflow.graphviz import savegraph
 from dagflow.lib.Array import Array
 from dagflow.lib.arithmetic import Product, Sum
 from dagflow.printl import current_level, printl, set_prefix_function
-from dagflow.wrappers import *
 
 set_prefix_function(lambda: "{:<2d} ".format(current_level()))
 
@@ -25,7 +24,6 @@ def test_00(testname, debug_graph):
 
     (initials[3], (initials[:3] >> s)) >> m
 
-    graph._wrap_fcns(dataprinter, printer)
     graph.close()
 
     s.print()

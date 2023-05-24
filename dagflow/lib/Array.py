@@ -11,10 +11,11 @@ from ..typefunctions import check_array_edges_consistency, check_edges_type
 
 class Array(FunctionNode):
     """Creates a node with a single data output with predefined array"""
+    __slots__ = ('_mode', '_data', '_output')
 
     _mode: str
     _data: NDArray
-    _output = Output
+    _output: Output
 
     def __init__(
         self,

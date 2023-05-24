@@ -5,7 +5,13 @@ from typing import Sequence, List, Optional, Union, Tuple, Callable, Dict
 
 class MetaNode(Limbs):
     """A node containing multiple nodes and exposing part of their inputs and outputs"""
-    __slots__ = ('_nodes', '_node_inputs_pos', '_node_inputs_pos', '_missing_input_handler')
+    __slots__ = (
+        '_nodes',
+        '_node_inputs_pos',
+        '_node_outputs_pos',
+        '_missing_input_handler',
+        '__weakref__' # needed for weakref
+    )
 
     _nodes: List[Node]
     _node_inputs_pos: Optional[Node]

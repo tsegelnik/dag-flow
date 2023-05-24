@@ -4,11 +4,10 @@ from dagflow.exception import ClosedGraphError, UnclosedGraphError, ConnectionEr
 from dagflow.graph import Graph
 from dagflow.input import Input
 from dagflow.nodes import FunctionNode
+from dagflow.lib.Dummy import Dummy
 from dagflow.output import Output
 from pytest import raises
 from dagflow.graphviz import savegraph
-
-nodeargs = {"typefunc": lambda: True}
 
 def test_01():
     i = Input("input", None)
@@ -55,8 +54,8 @@ def test_04():
 
 
 def test_05():
-    n1 = FunctionNode("node1", **nodeargs)
-    n2 = FunctionNode("node2", **nodeargs)
+    n1 = Dummy("node1")
+    n2 = Dummy("node2")
 
     out1 = n1.add_output("o1", allocatable=False)
     out2 = n1.add_output("o2", allocatable=False)
@@ -77,8 +76,8 @@ def test_05():
 
 
 def test_06():
-    n1 = FunctionNode("node1", **nodeargs)
-    n2 = FunctionNode("node2", **nodeargs)
+    n1 = Dummy("node1")
+    n2 = Dummy("node2")
 
     out1 = n1._add_output("o1", allocatable=False)
     out2 = n1._add_output("o2", allocatable=False)
@@ -101,9 +100,9 @@ def test_06():
 
 
 def test_07():
-    g = Graph()
-    n1 = g.add_node("node1", **nodeargs)
-    n2 = g.add_node("node2", **nodeargs)
+    with Graph() as g:
+        n1 = Dummy("node1")
+        n2 = Dummy("node2")
 
     out1 = n1._add_output("o1", allocatable=False)
     out2 = n1._add_output("o2", allocatable=False)
@@ -123,10 +122,10 @@ def test_07():
     final.data
 
 def test_08():
-    g = Graph()
-    n1 = g.add_node("node1", **nodeargs)
-    n2 = g.add_node("node2", **nodeargs)
-    n3 = g.add_node("node3", **nodeargs)
+    with Graph() as g:
+        n1 = Dummy("node1")
+        n2 = Dummy("node2")
+        n3 = Dummy("node3")
 
     out1 = n1._add_output("o1", allocatable=False)
     out2 = n1._add_output("o2", allocatable=False)
@@ -164,8 +163,8 @@ def test_08():
 def test_09(testname):
     """Test <<"""
     with Graph(close=True) as g:
-        n1 = g.add_node("node1", **nodeargs)
-        n2 = g.add_node("node2", **nodeargs)
+        n1 = Dummy("node1")
+        n2 = Dummy("node2")
 
         out11 = n1._add_output("o1", allocatable=False)
         out12 = n1._add_output("o2", allocatable=False)

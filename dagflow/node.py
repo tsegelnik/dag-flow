@@ -23,31 +23,42 @@ from .labels import Labels
 
 
 class Node(Limbs):
+    __slots__ = (
+        "_name",
+        "_labels",
+        "_graph",
+        "_logger",
+        "_exception",
+        "_meta_node",
+        "_tainted", "_frozen", "_frozen_tainted", "_invalid", "_types_tainted",
+        "_auto_freeze", "_immediate",
+        "_closed", "_allocated", "_being_evaluated",
+        "_debug",
+        )
+
     _name: str
     _labels: Labels
-    _graph: Optional[GraphT] = None
-    _fcn: Optional[Callable]
-    _fcn_chain = None
-    _exception: Optional[str] = None
+    _graph: Optional[GraphT]
+    _exception: Optional[str]
 
-    _meta_node: Optional[ReferenceType] = None
+    _meta_node: Optional[ReferenceType]
 
     # Taintflag and status
-    _tainted: bool = True
-    _frozen: bool = False
-    _frozen_tainted: bool = False
-    _invalid: bool = False
-    _closed: bool = False
-    _allocated: bool = False
-    _being_evaluated: bool = False
+    _tainted: bool
+    _frozen: bool
+    _frozen_tainted: bool
+    _invalid: bool
+    _closed: bool
+    _allocated: bool
+    _being_evaluated: bool
 
-    _types_tainted: bool = True
+    _types_tainted: bool
 
     # Options
-    _debug: bool = False
-    _auto_freeze: bool = False
-    _immediate: bool = False
-    # _always_tainted: bool = False
+    _debug: bool
+    _auto_freeze: bool
+    _immediate: bool
+    # _always_tainted: bool
 
     def __init__(
         self,
@@ -55,8 +66,6 @@ class Node(Limbs):
         *,
         label: Union[str, dict, None] = None,
         graph: Optional[GraphT] = None,
-        fcn: Optional[Callable] = None,
-        typefunc: Optional[Callable] = None,
         debug: Optional[bool] = None,
         logger: Optional[Any] = None,
         missing_input_handler: Optional[Callable] = None,
@@ -66,15 +75,24 @@ class Node(Limbs):
         **kwargs,
     ):
         super().__init__(missing_input_handler=missing_input_handler)
-        self._name = name
-        if fcn is not None:
-            self._fcn = fcn
-        if typefunc is not None:
-            self._typefunc = typefunc
-        elif typefunc is False:
-            self._typefunc = lambda: None
+        self._graph = None
+        self._logger = None
+        self._exception = None
+        self._meta_node = None
 
-        self._fcn_chain = []
+        self._tainted = True
+        self._frozen = False
+        self._frozen_tainted = False
+        self._invalid = False
+        self._closed = False
+        self._allocated = False
+        self._being_evaluated = False
+        self._types_tainted = True
+        self._auto_freeze = False
+        self._immediate = False
+
+        self._name = name
+
         if graph is None:
             from .graph import Graph
 
@@ -356,27 +374,6 @@ class Node(Limbs):
         input = self.add_input(iname, child_output=output, **input_kws)
         return input, output
 
-    def _wrap_fcn(self, wrap_fcn, *other_fcns):
-        prev_fcn = self._stash_fcn()
-        self._fcn = self._make_wrap(prev_fcn, wrap_fcn)
-        if other_fcns:
-            self._wrap_fcn(*other_fcns)
-
-    def _unwrap_fcn(self):
-        if not self._fcn_chain:
-            raise DagflowError("Unable to unwrap bare function")
-        self._fcn = self._fcn_chain.pop()
-
-    def _stash_fcn(self):
-        raise DagflowError(
-            "Unimplemented method: use FunctionNode, StaticNode or MemberNode"
-        )
-
-    def _make_wrap(self, prev_fcn, wrap_fcn):
-        raise DagflowError(
-            "Unimplemented method: use FunctionNode, StaticNode or MemberNode"
-        )
-
     def touch(self, force=False):
         if self._frozen:
             return
@@ -471,9 +468,6 @@ class Node(Limbs):
         raise DagflowError(
             "Unimplemented method: the method must be overridden!"
         )
-
-    def _fcn(self, _, inputs, outputs):
-        pass
 
     def _on_taint(self, caller: Input):
         """A node method to be called on taint"""
