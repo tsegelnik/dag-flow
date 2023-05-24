@@ -1,4 +1,4 @@
-from typing import Any, Callable, List, Optional, Sequence, Tuple, Union
+from typing import Any, Callable, List, Optional, Sequence, Tuple, Union, Mapping
 from weakref import ReferenceType
 from weakref import ref as weakref
 
@@ -20,7 +20,6 @@ from .logger import Logger, get_logger
 from .output import Output
 from .types import GraphT
 from .labels import Labels
-
 
 class Node(Limbs):
     __slots__ = (
@@ -120,6 +119,30 @@ class Node(Limbs):
 
         if kwargs:
             raise InitializationError(f"Unparsed arguments: {kwargs}!")
+
+    @classmethod
+    def store(Cls, name: str, *args, label_from: Optional[Mapping]=None, **kwargs) -> "Node":
+        from multikeydict.nestedmkdict import NestedMKDict
+        if label_from is not None:
+            label_from = NestedMKDict(label_from, sep='.')
+            try:
+                label = label_from.any(name, object=True)
+            except KeyError:
+                raise RuntimeError(f"Could not find label for {name}")
+            kwargs.setdefault('label', label)
+
+        node = Cls(name, *args, **kwargs)
+
+        from .storage import NodeStorage
+        if (common_storage:=NodeStorage.current()) is None:
+            return node
+
+        storage = {'nodes': {name: node}}
+        if len(node.outputs)==1:
+            storage['outputs'] = {name: node.outputs[0]}
+        common_storage^=storage
+
+        return node
 
     def __str__(self):
         return f"{{{self.name}}} {super().__str__()}"
