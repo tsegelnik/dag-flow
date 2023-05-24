@@ -1,9 +1,5 @@
 from ..nodes import FunctionNode
-from ..typefunctions import (
-    copy_input_dtype_to_output,
-    copy_input_shape_to_output,
-)
-
+from ..typefunctions import copy_from_input_to_output
 class View(FunctionNode):
     """Creates a node with a single data output which is a view on the input"""
 
@@ -19,8 +15,7 @@ class View(FunctionNode):
 
     def _typefunc(self) -> None:
         """A output takes this function to determine the dtype and shape"""
-        copy_input_dtype_to_output(self, 0, 0)
-        copy_input_shape_to_output(self, 0, 0)
+        copy_from_input_to_output(self, 0, 0)
 
     def _post_allocate(self) -> None:
         input = self.inputs[0]

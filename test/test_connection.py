@@ -10,7 +10,6 @@ from dagflow.graphviz import savegraph
 
 nodeargs = {"typefunc": lambda: True}
 
-
 def test_01():
     i = Input("input", None)
     o = Output("output", None)

@@ -49,7 +49,7 @@ class Parameter:
         return self._parent.is_correlated
 
     def label(self, source: str='text') -> str:
-        return self._labelfmt.format(self._value_output.node.label(source))
+        return self._labelfmt.format(self._value_output.node.labels[source])
 
     def to_dict(self, *, label_from: str='text') -> dict:
         return {
@@ -217,8 +217,7 @@ class Parameters:
         if close:
             self._close()
 
-            for i in range(self.value._data.size):
-                self._pars.append(Parameter(self.value, i, parent=self))
+            self._pars.extend(Parameter(self.value, i, parent=self) for i in range(self.value._data.size))
 
     def _close(self) -> None:
         self._value_node.close(recursive=True)
@@ -268,7 +267,7 @@ class Parameters:
     def to_dict(self, *, label_from: str='text') -> dict:
         return {
                 'value': self.value.data[0],
-                'label': self._value_node.label(label_from),
+                'label': self._value_node.labels[label_from],
                 'flags': ''
                 }
 
@@ -425,7 +424,7 @@ class GaussianConstraint(Constraint):
         self.central = self._central_node.outputs[0]
         self.sigma = self._sigma_node.outputs[0]
 
-        if (mark:=value_node.label('mark', fallback=None)) is not None:
+        if (mark:=value_node.labels.mark) is not None:
             normmark = f'norm({mark})'
         else:
             normmark = 'norm'
@@ -435,7 +434,7 @@ class GaussianConstraint(Constraint):
             mark=normmark,
             mode='store_weak'
         )
-        self._normvalue_node._inherit_labels(self._pars._value_node, fmtlong='[norm] {}', fmtshort='n({})')
+        self._normvalue_node.labels.inherit(self._pars._value_node.labels, fmtlong='[norm] {}', fmtshort='n({})')
         self.normvalue = self._normvalue_node.outputs[0]
 
         self._norm_node = NormalizeCorrelatedVars2(f"[norm] {value_node.name}", immediate=True)

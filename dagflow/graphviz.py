@@ -1,10 +1,10 @@
 from .input import Input
 from .output import Output
-from .printl import printl
 from .types import NodeT
+from .logger import logger, SUBINFO
 
 from numpy import square
-from typing import Union, Set, Optional, Dict, Sequence
+from typing import Union, Set, Optional, Dict, Sequence, Literal
 
 from .graph import Graph
 from .node import Node
@@ -45,7 +45,7 @@ else:
         _node_id_map: dict
         _nodes_map_dag: Dict[Node, G.agraph.Node]
 
-        _show: Set[str]
+        _show: Set[Literal['type', 'mark', 'label', 'path', 'status', 'data', 'data_summary']]
         def __init__(
             self,
             graph_or_node: Union[Graph, Node, None],
@@ -54,7 +54,7 @@ else:
             **kwargs
         ):
             if show=='all' or 'all' in show:
-                self._show = {'type', 'mark', 'label', 'status', 'data', 'data_summary'}
+                self._show = {'type', 'mark', 'label', 'path', 'status', 'data', 'data_summary'}
             else:
                 self._show = set(show)
 
@@ -140,8 +140,18 @@ else:
             mindepth: Optional[int] = None,
             maxdepth: Optional[int] = None,
             minsize: Optional[int] = None,
+            no_forward: bool = False,
+            no_backward: bool = False,
         ) -> None:
-            self._add_nodes_backward_recursive(node, including_self=True, mindepth=mindepth, maxdepth=maxdepth, minsize=minsize)
+            self._add_nodes_backward_recursive(
+                node,
+                including_self=True,
+                mindepth=mindepth,
+                maxdepth=maxdepth,
+                minsize=minsize,
+                no_forward=no_forward,
+                no_backward=no_backward,
+            )
 
             for nodedag in self._nodes_map_dag:
                 self._add_open_inputs(nodedag)
@@ -172,9 +182,13 @@ else:
             mindepth: Optional[int] = None,
             maxdepth: Optional[int] = None,
             minsize: Optional[int] = None,
+            no_forward: bool = False,
+            no_backward: bool = False,
             depth: int=0,
             visited_nodes: Set[Node] = set()
         ) -> None:
+            if no_forward and no_backward:
+                raise RuntimeError('May not set no_forward and no_backward simultaneously')
             if node not in visited_nodes:
                 visited_nodes.add(node)
 
@@ -188,27 +202,31 @@ else:
                 else:
                     return
             depth-=1
-            for input in node.inputs.iter_all():
-                self._add_nodes_backward_recursive(
-                    input.parent_node,
-                    including_self=True,
-                    depth=depth,
+            if not no_backward:
+                for input in node.inputs.iter_all():
+                    self._add_nodes_backward_recursive(
+                        input.parent_node,
+                        including_self=True,
+                        depth=depth,
+                        mindepth=mindepth,
+                        maxdepth=maxdepth,
+                        minsize=minsize,
+                        no_forward=no_forward,
+                        visited_nodes=visited_nodes
+                    )
+
+            if not no_forward:
+                self._add_nodes_forward_recursive(
+                    node,
+                    including_self=False,
+                    depth=depth+1,
+                    no_backward=no_backward,
                     mindepth=mindepth,
                     maxdepth=maxdepth,
                     minsize=minsize,
+                    ignore_visit=True,
                     visited_nodes=visited_nodes
                 )
-
-            self._add_nodes_forward_recursive(
-                node,
-                including_self=False,
-                depth=depth+1,
-                mindepth=mindepth,
-                maxdepth=maxdepth,
-                minsize=minsize,
-                ignore_visit=True,
-                visited_nodes=visited_nodes
-            )
 
         def _add_nodes_forward_recursive(
             self,
@@ -218,6 +236,7 @@ else:
             mindepth: Optional[int] = None,
             maxdepth: Optional[int] = None,
             minsize: Optional[int] = None,
+            no_backward: bool = False,
             depth: int=0,
             visited_nodes: Set[Node] = set(),
             ignore_visit: bool = False
@@ -238,19 +257,21 @@ else:
             depth+=1
             for output in node.outputs.iter_all():
                 for child_input in output.child_inputs:
-                    self._add_nodes_backward_recursive(
-                        child_input.node,
-                        including_self=True,
-                        depth=depth,
-                        mindepth=mindepth,
-                        maxdepth=maxdepth,
-                        minsize=minsize,
-                        visited_nodes=visited_nodes
-                    )
+                    if not no_backward:
+                        self._add_nodes_backward_recursive(
+                            child_input.node,
+                            including_self=True,
+                            depth=depth,
+                            mindepth=mindepth,
+                            maxdepth=maxdepth,
+                            minsize=minsize,
+                            visited_nodes=visited_nodes
+                        )
                     self._add_nodes_forward_recursive(
                         child_input.node,
-                        including_self=False,
+                        including_self=no_backward,
                         depth=depth,
+                        no_backward=no_backward,
                         mindepth=mindepth,
                         maxdepth=maxdepth,
                         minsize=minsize,
@@ -436,10 +457,8 @@ else:
         def set_label(self, label: str):
             self._graph.graph_attr["label"] = label
 
-        def savegraph(self, fname, verbose=True):
-            if verbose:
-                printl("Write output file:", fname)
-
+        def savegraph(self, fname):
+            logger.log(SUBINFO, f'Write: {fname}')
             if fname.endswith(".dot"):
                 self._graph.write(fname)
             else:
@@ -453,7 +472,7 @@ else:
             return f"{name}_{onum}{suffix}"
 
         def get_label(self, node: NodeT, *, depth: Optional[int]=None) -> str:
-            text = node.label('graph') or node.name
+            text = node.labels.graph or node.name
             try:
                 out0 = node.outputs[0]
             except IndexError:
@@ -507,10 +526,12 @@ else:
             info_type = f"{br_left}{shape0}{br_right}{dtype0}{nlimbs}"
             if 'type' in self._show:
                 left.append(info_type)
-            if 'mark' in self._show and (mark:=node.label('mark', fallback=None)) is not None:
+            if 'mark' in self._show and (mark:=node.labels.mark) is not None:
                 left.append(mark)
             if 'label' in self._show:
                 right.append(text)
+            if 'path' in self._show and (paths:=node.labels.paths):
+                right.append(f'path: {paths[0]}')
             if 'status' in self._show:
                 status = []
                 try:
@@ -536,8 +557,6 @@ else:
                     right.append('cought exception')
                     data = out0._data
 
-                if show_data:
-                    right.append(str(data).replace('\n', '\\l')+'\\l')
                 if show_data_summary:
                     sm = data.sum()
                     sm2 = square(data).sum()
@@ -547,6 +566,9 @@ else:
                     if depth is not None:
                         block.append(f'd: {depth:+d}'.replace('-', '−'))
                     right.append(block)
+
+                if show_data:
+                    right.append(str(data).replace('\n', '\\l')+'\\l')
 
             if getattr(node, 'exception', None) is not None:
                 right.append(node.exception)
@@ -560,7 +582,7 @@ else:
             slabels = [self._combine_labels(l) for l in labels]
             return f"{{{'|'.join(slabels)}}}"
 
-def num_in_range(num: int, minnum: Optional[int], maxnum: Optional[int]=None) -> False:
+def num_in_range(num: int, minnum: Optional[int], maxnum: Optional[int]=None) -> bool:
     if minnum is not None and num<minnum:
         return False
     if maxnum is not None and num>maxnum:

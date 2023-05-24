@@ -1,9 +1,15 @@
-from matplotlib.pyplot import stairs, plot, gca, gcf, colorbar as plot_colorbar, sca, cm, text
+from matplotlib.pyplot import (
+    stairs, plot, colorbar as plot_colorbar,
+    gca, gcf, sca,
+    cm, text,
+    close as closefig, savefig, show as showfig
+)
 from matplotlib.pyplot import Axes
 from matplotlib import colormaps
 from .output import Output
 from .limbs import Limbs
 from .types import EdgesLike, NodesLike
+from .logger import logger, SUBINFO
 
 from typing import Union, List, Optional, Tuple, Mapping
 from numpy.typing import ArrayLike, NDArray
@@ -43,6 +49,10 @@ def plot_auto(
     colorbar: Union[bool,Mapping,None] = None,
     filter_kw: dict = {},
     show_path: bool = True,
+    save: Optional[str] = None,
+    close: bool = False,
+    show: bool = False,
+    save_kw: dict = {},
     **kwargs
 ) -> Tuple[tuple, ...]:
     output, array, edges, nodes = _get_data(object, **filter_kw)
@@ -64,19 +74,25 @@ def plot_auto(
     if output is not None:
         annotate_axes(output, show_path=show_path)
 
+    if save:
+        logger.log(SUBINFO, f'Write: {save}')
+        savefig(save, **save_kw)
+    if show: showfig()
+    if close: closefig()
+
     return ret
 
 def get_colorbar_label(output: Output, /) -> None:
-    return output.node.label('axis', fallback=None)
+    return output.node.labels.axis
 
 def annotate_axes(output: Output, /, ax: Optional[Axes]=None, *, show_path: bool=True) -> None:
     ax = ax or gca()
     node = output.node
 
-    title = node.label('plottitle', fallback=('text'))
-    xlabel = output.dd.axis_label(0)
+    title = node.labels.plottitle
+    xlabel = output.dd.axis_label(0) or node.labels.xaxis or 'Index'
 
-    ylabel = node.label('axis', fallback=('plottitle', 'text'))
+    ylabel = node.labels.axis
     if output.dd.dim==2:
         zlabel = ylabel
         ylabel = output.dd.axis_label(1)
@@ -93,7 +109,7 @@ def annotate_axes(output: Output, /, ax: Optional[Axes]=None, *, show_path: bool
             pass
 
     if show_path:
-        path = node.label('paths', [], fallback=None)
+        path = node.labels.paths
         if not path:
             return
 
@@ -371,7 +387,7 @@ def add_colorbar(
         cbar.solids.set_rasterized( True )
 
     if label is not None:
-        cbar.set_label(label, rotation=270)
+        cbar.set_label(label, rotation=270, labelpad=15)
     sca( ax )
     return cbar
 

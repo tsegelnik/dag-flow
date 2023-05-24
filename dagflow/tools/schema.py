@@ -26,7 +26,6 @@ def LoadFileWithExt(*, key: Union[str, dict, None]=None, update: bool=False, **k
             dct = None
         for ext, loader in kwargs.items():
             if filename.endswith(f'.{ext}'):
-                logger.log(SUBINFO, f'Read: {filename}')
                 ret = loader(filename)
 
                 if update and dct is not None:
@@ -39,11 +38,13 @@ def LoadFileWithExt(*, key: Union[str, dict, None]=None, update: bool=False, **k
 
 from yaml import load, Loader
 def LoadYaml(fname: str):
+    logger.log(SUBINFO, f'Read: {fname}')
     with open(fname, 'r') as file:
         return load(file, Loader)
 
 import runpy
 def LoadPy(fname: str, variable: str):
+    logger.log(SUBINFO, f'Read: {fname} ({variable})')
     dct = runpy.run_path(fname)
 
     try:
