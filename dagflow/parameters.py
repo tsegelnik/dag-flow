@@ -217,8 +217,7 @@ class Parameters:
         if close:
             self._close()
 
-            for i in range(self.value._data.size):
-                self._pars.append(Parameter(self.value, i, parent=self))
+            self._pars.extend(Parameter(self.value, i, parent=self) for i in range(self.value._data.size))
 
     def _close(self) -> None:
         self._value_node.close(recursive=True)

@@ -582,7 +582,7 @@ else:
             slabels = [self._combine_labels(l) for l in labels]
             return f"{{{'|'.join(slabels)}}}"
 
-def num_in_range(num: int, minnum: Optional[int], maxnum: Optional[int]=None) -> False:
+def num_in_range(num: int, minnum: Optional[int], maxnum: Optional[int]=None) -> bool:
     if minnum is not None and num<minnum:
         return False
     if maxnum is not None and num>maxnum:
