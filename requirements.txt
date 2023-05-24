@@ -3,6 +3,7 @@ coverage
 numba
 numpy==1.23.5
 pandas
+scipy
 pygraphviz
 pytest
 pytest-cov
