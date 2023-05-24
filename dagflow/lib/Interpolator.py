@@ -51,7 +51,15 @@ class Interpolator(FunctionNode):
     to `fine` points and calculates `y≈f(fine)`.
     """
 
-    __slots__ = ("_strategies", "_methods", "_method")
+    __slots__ = (
+        "_strategies",
+        "_methods",
+        "_method",
+        "_tolerance",
+        "_underflow",
+        "_overflow",
+        "_fillvalue",
+    )
 
     def __init__(
         self,
