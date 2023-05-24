@@ -5,6 +5,7 @@ from numpy.typing import ArrayLike, NDArray
 
 from ..exception import InitializationError
 from ..nodes import FunctionNode
+from ..node import Node
 from ..output import Output
 from ..typefunctions import check_array_edges_consistency, check_edges_type
 
@@ -25,7 +26,7 @@ class Array(FunctionNode):
         mode: str = "store",
         outname="array",
         mark: Optional[str] = None,
-        edges: Optional[Union[Output, Sequence[Output]]] = None,
+        edges: Union[Output, Sequence[Output], Node, None] = None,
         **kwargs,
     ):
         super().__init__(name, **kwargs)
@@ -63,6 +64,8 @@ class Array(FunctionNode):
             dd.edges_inherited = False
             if isinstance(edges, Output):
                 dd.axes_edges+=(edges,)
+            elif isinstance(edges, Node):
+                dd.axes_edges+=(edges.outputs[0],)
             else:
                 # assume that the edges are Sequence[Output]
                 try:
