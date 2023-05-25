@@ -165,6 +165,8 @@ class ParametersVisitor(NestedMKDictVisitor):
             dct = value.to_dict(**self._kwargs)
         except AttributeError:
             return
+        except IndexError:
+            return
 
         subkey = key[len(self._path):]
         subkeystr = '.'.join(subkey)

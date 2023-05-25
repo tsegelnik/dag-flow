@@ -121,7 +121,14 @@ class Node(Limbs):
             raise InitializationError(f"Unparsed arguments: {kwargs}!")
 
     @classmethod
-    def store(Cls, name: str, *args, label_from: Optional[Mapping]=None, **kwargs) -> "Node":
+    def make_stored(
+        Cls,
+        name: str,
+        *args,
+        label_from: Optional[Mapping]=None,
+        
+        **kwargs
+    ) -> "Node":
         from multikeydict.nestedmkdict import NestedMKDict
         if label_from is not None:
             label_from = NestedMKDict(label_from, sep='.')

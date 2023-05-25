@@ -80,7 +80,8 @@ class Integrator(FunctionNode):
         Checks inputs dimension and, selects an integration algorithm,
         determines dtype and shape for outputs
         """
-        check_has_inputs(self)
+        if len(self.inputs)==0:
+            return
         check_has_inputs(self, "weights")
 
         input0 = self.inputs[0]

@@ -493,6 +493,8 @@ else:
                     dtype0 = '?'
                 else:
                     dtype0 = dtype0.char
+            finally:
+                out0 = None
 
             nout_pos = len(node.outputs)
             nout_nonpos = node.outputs.len_all()-nout_pos
@@ -548,7 +550,7 @@ else:
 
             show_data = 'data' in self._show
             show_data_summary = 'data_summary' in self._show
-            if show_data or show_data_summary:
+            if (show_data or show_data_summary) and out0 is not None:
                 data = None
                 tainted = out0.tainted and 'tainted' or 'updated'
                 try:

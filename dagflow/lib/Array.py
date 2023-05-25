@@ -92,7 +92,7 @@ class Array(FunctionNode):
         else:
             raise RuntimeError("Invalid edges specification")
         array = full(shape, value, dtype=dtype)
-        return cls.store(name, array, edges=edges, **kwargs)
+        return cls.make_stored(name, array, edges=edges, **kwargs)
 
     def _fcn_store(self, *args):
         return self._data
