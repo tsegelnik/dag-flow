@@ -5,13 +5,14 @@ from logging import (
     Formatter,
     Logger,
     StreamHandler,
+    addLevelName,
     getLogger,
-    addLevelName
 )
 from typing import Optional
 
 # To avoid a creation of duplicates save an instance
 _loggers = {}
+
 
 def get_logger(
     name="dagflow",
@@ -41,8 +42,9 @@ def get_logger(
     _loggers[name] = logger
     return logger
 
-SUBINFO    = INFO-1
-SUBSUBINFO = INFO-2
+
+SUBINFO = INFO - 1
+SUBSUBINFO = INFO - 2
 addLevelName(SUBINFO, "SUBINFO")
 addLevelName(SUBSUBINFO, "SUBSUBINFO")
 
