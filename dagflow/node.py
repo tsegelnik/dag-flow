@@ -1,4 +1,14 @@
-from typing import Any, Callable, List, Optional, Sequence, Tuple, Union, Mapping
+from typing import (
+    Any,
+    Callable,
+    List,
+    Optional,
+    Sequence,
+    Tuple,
+    Union,
+    Mapping,
+    TYPE_CHECKING
+)
 from weakref import ReferenceType
 from weakref import ref as weakref
 
@@ -20,6 +30,8 @@ from .logger import Logger, get_logger
 from .output import Output
 from .types import GraphT
 from .labels import Labels
+if TYPE_CHECKING:
+    from .meta_node import MetaNode
 
 class Node(Limbs):
     __slots__ = (
@@ -29,11 +41,18 @@ class Node(Limbs):
         "_logger",
         "_exception",
         "_meta_node",
-        "_tainted", "_frozen", "_frozen_tainted", "_invalid", "_types_tainted",
-        "_auto_freeze", "_immediate",
-        "_closed", "_allocated", "_being_evaluated",
+        "_tainted",
+        "_frozen",
+        "_frozen_tainted",
+        "_invalid",
+        "_types_tainted",
+        "_auto_freeze",
+        "_immediate",
+        "_closed",
+        "_allocated",
+        "_being_evaluated",
         "_debug",
-        )
+    )
 
     _name: str
     _labels: Labels
@@ -122,32 +141,29 @@ class Node(Limbs):
 
     @classmethod
     def make_stored(
-        Cls,
-        name: str,
-        *args,
-        label_from: Optional[Mapping]=None,
-        
-        **kwargs
+        Cls, name: str, *args, label_from: Optional[Mapping] = None, **kwargs
     ) -> "Node":
         from multikeydict.nestedmkdict import NestedMKDict
+
         if label_from is not None:
-            label_from = NestedMKDict(label_from, sep='.')
+            label_from = NestedMKDict(label_from, sep=".")
             try:
                 label = label_from.any(name, object=True)
             except KeyError:
                 raise RuntimeError(f"Could not find label for {name}")
-            kwargs.setdefault('label', label)
+            kwargs.setdefault("label", label)
 
         node = Cls(name, *args, **kwargs)
 
         from .storage import NodeStorage
-        if (common_storage:=NodeStorage.current()) is None:
+
+        if (common_storage := NodeStorage.current()) is None:
             return node
 
-        storage = {'nodes': {name: node}}
-        if len(node.outputs)==1:
-            storage['outputs'] = {name: node.outputs[0]}
-        common_storage^=storage
+        storage = {"nodes": {name: node}}
+        if len(node.outputs) == 1:
+            storage["outputs"] = {name: node.outputs[0]}
+        common_storage ^= storage
 
         return node
 
@@ -278,9 +294,7 @@ class Node(Limbs):
     #
     # Methods
     #
-    def __call__(
-        self, name: Optional[str] = None, *args, **kwargs
-    ) -> Optional[Input]:
+    def __call__(self, name: Optional[str] = None, *args, **kwargs) -> Optional[Input]:
         """
         Returns an existing input by `name`, else try to create new one.
         If `name` is given, creates an input by the default way,
@@ -481,9 +495,7 @@ class Node(Limbs):
             output.taint_children_type(force)
 
     def print(self):
-        print(
-            f"Node {self._name}: →[{len(self.inputs)}],[{len(self.outputs)}]→"
-        )
+        print(f"Node {self._name}: →[{len(self.inputs)}],[{len(self.outputs)}]→")
         for i, input in enumerate(self.inputs):
             print("  ", i, input)
         for input in self.inputs.iter_nonpos():
@@ -495,13 +507,10 @@ class Node(Limbs):
 
     def _typefunc(self) -> bool:
         """A output takes this function to determine the dtype and shape"""
-        raise DagflowError(
-            "Unimplemented method: the method must be overridden!"
-        )
+        raise DagflowError("Unimplemented method: the method must be overridden!")
 
     def _on_taint(self, caller: Input):
         """A node method to be called on taint"""
-        pass
 
     def _post_allocate(self):
         pass
@@ -510,9 +519,7 @@ class Node(Limbs):
         if not self._types_tainted:
             return True
         if recursive:
-            self.logger.debug(
-                f"Node '{self.name}': Trigger recursive update types..."
-            )
+            self.logger.debug(f"Node '{self.name}': Trigger recursive update types...")
             for input in self.inputs.iter_all():
                 input.parent_node.update_types(recursive)
         self.logger.debug(f"Node '{self.name}': Update types...")
@@ -533,22 +540,16 @@ class Node(Limbs):
                 return False
         self.logger.debug(f"Node '{self.name}': Allocate memory on inputs")
         if not self.inputs.allocate():
-            raise AllocationError(
-                "Cannot allocate memory for inputs!", node=self
-            )
+            raise AllocationError("Cannot allocate memory for inputs!", node=self)
         self.logger.debug(f"Node '{self.name}': Allocate memory on outputs")
         if not self.outputs.allocate():
-            raise AllocationError(
-                "Cannot allocate memory for outputs!", node=self
-            )
+            raise AllocationError("Cannot allocate memory for outputs!", node=self)
         self.logger.debug(f"Node '{self.name}': Post allocate")
         self._post_allocate()
         self._allocated = True
         return True
 
-    def close(
-        self, recursive: bool = True, together: List["Node"] = []
-    ) -> bool:
+    def close(self, recursive: bool = True, together: List["Node"] = []) -> bool:
         # Caution: `together` list should not be written in!
 
         if self._closed:
@@ -561,8 +562,7 @@ class Node(Limbs):
         for node in [self] + together:
             node.allocate(recursive=recursive)
         if recursive and not all(
-            input.parent_node.close(recursive)
-            for input in self.inputs.iter_all()
+            input.parent_node.close(recursive) for input in self.inputs.iter_all()
         ):
             return False
         for node in together:
@@ -588,4 +588,3 @@ class Node(Limbs):
         self.taint()
         self._closed = False
         return not self._closed
-
