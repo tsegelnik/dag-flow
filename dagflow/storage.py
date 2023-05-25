@@ -31,14 +31,28 @@ class NodeStorage(NestedMKDict):
     def plot(
         self,
         *args,
+        show_all: bool = False,
         **kwargs
     ) -> None:
         from dagflow.plot import plot_auto
+        from matplotlib.pyplot import subplots, show
+
+        if show_all:
+            kwargs['show'] = False
+            kwargs['close'] = False
+            def mkfigure(): return subplots(1,1)
+        else:
+            def mkfigure(): pass
+
         for _, value in self.walkitems():
             if not isinstance(value, Output):
                 continue
 
+            mkfigure()
             plot_auto(value, *args, **kwargs)
+
+        if show_all:
+            show()
 
     def to_list(self, **kwargs) -> list:
         return self.visit(ParametersVisitor(kwargs)).data_list
