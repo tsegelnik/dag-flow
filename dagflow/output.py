@@ -16,7 +16,7 @@ from .shift import rshift
 from .iter import StopNesting
 from .types import EdgesLike, InputT, NodeT, ShapeLike
 from .datadescriptor import DataDescriptor
-from .labels import repr_pretty
+from .labels import repr_pretty, Labels
 
 class Output:
     _data: Optional[NDArray] = None
@@ -34,6 +34,8 @@ class Output:
     _forbid_reallocation: bool = False
 
     _debug: bool = False
+
+    _labels: Optional[Labels] = None
 
     def __init__(
         self,
@@ -95,6 +97,14 @@ class Output:
     @property
     def node(self):
         return self._node
+
+    @property
+    def labels(self) -> Optional[Labels]:
+        return self._node is not None and self._node.labels or self._labels
+
+    @labels.setter
+    def labels(self, labels: Labels):
+        self._labels = labels
 
     @property
     def child_inputs(self):
@@ -202,10 +212,6 @@ class Output:
     @property
     def debug(self) -> bool:
         return self._debug
-
-    @property
-    def labels(self) -> dict:
-        return self._node.labels
 
     @property
     def data_unsafe(self):
