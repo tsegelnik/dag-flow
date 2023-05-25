@@ -1,7 +1,8 @@
 from typing import Optional, Sequence, Union
+from numbers import Number
 
-from numpy import array
-from numpy.typing import ArrayLike, NDArray
+from numpy import array, full
+from numpy.typing import ArrayLike, NDArray, DTypeLike
 
 from ..exception import InitializationError
 from ..nodes import FunctionNode
@@ -78,6 +79,20 @@ class Array(FunctionNode):
 
         if mode == "store":
             self.close()
+
+    @classmethod
+    def from_value(cls, name, value: Number, *, edges: Union[Output, Sequence[Output], Node], dtype: DTypeLike=None, **kwargs):
+        if isinstance(edges, Output):
+            shape=(edges.dd.shape[0]-1,)
+        elif isinstance(edges, Node):
+            output = edges.outputs[0]
+            shape=(output.dd.shape[0]-1,)
+        elif isinstance(edges, Sequence):
+            shape = tuple(output.dd.shape[0]-1 for output in edges)
+        else:
+            raise RuntimeError("Invalid edges specification")
+        array = full(shape, value, dtype=dtype)
+        return cls.store(name, array, edges=edges, **kwargs)
 
     def _fcn_store(self, *args):
         return self._data
