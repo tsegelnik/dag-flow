@@ -4,6 +4,7 @@ numba
 numpy==1.23.5
 pandas
 scipy
+pre-commit
 pygraphviz
 pytest
 pytest-cov
