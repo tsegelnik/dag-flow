@@ -10,7 +10,6 @@ from ..typefunctions import (
     check_input_dimension,
     check_input_dtype,
     check_input_edges_dim,
-    check_input_edges_equivalence,
     check_input_shape,
     check_input_subtype,
 )
@@ -106,7 +105,6 @@ class Integrator(FunctionNode):
             )
             shape.append(edgeslenY)
             edges.append(edgesY)
-        check_input_edges_equivalence(self, slice(None), edges)
 
         shape = tuple(shape)
         self.fcn = self._functions[dim]
