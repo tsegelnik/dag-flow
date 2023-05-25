@@ -158,25 +158,25 @@ def test_Integrator_gl2d(debug_graph, testname):
 
     from mpl_toolkits.mplot3d import axes3d
     subplots(1, 1, subplot_kw={'projection': '3d'})
-    plot_auto(integrator, mode='bar3d', colorbar=True)
+    plot_auto(integrator, method='bar3d', colorbar=True)
 
     subplots(1, 1)
-    plot_auto(integrator, mode='pcolormesh', colorbar=True)
+    plot_auto(integrator, method='pcolormesh', colorbar=True)
 
     subplots(1, 1)
-    plot_auto(integrator, mode='pcolor', colorbar=True)
+    plot_auto(integrator, method='pcolor', colorbar=True)
 
     subplots(1, 1)
-    plot_auto(integrator, mode='pcolorfast', colorbar=True)
+    plot_auto(integrator, method='pcolorfast', colorbar=True)
 
     subplots(1, 1)
-    plot_auto(integrator, mode='imshow', colorbar=True)
+    plot_auto(integrator, method='imshow', colorbar=True)
 
     subplots(1, 1)
-    plot_auto(integrator, mode='matshow', colorbar=True)
+    plot_auto(integrator, method='matshow', colorbar=True)
 
     subplots(1, 1)
-    plot_auto(integrator, mode='matshow', extent=None, colorbar=True)
+    plot_auto(integrator, method='matshow', extent=None, colorbar=True)
 
     for _ in range(7):
         close()

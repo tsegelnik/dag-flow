@@ -114,7 +114,10 @@ def annotate_axes(output: Output, /, ax: Optional[Axes]=None, *, show_path: bool
             return
 
         fig = gcf()
-        text(0.05, 0.05, path[0], transform=fig.dpi_scale_trans)
+        try:
+            ax.text2D(0.05, 0.05, path[0], transform=fig.dpi_scale_trans)
+        except AttributeError:
+            ax.text(0.05, 0.05, path[0], transform=fig.dpi_scale_trans)
 
 def plot_array_1d(
     array: NDArray,
@@ -182,7 +185,7 @@ def plot_array_2d_hist(
     dZ: NDArray,
     edges: List[NDArray],
     *args,
-    mode: str = 'pcolormesh',
+    method: str = 'pcolormesh',
     **kwargs
 ) -> Tuple:
     fcn = {
@@ -192,10 +195,10 @@ def plot_array_2d_hist(
             'imshow': plot_array_2d_hist_imshow,
             'matshow': plot_array_2d_hist_matshow,
             'bar3d': plot_array_2d_hist_bar3d,
-            }.get(mode, None)
+            }.get(method, None)
 
     if fcn is None:
-        raise RuntimeError(f'Invlid 2d hist mode: {mode}')
+        raise RuntimeError(f'Invlid 2d hist method: {method}')
 
     return fcn(dZ, edges, *args, **kwargs)
 
@@ -203,7 +206,7 @@ def plot_array_2d_vs(
     array: NDArray,
     nodes: List[NDArray],
     *args,
-    mode: str = 'pcolormesh',
+    method: str = 'pcolormesh',
     **kwargs
 ) -> Tuple:
     fcn = {
@@ -211,7 +214,7 @@ def plot_array_2d_vs(
             'wireframe': plot_array_2d_vs_wireframe,
             'pcolormesh': plot_array_2d_vs_pcolormesh,
             'pcolor': plot_array_2d_vs_pcolor
-            }.get(mode, None)
+            }.get(method, None)
     if fcn is None:
         raise RuntimeError("unimplemented")
 
@@ -222,6 +225,7 @@ def plot_array_2d_array(
     *args,
     **kwargs
 ) -> Tuple:
+    kwargs.setdefault('aspect', 'auto')
     return plot_array_2d_hist_matshow(array, None, *args, **kwargs)
 
 def plot_array_2d_hist_bar3d(
