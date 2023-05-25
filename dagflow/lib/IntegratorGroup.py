@@ -10,8 +10,8 @@ def IntegratorGroup(mode: str, *, labels: Mapping={}) -> MetaNode:
     sampler.outputs["weights"] >> integrator("weights")
 
     metaint = MetaNode()
-    metaint.add_node(sampler, kw_inputs=['ordersX'], kw_outputs=['x'], merge_inputs=['ordersX'])
-    metaint.add_node(integrator, kw_inputs=['ordersX'], merge_inputs=['ordersX'],
+    metaint._add_node(sampler, kw_inputs=['ordersX'], kw_inputs_optional=['ordersY'], kw_outputs=['x'], merge_inputs=['ordersX', 'ordersY'])
+    metaint._add_node(integrator, kw_inputs=['ordersX'], merge_inputs=['ordersX', 'ordersY'],
                      inputs_pos=True, outputs_pos=True, missing_inputs=True, also_missing_outputs=True)
 
     return metaint
