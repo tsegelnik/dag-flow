@@ -1,8 +1,10 @@
 from multikeydict.nestedmkdict import NestedMKDict
 from multikeydict.visitor import NestedMKDictVisitor
-from dagflow.output import Output
+from .output import Output
+from .node import Node
+from .logger import logger, DEBUG
 
-from typing import Union, Tuple, List, Optional
+from typing import Union, Tuple, List, Optional, Dict
 
 from tabulate import tabulate
 from pandas import DataFrame
@@ -53,6 +55,27 @@ class NodeStorage(NestedMKDict):
 
         if show_all:
             show()
+
+    def read_labels(self, source: Union[NestedMKDict, Dict]) -> None:
+        source = NestedMKDict(source, sep='.')
+        for key, object in self.walkitems():
+            if not isinstance(object, (Node, Output)):
+                continue
+
+            logger.log(DEBUG, f"Look up label for {'.'.join(key)}")
+            try:
+                labels = source(key)
+            except KeyError:
+                continue
+            except TypeError:
+                continue
+            logger.log(DEBUG, "... found")
+
+            if isinstance(object, Node):
+                object.labels.update(labels)
+            elif isinstance(object, Output):
+                object.labels = object.labels or {}
+                object.labels.update(labels)
 
     def to_list(self, **kwargs) -> list:
         return self.visit(ParametersVisitor(kwargs)).data_list

@@ -77,13 +77,13 @@ class Labels:
         elif isinstance(label, Path):
             self._update_from(str(label))
         elif isinstance(label, dict):
-            self._update(label)
+            self.update(label)
 
     def _update_from(self, path: str):
         d = LoadYaml(path)
-        self._update(d)
+        self.update(d)
 
-    def _update(self, d: Dict[str,str]):
+    def update(self, d: Dict[str,str]):
         for k, v in d.items():
             setattr(self, k, v)
 
