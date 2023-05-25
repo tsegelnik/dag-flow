@@ -35,6 +35,7 @@ class MetaNode(Limbs):
         kw_inputs: Sequence[Union[str, Tuple[str, str], Dict[str, str]]]=[],
         kw_inputs_optional: Sequence[Union[str, Tuple[str, str], Dict[str, str]]]=[],
         kw_outputs: Sequence[Union[str, Tuple[str, str], Dict[str, str]]]=[],
+        kw_outputs_optional: Sequence[Union[str, Tuple[str, str], Dict[str, str]]]=[],
         merge_inputs: Sequence[str]=[],
         missing_inputs: bool=False,
         also_missing_outputs: bool=False,
@@ -51,6 +52,8 @@ class MetaNode(Limbs):
         if kw_inputs_optional:
             self._import_kw_inputs(node, kw_inputs_optional, merge=merge_inputs, optional=True)
         self._import_kw_outputs(node, kw_outputs)
+        if kw_outputs_optional:
+            self._import_kw_outputs(node, kw_outputs_optional, optional=True)
 
         if missing_inputs:
             self._missing_input_handler = MissingInputInherit(node, self, inherit_outputs=also_missing_outputs)
@@ -98,7 +101,8 @@ class MetaNode(Limbs):
         self,
         node: Node,
         kw_outputs: Sequence[Union[str, Tuple[str, str], Dict[str, str]]]=[],
-        kw_outputs_optional: Sequence[Union[str, Tuple[str, str], Dict[str, str]]]=[]
+        *,
+        optional: bool = True
     ) -> None:
         if isinstance(kw_outputs, dict):
             iterable = kw_outputs.items()
@@ -109,7 +113,12 @@ class MetaNode(Limbs):
             tname = None
             if not isinstance(oname, str):
                 oname, tname = oname
-            self.outputs.add(node.outputs.get_kw(oname), name=tname, positional=False)
+            try:
+                output = node.outputs.get_kw(oname)
+            except KeyError as e:
+                if optional: continue
+                raise RuntimeError(f"Output {oname} not found") from e
+            self.outputs.add(output, name=tname, positional=False)
 
     def print(self, recursive: bool=False):
         print(f"MetaNode: →[{len(self.inputs)}],[{len(self.outputs)}]→")
