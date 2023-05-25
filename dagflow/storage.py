@@ -44,12 +44,12 @@ class NodeStorage(NestedMKDict):
         else:
             def mkfigure(): pass
 
-        for _, value in self.walkitems():
-            if not isinstance(value, Output):
+        for _, output in self.walkitems():
+            if not isinstance(output, Output) or not output.labels.plottable:
                 continue
 
             mkfigure()
-            plot_auto(value, *args, **kwargs)
+            plot_auto(output, *args, **kwargs)
 
         if show_all:
             show()
