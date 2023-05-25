@@ -203,7 +203,7 @@ def plot_array_2d_vs(
     array: NDArray,
     nodes: List[NDArray],
     *args,
-    mode: str = 'surface',
+    mode: str = 'pcolormesh',
     **kwargs
 ) -> Tuple:
     fcn = {
@@ -219,7 +219,6 @@ def plot_array_2d_vs(
 
 def plot_array_2d_array(
     array: NDArray,
-    nodes: List[NDArray],
     *args,
     **kwargs
 ) -> Tuple:

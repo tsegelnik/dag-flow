@@ -141,7 +141,7 @@ class Node(Limbs):
 
     @classmethod
     def make_stored(
-        Cls, name: str, *args, label_from: Optional[Mapping] = None, **kwargs
+        cls, name: str, *args, label_from: Optional[Mapping] = None, **kwargs
     ) -> "Node":
         from multikeydict.nestedmkdict import NestedMKDict
 
@@ -153,7 +153,7 @@ class Node(Limbs):
                 raise RuntimeError(f"Could not find label for {name}")
             kwargs.setdefault("label", label)
 
-        node = Cls(name, *args, **kwargs)
+        node = cls(name, *args, **kwargs)
 
         from .storage import NodeStorage
 
