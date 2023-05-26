@@ -46,7 +46,6 @@ def _get_data(object: Union[Output, Limbs, ArrayLike], *args, **kwargs) -> Tuple
 def plot_auto(
     object: Union[Output, Limbs, ArrayLike],
     *args,
-    colorbar: Union[bool,Mapping,None] = None,
     filter_kw: dict = {},
     show_path: bool = True,
     save: Optional[str] = None,
@@ -63,10 +62,11 @@ def plot_auto(
         nodes = nodes[0] if nodes else None
         ret = plot_array_1d(array, edges, nodes, *args, **kwargs)
     elif ndim==2:
+        colorbar = kwargs.pop('colorbar', {})
         if colorbar==True:
             colorbar={}
         if isinstance(colorbar, Mapping):
-            colorbar.setdefault('label', get_colorbar_label(output))
+            colorbar.setdefault('label', output.labels.axis)
         ret = plot_array_2d(array, edges, nodes, *args, colorbar=colorbar, **kwargs)
     else:
         raise RuntimeError(f"Do not know how to plot {ndim}d")
@@ -81,9 +81,6 @@ def plot_auto(
     if close: closefig()
 
     return ret
-
-def get_colorbar_label(output: Output, /) -> None:
-    return output.labels.axis
 
 def annotate_axes(output: Output, /, ax: Optional[Axes]=None, *, show_path: bool=True) -> None:
     ax = ax or gca()
