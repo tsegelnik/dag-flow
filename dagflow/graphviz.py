@@ -480,6 +480,7 @@ else:
                 dtype0 = '?'
                 hasedges = False
                 hasnodes = False
+                out0 = None
             else:
                 hasedges = bool(out0.dd.axes_edges)
                 hasnodes = bool(out0.dd.axes_nodes)
@@ -493,8 +494,6 @@ else:
                     dtype0 = '?'
                 else:
                     dtype0 = dtype0.char
-            finally:
-                out0 = None
 
             nout_pos = len(node.outputs)
             nout_nonpos = node.outputs.len_all()-nout_pos
