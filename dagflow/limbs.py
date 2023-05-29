@@ -10,6 +10,7 @@ from .labels import repr_pretty
 from typing import Mapping, Sequence
 
 class Limbs:
+    __slots__ = ('inputs', 'outputs', '__missing_input_handler')
     inputs: Inputs
     outputs: Outputs
     def __init__(self, inputs=None, outputs=None, missing_input_handler=None):

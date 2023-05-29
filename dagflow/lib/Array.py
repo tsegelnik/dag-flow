@@ -1,20 +1,23 @@
 from typing import Optional, Sequence, Union
+from numbers import Number
 
-from numpy import array
-from numpy.typing import ArrayLike, NDArray
+from numpy import array, full
+from numpy.typing import ArrayLike, NDArray, DTypeLike
 
 from ..exception import InitializationError
 from ..nodes import FunctionNode
+from ..node import Node
 from ..output import Output
 from ..typefunctions import check_array_edges_consistency, check_edges_type
 
 
 class Array(FunctionNode):
     """Creates a node with a single data output with predefined array"""
+    __slots__ = ('_mode', '_data', '_output')
 
     _mode: str
     _data: NDArray
-    _output = Output
+    _output: Output
 
     def __init__(
         self,
@@ -24,7 +27,7 @@ class Array(FunctionNode):
         mode: str = "store",
         outname="array",
         mark: Optional[str] = None,
-        edges: Optional[Union[Output, Sequence[Output]]] = None,
+        edges: Union[Output, Sequence[Output], Node, None] = None,
         **kwargs,
     ):
         super().__init__(name, **kwargs)
@@ -62,6 +65,8 @@ class Array(FunctionNode):
             dd.edges_inherited = False
             if isinstance(edges, Output):
                 dd.axes_edges+=(edges,)
+            elif isinstance(edges, Node):
+                dd.axes_edges+=(edges.outputs[0],)
             else:
                 # assume that the edges are Sequence[Output]
                 try:
@@ -74,6 +79,20 @@ class Array(FunctionNode):
 
         if mode == "store":
             self.close()
+
+    @classmethod
+    def from_value(cls, name, value: Number, *, edges: Union[Output, Sequence[Output], Node], dtype: DTypeLike=None, **kwargs):
+        if isinstance(edges, Output):
+            shape=(edges.dd.shape[0]-1,)
+        elif isinstance(edges, Node):
+            output = edges.outputs[0]
+            shape=(output.dd.shape[0]-1,)
+        elif isinstance(edges, Sequence):
+            shape = tuple(output.dd.shape[0]-1 for output in edges)
+        else:
+            raise RuntimeError("Invalid edges specification")
+        array = full(shape, value, dtype=dtype)
+        return cls.make_stored(name, array, edges=edges, **kwargs)
 
     def _fcn_store(self, *args):
         return self._data

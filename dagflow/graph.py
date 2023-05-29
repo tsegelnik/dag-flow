@@ -6,7 +6,7 @@ from .exception import (
 from .logger import Logger, get_logger
 from .node_group import NodeGroup
 
-from typing import Optional
+from typing import Optional, List
 
 class Graph(NodeGroup):
     """
@@ -14,7 +14,6 @@ class Graph(NodeGroup):
     holds nodes as a list, has name, label, logger and uses context
     """
 
-    _context_graph: Optional['Graph'] = None
     _label: Optional[str] = None
     _name = "graph"
     _close: bool = False
@@ -92,22 +91,6 @@ class Graph(NodeGroup):
         for node in self._nodes:
             node.print()
 
-    @classmethod
-    def current(cls):
-        return cls._context_graph
-
-    def __enter__(self):
-        Graph._context_graph = self
-        return self
-
-    def __exit__(self, exc_type, exc_val, exc_tb):
-        Graph._context_graph = None
-        if exc_val is not None:
-            raise exc_val
-
-        if self._close:
-            self.close()
-
     def close(self, **kwargs) -> bool:
         """Closes the graph"""
         if self._closed:
@@ -135,3 +118,23 @@ class Graph(NodeGroup):
         if self._closed:
             raise UnclosedGraphError("The graph is still open!")
         return not self._closed
+
+    @classmethod
+    def current(cls) -> Optional["Graph"]:
+        return _context_graph[-1] if _context_graph else None
+
+    def __enter__(self):
+        _context_graph.append(self)
+        return self
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        if _context_graph.pop()!=self:
+            raise RuntimeError("Graph: invalid context exit")
+
+        if exc_val is not None:
+            raise exc_val
+
+        if self._close:
+            self.close()
+
+_context_graph: List['Graph'] = []

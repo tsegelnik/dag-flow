@@ -4,14 +4,32 @@ from ..meta_node import MetaNode
 
 from typing import Mapping
 
-def IntegratorGroup(mode: str, *, labels: Mapping={}) -> MetaNode:
-    sampler = IntegratorSampler("sampler", mode=mode, label=labels.get('sampler', {}))
-    integrator = Integrator("integrator", label=labels.get('integrator', {}))
-    sampler.outputs["weights"] >> integrator("weights")
+class IntegratorGroup(MetaNode):
+    def __init__(self, mode: str, *, labels: Mapping={}):
+        super().__init__()
 
-    metaint = MetaNode()
-    metaint.add_node(sampler, kw_inputs=['ordersX'], kw_outputs=['x'], merge_inputs=['ordersX'])
-    metaint.add_node(integrator, kw_inputs=['ordersX'], merge_inputs=['ordersX'],
-                     inputs_pos=True, outputs_pos=True, missing_inputs=True, also_missing_outputs=True)
+        sampler = IntegratorSampler("sampler", mode=mode, label=labels.get('sampler', {}))
+        integrator = Integrator("integrator", label=labels.get('integrator', {}))
+        sampler.outputs["weights"] >> integrator("weights")
 
-    return metaint
+        if mode=='2d':
+            integrator('ordersY')
+
+        self._add_node(
+            sampler,
+            kw_inputs=['ordersX'],
+            kw_inputs_optional=['ordersY'],
+            kw_outputs=['x'],
+            kw_outputs_optional=['y'],
+            merge_inputs=['ordersX', 'ordersY']
+        )
+        self._add_node(
+            integrator,
+            kw_inputs=['ordersX'],
+            kw_inputs_optional=['ordersY'],
+            merge_inputs=['ordersX', 'ordersY'],
+            inputs_pos=True,
+            outputs_pos=True,
+            missing_inputs=True,
+            also_missing_outputs=True
+        )

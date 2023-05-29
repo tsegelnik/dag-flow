@@ -8,6 +8,7 @@ from typing import Tuple, Generator
 from ..tools.schema import NestedSchema, LoadFileWithExt, LoadYaml, MakeLoaderPy
 from ..exception import InitializationError
 from ..labels import inherit_labels
+from ..storage import NodeStorage
 
 class ParsCfgHasProperFormat(object):
     def validate(self, data: dict) -> dict:
@@ -363,5 +364,8 @@ def load_parameters(acfg):
         outputs >> ssq
         ssq.close()
         ret[('stat', 'nuisance_parts', path, name)] = ssq
+
+    if (storage:=NodeStorage.current()) is not None:
+        storage^=ret
 
     return ret

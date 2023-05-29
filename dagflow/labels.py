@@ -39,7 +39,18 @@ def inherit_labels(
     return destination
 
 class Labels:
-    __slots__ = ('_name', '_text', '_graph', '_latex', '_mark', '_xaxis', '_axis', '_plottitle', '_paths')
+    __slots__ = (
+        '_name',
+        '_text',
+        '_graph',
+        '_latex',
+        '_mark',
+        '_xaxis',
+        '_axis',
+        '_plottitle',
+        '_paths',
+        'plottable'
+    )
 
     _name: Optional[str]
     _text: Optional[str]
@@ -50,11 +61,13 @@ class Labels:
     _plottitle: Optional[str]
     _mark: Optional[str]
     _paths: List[str]
+    plottable: bool
 
     def __init__(self, label: Union[Dict[str, str], str, Path, None]=None):
         for slot in self.__slots__:
             setattr(self, slot, None)
         self._paths = []
+        self.plottable = True
 
         if isinstance(label, str):
             if label.endswith('.yaml'):
@@ -64,13 +77,13 @@ class Labels:
         elif isinstance(label, Path):
             self._update_from(str(label))
         elif isinstance(label, dict):
-            self._update(label)
+            self.update(label)
 
     def _update_from(self, path: str):
         d = LoadYaml(path)
-        self._update(d)
+        self.update(d)
 
-    def _update(self, d: Dict[str,str]):
+    def update(self, d: Dict[str,str]):
         for k, v in d.items():
             setattr(self, k, v)
 

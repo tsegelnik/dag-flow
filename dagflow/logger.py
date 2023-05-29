@@ -13,7 +13,6 @@ from typing import Optional
 # To avoid a creation of duplicates save an instance
 _loggers = {}
 
-
 def get_logger(
     name="dagflow",
     *,
@@ -42,6 +41,9 @@ def get_logger(
     _loggers[name] = logger
     return logger
 
+def set_level(level, name="dagflow"):
+    logger = _loggers[name]
+    logger.handlers[0].setLevel(level)
 
 SUBINFO = INFO - 1
 SUBSUBINFO = INFO - 2

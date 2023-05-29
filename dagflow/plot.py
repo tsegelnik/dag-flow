@@ -46,7 +46,6 @@ def _get_data(object: Union[Output, Limbs, ArrayLike], *args, **kwargs) -> Tuple
 def plot_auto(
     object: Union[Output, Limbs, ArrayLike],
     *args,
-    colorbar: Union[bool,Mapping,None] = None,
     filter_kw: dict = {},
     show_path: bool = True,
     save: Optional[str] = None,
@@ -63,10 +62,11 @@ def plot_auto(
         nodes = nodes[0] if nodes else None
         ret = plot_array_1d(array, edges, nodes, *args, **kwargs)
     elif ndim==2:
+        colorbar = kwargs.pop('colorbar', {})
         if colorbar==True:
             colorbar={}
         if isinstance(colorbar, Mapping):
-            colorbar.setdefault('label', get_colorbar_label(output))
+            colorbar.setdefault('label', output.labels.axis)
         ret = plot_array_2d(array, edges, nodes, *args, colorbar=colorbar, **kwargs)
     else:
         raise RuntimeError(f"Do not know how to plot {ndim}d")
@@ -82,17 +82,14 @@ def plot_auto(
 
     return ret
 
-def get_colorbar_label(output: Output, /) -> None:
-    return output.node.labels.axis
-
 def annotate_axes(output: Output, /, ax: Optional[Axes]=None, *, show_path: bool=True) -> None:
     ax = ax or gca()
-    node = output.node
+    labels = output.labels
 
-    title = node.labels.plottitle
-    xlabel = output.dd.axis_label(0) or node.labels.xaxis or 'Index'
+    title = labels.plottitle
+    xlabel = output.dd.axis_label(0) or labels.xaxis or 'Index'
 
-    ylabel = node.labels.axis
+    ylabel = labels.axis
     if output.dd.dim==2:
         zlabel = ylabel
         ylabel = output.dd.axis_label(1)
@@ -109,12 +106,15 @@ def annotate_axes(output: Output, /, ax: Optional[Axes]=None, *, show_path: bool
             pass
 
     if show_path:
-        path = node.labels.paths
+        path = labels.paths
         if not path:
             return
 
         fig = gcf()
-        text(0.05, 0.05, path[0], transform=fig.dpi_scale_trans)
+        try:
+            ax.text2D(0.05, 0.05, path[0], transform=fig.dpi_scale_trans)
+        except AttributeError:
+            ax.text(0.05, 0.05, path[0], transform=fig.dpi_scale_trans)
 
 def plot_array_1d(
     array: NDArray,
@@ -182,7 +182,7 @@ def plot_array_2d_hist(
     dZ: NDArray,
     edges: List[NDArray],
     *args,
-    mode: str = 'pcolormesh',
+    method: str = 'pcolormesh',
     **kwargs
 ) -> Tuple:
     fcn = {
@@ -192,10 +192,10 @@ def plot_array_2d_hist(
             'imshow': plot_array_2d_hist_imshow,
             'matshow': plot_array_2d_hist_matshow,
             'bar3d': plot_array_2d_hist_bar3d,
-            }.get(mode, None)
+            }.get(method, None)
 
     if fcn is None:
-        raise RuntimeError(f'Invlid 2d hist mode: {mode}')
+        raise RuntimeError(f'Invlid 2d hist method: {method}')
 
     return fcn(dZ, edges, *args, **kwargs)
 
@@ -203,7 +203,7 @@ def plot_array_2d_vs(
     array: NDArray,
     nodes: List[NDArray],
     *args,
-    mode: str = 'surface',
+    method: str = 'pcolormesh',
     **kwargs
 ) -> Tuple:
     fcn = {
@@ -211,7 +211,7 @@ def plot_array_2d_vs(
             'wireframe': plot_array_2d_vs_wireframe,
             'pcolormesh': plot_array_2d_vs_pcolormesh,
             'pcolor': plot_array_2d_vs_pcolor
-            }.get(mode, None)
+            }.get(method, None)
     if fcn is None:
         raise RuntimeError("unimplemented")
 
@@ -219,10 +219,10 @@ def plot_array_2d_vs(
 
 def plot_array_2d_array(
     array: NDArray,
-    nodes: List[NDArray],
     *args,
     **kwargs
 ) -> Tuple:
+    kwargs.setdefault('aspect', 'auto')
     return plot_array_2d_hist_matshow(array, None, *args, **kwargs)
 
 def plot_array_2d_hist_bar3d(

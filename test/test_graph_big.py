@@ -2,12 +2,12 @@
 from dagflow.graph import Graph
 from dagflow.graphviz import GraphDot
 from dagflow.printl import current_level, set_prefix_function
+from dagflow.lib.Dummy import Dummy
 from dagflow.wrappers import *
 
 set_prefix_function(lambda: "{:<2d} ".format(current_level()))
 
 counter = 0
-nodeargs = dict(typefunc=lambda: True)
 
 
 def test_graph_big_01():
@@ -29,17 +29,18 @@ def test_graph_big_01():
         fcn(node, inputs, outputs)
         plot(f"[done evaluating {node.name}]")
 
-    A1 = g.add_node("A1", **nodeargs)
-    A2 = g.add_node("A2", auto_freeze=True, label="{name}|frozen", **nodeargs)
-    A3 = g.add_node("A3", immediate=True, label="{name}|immediate", **nodeargs)
-    B = g.add_node("B", **nodeargs)
-    C1 = g.add_node("C1", **nodeargs)
-    C2 = g.add_node("C2", **nodeargs)
-    D = g.add_node("D", **nodeargs)
-    E = g.add_node("E", **nodeargs)
-    F = g.add_node("F", **nodeargs)
-    H = g.add_node("H", **nodeargs)
-    P = g.add_node("P", immediate=True, label="{name}|immediate", **nodeargs)
+    with g:
+        A1 = Dummy("A1")
+        A2 = Dummy("A2", auto_freeze=True, label="{name}|frozen")
+        A3 = Dummy("A3", immediate=True, label="{name}|immediate")
+        B = Dummy("B")
+        C1 = Dummy("C1")
+        C2 = Dummy("C2")
+        D = Dummy("D")
+        E = Dummy("E")
+        F = Dummy("F")
+        H = Dummy("H")
+        P = Dummy("P", immediate=True, label="{name}|immediate")
 
     g._wrap_fcns(toucher, printer, plotter)
 

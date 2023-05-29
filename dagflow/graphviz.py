@@ -480,6 +480,7 @@ else:
                 dtype0 = '?'
                 hasedges = False
                 hasnodes = False
+                out0 = None
             else:
                 hasedges = bool(out0.dd.axes_edges)
                 hasnodes = bool(out0.dd.axes_nodes)
@@ -548,7 +549,7 @@ else:
 
             show_data = 'data' in self._show
             show_data_summary = 'data_summary' in self._show
-            if show_data or show_data_summary:
+            if (show_data or show_data_summary) and out0 is not None:
                 data = None
                 tainted = out0.tainted and 'tainted' or 'updated'
                 try:

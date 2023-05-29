@@ -1,5 +1,6 @@
 contextlib2
 coverage
+latexdatax
 numba
 numpy==1.23.5
 pandas

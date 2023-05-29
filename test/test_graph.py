@@ -2,20 +2,19 @@
 from dagflow.graph import Graph
 from dagflow.graphviz import GraphDot
 from dagflow.printl import current_level, set_prefix_function
+from dagflow.lib.Dummy import Dummy
 from dagflow.wrappers import *
 
 set_prefix_function(
     lambda: "{:<2d} ".format(current_level()),
 )
-nodeargs = dict(typefunc=lambda: True)
-
 
 def test_01():
     """Simple test of the graph plotter"""
-    g = Graph()
-    n1 = g.add_node("node1", **nodeargs)
-    n2 = g.add_node("node2", **nodeargs)
-    n3 = g.add_node("node3", **nodeargs)
+    with Graph() as g:
+        n1 = Dummy("node1")
+        n2 = Dummy("node2")
+        n3 = Dummy("node3")
     g._wrap_fcns(toucher, printer)
 
     out1 = n1._add_output("o1", allocatable=False)
@@ -36,10 +35,10 @@ def test_01():
 
 def test_02():
     """Simple test of the graph plotter"""
-    g = Graph()
-    n1 = g.add_node("node1", **nodeargs)
-    n2 = g.add_node("node2", **nodeargs)
-    n3 = g.add_node("node3", **nodeargs)
+    with Graph() as g:
+        n1 = Dummy("node1")
+        n2 = Dummy("node2")
+        n3 = Dummy("node3")
     g._wrap_fcns(toucher, printer)
 
     out1 = n1._add_output("o1", allocatable=False)
@@ -64,11 +63,11 @@ def test_02():
 
 def test_02a():
     """Simple test of the graph plotter"""
-    g = Graph()
-    n1 = g.add_node("node1", **nodeargs)
-    n2 = g.add_node("node2", **nodeargs)
-    n3 = g.add_node("node3", **nodeargs)
-    n4 = g.add_node("node4", **nodeargs)
+    with Graph() as g:
+        n1 = Dummy("node1")
+        n2 = Dummy("node2")
+        n3 = Dummy("node3")
+        n4 = Dummy("node4")
     g._wrap_fcns(toucher, printer)
 
     out1 = n1._add_output("o1", allocatable=False)

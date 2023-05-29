@@ -5,26 +5,21 @@ from contextlib import suppress
 
 from dagflow.graph import Graph
 from dagflow.graphviz import savegraph
+from dagflow.lib.Dummy import Dummy
 from dagflow.input_extra import *
 from dagflow.wrappers import *
 
-nodeargs = dict(typefunc=lambda: True)
-
-
 def test_00():
     """Test default handler: fail on connect"""
-    graph = Graph()
+    with Graph() as graph:
+        in1 = Dummy("n1")
+        in2 = Dummy("n2")
+        in3 = Dummy("n3")
+        in4 = Dummy("n4")
+        for node in (in1, in2, in3, in4):
+            node.add_output("o1", allocatable=False)
 
-    in1 = graph.add_node("n1", **nodeargs)
-    in2 = graph.add_node("n2", **nodeargs)
-    in3 = graph.add_node("n3", **nodeargs)
-    in4 = graph.add_node("n4", **nodeargs)
-    for node in (in1, in2, in3, in4):
-        node.add_output("o1", allocatable=False)
-
-    s = graph.add_node(
-        "add", missing_input_handler=MissingInputFail, **nodeargs
-    )
+            s = Dummy("add", missing_input_handler=MissingInputFail)
     graph.close()
 
     with suppress(Exception):
@@ -36,22 +31,16 @@ def test_00():
 
 def test_01():
     """Test InputAdd handler: add new input on each new connect"""
-    graph = Graph()
+    with Graph() as graph:
 
-    in1 = graph.add_node("n1", **nodeargs)
-    in2 = graph.add_node("n2", **nodeargs)
-    in3 = graph.add_node("n3", **nodeargs)
-    in4 = graph.add_node("n4", **nodeargs)
-    for node in (in1, in2, in3, in4):
-        node.add_output("o1", allocatable=False)
+        in1 = Dummy("n1")
+        in2 = Dummy("n2")
+        in3 = Dummy("n3")
+        in4 = Dummy("n4")
+        for node in (in1, in2, in3, in4):
+            node.add_output("o1", allocatable=False)
 
-    s = graph.add_node(
-        "add",
-        missing_input_handler=MissingInputAdd(
-            output_kws={"allocatable": False}
-        ),
-        **nodeargs
-    )
+            s = Dummy("add", missing_input_handler=MissingInputAdd(output_kws={"allocatable": False}))
 
     (in1, in2, in3) >> s
     in4 >> s
@@ -71,22 +60,16 @@ def test_02():
     Test InputAddPair handler: add new input on each new connect
     and connect them as inputs to another input
     """
-    graph = Graph()
+    with Graph() as graph:
 
-    in1 = graph.add_node("n1", **nodeargs)
-    in2 = graph.add_node("n2", **nodeargs)
-    in3 = graph.add_node("n3", **nodeargs)
-    in4 = graph.add_node("n4", **nodeargs)
-    for node in (in1, in2, in3, in4):
-        node.add_output("o1", allocatable=False)
+        in1 = Dummy("n1")
+        in2 = Dummy("n2")
+        in3 = Dummy("n3")
+        in4 = Dummy("n4")
+        for node in (in1, in2, in3, in4):
+            node.add_output("o1", allocatable=False)
 
-    s = graph.add_node(
-        "add",
-        missing_input_handler=MissingInputAddPair(
-            output_kws={"allocatable": False}
-        ),
-        **nodeargs
-    )
+            s = Dummy("add", missing_input_handler=MissingInputAddPair( output_kws={"allocatable": False}))
 
     (in1, in2, in3) >> s
     in4 >> s
@@ -111,22 +94,16 @@ def test_03():
     Test InputAddOne handler: add new input on each new connect and
     add an output if needed
     """
-    graph = Graph()
+    with Graph() as graph:
 
-    in1 = graph.add_node("n1", **nodeargs)
-    in2 = graph.add_node("n2", **nodeargs)
-    in3 = graph.add_node("n3", **nodeargs)
-    in4 = graph.add_node("n4", **nodeargs)
-    for node in (in1, in2, in3, in4):
-        node.add_output("o1", allocatable=False)
+        in1 = Dummy("n1")
+        in2 = Dummy("n2")
+        in3 = Dummy("n3")
+        in4 = Dummy("n4")
+        for node in (in1, in2, in3, in4):
+            node.add_output("o1", allocatable=False)
 
-    s = graph.add_node(
-        "add",
-        missing_input_handler=MissingInputAddOne(
-            output_kws={"allocatable": False}
-        ),
-        **nodeargs
-    )
+            s = Dummy("add", missing_input_handler=MissingInputAddOne( output_kws={"allocatable": False}))
 
     (in1, in2, in3) >> s
     in4 >> s
@@ -149,22 +126,16 @@ def test_04():
     add an output if needed.
     This version also sets the input for each input
     """
-    graph = Graph()
+    with Graph() as graph:
 
-    in1 = graph.add_node("n1", **nodeargs)
-    in2 = graph.add_node("n2", **nodeargs)
-    in3 = graph.add_node("n3", **nodeargs)
-    in4 = graph.add_node("n4", **nodeargs)
-    for node in (in1, in2, in3, in4):
-        node.add_output("o1", allocatable=False)
+        in1 = Dummy("n1")
+        in2 = Dummy("n2")
+        in3 = Dummy("n3")
+        in4 = Dummy("n4")
+        for node in (in1, in2, in3, in4):
+            node.add_output("o1", allocatable=False)
 
-    s = graph.add_node(
-        "add",
-        missing_input_handler=MissingInputAddOne(
-            add_child_output=True, output_kws={"allocatable": False}
-        ),
-        **nodeargs
-    )
+            s = Dummy("add", missing_input_handler=MissingInputAddOne( add_child_output=True, output_kws={"allocatable": False}))
 
     (in1, in2, in3) >> s
     in4 >> s
@@ -190,22 +161,16 @@ def test_05():
     Test InputAddEach handler: add new input on each new connect and
     add an output for each >> group
     """
-    graph = Graph()
+    with Graph() as graph:
 
-    in1 = graph.add_node("n1", **nodeargs)
-    in2 = graph.add_node("n2", **nodeargs)
-    in3 = graph.add_node("n3", **nodeargs)
-    in4 = graph.add_node("n4", **nodeargs)
-    for node in (in1, in2, in3, in4):
-        node.add_output("o1", allocatable=False)
+        in1 = Dummy("n1")
+        in2 = Dummy("n2")
+        in3 = Dummy("n3")
+        in4 = Dummy("n4")
+        for node in (in1, in2, in3, in4):
+            node.add_output("o1", allocatable=False)
 
-    s = graph.add_node(
-        "add",
-        missing_input_handler=MissingInputAddEach(
-            add_child_output=False, output_kws={"allocatable": False}
-        ),
-        **nodeargs
-    )
+            s = Dummy("add", missing_input_handler=MissingInputAddEach( add_child_output=False, output_kws={"allocatable": False}))
 
     (in1, in2, in3) >> s
     in4 >> s
@@ -228,22 +193,16 @@ def test_06():
     add an output for each >> group.
     This version also sets the child_output for each input
     """
-    graph = Graph()
+    with Graph() as graph:
 
-    in1 = graph.add_node("n1", **nodeargs)
-    in2 = graph.add_node("n2", **nodeargs)
-    in3 = graph.add_node("n3", **nodeargs)
-    in4 = graph.add_node("n4", **nodeargs)
-    for node in (in1, in2, in3, in4):
-        node.add_output("o1", allocatable=False)
+        in1 = Dummy("n1")
+        in2 = Dummy("n2")
+        in3 = Dummy("n3")
+        in4 = Dummy("n4")
+        for node in (in1, in2, in3, in4):
+            node.add_output("o1", allocatable=False)
 
-    s = graph.add_node(
-        "add",
-        missing_input_handler=MissingInputAddEach(
-            add_child_output=True, output_kws={"allocatable": False}
-        ),
-        **nodeargs
-    )
+            s = Dummy("add", missing_input_handler=MissingInputAddEach( add_child_output=True, output_kws={"allocatable": False}))
 
     (in1, in2, in3) >> s
     in4 >> s

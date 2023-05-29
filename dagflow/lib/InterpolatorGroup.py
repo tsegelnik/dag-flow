@@ -33,12 +33,12 @@ def InterpolatorGroup(
     segmentIndex.outputs["indices"] >> interpolator("indices")
 
     metaint = MetaNode()
-    metaint.add_node(
+    metaint._add_node(
         segmentIndex,
         kw_inputs=["coarse", "fine"],
         merge_inputs=["coarse", "fine"],
     )
-    metaint.add_node(
+    metaint._add_node(
         interpolator,
         kw_inputs=["coarse", "fine"],
         merge_inputs=["coarse", "fine"],

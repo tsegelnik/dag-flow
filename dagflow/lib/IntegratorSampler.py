@@ -54,7 +54,7 @@ class IntegratorSampler(FunctionNode):
     There are two outputs: 0 - `sample`, 1 - `weights`
     """
 
-    __slots__ = ("__bufferX", "__bufferY")
+    __slots__ = ("__bufferX", "__bufferY", "_dtype", "_mode", "_align")
 
     def __init__(
         self,
@@ -115,14 +115,11 @@ class IntegratorSampler(FunctionNode):
         if self.mode == "2d":
             lenY, edgesY = self.__check_orders("ordersY")
             shape = (lenX, lenY)
-            edges = [edgesX, edgesY]
         else:
             shape = (lenX,)
-            edges = [edgesX]
         for output in (*self.outputs, self.outputs["weights"]):
             output.dd.dtype = self.dtype
             output.dd.shape = shape
-            output.dd.axes_edges = edges
         self.fcn = self._functions[self.mode]
 
     def __check_orders(self, name: str) -> tuple:

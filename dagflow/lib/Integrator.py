@@ -10,7 +10,6 @@ from ..typefunctions import (
     check_input_dimension,
     check_input_dtype,
     check_input_edges_dim,
-    check_input_edges_equivalence,
     check_input_shape,
     check_input_subtype,
 )
@@ -80,7 +79,8 @@ class Integrator(FunctionNode):
         Checks inputs dimension and, selects an integration algorithm,
         determines dtype and shape for outputs
         """
-        check_has_inputs(self)
+        if len(self.inputs)==0:
+            return
         check_has_inputs(self, "weights")
 
         input0 = self.inputs[0]
@@ -105,7 +105,6 @@ class Integrator(FunctionNode):
             )
             shape.append(edgeslenY)
             edges.append(edgesY)
-        check_input_edges_equivalence(self, slice(None), edges)
 
         shape = tuple(shape)
         self.fcn = self._functions[dim]
