@@ -91,7 +91,7 @@ class OscProb(FunctionNode):
         self._DeltaMSq32 = DeltaMSq32
         self._DeltaMSq31 = DeltaMSq31
         self._alpha = alpha
-        self._add_input("result")
+        self._add_output("result")
 
     @property
     def L(self) -> float:
