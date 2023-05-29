@@ -76,9 +76,9 @@ class DataDescriptor:
         if self.axes_nodes and axistype in {'any', 'nodes'}:
             try:
                 if root:
-                    return self.axes_nodes[axis].node.labels.axis
-                else:
                     return self.axes_nodes[axis].node.labels.rootaxis
+                else:
+                    return self.axes_nodes[axis].node.labels.axis
             except IndexError as e:
                 raise RuntimeError(f'Invalid axis index {axis}') from e
 
