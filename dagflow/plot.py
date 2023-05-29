@@ -95,11 +95,11 @@ def annotate_axes(output: Output, /, ax: Optional[Axes]=None, *, show_path: bool
     title = labels.plottitle
     xlabel = output.dd.axis_label(0) or labels.xaxis or 'Index'
 
-    ylabel = labels.axis
     if output.dd.dim==2:
         zlabel = ylabel
         ylabel = output.dd.axis_label(1)
     else:
+        ylabel = labels.axis
         zlabel = None
 
     if title: ax.set_title(title)
