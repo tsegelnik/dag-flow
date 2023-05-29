@@ -72,30 +72,3 @@ class FunctionNode(Node):
     def _eval(self):
         return self.fcn(self, self.inputs, self.outputs)
 
-# class StaticNode(Node):
-#     """Function signature: fcn()"""
-#
-#     _touch_inputs = True
-#
-#     def __init__(self, *args, **kwargs):
-#         self._touch_inputs = kwargs.pop("touch_inputs", True)
-#         super().__init__(*args, **kwargs)
-#
-#     def _eval(self):
-#         self._being_evaluated = True
-#         if self._touch_inputs:
-#             self.inputs.touch()
-#         ret = self._fcn()
-#         self._being_evaluated = False
-#         return ret
-#
-#     def _stash_fcn(self):
-#         prev_fcn = self._fcn
-#         self._fcn_chain.append(prev_fcn)
-#         return lambda node, inputs, outputs: prev_fcn()
-#
-#     def _make_wrap(self, prev_fcn, wrap_fcn):
-#         def wrapped_fcn():
-#             wrap_fcn(prev_fcn, self, self.inputs, self.outputs)
-#
-#         return wrapped_fcn

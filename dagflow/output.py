@@ -1,4 +1,4 @@
-from typing import List, Optional, Tuple
+from typing import List, Optional
 
 from numpy import zeros
 from numpy.typing import ArrayLike, DTypeLike, NDArray
@@ -327,9 +327,7 @@ class Output:
         if self.node._frozen and not force:
             return False
 
-        tainted = True
-        if check_taint:
-            tainted = self._data[udx] != value
+        tainted = self._data[udx]!=value if check_taint else True
 
         if tainted:
             self._data[idx] = value
@@ -345,9 +343,7 @@ class Output:
         if self.node._frozen and not force:
             return False
 
-        tainted = True
-        if check_taint:
-            tainted = (self._data != data).any()
+        tainted = (self._data != data).any() if check_taint else True
 
         if tainted:
             self._data[:] = data
