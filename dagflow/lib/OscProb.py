@@ -1,5 +1,5 @@
 from numba import float64, njit, void
-from numpy import float_, sin, sqrt
+from numpy import empty, float_, sin, sqrt
 from numpy.typing import NDArray
 
 from ..nodes import FunctionNode
@@ -16,14 +16,12 @@ from ..typefunctions import copy_from_input_to_output
         float64,
         float64,
         float64,
-        float64,
     ),
     cache=True,
 )
 def _osc_prob(
     out: NDArray[float_],
-    E: NDArray[float_],
-    L: float,
+    L4E: NDArray[float_],
     sinSq2Theta13: float,
     DeltaMSq32: float,
     sinSq2Theta12: float,
@@ -37,15 +35,14 @@ def _osc_prob(
     _cosSqTheta12 = 1.0 - _sinSqTheta12  # cos^2 θ_{12}
     _cosQuTheta13 = (0.5 * (1 - sqrt(1 - sinSq2Theta13))) ** 2  # cos^4 θ_{13}
 
-    L4E = L / 4.0 / E  # common multiplier
     out[:] = (
         1
         - sinSq2Theta13
         * (
-            _sinSqTheta12 * sin(_DeltaMSq32 * L4E) ** 2
-            + _cosSqTheta12 * sin(_DeltaMSq31 * L4E) ** 2
+            _sinSqTheta12 * sin(_DeltaMSq32 * L4E[:]) ** 2
+            + _cosSqTheta12 * sin(_DeltaMSq31 * L4E[:]) ** 2
         )
-        - sinSq2Theta12 * _cosQuTheta13 * sin(DeltaMSq21 * L4E) ** 2
+        - sinSq2Theta12 * _cosQuTheta13 * sin(DeltaMSq21 * L4E[:]) ** 2
     )
 
 
@@ -68,6 +65,8 @@ class OscProb(FunctionNode):
 
     Calcultes a probability of the neutrino oscillations
     """
+
+    __slots__ = ("__buffer",)
 
     def __init__(
         self,
@@ -92,6 +91,7 @@ class OscProb(FunctionNode):
         self._DeltaMSq32 = DeltaMSq32
         self._DeltaMSq31 = DeltaMSq31
         self._alpha = alpha
+        self._add_input("result")
 
     @property
     def L(self) -> float:
@@ -124,10 +124,11 @@ class OscProb(FunctionNode):
     def _fcn(self, _, inputs, outputs):
         out = outputs["result"].data
         E = inputs["E"].data
+        self.__buffer[:] = self.L / 4.0 / E[:]  # common factor
+
         _osc_prob(
             out,
-            E,
-            self.L,
+            self.__buffer,
             self.sinSq2Theta13,
             self.DeltaMSq32,
             self.sinSq2Theta12,
@@ -140,3 +141,7 @@ class OscProb(FunctionNode):
     def _typefunc(self) -> None:
         """A output takes this function to determine the dtype and shape"""
         copy_from_input_to_output(self, "E", "result")
+
+    def _post_allocate(self):
+        Edd = self.inputs["E"].dd
+        self._buffer = empty(dtype=Edd.dtype, shape=Edd.shape)
