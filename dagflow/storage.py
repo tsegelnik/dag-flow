@@ -4,7 +4,7 @@ from .output import Output
 from .node import Node
 from .logger import logger, DEBUG
 
-from typing import Union, Tuple, List, Optional, Dict
+from typing import Union, Tuple, List, Optional, Dict, Mapping
 
 from tabulate import tabulate
 from pandas import DataFrame
@@ -65,9 +65,7 @@ class NodeStorage(NestedMKDict):
             logger.log(DEBUG, f"Look up label for {'.'.join(key)}")
             try:
                 labels = source(key)
-            except KeyError:
-                continue
-            except TypeError:
+            except (KeyError, TypeError):
                 continue
             logger.log(DEBUG, "... found")
 
@@ -115,7 +113,7 @@ class NodeStorage(NestedMKDict):
     def to_table(
         self,
         *,
-        df_kwargs: dict={},
+        df_kwargs: Mapping={},
         truncate: Union[int, bool] = False,
         **kwargs
     ) -> str:
@@ -136,10 +134,7 @@ class NodeStorage(NestedMKDict):
         df = self.to_df(label_from='latex', **kwargs)
         tex = df.to_latex(escape=False)
 
-        if return_df:
-            return tex, df
-
-        return tex
+        return tex, df if return_df else tex
 
     def to_datax(self, filename: str, **kwargs) -> None:
         data = self.to_dict(**kwargs)
@@ -200,19 +195,13 @@ class ParametersVisitor(NestedMKDictVisitor):
     def visit(self, key, value):
         try:
             dct = value.to_dict(**self._kwargs)
-        except AttributeError:
-            return
-        except IndexError:
+        except (AttributeError, IndexError):
             return
 
         subkey = key[len(self._path):]
         subkeystr = '.'.join(subkey)
 
-        if self._path:
-            dct['path'] = f'.. {subkeystr}'
-        else:
-            dct['path'] = subkeystr
-
+        dct['path'] = self._path and f'.. {subkeystr}' or subkeystr
         self._localdata.append(dct)
 
         self._data_dict[key]=dct

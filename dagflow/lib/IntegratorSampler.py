@@ -111,9 +111,9 @@ class IntegratorSampler(FunctionNode):
         determines dtype and shape for outputs
         """
         check_inputs_number(self, 0)
-        lenX, edgesX = self.__check_orders("ordersX")
+        lenX = self.__check_orders("ordersX")
         if self.mode == "2d":
-            lenY, edgesY = self.__check_orders("ordersY")
+            lenY = self.__check_orders("ordersY")
             shape = (lenX, lenY)
         else:
             shape = (lenX,)
@@ -122,7 +122,7 @@ class IntegratorSampler(FunctionNode):
             output.dd.shape = shape
         self.fcn = self._functions[self.mode]
 
-    def __check_orders(self, name: str) -> tuple:
+    def __check_orders(self, name: str) -> int:
         """
         The method checks dimension (==1) of the input `name`, type (==`integer`),
         and returns the `dd.shape[0]`
@@ -131,7 +131,7 @@ class IntegratorSampler(FunctionNode):
         check_input_subtype(self, name, integer)
         check_input_edges_dim(self, name, 1)
         orders = self.inputs[name]
-        return sum(orders.data), orders.dd.axes_edges[0]
+        return sum(orders.data)
 
     def _post_allocate(self) -> None:
         """Allocates the `buffer`"""

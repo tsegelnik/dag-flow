@@ -1,8 +1,14 @@
 from matplotlib.pyplot import (
-    stairs, plot, colorbar as plot_colorbar,
-    gca, gcf, sca,
-    cm, text,
-    close as closefig, savefig, show as showfig
+    stairs,
+    plot,
+    colorbar as plot_colorbar,
+    gca,
+    gcf,
+    sca,
+    cm,
+    close as closefig,
+    savefig,
+    show as showfig
 )
 from matplotlib.pyplot import Axes
 from matplotlib import colormaps
@@ -122,18 +128,12 @@ def plot_array_1d(
     nodes: Optional[NDArray],
     *args, **kwargs
 ) -> Tuple[tuple, ...]:
-    rets = []
     if edges is not None:
-        ret = plot_array_1d_hist(array, edges, *args, **kwargs)
-        rets.append(ret)
+        return plot_array_1d_hist(array, edges, *args, **kwargs)
     elif nodes is not None:
-        ret = plot_array_1d_vs(array, nodes, *args, **kwargs)
-        rets.append(ret)
+        return plot_array_1d_vs(array, nodes, *args, **kwargs)
     else:
-        ret = plot_array_1d_array(array, *args, **kwargs)
-        rets.append(ret)
-
-    return tuple(rets)
+        return plot_array_1d_array(array, *args, **kwargs)
 
 def plot_array_1d_hist(array: NDArray, edges: Optional[NDArray], *args, **kwargs) -> Tuple:
     return stairs(array, edges, *args, **kwargs)
@@ -165,18 +165,12 @@ def plot_array_2d(
     nodes: NodesLike,
     *args, **kwargs
 ) -> Tuple[tuple, ...]:
-    rets = []
     if edges:
-        ret = plot_array_2d_hist(array, edges, *args, **kwargs)
-        rets.append(ret)
+        plot_array_2d_hist(array, edges, *args, **kwargs)
     elif nodes:
-        ret = plot_array_2d_vs(array, nodes, *args, **kwargs)
-        rets.append(ret)
+        plot_array_2d_vs(array, nodes, *args, **kwargs)
     else:
-        ret = plot_array_2d_array(array, *args, **kwargs)
-        rets.append(ret)
-
-    return tuple(rets)
+        plot_array_2d_array(array, *args, **kwargs)
 
 def plot_array_2d_hist(
     dZ: NDArray,
@@ -271,7 +265,7 @@ def plot_array_2d_hist_imshow(Z: NDArray, edges: EdgesLike=None, *args, **kwargs
     kwargs.setdefault('origin', 'lower')
     return imshow(Z.T, *args, **kwargs)
 
-def plot_array_2d_hist_matshow(Z: NDArray, edges: EdgesLike=None, *args, **kwargs):
+def plot_array_2d_hist_matshow(Z: NDArray, edges: Optional[EdgesLike]=None, *args, **kwargs):
     kwargs.setdefault('fignum', False)
     if edges:
         xedges, yedges = edges
