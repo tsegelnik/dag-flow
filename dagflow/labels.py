@@ -136,7 +136,7 @@ class Labels:
         if self._roottitle is not None:
             return self._roottitle
         title = self.plottitle
-        return title and title.replace('\\', '#')
+        return title and title.replace('\\', '#').replace('$','')
 
     @roottitle.setter
     def roottitle(self, value: Optional[str]):
@@ -147,7 +147,7 @@ class Labels:
         if self._rootaxis is not None:
             return self._rootaxis
         axis = self.axis
-        return axis and axis.replace('\\', '#')
+        return axis and axis.replace('\\', '#').replace('$','')
 
     @rootaxis.setter
     def rootaxis(self, value: Optional[str]):
