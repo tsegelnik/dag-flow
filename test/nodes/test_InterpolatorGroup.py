@@ -66,7 +66,7 @@ def test_InterpolatorGroup(debug_graph, testname):
         rtol=0,
         atol=finfo("d").resolution * 5,
     )
-    assert metaint.outputs[0].dd.axes_nodes == [fine["array"]]
+    assert metaint.outputs[0].dd.axes_meshes == [fine["array"]]
 
     plot_auto(metaint)
     ax = gca()

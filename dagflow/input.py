@@ -45,7 +45,7 @@ class Input:
         dtype: DTypeLike = None,
         shape: Optional[ShapeLike] = None,
         axes_edges: Optional[EdgesLike] = None,
-        axes_nodes: Optional[EdgesLike] = None,
+        axes_meshes: Optional[EdgesLike] = None,
     ):
         if data is not None and (
             allocatable or dtype is not None or shape is not None
@@ -64,7 +64,7 @@ class Input:
         else:
             self._debug = False
 
-        self._own_dd = DataDescriptor(dtype, shape, axes_edges, axes_nodes)
+        self._own_dd = DataDescriptor(dtype, shape, axes_edges, axes_meshes)
 
         if data is not None:
             self.set_own_data(data, owns_buffer=True)
@@ -92,7 +92,7 @@ class Input:
         *,
         owns_buffer: bool,
         axes_edges: Optional[EdgesLike] = None,
-        axes_nodes: Optional[EdgesLike] = None,
+        axes_meshes: Optional[EdgesLike] = None,
     ):
         if self.closed:
             raise ClosedGraphError(
@@ -108,7 +108,7 @@ class Input:
         self.own_dd.dtype = data.dtype
         self.own_dd.shape = data.shape
         self.own_dd.axes_edges = axes_edges or ()
-        self.own_dd.axes_nodes = axes_nodes or ()
+        self.own_dd.axes_meshes = axes_meshes or ()
 
     @property
     def closed(self):

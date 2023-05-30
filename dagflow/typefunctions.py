@@ -52,8 +52,8 @@ def cpy_shape(input, output):
 def cpy_edges(input, output):
     output.dd.axes_edges = input.dd.axes_edges
 
-def cpy_nodes(input, output):
-    output.dd.axes_nodes = input.dd.axes_nodes
+def cpy_meshes(input, output):
+    output.dd.axes_meshes = input.dd.axes_meshes
 
 
 def check_has_inputs(
@@ -108,7 +108,7 @@ def copy_from_input_to_output(
     if edges:
         caller.add(cpy_edges)
     if nodes:
-        caller.add(cpy_nodes)
+        caller.add(cpy_meshes)
 
     if len(inputs) == 1:
         inputs = repeat(inputs[0], len(outputs))
@@ -282,15 +282,15 @@ def check_inputs_square_or_diag(
 def check_inputs_equivalence(
     node: NodeT, inputkey: Union[str, int, slice, Sequence] = AllPositionals
 ):
-    """Checking the equivalence of the dtype, shape, axes_edges and axes_nodes of all the inputs"""
+    """Checking the equivalence of the dtype, shape, axes_edges and axes_meshes of all the inputs"""
     inputs = tuple(node.inputs.iter(inputkey))
     input0, inputs = inputs[0], inputs[1:]
 
-    dtype, shape, edges, nodes = (
+    dtype, shape, edges, meshes = (
         input0.dd.dtype,
         input0.dd.shape,
         input0.dd.axes_edges,
-        input0.dd.axes_nodes,
+        input0.dd.axes_meshes,
     )
     for input in inputs:
         dd = input.dd
@@ -298,11 +298,11 @@ def check_inputs_equivalence(
             dd.dtype != dtype
             or dd.shape != shape
             or (dd.axes_edges and edges and dd.axes_edges != edges)
-            or (dd.axes_nodes and nodes and dd.axes_nodes != nodes)
+            or (dd.axes_meshes and meshes and dd.axes_meshes != meshes)
         ):
             raise TypeFunctionError(
-                f"Input data [{dd.dtype=}, {dd.shape=}, {dd.axes_edges=}, {dd.axes_nodes=}]"
-                f" is inconsistent with [{dtype=}, {shape=}, {edges=}, {nodes=}]",
+                f"Input data [{dd.dtype=}, {dd.shape=}, {dd.axes_edges=}, {dd.axes_meshes=}]"
+                f" is inconsistent with [{dtype=}, {shape=}, {edges=}, {meshes=}]",
                 node=node,
                 input=input,
             )
@@ -450,36 +450,36 @@ def assign_output_edges(input: Union[Input, Sequence[Input]], output: Output, ig
 
     output.dd.axes_edges = edges
 
-def assign_output_nodes(input: Union[Input, Sequence[Input]], output: Output, *, ignore_assigned: bool = False):
+def assign_output_meshes(input: Union[Input, Sequence[Input]], output: Output, *, ignore_assigned: bool = False):
     """Assign output's edges from input's parent output"""
     dd = output.dd
 
-    if dd.axes_nodes:
+    if dd.axes_meshes:
         if ignore_assigned:
             return
-        raise TypeFunctionError("Nodes already assigned", output=output, input=input)
+        raise TypeFunctionError("Meshes already assigned", output=output, input=input)
 
     if isinstance(input, Input):
-        nodes = [input.parent_output]
+        meshes = [input.parent_output]
     else:
-        nodes = [inp.parent_output for inp in input]
+        meshes = [inp.parent_output for inp in input]
 
-    if len(dd.shape)!=len(nodes):
+    if len(dd.shape)!=len(meshes):
         raise TypeFunctionError(
-            f"Output ndim={len(dd.shape)} is inconsistent with nodes ndim={len(nodes)}",
+            f"Output ndim={len(dd.shape)} is inconsistent with meshes ndim={len(meshes)}",
             output=output,
             input=input
         )
 
-    for i, nodesoutput in enumerate(nodes):
-        if dd.shape!=nodesoutput.dd.shape:
+    for i, meshesoutput in enumerate(meshes):
+        if dd.shape!=meshesoutput.dd.shape:
             raise TypeFunctionError(
-                f"Output shape={dd.shape} is inconsistent with nodes {i} shape={nodesoutput.dd.shape}",
+                f"Output shape={dd.shape} is inconsistent with meshes {i} shape={meshesoutput.dd.shape}",
                 output=output,
                 input=input
             )
 
-    output.dd.axes_nodes = nodes
+    output.dd.axes_meshes = meshes
 
 def assign_output_axes_from_inputs(
     node: NodeT,
@@ -502,7 +502,7 @@ def assign_output_axes_from_inputs(
             assign_output_edges(inputs, output, **kwargs)
 
         if assign_nodes:
-            assign_output_nodes(inputs, output, **kwargs)
+            assign_output_meshes(inputs, output, **kwargs)
 
 def assign_outputs_axes_from_inputs(
     node: NodeT,
@@ -531,7 +531,7 @@ def assign_outputs_axes_from_inputs(
             assign_output_edges(input, output, **kwargs)
 
         if assign_nodes:
-            assign_output_nodes(input, output, **kwargs)
+            assign_output_meshes(input, output, **kwargs)
 
 def check_input_edges_dim(
     node: NodeT,

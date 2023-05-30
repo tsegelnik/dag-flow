@@ -112,7 +112,7 @@ class Integrator(FunctionNode):
             output.dd.dtype = dtype
             output.dd.shape = shape
             output.dd.axes_edges = edges
-            # TODO: copy axes_nodes?
+            # TODO: copy axes_meshes?
 
     def __check_orders(self, name: str, shape: ShapeLike) -> tuple:
         """

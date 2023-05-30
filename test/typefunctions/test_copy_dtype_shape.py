@@ -71,7 +71,7 @@ def test_copy_from_input_00(testname, debug_graph):
 
 @mark.parametrize("dtype", ("i", "d", "f"))
 def test_copy_from_input_01(testname, debug_graph, dtype):
-    # TODO: adding axes_nodes check
+    # TODO: adding axes_meshes check
     with Graph(close=False, debug=debug_graph) as graph:
         edges1 = Array("edges1", [0, 1, 2, 3, 4]).outputs["array"]
         edges2 = Array("edges2", [0, 1, 2, 3]).outputs["array"]
@@ -96,9 +96,9 @@ def test_copy_from_input_01(testname, debug_graph, dtype):
     assert node.outputs[0].dd.dtype == "i"
     assert node.outputs[0].dd.shape == out1.shape
     assert node.outputs[0].dd.axes_edges == out1.axes_edges
-    assert node.outputs[0].dd.axes_nodes == out1.axes_nodes
+    assert node.outputs[0].dd.axes_meshes == out1.axes_meshes
     assert node.outputs[1].dd.dtype == dtype
     assert node.outputs[1].dd.shape == out2.shape
     assert node.outputs[1].dd.axes_edges == out2.axes_edges
-    assert node.outputs[1].dd.axes_nodes == out2.axes_nodes
+    assert node.outputs[1].dd.axes_meshes == out2.axes_meshes
     savegraph(graph, f"output/{testname}.png")

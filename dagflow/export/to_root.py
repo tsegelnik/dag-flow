@@ -10,7 +10,7 @@ if TYPE_CHECKING:
     from ..output import Output
 
     try:
-        from ROOT import TFile, TDirectory, TObject, TH1D, TH2D, TH1, TH2
+        from ROOT import TFile, TDirectory, TObject, TH1, TH2
     except ImportError:
         pass
 
@@ -24,12 +24,12 @@ def to_root(output: Union['Output', Any]) -> Dict[str, 'TObject']:
     if dim==1:
         if dd.axes_edges:
             rets['hist'] = to_TH1(output)
-        if dd.axes_nodes:
+        if dd.axes_meshes:
             rets['graph'] = to_TGraph(output)
     elif dim==2:
         if dd.axes_edges:
             rets['hist'] = to_TH2(output)
-        if dd.axes_nodes:
+        if dd.axes_meshes:
             rets['graph'] = to_TGraph2(output)
     else:
         raise RuntimeError('Unsupported output dimension: {dim}')
@@ -145,9 +145,3 @@ class ExportToRootVisitor(NestedMKDictVisitor):
     def stop(self, dct):
         pass
 
-try:
-    import ROOT
-except ImportError as e:
-    class ExportToRootVisitor(NestedMKDictVisitor):
-        def __init__(self, *args, **kwargs):
-            raise ImportError("ROOT") from e

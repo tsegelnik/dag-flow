@@ -127,7 +127,6 @@ class NodeStorage(NestedMKDict):
 
             return trunc(ret, width=truncate)
 
-
         return ret
 
     def to_latex(self, *, return_df: bool=False, **kwargs) -> Union[str, Tuple[str, DataFrame]]:
