@@ -3,7 +3,11 @@ from numpy import empty, float_, sin, sqrt
 from numpy.typing import NDArray
 
 from ..nodes import FunctionNode
-from ..typefunctions import copy_from_input_to_output
+from ..typefunctions import (
+    check_input_dimension,
+    check_input_shape,
+    copy_from_input_to_output,
+)
 
 
 @njit(
@@ -22,11 +26,11 @@ from ..typefunctions import copy_from_input_to_output
 def _osc_prob(
     out: NDArray[float_],
     L4E: NDArray[float_],
-    sinSq2Theta13: float,
-    DeltaMSq32: float,
     sinSq2Theta12: float,
+    sinSq2Theta13: float,
     DeltaMSq21: float,
     DeltaMSq31: float,
+    DeltaMSq32: float,
     alpha: float,
 ) -> None:
     _DeltaMSq32 = alpha * DeltaMSq31 - DeltaMSq21  # proper value of |Δm²₃₂|
@@ -50,98 +54,98 @@ class OscProb(FunctionNode):
     """
     inputs:
         `E`: array of the energies
+        `L`: the distance
+        `sinSq2Theta12`: sin²2θ₁₂
+        `sinSq2Theta13`: sin²2θ₁₃
+        `DeltaMSq21`: |Δm²₂₁|
+        `DeltaMSq31`: |Δm²₃₁|
+        `DeltaMSq32`: |Δm²₃₂|
+        `alpha`: the mass ordering constant
+
 
     outputs:
         `0` or `result`: array of probabilities
-
-    extra arguments:
-        `L`: the distance
-        `sinSq2Theta13`: sin²2θ₁₃
-        `DeltaMSq32`: |Δm²₃₂|
-        `sinSq2Theta12`: sin²2θ₁₂
-        `DeltaMSq21`: |Δm²₂₁|
-        `DeltaMSq31`: |Δm²₃₁|
-        `alpha`: the mass ordering constant
 
     Calcultes a probability of the neutrino oscillations
     """
 
     __slots__ = ("__buffer",)
 
-    def __init__(
-        self,
-        *args,
-        L: float,
-        sinSq2Theta13: float,
-        DeltaMSq32: float,
-        sinSq2Theta12: float,
-        DeltaMSq21: float,
-        DeltaMSq31: float,
-        alpha: float,
-        **kwargs
-    ):
+    def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self._labels.setdefault(
-            "mark", "P(E, L, sin²2θ₁₃, Δm²₃₂, sin²2θ₁₂, Δm²₂₁, Δm²₃₁, α)"
+            "mark", "P(E, L, sin²2θ₁₂, sin²2θ₁₃, Δm²₂₁, Δm²₃₁, Δm²₃₂, α)"
         )
-        self._L = L
-        self._sinSqTheta12 = sinSq2Theta12
-        self._sinSqTheta13 = sinSq2Theta13
-        self._DeltaMSq21 = DeltaMSq21
-        self._DeltaMSq32 = DeltaMSq32
-        self._DeltaMSq31 = DeltaMSq31
-        self._alpha = alpha
+        self.add_input(
+            (
+                "L",
+                "sinSq2Theta12",
+                "sinSq2Theta13",
+                "DeltaMSq21",
+                "DeltaMSq31",
+                "DeltaMSq32",
+                "alpha",
+            ),
+            positional=False,
+        )
         self._add_output("result")
-
-    @property
-    def L(self) -> float:
-        return self._L
-
-    @property
-    def sinSq2Theta12(self) -> float:
-        return self._sinSqTheta12
-
-    @property
-    def sinSq2Theta13(self) -> float:
-        return self._sinSqTheta13
-
-    @property
-    def DeltaMSq21(self) -> float:
-        return self._DeltaMSq21
-
-    @property
-    def DeltaMSq32(self) -> float:
-        return self._DeltaMSq32
-
-    @property
-    def DeltaMSq31(self) -> float:
-        return self._DeltaMSq31
-
-    @property
-    def alpha(self) -> float:
-        return self._alpha
-
-    def _fcn(self, _, inputs, outputs):
-        out = outputs["result"].data
-        E = inputs["E"].data
-        self.__buffer[:] = self.L / 4.0 / E[:]  # common factor
-
-        _osc_prob(
-            out,
-            self.__buffer,
-            self.sinSq2Theta13,
-            self.DeltaMSq32,
-            self.sinSq2Theta12,
-            self.DeltaMSq21,
-            self.DeltaMSq31,
-            self.alpha,
-        )
-        return out
 
     def _typefunc(self) -> None:
         """A output takes this function to determine the dtype and shape"""
+        check_input_dimension(
+            self,
+            (
+                "E",
+                "L",
+                "sinSq2Theta12",
+                "sinSq2Theta13",
+                "DeltaMSq21",
+                "DeltaMSq31",
+                "DeltaMSq32",
+                "alpha",
+            ),
+            1,
+        )
+        check_input_shape(
+            self,
+            (
+                "L",
+                "sinSq2Theta12",
+                "sinSq2Theta13",
+                "DeltaMSq21",
+                "DeltaMSq31",
+                "DeltaMSq32",
+                "alpha",
+            ),
+            (1,),
+        )
         copy_from_input_to_output(self, "E", "result")
 
     def _post_allocate(self):
         Edd = self.inputs["E"].dd
-        self._buffer = empty(dtype=Edd.dtype, shape=Edd.shape)
+        self.__buffer = empty(dtype=Edd.dtype, shape=Edd.shape)
+
+    def _fcn(self, _, inputs, outputs):
+        out = outputs["result"].data
+        E = inputs["E"].data
+        L = inputs["L"].data[0]
+        sinSq2Theta12 = inputs["sinSq2Theta12"].data[0]
+        sinSq2Theta13 = inputs["sinSq2Theta13"].data[0]
+        DeltaMSq21 = inputs["DeltaMSq21"].data[0]
+        DeltaMSq31 = inputs["DeltaMSq31"].data[0]
+        DeltaMSq32 = inputs["DeltaMSq32"].data[0]
+        alpha = inputs["alpha"].data[0]
+
+        self.__buffer[:] = L / 4.0 / E[:]  # common factor
+
+        _osc_prob(
+            out,
+            self.__buffer,
+            sinSq2Theta12,
+            sinSq2Theta13,
+            DeltaMSq21,
+            DeltaMSq31,
+            DeltaMSq32,
+            alpha,
+        )
+        return out
