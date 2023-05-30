@@ -311,6 +311,8 @@ else:
 
                 if output.dd.axes_edges:
                     self._add_edge_hist(output)
+                if output.dd.axes_meshes:
+                    self._add_mesh(output)
 
         def _add_edges_multi(self, nodedag, output):
             vnode = self.get_id(output, "_mid")
@@ -323,9 +325,15 @@ else:
         def _add_edge_hist(self, output: Output) -> None:
             if output.dd.edges_inherited:
                 return
-            eoutput = output.dd.axes_edges[0]
 
-            self._add_edge(eoutput.node, eoutput, output, style={'style': 'dotted'})
+            for eoutput in output.dd.axes_edges:
+                self._add_edge(eoutput.node, eoutput, output, style={'style': 'dotted'})
+
+        def _add_mesh(self, output: Output) -> None:
+            if output.dd.meshes_inherited:
+                return
+            for noutput in output.dd.axes_meshes:
+                self._add_edge(noutput.node, noutput, output, style={'style': 'dotted'})
 
         def _add_open_output(self, nodedag, output):
             styledict = {}
@@ -483,7 +491,7 @@ else:
                 out0 = None
             else:
                 hasedges = bool(out0.dd.axes_edges)
-                hasnodes = bool(out0.dd.axes_nodes)
+                hasnodes = bool(out0.dd.axes_meshes)
                 shape0 = out0.dd.shape
                 if shape0 is None:
                     shape0 = '?'
