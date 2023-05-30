@@ -38,22 +38,22 @@ def test_to_root(testname, debug_graph, dtype):
                 },
             'meshx': {
                 'text': 'Mesh X 1d',
-                'plottitle': 'Mesh X $\\theta^{2} $ 1d',
+                'plottitle': 'Mesh X $\\theta^{2}$ 1d',
                 },
             'meshy': {
                 'text': 'Mesh Y 1d',
-                'plottitle': 'Mesh Y $\\theta^{2} $ 1d',
-                'axis': 'Y $\\theta^{2} $ 1d',
+                'plottitle': 'Mesh Y $\\theta^{2}$ 1d',
+                'axis': 'Y $\\theta^{2}$ 1d',
                 'rootaxis': 'Y #Theta^{3}  1d',
                 },
             'mesh2x': {
                 'text': 'Mesh X 2d',
-                'plottitle': 'Mesh X $\\theta^{2} $ 2d',
+                'plottitle': 'Mesh X $\\theta^{2}$ 2d',
                 },
             'mesh2y': {
                 'text': 'Mesh Y 2d',
-                'plottitle': 'Mesh Y $\\theta^{2} $ 2d',
-                'axis': 'Y $\\theta^{2} $ 2d',
+                'plottitle': 'Mesh Y $\\theta^{2}$ 2d',
+                'axis': 'Y $\\theta^{2}$ 2d',
                 'rootaxis': 'Y #Theta^{3}  2d',
                 },
             'array_edges': {
