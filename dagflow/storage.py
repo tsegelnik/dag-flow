@@ -141,6 +141,11 @@ class NodeStorage(NestedMKDict):
         odict = {'.'.join(k): v for k, v in data.walkitems() if not (k and k[-1] in skip)}
         datax(filename, **odict)
 
+    def to_root(self, filename: str) -> None:
+        from .export.to_root import ExportToRootVisitor
+        visitor = ExportToRootVisitor(filename)
+        self.visit(visitor)
+
     @staticmethod
     def current() -> Optional["NodeStorage"]:
         return _context_storage[-1] if _context_storage else None
