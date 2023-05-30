@@ -19,7 +19,6 @@ from ..typefunctions import (
         float64,
         float64,
         float64,
-        float64,
     ),
     cache=True,
 )
@@ -29,10 +28,10 @@ def _osc_prob(
     sinSq2Theta12: float,
     sinSq2Theta13: float,
     DeltaMSq21: float,
-    DeltaMSq31: float,
     DeltaMSq32: float,
     alpha: float,
 ) -> None:
+    DeltaMSq31 = DeltaMSq32 + DeltaMSq21  # |Δm²₃₁| = |Δm²₃₂| + |Δm²₂₁|
     _DeltaMSq32 = alpha * DeltaMSq31 - DeltaMSq21  # proper value of |Δm²₃₂|
     _DeltaMSq31 = alpha * DeltaMSq32 + DeltaMSq21  # proper value of |Δm²₃₁|
     _sinSqTheta12 = 0.5 * (1 - sqrt(1 - sinSq2Theta12))  # sin^2 θ_{12}
@@ -50,7 +49,7 @@ def _osc_prob(
     )
 
 
-class OscProb(FunctionNode):
+class NueSurvivalProbability(FunctionNode):
     """
     inputs:
         `E`: array of the energies
@@ -58,7 +57,6 @@ class OscProb(FunctionNode):
         `sinSq2Theta12`: sin²2θ₁₂
         `sinSq2Theta13`: sin²2θ₁₃
         `DeltaMSq21`: |Δm²₂₁|
-        `DeltaMSq31`: |Δm²₃₁|
         `DeltaMSq32`: |Δm²₃₂|
         `alpha`: the mass ordering constant
 
@@ -66,23 +64,20 @@ class OscProb(FunctionNode):
     outputs:
         `0` or `result`: array of probabilities
 
-    Calcultes a probability of the neutrino oscillations
+    Calcultes a survival probability for the neutrino
     """
 
     __slots__ = ("__buffer",)
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self._labels.setdefault(
-            "mark", "P(E, L, sin²2θ₁₂, sin²2θ₁₃, Δm²₂₁, Δm²₃₁, Δm²₃₂, α)"
-        )
+        self._labels.setdefault("mark", "P(E, L, sin²2θ₁₂, sin²2θ₁₃, Δm²₂₁, Δm²₃₂, α)")
         self.add_input(
             (
                 "L",
                 "sinSq2Theta12",
                 "sinSq2Theta13",
                 "DeltaMSq21",
-                "DeltaMSq31",
                 "DeltaMSq32",
                 "alpha",
             ),
@@ -100,7 +95,6 @@ class OscProb(FunctionNode):
                 "sinSq2Theta12",
                 "sinSq2Theta13",
                 "DeltaMSq21",
-                "DeltaMSq31",
                 "DeltaMSq32",
                 "alpha",
             ),
@@ -113,7 +107,6 @@ class OscProb(FunctionNode):
                 "sinSq2Theta12",
                 "sinSq2Theta13",
                 "DeltaMSq21",
-                "DeltaMSq31",
                 "DeltaMSq32",
                 "alpha",
             ),
@@ -132,7 +125,6 @@ class OscProb(FunctionNode):
         sinSq2Theta12 = inputs["sinSq2Theta12"].data[0]
         sinSq2Theta13 = inputs["sinSq2Theta13"].data[0]
         DeltaMSq21 = inputs["DeltaMSq21"].data[0]
-        DeltaMSq31 = inputs["DeltaMSq31"].data[0]
         DeltaMSq32 = inputs["DeltaMSq32"].data[0]
         alpha = inputs["alpha"].data[0]
 
@@ -144,7 +136,6 @@ class OscProb(FunctionNode):
             sinSq2Theta12,
             sinSq2Theta13,
             DeltaMSq21,
-            DeltaMSq31,
             DeltaMSq32,
             alpha,
         )
