@@ -35,7 +35,7 @@ def to_root(output: Union[Output, Any]) -> Dict[str, 'TObject']:
         if dd.axes_meshes:
             rets['graph'] = to_TGraph2(output)
     else:
-        raise RuntimeError('Unsupported output dimension: {dim}')
+        raise RuntimeError(f'Unsupported output dimension: {dim}')
 
     return rets
 

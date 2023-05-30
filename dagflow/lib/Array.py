@@ -67,8 +67,6 @@ class Array(FunctionNode):
             dd = self._output.dd
             dd.edges_inherited = False
 
-            axes_edges = []
-
             for edgesi in edges:
                 if isinstance(edgesi, Output):
                     dd.axes_edges+=(edgesi,)
