@@ -1,4 +1,4 @@
-from typing import List, Optional
+from typing import List, Optional, Literal
 from numpy.typing import DTypeLike, NDArray
 from numpy import product
 
@@ -63,7 +63,13 @@ class DataDescriptor:
     def nodes_arrays(self) -> Optional[List[NDArray]]:
         return tuple(o.data for o in self.axes_meshes)
 
-    def axis_label(self, axis: int=0, axistype: str='any', *, root: bool=False) -> Optional[str]:
+    def axis_label(
+        self,
+        axis: int=0,
+        axistype: Literal['any', 'edges', 'mesh']='any',
+        *,
+        root: bool=False
+    ) -> Optional[str]:
         if self.axes_edges and axistype in {'any', 'edges'}:
             try:
                 if root:
@@ -73,7 +79,7 @@ class DataDescriptor:
             except IndexError as e:
                 raise RuntimeError(f'Invalid axis index {axis}') from e
 
-        if self.axes_meshes and axistype in {'any', 'nodes'}:
+        if self.axes_meshes and axistype in {'any', 'mesh'}:
             try:
                 if root:
                     return self.axes_meshes[axis].node.labels.rootaxis
