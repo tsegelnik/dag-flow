@@ -127,7 +127,6 @@ class NodeStorage(NestedMKDict):
 
             return trunc(ret, width=truncate)
 
-
         return ret
 
     def to_latex(self, *, return_df: bool=False, **kwargs) -> Union[str, Tuple[str, DataFrame]]:
@@ -141,6 +140,11 @@ class NodeStorage(NestedMKDict):
         skip = {'path', 'label', 'flags'} # TODO, add LaTeX label
         odict = {'.'.join(k): v for k, v in data.walkitems() if not (k and k[-1] in skip)}
         datax(filename, **odict)
+
+    def to_root(self, filename: str) -> None:
+        from .export.to_root import ExportToRootVisitor
+        visitor = ExportToRootVisitor(filename)
+        self.visit(visitor)
 
     @staticmethod
     def current() -> Optional["NodeStorage"]:

@@ -61,21 +61,22 @@ class Array(FunctionNode):
         self.fcn = self._functions[self._mode]
 
         if edges is not None:
+            if not isinstance(edges, Sequence):
+                edges = (edges,)
+
             dd = self._output.dd
             dd.edges_inherited = False
-            if isinstance(edges, Output):
-                dd.axes_edges+=(edges,)
-            elif isinstance(edges, Node):
-                dd.axes_edges+=(edges.outputs[0],)
-            else:
-                # assume that the edges are Sequence[Output]
-                try:
-                    dd.axes_edges=dd.axes_edges + tuple(edges)
-                except Exception as exc:
+
+            for edgesi in edges:
+                if isinstance(edgesi, Output):
+                    dd.axes_edges+=(edgesi,)
+                elif isinstance(edgesi, Node):
+                    dd.axes_edges+=(edgesi.outputs[0],)
+                else:
                     raise InitializationError(
-                        "Array: edges must be `Output` or `Sequence[Output]`, "
+                        "Array: edges must be `Output/Node` or `Sequence[Output/Node]`, "
                         f"but given {edges=}, {type(edges)=}"
-                    ) from exc
+                    )
 
         if mode == "store":
             self.close()

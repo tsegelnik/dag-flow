@@ -48,6 +48,8 @@ class Labels:
         '_xaxis',
         '_axis',
         '_plottitle',
+        '_roottitle',
+        '_rootaxis',
         '_paths',
         'plottable'
     )
@@ -59,6 +61,8 @@ class Labels:
     _axis: Optional[str]
     _xaxis: Optional[str]
     _plottitle: Optional[str]
+    _roottitle: Optional[str]
+    _rootaxis: Optional[str]
     _mark: Optional[str]
     _paths: List[str]
     plottable: bool
@@ -126,6 +130,28 @@ class Labels:
     @plottitle.setter
     def plottitle(self, value: Optional[str]):
         self._plottitle = value
+
+    @property
+    def roottitle(self) -> Optional[str]:
+        if self._roottitle is not None:
+            return self._roottitle
+        title = self.plottitle
+        return title and title.replace('\\', '#').replace('$','')
+
+    @roottitle.setter
+    def roottitle(self, value: Optional[str]):
+        self._roottitle = value
+
+    @property
+    def rootaxis(self) -> Optional[str]:
+        if self._rootaxis is not None:
+            return self._rootaxis
+        axis = self.axis
+        return axis and axis.replace('\\', '#').replace('$','')
+
+    @rootaxis.setter
+    def rootaxis(self, value: Optional[str]):
+        self._rootaxis = value
 
     @property
     def axis(self) -> Optional[str]:

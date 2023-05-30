@@ -49,7 +49,7 @@ class Output:
         dtype: DTypeLike = None,
         shape: Optional[ShapeLike] = None,
         axes_edges: Optional[EdgesLike] = None,
-        axes_nodes: Optional[EdgesLike] = None,
+        axes_meshes: Optional[EdgesLike] = None,
         forbid_reallocation: bool = False,
     ):
         self._name = name
@@ -60,7 +60,7 @@ class Output:
         )
         self._forbid_reallocation = forbid_reallocation
 
-        self._dd = DataDescriptor(dtype, shape, axes_edges, axes_nodes)
+        self._dd = DataDescriptor(dtype, shape, axes_edges, axes_meshes)
 
         if data is None:
             self._allocatable = True if allocatable is None else allocatable

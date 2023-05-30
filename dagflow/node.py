@@ -160,15 +160,22 @@ class Node(Limbs):
         if (common_storage := NodeStorage.current()) is None:
             return node
 
-        storage = {"nodes": {name: node}}
+        storage = NestedMKDict({}, sep='.')
+        storage.child("nodes")[name] = node
         if len(node.outputs) == 1:
-            storage["outputs"] = {name: node.outputs[0]}
+            storage.child("outputs")[name] = node.outputs[0]
         common_storage ^= storage
 
         return node
 
     def __str__(self):
         return f"{{{self.name}}} {super().__str__()}"
+
+    def to_dict(self, *, label_from: str='text') -> dict:
+        return {
+                'label': self._labels[label_from],
+                'flags': ''
+                }
 
     #
     # Properties
