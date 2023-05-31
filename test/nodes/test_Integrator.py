@@ -1,4 +1,8 @@
 #!/usr/bin/env python
+from matplotlib.pyplot import close, subplots
+from numpy import allclose, linspace, meshgrid, pi, vectorize
+from pytest import mark, raises
+
 from dagflow.exception import TypeFunctionError
 from dagflow.graph import Graph
 from dagflow.graphviz import savegraph
@@ -9,9 +13,6 @@ from dagflow.lib.ManyToOneNode import ManyToOneNode
 from dagflow.lib.OneToOneNode import OneToOneNode
 from dagflow.lib.trigonometry import Cos, Sin
 from dagflow.plot import plot_auto
-from matplotlib.pyplot import close, subplots
-from numpy import allclose, linspace, meshgrid, pi, vectorize
-from pytest import mark, raises
 
 
 @mark.parametrize("align", ("left", "center", "right"))
@@ -195,7 +196,8 @@ def test_Integrator_gl2d(debug_graph, testname):
     savegraph(graph, f"output/{testname}.png")
 
 
-def test_Integrator_gl21d_x(debug_graph, testname):
+@mark.parametrize("dropdim", (True, False))
+def test_Integrator_gl2to1d_x(debug_graph, testname, dropdim):
     class Polynomial21(ManyToOneNode):
         def _fcn(self, _, inputs, outputs):
             outputs["result"].data[:] = vecF0(inputs[1].data) * vecF0(inputs[0].data)
@@ -222,6 +224,7 @@ def test_Integrator_gl21d_x(debug_graph, testname):
         sampler = IntegratorSampler("sampler", mode="2d")
         integrator = Integrator(
             "integrator",
+            dropdim=dropdim,
             label={
                 "plottitle": f"Integrator test: {testname}",
                 "axis": "integral",
@@ -241,16 +244,24 @@ def test_Integrator_gl21d_x(debug_graph, testname):
         poly0.outputs[0] >> integrator
         ordersX >> integrator("ordersX")
         ordersY >> integrator("ordersY")
-    res = (polyres.outputs[1].data.T - polyres.outputs[0].data.T) * (
-        polyres.outputs[3].data.T - polyres.outputs[2].data.T
-    )[0]
+    if dropdim:
+        res = (polyres.outputs[1].data.T - polyres.outputs[0].data.T) * (
+            polyres.outputs[3].data.T - polyres.outputs[2].data.T
+        )[0]
+        edges = [edgesX["array"]]
+    else:
+        res = (polyres.outputs[1].data - polyres.outputs[0].data) * (
+            polyres.outputs[3].data - polyres.outputs[2].data
+        )
+        edges = [edgesX["array"], edgesY["array"]]
     assert allclose(integrator.outputs[0].data, res, atol=1e-10)
-    assert integrator.outputs[0].dd.axes_edges == [edgesX["array"]]
+    assert integrator.outputs[0].dd.axes_edges == edges
 
     savegraph(graph, f"output/{testname}.png")
 
 
-def test_Integrator_gl21d_y(debug_graph, testname):
+@mark.parametrize("dropdim", (True, False))
+def test_Integrator_gl2to1d_y(debug_graph, testname, dropdim):
     class Polynomial21(ManyToOneNode):
         def _fcn(self, _, inputs, outputs):
             outputs["result"].data[:] = vecF0(inputs[1].data) * vecF0(inputs[0].data)
@@ -273,6 +284,7 @@ def test_Integrator_gl21d_y(debug_graph, testname):
         sampler = IntegratorSampler("sampler", mode="2d")
         integrator = Integrator(
             "integrator",
+            dropdim=dropdim,
             label={
                 "plottitle": f"Integrator test: {testname}",
                 "axis": "integral",
@@ -292,11 +304,18 @@ def test_Integrator_gl21d_y(debug_graph, testname):
         poly0.outputs[0] >> integrator
         ordersX >> integrator("ordersX")
         ordersY >> integrator("ordersY")
-    res = (polyres.outputs[1].data - polyres.outputs[0].data) * (
-        polyres.outputs[3].data - polyres.outputs[2].data
-    )[0]
+    if dropdim:
+        res = (polyres.outputs[1].data - polyres.outputs[0].data) * (
+            polyres.outputs[3].data - polyres.outputs[2].data
+        )[0]
+        edges = [edgesY["array"]]
+    else:
+        res = (polyres.outputs[1].data - polyres.outputs[0].data) * (
+            polyres.outputs[3].data - polyres.outputs[2].data
+        )
+        edges = [edgesX["array"], edgesY["array"]]
     assert allclose(integrator.outputs[0].data, res, atol=1e-10)
-    assert integrator.outputs[0].dd.axes_edges == [edgesY["array"]]
+    assert integrator.outputs[0].dd.axes_edges == edges
 
     savegraph(graph, f"output/{testname}.png")
 

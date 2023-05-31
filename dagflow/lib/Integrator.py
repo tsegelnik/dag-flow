@@ -47,7 +47,7 @@ def _integrate2d(result: NDArray, data: NDArray, ordersX: NDArray, ordersY: NDAr
 
 
 @njit(cache=True)
-def _integrate21d(result: NDArray, data: NDArray, orders: NDArray):
+def _integrate2to1d(result: NDArray, data: NDArray, orders: NDArray):
     """
     Summing up `data` within `orders` and then puts the result into `result`.
     The 21-dimensional version of integration, where y dimension is dropped.
@@ -79,11 +79,12 @@ class Integrator(FunctionNode):
     .. _Numba: https://numba.pydata.org
     """
 
-    __slots__ = ("__buffer",)
+    __slots__ = ("__buffer", "_dropdim")
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args, dropdim: bool = True, **kwargs):
         kwargs.setdefault("missing_input_handler", MissingInputAddPair())
         super().__init__(*args, **kwargs)
+        self._dropdim = dropdim
         self._add_input("weights", positional=False)
         self._add_input("ordersX", positional=False)
         self._functions.update(
@@ -94,6 +95,10 @@ class Integrator(FunctionNode):
                 211: self._fcn_21d_y,
             }
         )
+
+    @property
+    def dropdim(self) -> bool:
+        return self._dropdim
 
     def _typefunc(self) -> None:
         """
@@ -121,22 +126,22 @@ class Integrator(FunctionNode):
         edgeslenX, edgesX = self.__check_orders("ordersX", input0.dd.shape[0])
         if dim == 2:
             edgeslenY, edgesY = self.__check_orders("ordersY", input0.dd.shape[1])
-            if edgeslenY == 2:  # drop Y dimension
+            if self.dropdim and edgeslenY == 2:  # drop Y dimension
                 shape = [edgeslenX - 1]
                 edges = [edgesX]
                 self.fcn = self._functions[211]
-            elif edgeslenX == 2:  # drop X dimension
+            elif self.dropdim and edgeslenX == 2:  # drop X dimension
                 shape = [edgeslenY - 1]
                 edges = [edgesY]
                 self.fcn = self._functions[210]
             else:
                 shape = [edgeslenX - 1, edgeslenY - 1]
                 edges = [edgesX, edgesY]
-                self.fcn = self._functions[dim]
+                self.fcn = self._functions[2]
         else:
             shape = [edgeslenX - 1]
             edges = [edgesX]
-            self.fcn = self._functions[dim]
+            self.fcn = self._functions[1]
 
         shape = tuple(shape)
         for output in self.outputs:
@@ -196,7 +201,7 @@ class Integrator(FunctionNode):
         ordersY = inputs["ordersY"].data  # (m, )
         for input, output in zip(inputs.iter_data(), outputs.iter_data()):
             multiply(input, weights, out=self.__buffer)
-            _integrate21d(output, self.__buffer.T, ordersY)
+            _integrate2to1d(output, self.__buffer.T, ordersY)
         if self.debug:
             return list(outputs.iter_data())
 
@@ -206,6 +211,6 @@ class Integrator(FunctionNode):
         ordersX = inputs["ordersX"].data  # (m, )
         for input, output in zip(inputs.iter_data(), outputs.iter_data()):
             multiply(input, weights, out=self.__buffer)
-            _integrate21d(output, self.__buffer, ordersX)
+            _integrate2to1d(output, self.__buffer, ordersX)
         if self.debug:
             return list(outputs.iter_data())
