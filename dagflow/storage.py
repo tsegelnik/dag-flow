@@ -138,8 +138,8 @@ class NodeStorage(NestedMKDict):
 
     def to_datax(self, filename: str, **kwargs) -> None:
         data = self.to_dict(**kwargs)
-        skip = {'path', 'label', 'flags'} # TODO, add LaTeX label
-        odict = {'.'.join(k): v for k, v in data.walkitems() if not (k and k[-1] in skip)}
+        include = ('value', 'central', 'sigma', 'sigma_rel_perc')
+        odict = {'.'.join(k): v for k, v in data.walkitems() if (k and k[-1] in include)}
         datax(filename, **odict)
 
     def to_root(self, filename: str) -> None:
