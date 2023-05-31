@@ -30,9 +30,7 @@ def _integrate1d(result: NDArray, data: NDArray, ordersX: NDArray):
 
 
 @njit(cache=True)
-def _integrate2d(
-    result: NDArray, data: NDArray, ordersX: NDArray, ordersY: NDArray
-):
+def _integrate2d(result: NDArray, data: NDArray, ordersX: NDArray, ordersY: NDArray):
     """
     Summing up `data` within `ordersX` and `ordersY` and then
     puts the result into `result`. The 2-dimensional version of integration.
@@ -46,6 +44,32 @@ def _integrate2d(
             result[i, j] = data[iprev:inext, jprev:jnext].sum()
             jprev = jnext
         iprev = inext
+
+
+@njit(cache=True)
+def _integrate21d_x(result: NDArray, data: NDArray, ordersX: NDArray):
+    """
+    Summing up `data` within `ordersY` and then puts the result into `result`.
+    The 21-dimensional version of integration, where x-dimension is dropped.
+    """
+    iprev = 0
+    for i, orderx in enumerate(ordersX):
+        inext = iprev + orderx
+        result[i] = data[iprev:inext, :].sum()
+        iprev = inext
+
+
+@njit(cache=True)
+def _integrate21d_y(result: NDArray, data: NDArray, ordersY: NDArray):
+    """
+    Summing up `data` within `ordersY` and then puts the result into `result`.
+    The 21-dimensional version of integration, where x-dimension is dropped.
+    """
+    jprev = 0
+    for j, ordery in enumerate(ordersY):
+        jnext = jprev + ordery
+        result[j] = data[:, jprev:jnext].sum()
+        jprev = jnext
 
 
 class Integrator(FunctionNode):
@@ -64,7 +88,7 @@ class Integrator(FunctionNode):
     .. _Numba: https://numba.pydata.org
     """
 
-    __slots__ = ("__buffer",)
+    __slots__ = "__buffer"
 
     def __init__(self, *args, **kwargs):
         kwargs.setdefault("missing_input_handler", MissingInputAddPair())
@@ -79,7 +103,7 @@ class Integrator(FunctionNode):
         Checks inputs dimension and, selects an integration algorithm,
         determines dtype and shape for outputs
         """
-        if len(self.inputs)==0:
+        if len(self.inputs) == 0:
             return
         check_has_inputs(self, "weights")
 
@@ -97,14 +121,20 @@ class Integrator(FunctionNode):
         check_input_dtype(self, (slice(None), "weights"), dtype)
 
         edgeslenX, edgesX = self.__check_orders("ordersX", input0.dd.shape[0])
-        shape = [edgeslenX]
-        edges = [edgesX]
         if dim == 2:
-            edgeslenY, edgesY = self.__check_orders(
-                "ordersY", input0.dd.shape[1]
-            )
-            shape.append(edgeslenY)
-            edges.append(edgesY)
+            edgeslenY, edgesY = self.__check_orders("ordersY", input0.dd.shape[1])
+            if edgeslenY == 2:  # drop Y dimension
+                shape = [edgeslenX - 1]
+                edges = [edgesX]
+            elif edgeslenX == 2:  # drop X dimension
+                shape = [edgeslenY - 1]
+                edges = [edgesY]
+            else:
+                shape = [edgeslenX - 1, edgeslenY - 1]
+                edges = [edgesX, edgesY]
+        else:
+            shape = [edgeslenX - 1]
+            edges = [edgesX]
 
         shape = tuple(shape)
         self.fcn = self._functions[dim]
@@ -131,7 +161,7 @@ class Integrator(FunctionNode):
             )
         check_input_edges_dim(self, name, 1)
         edges = orders.dd.axes_edges[0]
-        return edges.dd.shape[0] - 1, edges
+        return edges.dd.shape[0], edges
 
     def _post_allocate(self):
         """Allocates the `buffer` within `weights`"""
