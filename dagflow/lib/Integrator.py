@@ -30,9 +30,7 @@ def _integrate1d(result: NDArray, data: NDArray, ordersX: NDArray):
 
 
 @njit(cache=True)
-def _integrate2d(
-    result: NDArray, data: NDArray, ordersX: NDArray, ordersY: NDArray
-):
+def _integrate2d(result: NDArray, data: NDArray, ordersX: NDArray, ordersY: NDArray):
     """
     Summing up `data` within `ordersX` and `ordersY` and then
     puts the result into `result`. The 2-dimensional version of integration.
@@ -48,6 +46,21 @@ def _integrate2d(
         iprev = inext
 
 
+@njit(cache=True)
+def _integrate2to1d(result: NDArray, data: NDArray, orders: NDArray):
+    """
+    Summing up `data` within `orders` and then puts the result into `result`.
+    The 21-dimensional version of integration, where y dimension is dropped.
+
+    .. note:: Note that the x dimension drop uses a matrix transpose before
+    """
+    iprev = 0
+    for i, orderx in enumerate(orders):
+        inext = iprev + orderx
+        result[i] = data[iprev:inext, :].sum()
+        iprev = inext
+
+
 class Integrator(FunctionNode):
     """
     The `Integrator` node performs integration (summation)
@@ -57,6 +70,8 @@ class Integrator(FunctionNode):
     in the type function within the inputs.
 
     For 2d-integration the `ordersY` input must be connected.
+    If any dimension has only one bin, the integrator drops this dimension and
+    returns 1d array.
 
     Note that the `Integrator` preallocates temporary buffer.
     For the integration algorithm the `Numba`_ package is used.
@@ -64,14 +79,26 @@ class Integrator(FunctionNode):
     .. _Numba: https://numba.pydata.org
     """
 
-    __slots__ = ("__buffer",)
+    __slots__ = ("__buffer", "_dropdim")
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args, dropdim: bool = True, **kwargs):
         kwargs.setdefault("missing_input_handler", MissingInputAddPair())
         super().__init__(*args, **kwargs)
+        self._dropdim = dropdim
         self._add_input("weights", positional=False)
         self._add_input("ordersX", positional=False)
-        self._functions.update({1: self._fcn_1d, 2: self._fcn_2d})
+        self._functions.update(
+            {
+                1: self._fcn_1d,
+                2: self._fcn_2d,
+                210: self._fcn_21d_x,
+                211: self._fcn_21d_y,
+            }
+        )
+
+    @property
+    def dropdim(self) -> bool:
+        return self._dropdim
 
     def _typefunc(self) -> None:
         """
@@ -79,7 +106,7 @@ class Integrator(FunctionNode):
         Checks inputs dimension and, selects an integration algorithm,
         determines dtype and shape for outputs
         """
-        if len(self.inputs)==0:
+        if len(self.inputs) == 0:
             return
         check_has_inputs(self, "weights")
 
@@ -97,17 +124,26 @@ class Integrator(FunctionNode):
         check_input_dtype(self, (slice(None), "weights"), dtype)
 
         edgeslenX, edgesX = self.__check_orders("ordersX", input0.dd.shape[0])
-        shape = [edgeslenX]
-        edges = [edgesX]
         if dim == 2:
-            edgeslenY, edgesY = self.__check_orders(
-                "ordersY", input0.dd.shape[1]
-            )
-            shape.append(edgeslenY)
-            edges.append(edgesY)
+            edgeslenY, edgesY = self.__check_orders("ordersY", input0.dd.shape[1])
+            if self.dropdim and edgeslenY == 2:  # drop Y dimension
+                shape = [edgeslenX - 1]
+                edges = [edgesX]
+                self.fcn = self._functions[211]
+            elif self.dropdim and edgeslenX == 2:  # drop X dimension
+                shape = [edgeslenY - 1]
+                edges = [edgesY]
+                self.fcn = self._functions[210]
+            else:
+                shape = [edgeslenX - 1, edgeslenY - 1]
+                edges = [edgesX, edgesY]
+                self.fcn = self._functions[2]
+        else:
+            shape = [edgeslenX - 1]
+            edges = [edgesX]
+            self.fcn = self._functions[1]
 
         shape = tuple(shape)
-        self.fcn = self._functions[dim]
         for output in self.outputs:
             output.dd.dtype = dtype
             output.dd.shape = shape
@@ -131,7 +167,7 @@ class Integrator(FunctionNode):
             )
         check_input_edges_dim(self, name, 1)
         edges = orders.dd.axes_edges[0]
-        return edges.dd.shape[0] - 1, edges
+        return edges.dd.shape[0], edges
 
     def _post_allocate(self):
         """Allocates the `buffer` within `weights`"""
@@ -156,5 +192,25 @@ class Integrator(FunctionNode):
         for input, output in zip(inputs.iter_data(), outputs.iter_data()):
             multiply(input, weights, out=self.__buffer)
             _integrate2d(output, self.__buffer, ordersX, ordersY)
+        if self.debug:
+            return list(outputs.iter_data())
+
+    def _fcn_21d_x(self, _, inputs, outputs):
+        """21d version of integration function where x-axis is dropped"""
+        weights = inputs["weights"].data  # (1, m)
+        ordersY = inputs["ordersY"].data  # (m, )
+        for input, output in zip(inputs.iter_data(), outputs.iter_data()):
+            multiply(input, weights, out=self.__buffer)
+            _integrate2to1d(output, self.__buffer.T, ordersY)
+        if self.debug:
+            return list(outputs.iter_data())
+
+    def _fcn_21d_y(self, _, inputs, outputs):
+        """21d version of integration function where y-axis is dropped"""
+        weights = inputs["weights"].data  # (m, 1)
+        ordersX = inputs["ordersX"].data  # (m, )
+        for input, output in zip(inputs.iter_data(), outputs.iter_data()):
+            multiply(input, weights, out=self.__buffer)
+            _integrate2to1d(output, self.__buffer, ordersX)
         if self.debug:
             return list(outputs.iter_data())
