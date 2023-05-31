@@ -353,6 +353,22 @@ class Output:
 
         return tainted
 
+    def to_dict(self, *, label_from: str = "text") -> dict:
+        data = self.data
+        shape = data.shape
+
+        ret = {
+            "label": self.labels[label_from],
+            "shape": shape[0] if len(data.shape)==1 else shape
+        }
+
+        if data.size > 1:
+            ret["value"]='…'
+            return ret
+
+        ret["value"]=float(data)
+        return ret
+
 class Outputs(EdgeContainer):
     def __init__(self, iterable=None) -> None:
         super().__init__(iterable)

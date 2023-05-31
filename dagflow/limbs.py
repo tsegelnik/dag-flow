@@ -130,8 +130,5 @@ class Limbs:
     def get_input_data(self, key):
         return self.inputs[key].data()
 
-    def to_dict(self, *, label_from: str = "text") -> dict:
-        data = self.get_data()
-        if data.size > 1:
-            raise AttributeError("to_dict")
-        return {"value": data[0], "label": self.labels[label_from]}
+    def to_dict(self, **kwargs) -> dict:
+        return self.outputs[0].to_dict(**kwargs)

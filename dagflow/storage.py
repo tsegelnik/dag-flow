@@ -84,7 +84,7 @@ class NodeStorage(NestedMKDict):
     def to_df(self, *, columns: Optional[List[str]]=None, **kwargs) -> DataFrame:
         dct = self.to_list(**kwargs)
         if columns is None:
-            columns = ['path', 'value', 'central', 'sigma', 'flags', 'label']
+            columns = ['path', 'value', 'central', 'sigma', 'flags', 'shape', 'label']
         df = DataFrame(dct, columns=columns)
 
         df.insert(4, 'sigma_rel_perc', df['sigma'])
@@ -100,15 +100,16 @@ class NodeStorage(NestedMKDict):
         df['value'].fillna('-', inplace=True)
         df['flags'].fillna('', inplace=True)
         df['label'].fillna('', inplace=True)
+        df['shape'].fillna('', inplace=True)
 
         if (df['flags']=='').all():
             del df['flags']
 
         return df
 
-    def to_string(self, **kwargs) -> str:
+    def to_str(self, **kwargs) -> str:
         df = self.to_df()
-        return df.to_string(**kwargs)
+        return df.to_str(**kwargs)
 
     def to_table(
         self,
@@ -202,6 +203,9 @@ class ParametersVisitor(NestedMKDictVisitor):
         except (AttributeError, IndexError):
             return
 
+        if dct is None:
+            return
+
         subkey = key[len(self._path):]
         subkeystr = '.'.join(subkey)
 
@@ -213,7 +217,9 @@ class ParametersVisitor(NestedMKDictVisitor):
     def exitdict(self, k, v):
         if self._localdata:
             self._data_list.append({
-                'path': f"group: {'.'.join(self._path)} [{len(self._localdata)}]"
+                'path': f"group: {'.'.join(self._path)} [{len(self._localdata)}]",
+                'shape': len(self._localdata),
+                'label': 'group'
                 })
             self._data_list.extend(self._localdata)
             self._localdata = []
