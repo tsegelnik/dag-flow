@@ -21,6 +21,11 @@ def trunc(text: str, width: int) -> str:
     return '\n'.join(line[:width] for line in text.split('\n'))
 
 class NodeStorage(NestedMKDict):
+    def __init__(self, *args, **kwargs):
+        kwargs.setdefault('sep', '.')
+        kwargs.setdefault('recursive_to_others', True)
+        super().__init__(*args, **kwargs)
+
     def read_paths(self) -> None:
         for key, value in self.walkitems():
             labels = getattr(value, 'labels', None)
@@ -55,6 +60,9 @@ class NodeStorage(NestedMKDict):
 
         if show_all:
             show()
+
+    def make_indices(self,) -> None:
+        pass
 
     def read_labels(self, source: Union[NestedMKDict, Dict]) -> None:
         source = NestedMKDict(source, sep='.')
