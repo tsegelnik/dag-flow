@@ -61,8 +61,11 @@ class NodeStorage(NestedMKDict):
         if show_all:
             show()
 
-    def make_indices(self,) -> None:
-        pass
+    def process_indices(self, index_values: Tuple[str, ...]) -> None:
+        from multikeydict.flatten import flatten
+        newdict = flatten(self, index_values)
+        for k, v in newdict.items():
+            self[k] = v
 
     def read_labels(self, source: Union[NestedMKDict, Dict]) -> None:
         source = NestedMKDict(source, sep='.')
