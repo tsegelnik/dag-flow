@@ -34,7 +34,7 @@ def test_PartialSums_01(testname, debug_graph, a):
 
 
 @mark.parametrize("a", (arange(12, dtype="d") * i for i in (1, 2, 3)))
-def test_PartialSums_edges(testname, debug_graph, a):
+def test_PartialSums_edges(debug_graph, a):
     arrays_range = [0, 12], [0, 3], [4, 10], [11, 12]
     with Graph(close=False, debug=debug_graph) as graph:
         edges = Array("edges", linspace(0, 13, 13))
