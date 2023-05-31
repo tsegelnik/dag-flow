@@ -2,7 +2,7 @@ from numba import njit
 from numpy import integer
 from numpy.typing import NDArray
 
-from ..exception import CriticalError
+from ..exception import TypeFunctionError
 from ..typefunctions import (
     AllPositionals,
     check_has_inputs,
@@ -51,7 +51,7 @@ class PartialSums(OneToOneNode):
         # now edges are restricted
         a = self.inputs["a"]
         if a.dd.axes_edges:
-            raise CriticalError(
+            raise TypeFunctionError(
                 "The PartialSums doesn't support edges functional, "
                 f"but given {a.dd.axes_edges}",
                 node=self,

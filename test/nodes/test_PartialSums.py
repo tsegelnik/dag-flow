@@ -1,11 +1,13 @@
 #!/usr/bin/env python
 
+from numpy import allclose, arange, finfo, linspace
+from pytest import mark, raises
+
+from dagflow.exception import TypeFunctionError
 from dagflow.graph import Graph
 from dagflow.graphviz import savegraph
 from dagflow.lib.Array import Array
 from dagflow.lib.PartialSums import PartialSums
-from numpy import allclose, arange, finfo
-from pytest import mark
 
 
 @mark.parametrize("a", (arange(12, dtype="d") * i for i in (1, 2, 3)))
@@ -14,8 +16,8 @@ def test_PartialSums_01(testname, debug_graph, a):
     arrays_res = tuple(a[ranges[0] : ranges[1]].sum() for ranges in arrays_range)
 
     with Graph(close=True, debug=debug_graph) as graph:
-        arra = Array("a", a)
         ranges = tuple(Array(f"range_{i}", arr) for i, arr in enumerate(arrays_range))
+        arra = Array("a", a)
         ps = PartialSums("partialsums")
         arra >> ps("a")
         ranges >> ps
@@ -29,3 +31,17 @@ def test_PartialSums_01(testname, debug_graph, a):
     assert ps.tainted is False
 
     savegraph(graph, f"output/{testname}.png", show="all")
+
+
+@mark.parametrize("a", (arange(12, dtype="d") * i for i in (1, 2, 3)))
+def test_PartialSums_edges(testname, debug_graph, a):
+    arrays_range = [0, 12], [0, 3], [4, 10], [11, 12]
+    with Graph(close=False, debug=debug_graph) as graph:
+        edges = Array("edges", linspace(0, 13, 13))
+        arra = Array("a", a, edges=edges["array"])
+        ranges = tuple(Array(f"range_{i}", arr) for i, arr in enumerate(arrays_range))
+        ps = PartialSums("partialsums")
+        arra >> ps("a")
+        ranges >> ps
+    with raises(TypeFunctionError):
+        graph.close()
