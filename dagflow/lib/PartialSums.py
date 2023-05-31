@@ -22,7 +22,7 @@ def _psum(data: NDArray, range: NDArray, out: NDArray):
 class PartialSums(OneToOneNode):
     """
     inputs:
-        `a`: array to sum
+        `array`: array to sum
         `0`, `...`: range to partial sum
 
     outputs:
@@ -36,20 +36,20 @@ class PartialSums(OneToOneNode):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self._add_input("a", positional=False)
+        self._add_input("array", positional=False)
 
     def _typefunc(self) -> None:
-        check_has_inputs(self, "a")
+        check_has_inputs(self, "array")
         check_has_inputs(self, AllPositionals)
-        check_input_dimension(self, (AllPositionals, "a"), 1)
+        check_input_dimension(self, (AllPositionals, "array"), 1)
         check_input_subtype(self, AllPositionals, integer)
         check_input_shape(self, AllPositionals, (2,))
-        copy_input_dtype_to_output(self, "a", AllPositionals)
+        copy_input_dtype_to_output(self, "array", AllPositionals)
         for out in self.outputs:
             out.dd.shape = (1,)
         # TODO: axes_edges and axes_meshes?
         # now edges are restricted
-        a = self.inputs["a"]
+        a = self.inputs["array"]
         if a.dd.axes_edges:
             raise TypeFunctionError(
                 "The PartialSums doesn't support edges functional, "
@@ -59,7 +59,7 @@ class PartialSums(OneToOneNode):
             )
 
     def _fcn(self, _, inputs, outputs):
-        data = inputs["a"].data
+        data = inputs["array"].data
         for inp, out in zip(inputs, outputs):
             _psum(data, inp.data, out.data)
         return list(outputs.iter_data())

@@ -19,7 +19,7 @@ def test_PartialSums_01(testname, debug_graph, a):
         ranges = tuple(Array(f"range_{i}", arr) for i, arr in enumerate(arrays_range))
         arra = Array("a", a)
         ps = PartialSums("partialsums")
-        arra >> ps("a")
+        arra >> ps("array")
         ranges >> ps
 
     atol = finfo("d").precision * 2
@@ -41,7 +41,7 @@ def test_PartialSums_edges(testname, debug_graph, a):
         arra = Array("a", a, edges=edges["array"])
         ranges = tuple(Array(f"range_{i}", arr) for i, arr in enumerate(arrays_range))
         ps = PartialSums("partialsums")
-        arra >> ps("a")
+        arra >> ps("array")
         ranges >> ps
     with raises(TypeFunctionError):
         graph.close()
