@@ -8,11 +8,11 @@ from dagflow.lib.IntegratorSampler import IntegratorSampler
 from dagflow.lib.ManyToOneNode import ManyToOneNode
 from dagflow.lib.OneToOneNode import OneToOneNode
 from dagflow.lib.trigonometry import Cos, Sin
+from dagflow.plot import plot_auto
+from matplotlib.pyplot import close, subplots
 from numpy import allclose, linspace, meshgrid, pi, vectorize
 from pytest import mark, raises
 
-from dagflow.plot import plot_auto
-from matplotlib.pyplot import subplots, close
 
 @mark.parametrize("align", ("left", "center", "right"))
 def test_Integrator_rect_center(align, debug_graph, testname):
@@ -116,15 +116,21 @@ def test_Integrator_gl1d(debug_graph, testname):
 def test_Integrator_gl2d(debug_graph, testname):
     class Polynomial1(ManyToOneNode):
         def _fcn(self, _, inputs, outputs):
-            outputs["result"].data[:] = vecF0(inputs[1].data) * vecF0(
-                inputs[0].data
-            )
+            outputs["result"].data[:] = vecF0(inputs[1].data) * vecF0(inputs[0].data)
             return list(outputs.iter_data())
 
     with Graph(debug=debug_graph, close=True) as graph:
         npointsX, npointsY = 10, 20
-        edgesX = Array("edgesX", linspace(0, 10, npointsX + 1), label={'axis': 'Label for axis X'})
-        edgesY = Array("edgesY", linspace(2, 12, npointsY + 1), label={'axis': 'Label for axis Y'})
+        edgesX = Array(
+            "edgesX",
+            linspace(0, 10, npointsX + 1),
+            label={"axis": "Label for axis X"},
+        )
+        edgesY = Array(
+            "edgesY",
+            linspace(2, 12, npointsY + 1),
+            label={"axis": "Label for axis Y"},
+        )
         ordersX = Array("ordersX", [2] * npointsX, edges=edgesX["array"])
         ordersY = Array("ordersY", [2] * npointsY, edges=edgesY["array"])
         x0, y0 = meshgrid(edgesX._data[:-1], edgesY._data[:-1], indexing="ij")
@@ -132,7 +138,13 @@ def test_Integrator_gl2d(debug_graph, testname):
         X0, X1 = Array("X0", x0), Array("X1", x1)
         Y0, Y1 = Array("Y0", y0), Array("Y1", y1)
         sampler = IntegratorSampler("sampler", mode="2d")
-        integrator = Integrator("integrator", label={'plottitle': f'Integrator test: {testname}', 'axis': 'integral'})
+        integrator = Integrator(
+            "integrator",
+            label={
+                "plottitle": f"Integrator test: {testname}",
+                "axis": "integral",
+            },
+        )
         poly0 = Polynomial1("poly0")
         polyres = PolynomialRes("polyres")
         ordersX >> sampler("ordersX")
@@ -156,32 +168,138 @@ def test_Integrator_gl2d(debug_graph, testname):
         edgesY["array"],
     ]
 
-    from mpl_toolkits.mplot3d import axes3d
-    subplots(1, 1, subplot_kw={'projection': '3d'})
-    plot_auto(integrator, method='bar3d', colorbar=True)
+    subplots(1, 1, subplot_kw={"projection": "3d"})
+    plot_auto(integrator, method="bar3d", colorbar=True)
 
     subplots(1, 1)
-    plot_auto(integrator, method='pcolormesh', colorbar=True)
+    plot_auto(integrator, method="pcolormesh", colorbar=True)
 
     subplots(1, 1)
-    plot_auto(integrator, method='pcolor', colorbar=True)
+    plot_auto(integrator, method="pcolor", colorbar=True)
 
     subplots(1, 1)
-    plot_auto(integrator, method='pcolorfast', colorbar=True)
+    plot_auto(integrator, method="pcolorfast", colorbar=True)
 
     subplots(1, 1)
-    plot_auto(integrator, method='imshow', colorbar=True)
+    plot_auto(integrator, method="imshow", colorbar=True)
 
     subplots(1, 1)
-    plot_auto(integrator, method='matshow', colorbar=True)
+    plot_auto(integrator, method="matshow", colorbar=True)
 
     subplots(1, 1)
-    plot_auto(integrator, method='matshow', extent=None, colorbar=True)
+    plot_auto(integrator, method="matshow", extent=None, colorbar=True)
 
     for _ in range(7):
         close()
 
     savegraph(graph, f"output/{testname}.png")
+
+
+def test_Integrator_gl21d_x(debug_graph, testname):
+    class Polynomial21(ManyToOneNode):
+        def _fcn(self, _, inputs, outputs):
+            outputs["result"].data[:] = vecF0(inputs[1].data) * vecF0(inputs[0].data)
+            return list(outputs.iter_data())
+
+    with Graph(debug=debug_graph, close=True) as graph:
+        npointsX = 20
+        edgesX = Array(
+            "edgesX",
+            linspace(2, 12, npointsX + 1),
+            label={"axis": "Label for axis X"},
+        )
+        edgesY = Array(
+            "edgesY",
+            [0, 1],
+            label={"axis": "Label for axis Y"},
+        )
+        ordersX = Array("ordersX", [2] * npointsX, edges=edgesX["array"])
+        ordersY = Array("ordersY", [2], edges=edgesY["array"])
+        x0, y0 = meshgrid(edgesX._data[:-1], edgesY._data[:-1], indexing="ij")
+        x1, y1 = meshgrid(edgesX._data[1:], edgesY._data[1:], indexing="ij")
+        X0, X1 = Array("X0", x0), Array("X1", x1)
+        Y0, Y1 = Array("Y0", y0), Array("Y1", y1)
+        sampler = IntegratorSampler("sampler", mode="2d")
+        integrator = Integrator(
+            "integrator",
+            label={
+                "plottitle": f"Integrator test: {testname}",
+                "axis": "integral",
+            },
+        )
+        poly0 = Polynomial21("poly0")
+        polyres = PolynomialRes("polyres")
+        ordersX >> sampler("ordersX")
+        ordersY >> sampler("ordersY")
+        sampler.outputs["x"] >> poly0
+        sampler.outputs["y"] >> poly0
+        X0 >> polyres
+        X1 >> polyres
+        Y0 >> polyres
+        Y1 >> polyres
+        sampler.outputs["weights"] >> integrator("weights")
+        poly0.outputs[0] >> integrator
+        ordersX >> integrator("ordersX")
+        ordersY >> integrator("ordersY")
+    res = (polyres.outputs[1].data.T - polyres.outputs[0].data.T) * (
+        polyres.outputs[3].data.T - polyres.outputs[2].data.T
+    )[0]
+    assert allclose(integrator.outputs[0].data, res, atol=1e-10)
+    assert integrator.outputs[0].dd.axes_edges == [edgesX["array"]]
+
+    savegraph(graph, f"output/{testname}.png")
+
+
+def test_Integrator_gl21d_y(debug_graph, testname):
+    class Polynomial21(ManyToOneNode):
+        def _fcn(self, _, inputs, outputs):
+            outputs["result"].data[:] = vecF0(inputs[1].data) * vecF0(inputs[0].data)
+            return list(outputs.iter_data())
+
+    with Graph(debug=debug_graph, close=True) as graph:
+        npointsY = 20
+        edgesX = Array("edgesX", [0, 1], label={"axis": "Label for axis X"})
+        edgesY = Array(
+            "edgesY",
+            linspace(2, 12, npointsY + 1),
+            label={"axis": "Label for axis Y"},
+        )
+        ordersX = Array("ordersX", [2], edges=edgesX["array"])
+        ordersY = Array("ordersY", [2] * npointsY, edges=edgesY["array"])
+        x0, y0 = meshgrid(edgesX._data[:-1], edgesY._data[:-1], indexing="ij")
+        x1, y1 = meshgrid(edgesX._data[1:], edgesY._data[1:], indexing="ij")
+        X0, X1 = Array("X0", x0), Array("X1", x1)
+        Y0, Y1 = Array("Y0", y0), Array("Y1", y1)
+        sampler = IntegratorSampler("sampler", mode="2d")
+        integrator = Integrator(
+            "integrator",
+            label={
+                "plottitle": f"Integrator test: {testname}",
+                "axis": "integral",
+            },
+        )
+        poly0 = Polynomial21("poly0")
+        polyres = PolynomialRes("polyres")
+        ordersX >> sampler("ordersX")
+        ordersY >> sampler("ordersY")
+        sampler.outputs["x"] >> poly0
+        sampler.outputs["y"] >> poly0
+        X0 >> polyres
+        X1 >> polyres
+        Y0 >> polyres
+        Y1 >> polyres
+        sampler.outputs["weights"] >> integrator("weights")
+        poly0.outputs[0] >> integrator
+        ordersX >> integrator("ordersX")
+        ordersY >> integrator("ordersY")
+    res = (polyres.outputs[1].data - polyres.outputs[0].data) * (
+        polyres.outputs[3].data - polyres.outputs[2].data
+    )[0]
+    assert allclose(integrator.outputs[0].data, res, atol=1e-10)
+    assert integrator.outputs[0].dd.axes_edges == [edgesY["array"]]
+
+    savegraph(graph, f"output/{testname}.png")
+
 
 # test wrong ordersX: edges not given
 def test_Integrator_edges_0(debug_graph):
@@ -239,12 +357,8 @@ def test_Integrator_03(debug_graph):
     with Graph(debug=debug_graph, close=False):
         edgesX = Array("edgesX", [-1.0, 0.0, 1.0])
         edgesY = Array("edgesY", [-2.0, -1, 0.0, 1.0])
-        arr1 = Array(
-            "array", [arr, arr], edges=[edgesX["array"], edgesY["array"]]
-        )
-        weights = Array(
-            "weights", [arr, arr], edges=[edgesX["array"], edgesY["array"]]
-        )
+        arr1 = Array("array", [arr, arr], edges=[edgesX["array"], edgesY["array"]])
+        weights = Array("weights", [arr, arr], edges=[edgesX["array"], edgesY["array"]])
         ordersX = Array("ordersX", [1, 3], edges=edgesX["array"])
         ordersY = Array("ordersY", [1, 0, 0], edges=edgesY["array"])
         integrator = Integrator("integrator")

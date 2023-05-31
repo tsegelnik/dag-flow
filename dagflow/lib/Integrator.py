@@ -47,29 +47,18 @@ def _integrate2d(result: NDArray, data: NDArray, ordersX: NDArray, ordersY: NDAr
 
 
 @njit(cache=True)
-def _integrate21d_x(result: NDArray, data: NDArray, ordersX: NDArray):
+def _integrate21d(result: NDArray, data: NDArray, orders: NDArray):
     """
-    Summing up `data` within `ordersY` and then puts the result into `result`.
-    The 21-dimensional version of integration, where x-dimension is dropped.
+    Summing up `data` within `orders` and then puts the result into `result`.
+    The 21-dimensional version of integration, where y dimension is dropped.
+
+    .. note:: Note that the x dimension drop uses a matrix transpose before
     """
     iprev = 0
-    for i, orderx in enumerate(ordersX):
+    for i, orderx in enumerate(orders):
         inext = iprev + orderx
         result[i] = data[iprev:inext, :].sum()
         iprev = inext
-
-
-@njit(cache=True)
-def _integrate21d_y(result: NDArray, data: NDArray, ordersY: NDArray):
-    """
-    Summing up `data` within `ordersY` and then puts the result into `result`.
-    The 21-dimensional version of integration, where x-dimension is dropped.
-    """
-    jprev = 0
-    for j, ordery in enumerate(ordersY):
-        jnext = jprev + ordery
-        result[j] = data[:, jprev:jnext].sum()
-        jprev = jnext
 
 
 class Integrator(FunctionNode):
@@ -81,6 +70,8 @@ class Integrator(FunctionNode):
     in the type function within the inputs.
 
     For 2d-integration the `ordersY` input must be connected.
+    If any dimension has only one bin, the integrator drops this dimension and
+    returns 1d array.
 
     Note that the `Integrator` preallocates temporary buffer.
     For the integration algorithm the `Numba`_ package is used.
@@ -88,14 +79,21 @@ class Integrator(FunctionNode):
     .. _Numba: https://numba.pydata.org
     """
 
-    __slots__ = "__buffer"
+    __slots__ = ("__buffer",)
 
     def __init__(self, *args, **kwargs):
         kwargs.setdefault("missing_input_handler", MissingInputAddPair())
         super().__init__(*args, **kwargs)
         self._add_input("weights", positional=False)
         self._add_input("ordersX", positional=False)
-        self._functions.update({1: self._fcn_1d, 2: self._fcn_2d})
+        self._functions.update(
+            {
+                1: self._fcn_1d,
+                2: self._fcn_2d,
+                210: self._fcn_21d_x,
+                211: self._fcn_21d_y,
+            }
+        )
 
     def _typefunc(self) -> None:
         """
@@ -126,18 +124,21 @@ class Integrator(FunctionNode):
             if edgeslenY == 2:  # drop Y dimension
                 shape = [edgeslenX - 1]
                 edges = [edgesX]
+                self.fcn = self._functions[211]
             elif edgeslenX == 2:  # drop X dimension
                 shape = [edgeslenY - 1]
                 edges = [edgesY]
+                self.fcn = self._functions[210]
             else:
                 shape = [edgeslenX - 1, edgeslenY - 1]
                 edges = [edgesX, edgesY]
+                self.fcn = self._functions[dim]
         else:
             shape = [edgeslenX - 1]
             edges = [edgesX]
+            self.fcn = self._functions[dim]
 
         shape = tuple(shape)
-        self.fcn = self._functions[dim]
         for output in self.outputs:
             output.dd.dtype = dtype
             output.dd.shape = shape
@@ -186,5 +187,25 @@ class Integrator(FunctionNode):
         for input, output in zip(inputs.iter_data(), outputs.iter_data()):
             multiply(input, weights, out=self.__buffer)
             _integrate2d(output, self.__buffer, ordersX, ordersY)
+        if self.debug:
+            return list(outputs.iter_data())
+
+    def _fcn_21d_x(self, _, inputs, outputs):
+        """21d version of integration function where x-axis is dropped"""
+        weights = inputs["weights"].data  # (1, m)
+        ordersY = inputs["ordersY"].data  # (m, )
+        for input, output in zip(inputs.iter_data(), outputs.iter_data()):
+            multiply(input, weights, out=self.__buffer)
+            _integrate21d(output, self.__buffer.T, ordersY)
+        if self.debug:
+            return list(outputs.iter_data())
+
+    def _fcn_21d_y(self, _, inputs, outputs):
+        """21d version of integration function where y-axis is dropped"""
+        weights = inputs["weights"].data  # (m, 1)
+        ordersX = inputs["ordersX"].data  # (m, )
+        for input, output in zip(inputs.iter_data(), outputs.iter_data()):
+            multiply(input, weights, out=self.__buffer)
+            _integrate21d(output, self.__buffer, ordersX)
         if self.debug:
             return list(outputs.iter_data())
