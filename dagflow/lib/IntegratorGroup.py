@@ -15,8 +15,11 @@ class IntegratorGroup(MetaNode):
     __slots__ = ("_sampler")
 
     _sampler: "Node"
-    def __init__(self, mode: str, *, dropdim: bool=True, labels: Mapping={}):
+    def __init__(self, mode: str, *, bare: bool=False, dropdim: bool=True, labels: Mapping={}):
         super().__init__()
+        if bare:
+            return
+
         self._init_sampler(mode, "sampler", labels.get("sampler", {}))
         self._add_integrator("integrator", labels.get("integrator", {}), dropdim=dropdim)
 
@@ -48,3 +51,12 @@ class IntegratorGroup(MetaNode):
             missing_inputs=True,
             also_missing_outputs=True,
         )
+
+    @classmethod
+    def replicate(cls, mode: str, labels: Mapping={}, **kwargs):
+        integrators = cls(mode, bare=True, **kwargs)
+
+        integrators._init_sampler(mode, "sampler", labels.get("sampler", {}))
+        integrators._add_integrator("integrator", labels.get("integrator", {}))
+
+        return integrators
