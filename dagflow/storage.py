@@ -1,6 +1,8 @@
+from multikeydict.typing import Key
 from multikeydict.nestedmkdict import NestedMKDict
 from multikeydict.visitor import NestedMKDictVisitor
 from .output import Output
+from .input import Input
 from .node import Node
 from .logger import logger, DEBUG
 
@@ -21,10 +23,15 @@ def trunc(text: str, width: int) -> str:
     return '\n'.join(line[:width] for line in text.split('\n'))
 
 class NodeStorage(NestedMKDict):
-    def __init__(self, *args, **kwargs):
+    __slots__ = ('_remove_connected_inputs',)
+    _remove_connected_inputs: bool
+
+    def __init__(self, *args, remove_connected_inputs: bool=True, **kwargs):
         kwargs.setdefault('sep', '.')
         kwargs.setdefault('recursive_to_others', True)
         super().__init__(*args, **kwargs)
+
+        self._remove_connected_inputs = remove_connected_inputs
 
     def read_paths(self) -> None:
         for key, value in self.walkitems():
@@ -61,6 +68,44 @@ class NodeStorage(NestedMKDict):
         if show_all:
             show()
 
+    #
+    # Connectors
+    #
+    def __rshift__(self, other: NestedMKDict):
+        if not isinstance(other, NestedMKDict):
+            raise RuntimeError("Operator >> RHS should be NestedMKDict")
+
+        nconnections = 0
+        to_remove = []
+        for keyleft, valueleft in self.walkitems():
+            if not isinstance(valueleft, Output):
+                raise RuntimeError(f"Invalid left value type for {keyleft}: {type(valueleft)} (need Output)")
+            setleft = set(keyleft)
+
+            for keyright, valueright in other.walkitems():
+                if not isinstance(right, (Input, Node)):
+                    raise RuntimeError(f"Invalid right value type for {keyright}: {type(valueright)} (need Input/Node)")
+                setright = set(keyright)
+
+                if not setleft.issubset(setright):
+                    continue
+
+                valueleft >> valueright
+
+                if self._remove_connected_inputs:
+                    to_remove.append(keyright)
+                nconnections+=1
+
+        if nconnections==0:
+            raise RuntimeError("No connections are done")
+
+        for key in to_remove:
+            print('remove', key)
+            del other[key]
+
+    #
+    # Finalizers
+    #
     def process_indices(self, index_values: Tuple[str, ...]) -> None:
         from multikeydict.flatten import flatten
         newdict = flatten(self, index_values)
@@ -69,15 +114,19 @@ class NodeStorage(NestedMKDict):
 
     def read_labels(self, source: Union[NestedMKDict, Dict]) -> None:
         source = NestedMKDict(source, sep='.')
+
+        def get_label(key):
+            try:
+                labels = source(key)
+            except (KeyError, TypeError):
+                return None
+
         for key, object in self.walkitems():
             if not isinstance(object, (Node, Output)):
                 continue
 
             logger.log(DEBUG, f"Look up label for {'.'.join(key)}")
-            try:
-                labels = source(key)
-            except (KeyError, TypeError):
-                continue
+            labels = get_label(key)
             logger.log(DEBUG, "... found")
 
             if isinstance(object, Node):
@@ -85,6 +134,21 @@ class NodeStorage(NestedMKDict):
             elif isinstance(object, Output):
                 object.labels = object.labels or {}
                 object.labels.update(labels)
+
+    def remove_connected_inputs(self, key: Tuple[str,...]=()):
+        source = self(key)
+        to_remove = []
+        for key, input in source.walkitems():
+            if not isinstance(input, Input):
+                continuer
+            to_remove.append(key)
+
+        for key in to_remove:
+            del source[key]
+
+    #
+    # Converters
+    #
 
     def to_list(self, **kwargs) -> list:
         return self.visit(ParametersVisitor(kwargs)).data_list
@@ -158,6 +222,9 @@ class NodeStorage(NestedMKDict):
         visitor = ExportToRootVisitor(filename)
         self.visit(visitor)
 
+    #
+    # Current storage, context
+    #
     @staticmethod
     def current() -> Optional["NodeStorage"]:
         return _context_storage[-1] if _context_storage else None
