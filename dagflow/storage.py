@@ -112,9 +112,10 @@ class NodeStorage(NestedMKDict):
     #     for k, v in newdict.items():
     #         self[k] = v
 
-    def read_labels(self, source: Union[NestedMKDict, Dict]) -> None:
+    def read_labels(self, source: Union[NestedMKDict, Dict], *, strict: bool=False) -> None:
         source = NestedMKDict(source, sep='.')
 
+        processed_keys = set()
         def get_label(key):
             try:
                 # if strict:
@@ -124,6 +125,7 @@ class NodeStorage(NestedMKDict):
             except (KeyError, TypeError):
                 pass
             else:
+                processed_keys.add(key)
                 return labels
 
             keyleft = list(key[:-1])
@@ -135,6 +137,7 @@ class NodeStorage(NestedMKDict):
                 except (KeyError, TypeError):
                     keyright.insert(0, keyleft.pop())
                 else:
+                    processed_keys.add(tuple(groupkey))
                     return labels
 
         for key, object in self.walkitems():
@@ -151,6 +154,12 @@ class NodeStorage(NestedMKDict):
             elif isinstance(object, Output):
                 object.labels = object.labels or {}
                 object.labels.update(labels)
+
+        if strict:
+            for key in processed_keys:
+                source.delete_with_parents(key)
+            if source:
+                raise RuntimeError(f'The following label groups were not used: {tuple(source.keys())}')
 
     def remove_connected_inputs(self, key: Key=()):
         source = self(key)
