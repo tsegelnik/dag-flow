@@ -66,6 +66,8 @@ class IntegratorGroup(MetaNode):
     def replicate(
         cls,
         mode: str,
+        name_sampler: str="sampler",
+        name_integrator: str="integrator",
         labels: Mapping={},
         *,
         replicate: Tuple[Union[Tuple[str,...], str],...]=((),),
@@ -74,15 +76,15 @@ class IntegratorGroup(MetaNode):
         integrators = cls(mode, bare=True)
         storage = NodeStorage()
 
-        integrators._init_sampler(mode, "sampler", labels.get("sampler", {}))
+        integrators._init_sampler(mode, name_sampler, labels.get("sampler", {}))
         label_int = labels.get("integrator", {})
         for key in replicate:
-            name = ".".join(("integrator",) + key)
+            name = ".".join((name_integrator,) + key)
             integrator = integrators._add_integrator(name, label_int, positionals=False, dropdim=dropdim)
             integrator()
-            storage.child(('nodes', 'kinint'))[key] = integrator
-            storage.child(('inputs', 'kinint'))[key] = integrator.inputs[0]
-            storage.child(('outputs', 'kinint'))[key] = integrator.outputs[0]
+            storage.child(('nodes', name_integrator))[key] = integrator
+            storage.child(('inputs', name_integrator))[key] = integrator.inputs[0]
+            storage.child(('outputs', name_integrator))[key] = integrator.outputs[0]
 
         if (common_storage := NodeStorage.current()) is not None:
             common_storage^=storage
