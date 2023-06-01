@@ -264,6 +264,20 @@ class Input:
 
         return True
 
+    def to_dict(self, *, label_from: str = "text") -> dict:
+        try:
+            output = self.output
+        except AttributeError:
+            return {
+                    "label": "input",
+                    "shape": "?"
+                    }
+        else:
+            shape = output.dd.shape
+            return {
+                    "label": output.labels[label_from],
+                    "shape": shape[0] if len(shape)==1 else shape,
+            }
 
 class Inputs(EdgeContainer):
     def __init__(self, iterable=None):
