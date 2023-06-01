@@ -487,12 +487,12 @@ def assign_output_axes_from_inputs(
     outputkey: Union[str, int, slice, Sequence] = AllPositionals,
     *,
     assign_edges: bool = False,
-    assign_nodes: bool = False,
+    assign_meshes: bool = False,
     **kwargs
 ) -> None:
     """Set output edges/nodes based on inputs (take parent_output)"""
-    if not (assign_edges^assign_nodes):
-        raise TypeFunctionError("assign_output_axes_from_input: may not assign {assign_edges=} and {assign_nodes=}")
+    if not (assign_edges^assign_meshes):
+        raise TypeFunctionError("assign_output_axes_from_input: may not assign {assign_edges=} and {assign_meshes=}")
 
     inputs = tuple(node.inputs.iter(inputkey))
     outputs = tuple(node.outputs.iter(outputkey))
@@ -501,7 +501,7 @@ def assign_output_axes_from_inputs(
         if assign_edges:
             assign_output_edges(inputs, output, **kwargs)
 
-        if assign_nodes:
+        if assign_meshes:
             assign_output_meshes(inputs, output, **kwargs)
 
 def assign_outputs_axes_from_inputs(
@@ -510,13 +510,13 @@ def assign_outputs_axes_from_inputs(
     outputkey: Union[str, int, slice, Sequence] = AllPositionals,
     *,
     assign_edges: bool = False,
-    assign_nodes: bool = False,
+    assign_meshes: bool = False,
     ignore_Nd: bool = False,
     **kwargs
 ) -> None:
     """Set outputs' edges/nodes based on inputs (take parent_output). Process each pair."""
-    if not (assign_edges^assign_nodes):
-        raise TypeFunctionError("assign_output_axes_from_input: may not assign {assign_edges=} and {assign_nodes=}")
+    if not (assign_edges^assign_meshes):
+        raise TypeFunctionError("assign_output_axes_from_input: may not assign {assign_edges=} and {assign_meshes=}")
 
     inputs = tuple(node.inputs.iter(inputkey))
     outputs = tuple(node.outputs.iter(outputkey))
@@ -530,7 +530,7 @@ def assign_outputs_axes_from_inputs(
         if assign_edges:
             assign_output_edges(input, output, **kwargs)
 
-        if assign_nodes:
+        if assign_meshes:
             assign_output_meshes(input, output, **kwargs)
 
 def check_input_edges_dim(
