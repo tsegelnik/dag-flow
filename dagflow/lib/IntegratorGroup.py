@@ -1,3 +1,5 @@
+from multikeydict.typing import KeyLike
+
 from .Integrator import Integrator
 from .IntegratorSampler import IntegratorSampler, ModeType
 from ..meta_node import MetaNode
@@ -77,7 +79,7 @@ class IntegratorGroup(MetaNode):
         name_integrator: str="integrator",
         labels: Mapping={},
         *,
-        replicate: Tuple[Union[Tuple[str,...], str],...]=((),),
+        replicate: Tuple[KeyLike,...]=((),),
         dropdim: bool=True
     ) -> "IntegratorGroup":
         integrators = cls(mode, bare=True)
