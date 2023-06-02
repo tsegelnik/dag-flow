@@ -26,12 +26,24 @@ class NodeStorage(NestedMKDict):
     __slots__ = ('_remove_connected_inputs',)
     _remove_connected_inputs: bool
 
-    def __init__(self, *args, remove_connected_inputs: bool=True, **kwargs):
+    def __init__(
+        self,
+        *args,
+        remove_connected_inputs: bool=True,
+        default_containers: bool=False,
+        **kwargs
+    ):
         kwargs.setdefault('sep', '.')
         kwargs.setdefault('recursive_to_others', True)
         super().__init__(*args, **kwargs)
 
         self._remove_connected_inputs = remove_connected_inputs
+
+        if not default_containers:
+            return
+        for name in ('parameters', 'nodes', 'inputs', 'outputs'):
+            self.child(name)
+
 
     def plot(
         self,
@@ -63,7 +75,6 @@ class NodeStorage(NestedMKDict):
     # Connectors
     #
     def __rshift__(self, other: NestedMKDict):
-        from dagflow.parameters import Parameter
         if not isinstance(other, NestedMKDict):
             raise RuntimeError("Operator >> RHS should be NestedMKDict")
 
@@ -265,6 +276,15 @@ class NodeStorage(NestedMKDict):
     def __exit__(self, exc_type, exc_val, exc_tb):
         if _context_storage.pop()!=self:
             raise RuntimeError("NodeStorage: invalid context exit")
+
+    @classmethod
+    def update_current(cls, storage: NestedMKDict, *, strict: bool=True):
+        if (common_storage := cls.current()) is None:
+            return
+        if strict:
+            common_storage^=storage
+        else:
+            common_storage|=storage
 
 _context_storage: List[NodeStorage] = []
 
