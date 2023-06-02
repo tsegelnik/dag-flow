@@ -3,11 +3,11 @@ from multikeydict.typing import KeyLike
 from .Integrator import Integrator
 from .IntegratorSampler import IntegratorSampler, ModeType
 from ..meta_node import MetaNode
-from ..storage import NodeStorage
 
 from typing import Mapping, TYPE_CHECKING, Tuple, Union
 if TYPE_CHECKING:
     from ..node import Node
+    from ..storage import NodeStorage
 
 from ..meta_node import MetaNode
 from .Integrator import Integrator
@@ -81,9 +81,14 @@ class IntegratorGroup(MetaNode):
         *,
         replicate: Tuple[KeyLike,...]=((),),
         dropdim: bool=True
-    ) -> "IntegratorGroup":
-        integrators = cls(mode, bare=True)
+    ) -> Union["IntegratorGroup", "NodeStorage"]:
+        from ..storage import NodeStorage
         storage = NodeStorage()
+        nodes = storage.child('nodes')
+        inputs = storage.child('inputs')
+        outputs = storage.child('outputs')
+
+        integrators = cls(mode, bare=True)
 
         integrators._init_sampler(mode, name_sampler, labels.get("sampler", {}))
         label_int = labels.get("integrator", {})
@@ -91,11 +96,11 @@ class IntegratorGroup(MetaNode):
             name = ".".join((name_integrator,) + key)
             integrator = integrators._add_integrator(name, label_int, positionals=False, dropdim=dropdim)
             integrator()
-            storage.child(('nodes', name_integrator))[key] = integrator
-            storage.child(('inputs', name_integrator))[key] = integrator.inputs[0]
-            storage.child(('outputs', name_integrator))[key] = integrator.outputs[0]
+            nodes.child(name_integrator)[key] = integrator
+            inputs.child(name_integrator)[key] = integrator.inputs[0]
+            outputs.child(name_integrator)[key] = integrator.outputs[0]
 
         if (common_storage := NodeStorage.current()) is not None:
             common_storage^=storage
 
-        return integrators
+        return integrators, storage

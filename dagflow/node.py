@@ -32,6 +32,7 @@ from .types import GraphT
 from .labels import Labels
 if TYPE_CHECKING:
     from .meta_node import MetaNode
+    from .storage import NodeStorage
 
 class Node(Limbs):
     __slots__ = (
@@ -142,7 +143,7 @@ class Node(Limbs):
     @classmethod
     def make_stored(
         cls, name: str, *args, label_from: Optional[Mapping] = None, **kwargs
-    ) -> "Node":
+    ) -> Tuple[Optional["Node"], "NodeStorage"]:
         from multikeydict.nestedmkdict import NestedMKDict
 
         if label_from is not None:
@@ -156,17 +157,15 @@ class Node(Limbs):
         node = cls(name, *args, **kwargs)
 
         from .storage import NodeStorage
-
-        if (common_storage := NodeStorage.current()) is None:
-            return node
-
         storage = NestedMKDict({}, sep='.')
         storage.child("nodes")[name] = node
         if len(node.outputs) == 1:
             storage.child("outputs")[name] = node.outputs[0]
-        common_storage ^= storage
 
-        return node
+        if (common_storage := NodeStorage.current()) is not None:
+            common_storage^=storage
+
+        return node, storage
 
     def __str__(self):
         return f"{{{self.name}}} {super().__str__()}"
@@ -528,6 +527,8 @@ class Node(Limbs):
         if recursive:
             self.logger.debug(f"Node '{self.name}': Trigger recursive update types...")
             for input in self.inputs.iter_all():
+                if not input.connected():
+                    raise ClosingError('Input is not connected', node=self, input=input)
                 input.parent_node.update_types(recursive)
         self.logger.debug(f"Node '{self.name}': Update types...")
         self._typefunc()
