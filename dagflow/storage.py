@@ -3,7 +3,7 @@ from multikeydict.nestedmkdict import NestedMKDict
 from multikeydict.visitor import NestedMKDictVisitor
 from .output import Output
 from .input import Input
-from .node import Node
+from .node import Node, Limbs
 from .logger import logger, DEBUG
 
 from typing import Union, Tuple, List, Optional, Dict, Mapping
@@ -63,25 +63,24 @@ class NodeStorage(NestedMKDict):
     # Connectors
     #
     def __rshift__(self, other: NestedMKDict):
+        from dagflow.parameters import Parameter
         if not isinstance(other, NestedMKDict):
             raise RuntimeError("Operator >> RHS should be NestedMKDict")
 
         nconnections = 0
         to_remove = []
         for keyleft, valueleft in self.walkitems():
-            if not isinstance(valueleft, Output):
-                raise RuntimeError(f"Invalid left value type for {keyleft}: {type(valueleft)} (need Output)")
             setleft = set(keyleft)
 
             for keyright, valueright in other.walkitems():
-                if not isinstance(right, (Input, Node)):
-                    raise RuntimeError(f"Invalid right value type for {keyright}: {type(valueright)} (need Input/Node)")
                 setright = set(keyright)
-
                 if not setleft.issubset(setright):
                     continue
 
-                valueleft >> valueright
+                try:
+                    valueleft >> valueright
+                except TypeError as e:
+                    raise ConnectionError(f"Invalid NodeStorage>> types for {keyleft}/{keyright}: {type(valueleft)}/{type(valueright)}") from e
 
                 if self._remove_connected_inputs:
                     to_remove.append(keyright)
@@ -91,8 +90,17 @@ class NodeStorage(NestedMKDict):
             raise RuntimeError("No connections are done")
 
         for key in to_remove:
-            print('remove', key)
             del other[key]
+
+    def __lshift__(self, other: NestedMKDict):
+        if not isinstance(other, NestedMKDict):
+            raise RuntimeError("Operator >> RHS should be NestedMKDict")
+
+        for keyleft, node in self.walkitems():
+            try:
+                node << other
+            except TypeError as e:
+                raise ConnectionError(f"Invalid NodeStorage<< types for {keyleft}: {type(node)} {type(other)}") from e
 
     #
     # Finalizers

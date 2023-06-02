@@ -10,10 +10,11 @@ from numpy.typing import DTypeLike, ArrayLike
 from typing import Optional, Dict, Tuple, List, Union, Generator, Sequence
 
 class Parameter:
-    __slots__ = ('_idx','_parent', '_value_output', '_labelfmt')
-    _parent: Optional['Parameters']
+    __slots__ = ('_idx','_parent', '_value_output', '_connectible', '_labelfmt')
+    _parent: 'Parameters'
     _idx: int
     _value_output: Output
+    _connectible: Output
     _labelfmt: str
 
     def __init__(
@@ -22,12 +23,14 @@ class Parameter:
         idx: int=0,
         *,
         parent: 'Parameters',
+        connectible: Optional[Output]=None,
         labelfmt: str='{}'
     ):
         self._idx = idx
         self._parent = parent
         self._value_output = value_output
         self._labelfmt = labelfmt
+        self._connectible = value_output if connectible is None else connectible
 
     def __str__(self):
         return f'par v={self.value}'
@@ -48,6 +51,10 @@ class Parameter:
     def is_correlated(self) -> bool:
         return self._parent.is_correlated
 
+    @property
+    def connectible(self) -> Output:
+        return self._connectible
+
     def label(self, source: str='text') -> str:
         return self._labelfmt.format(self._value_output.node.labels[source])
 
@@ -57,6 +64,9 @@ class Parameter:
                 'label': self.label(label_from),
                 'flags': ''
                 }
+
+    def __rshift__(self, other):
+        self._connectible >> other
 
 class GaussianParameter(Parameter):
     __slots__ = ( '_central_output', '_sigma_output', '_normvalue_output')
@@ -457,6 +467,7 @@ class GaussianConstraint(Constraint):
                     self.sigma_total,
                     i,
                     normvalue_output=self.normvalue,
+                    connectible=self._norm_node.outputs[0],
                     parent=parameters
                 )
             )
