@@ -7,6 +7,7 @@ class Sum(ManyToOneNode):
     """Sum of all the inputs together"""
 
     def __init__(self, *args, **kwargs):
+        kwargs.setdefault('broadcastable', True)
         super().__init__(*args, **kwargs)
         self._labels.setdefault("mark", "Σ")
 
@@ -22,6 +23,7 @@ class Product(ManyToOneNode):
     """Product of all the inputs together"""
 
     def __init__(self, *args, **kwargs):
+        kwargs.setdefault('broadcastable', True)
         super().__init__(*args, **kwargs)
         self._labels.setdefault("mark", "Π")
 
@@ -40,6 +42,7 @@ class Division(ManyToOneNode):
     .. note:: a division by zero returns `nan`
     """
     def __init__(self, *args, **kwargs):
+        kwargs.setdefault('broadcastable', True)
         super().__init__(*args, **kwargs)
         self._labels.setdefault("mark", "÷")
 

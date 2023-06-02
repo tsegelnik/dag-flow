@@ -117,7 +117,7 @@ def copy_from_input_to_output(
         largest_size = largest_input.dd.size
         found_edges = bool(largest_input.dd.axes_edges)
         for input in inputs[1:]:
-            if prefer_largest_input and (newsize:=input.dd.size)<=largest_size:
+            if (newsize:=input.dd.size)<=largest_size and prefer_largest_input:
                 continue
             if prefer_edges and found_edges and not bool(input.dd.axes_edges):
                 continue
