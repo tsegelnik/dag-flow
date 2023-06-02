@@ -61,6 +61,8 @@ class ManyToOneNode(FunctionNode):
                 for inkey, output in walkitems(arg):
                     inkeyset = frozenset(inkey)
                     if inkey and not outkeyset.issubset(inkeyset):
+                        if inkeyset.intersection(outkeyset):
+                            raise ConnectionError(f"Unsupported LHS key {inkey}. RHS key is {outkey}")
                         continue
 
                     try:
