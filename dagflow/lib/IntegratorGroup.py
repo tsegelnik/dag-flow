@@ -83,10 +83,10 @@ class IntegratorGroup(MetaNode):
         dropdim: bool=True
     ) -> Union["IntegratorGroup", "NodeStorage"]:
         from ..storage import NodeStorage
-        storage = NodeStorage()
-        nodes = storage.child('nodes')
-        inputs = storage.child('inputs')
-        outputs = storage.child('outputs')
+        storage = NodeStorage(default_containers=True)
+        nodes = storage('nodes')
+        inputs = storage('inputs')
+        outputs = storage('outputs')
 
         integrators = cls(mode, bare=True)
 
@@ -100,7 +100,6 @@ class IntegratorGroup(MetaNode):
             inputs.child(name_integrator)[key] = integrator.inputs[0]
             outputs.child(name_integrator)[key] = integrator.outputs[0]
 
-        if (common_storage := NodeStorage.current()) is not None:
-            common_storage^=storage
+        NodeStorage.update_current(storage, strict=True)
 
         return integrators, storage

@@ -157,13 +157,12 @@ class Node(Limbs):
         node = cls(name, *args, **kwargs)
 
         from .storage import NodeStorage
-        storage = NestedMKDict({}, sep='.')
-        storage.child("nodes")[name] = node
+        storage = NodeStorage(default_containers=True)
+        storage("nodes")[name] = node
         if len(node.outputs) == 1:
-            storage.child("outputs")[name] = node.outputs[0]
+            storage("outputs")[name] = node.outputs[0]
 
-        if (common_storage := NodeStorage.current()) is not None:
-            common_storage^=storage
+        NodeStorage.update_current(storage, strict=True)
 
         return node, storage
 

@@ -3,7 +3,7 @@ from .output import Output
 from .types import NodeT
 from .logger import logger, SUBINFO
 
-from numpy import square
+from numpy import square, printoptions
 from typing import Union, Set, Optional, Dict, Sequence, Literal
 
 from .graph import Graph
@@ -45,7 +45,7 @@ else:
         _node_id_map: dict
         _nodes_map_dag: Dict[Node, G.agraph.Node]
 
-        _show: Set[Literal['type', 'mark', 'label', 'path', 'status', 'data', 'data_summary']]
+        _show: Set[Literal['type', 'mark', 'label', 'path', 'status', 'data', 'data_part', 'data_summary']]
         def __init__(
             self,
             graph_or_node: Union[Graph, Node, None],
@@ -53,8 +53,10 @@ else:
             show: Union[Sequence,str] = ['type', 'mark', 'label'],
             **kwargs
         ):
-            if show=='all' or 'all' in show:
+            if show=='full' or 'full' in show:
                 self._show = {'type', 'mark', 'label', 'path', 'status', 'data', 'data_summary'}
+            elif show=='all' or 'all' in show:
+                self._show = {'type', 'mark', 'label', 'path', 'status', 'data_part', 'data_summary'}
             else:
                 self._show = set(show)
 
@@ -556,8 +558,10 @@ else:
                     right.append(status)
 
             show_data = 'data' in self._show
+            show_data_part = 'data_part' in self._show
             show_data_summary = 'data_summary' in self._show
-            if (show_data or show_data_summary) and out0 is not None:
+            need_data = show_data or show_data_part or show_data_summary
+            if need_data and out0 is not None:
                 data = None
                 tainted = out0.tainted and 'tainted' or 'updated'
                 try:
@@ -575,6 +579,10 @@ else:
                     if depth is not None:
                         block.append(f'd: {depth:+d}'.replace('-', '−'))
                     right.append(block)
+
+                if show_data_part:
+                    with printoptions(threshold=17):
+                        right.append(str(data).replace('\n', '\\l')+'\\l')
 
                 if show_data:
                     right.append(str(data).replace('\n', '\\l')+'\\l')

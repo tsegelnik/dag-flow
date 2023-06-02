@@ -365,7 +365,6 @@ def load_parameters(acfg):
         ssq.close()
         ret[('stat', 'nuisance_parts', path, name)] = ssq
 
-    if (storage:=NodeStorage.current()) is not None:
-        storage^=ret
+    NodeStorage.update_current(ret, strict=True)
 
     return ret

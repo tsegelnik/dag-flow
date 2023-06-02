@@ -21,6 +21,10 @@ class Sum(ManyToOneNode):
 class Product(ManyToOneNode):
     """Product of all the inputs together"""
 
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self._labels.setdefault("mark", "Π")
+
     def _fcn(self, _, inputs, outputs):
         out = outputs["result"].data
         copyto(out, inputs[0].data)
@@ -35,6 +39,9 @@ class Division(ManyToOneNode):
 
     .. note:: a division by zero returns `nan`
     """
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self._labels.setdefault("mark", "÷")
 
     def _fcn(self, _, inputs, outputs):
         out = outputs[0].data
