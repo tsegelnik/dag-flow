@@ -122,10 +122,11 @@ class MetaNode(Limbs):
 
     def print(self, recursive: bool=False):
         print(f"MetaNode: →[{len(self.inputs)}],[{len(self.outputs)}]→")
-        def getstr(name, o):
-            if isinstance(o, Tuple):
-                return f'{name}: {len(o)} objects'
-            return f'{name}: {o!s}'
+        def getstr(name, obj):
+            if isinstance(obj, Tuple):
+                nconnected = sum(1 for limb in obj if limb.connected())
+                return f'{name}: {len(obj)} objects / {nconnected} connected'
+            return f'{name}: {obj!s}'
 
         for i, (name, input) in enumerate(self.inputs.pos_edges.items()):
             print("  ", i, getstr(name, input))

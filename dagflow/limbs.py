@@ -1,5 +1,5 @@
 from . import input_extra
-from .input import Inputs
+from .input import Inputs, Input
 from .output import Outputs, Output
 from .shift import rshift
 from .iter import StopNesting
@@ -7,7 +7,11 @@ from .exception import ConnectionError
 from .logger import logger
 from .labels import repr_pretty
 
-from typing import Mapping, Sequence
+from multikeydict.nestedmkdict import NestedMKDict
+
+from typing import Mapping, Sequence, Union, TYPE_CHECKING
+if TYPE_CHECKING:
+    from .node import Node
 
 class Limbs:
     __slots__ = ('inputs', 'outputs', '__missing_input_handler')
@@ -86,17 +90,78 @@ class Limbs:
         for i, output in enumerate(self.outputs):
             print(i, output)
 
-    def __rshift__(self, other):
+    def __rshift_sequence(self, other: Sequence[Input]):
+        # TODO: should choose only one possible option
+        if len(self.outputs)==1:
+            # raise ConnectionError("Limbs>>Tuple only supported when Limbs has only 1 positional output", node=self)
+            output = self.outputs[0]
+            for input in other:
+                output >> input
+        elif len(self.outputs)==len(other):
+            for output, input in zip(self.outputs, other):
+                output >> input
+        else:
+            raise ConnectionError(
+                f"Inconsistent outputs/inputs: {len(self.outputs), len(other)}",
+                node=self
+            )
+
+    def __rshift__(self, other: Union[
+        Input,
+        "Node",
+        Sequence[Input],
+        Mapping[str, "Output"],
+        "NestedMKDict"
+    ]):
         """
         self >> other
         """
-        return rshift(self, other)
+        from .node import Node
+        if isinstance(other, Input):
+            if len(self.outputs)!=1:
+                raise ConnectionError("Limbs>>Input only supported when Limbs has only 1 positional output", node=self)
+            self.outputs[0] >> other
+        elif isinstance(other, Sequence):
+            self.__rshift_sequence(other)
+        elif isinstance(other, (Mapping, NestedMKDict)):
+            for name, output in self.outputs.iter_kw():
+                try:
+                    input = other[name]
+                except KeyError as e:
+                    raise ConnectionError(f"Unable to find input {name}", node=self) from e
+                else:
+                    output >> input
+        elif isinstance(other, Node):
+            return rshift(self, other)
+        elif isinstance(other, Limbs):
+            self.__rshift_sequence(tuple(iter(other)))
+        else:
+            raise ConnectionError(f"Unsupported >>RHS type: {type(other)}", node=self)
 
-    def __rrshift__(self, other):
+    def __rrshift__(self, other: Union[
+        Output,
+        Sequence[Output]
+    ]):
         """
         other >> self
         """
-        return rshift(other, self)
+        from .node import Node
+        if isinstance(other, Output):
+            for input in self.inputs:
+                other >> input
+        else:
+            # TODO: clean this item
+            return rshift(other, self)
+        # elif isinstance(other, Sequence):
+        #     if len(other)!=len(self.inputs):
+        #         raise ConnectionError(
+        #             f"Inconsistent outputs/inputs: {len(other), len(self.inputs)}",
+        #             node=self
+        #         )
+        #     for output, input in zip(other, self.inputs):
+        #         output >> input
+        # else:
+        #     raise ConnectionError(f"Unsupported LHS>> type: {type(other)}", node=self)
 
     def __lshift__(self, storage: Mapping[str, Output]) -> None:
         """

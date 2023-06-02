@@ -7,11 +7,11 @@ if TYPE_CHECKING:
 from numpy import zeros
 from numpy.typing import ArrayLike, DTypeLike, NDArray
 
-from .exception import DagflowError
-
 from .edges import EdgeContainer
 from .exception import (
+    DagflowError,
     ClosedGraphError,
+    ConnectionError,
     CriticalError,
     InitializationError,
     AllocationError,
@@ -260,6 +260,14 @@ class Output:
         input._set_parent_output(self)
         return input
 
+    def deep_iter_outputs(self, disconnected_only=False):
+        if disconnected_only and self.connected():
+            return iter(tuple())
+        raise StopNesting(self)
+
+    def deep_iter_child_outputs(self):
+        raise StopNesting(self)
+
     def __rshift__(self, other: Union[
         "Input",
         "Node",
@@ -303,14 +311,6 @@ class Output:
 
     def connected(self):
         return bool(self._child_inputs)
-
-    def deep_iter_outputs(self, disconnected_only=False):
-        if disconnected_only and self.connected():
-            return iter(tuple())
-        raise StopNesting(self)
-
-    def deep_iter_child_outputs(self):
-        raise StopNesting(self)
 
     def allocate(self, **kwargs):
         if not self._allocatable:
