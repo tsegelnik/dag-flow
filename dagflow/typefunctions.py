@@ -280,7 +280,13 @@ def check_inputs_square_or_diag(
 
 
 def check_inputs_equivalence(
-    node: NodeT, inputkey: Union[str, int, slice, Sequence] = AllPositionals
+    node: NodeT,
+    inputkey: Union[str, int, slice, Sequence] = AllPositionals,
+    *,
+    check_dtype: bool = True,
+    check_shape: bool = True,
+    check_edges: bool = True,
+    check_meshes: bool = False
 ):
     """Checking the equivalence of the dtype, shape, axes_edges and axes_meshes of all the inputs"""
     inputs = tuple(node.inputs.iter(inputkey))
@@ -295,10 +301,10 @@ def check_inputs_equivalence(
     for input in inputs:
         dd = input.dd
         if (
-            dd.dtype != dtype
-            or dd.shape != shape
-            or (dd.axes_edges and edges and dd.axes_edges != edges)
-            or (dd.axes_meshes and meshes and dd.axes_meshes != meshes)
+            (check_dtype and dd.dtype!=dtype) or
+            (check_shape and dd.shape!=shape) or
+            (check_edges and dd.axes_edges and edges and dd.axes_edges!=edges) or
+            (check_meshes and dd.axes_meshes and meshes and dd.axes_meshes!=meshes)
         ):
             raise TypeFunctionError(
                 f"Input data [{dd.dtype=}, {dd.shape=}, {dd.axes_edges=}, {dd.axes_meshes=}]"
