@@ -8,7 +8,7 @@ from dagflow.typefunctions import (
     AllPositionals,
     copy_from_input_to_output,
     copy_input_dtype_to_output,
-    copy_input_shape_to_output,
+    copy_input_shape_to_outputs,
     eval_output_dtype,
 )
 from numpy import array
@@ -32,7 +32,7 @@ def test_copy_input_dtype_and_shape(testname, debug_graph, data, dtype):
             missing_input_handler=MissingInputAddOne(output_fmt="result"),
         )
         arr1 >> node
-    copy_input_shape_to_output(node, 0, "result")
+    copy_input_shape_to_outputs(node, 0, "result")
     copy_input_dtype_to_output(node, 0, "result")
     assert node.close()
     assert node.outputs["result"].dd.dtype == arrdata.dtype
@@ -50,7 +50,7 @@ def test_output_eval_dtype(testname, debug_graph, dtype):
             missing_input_handler=MissingInputAddOne(output_fmt="result"),
         )
         (arr1, arr2) >> node
-    copy_input_shape_to_output(node, 1, "result")
+    copy_input_shape_to_outputs(node, 1, "result")
     eval_output_dtype(node, AllPositionals, "result")
     assert node.close()
     assert node.outputs["result"].dd.dtype == dtype

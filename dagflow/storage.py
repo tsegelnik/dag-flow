@@ -93,12 +93,12 @@ class NodeStorage(NestedMKDict):
                 except TypeError as e:
                     raise ConnectionError(f"Invalid NodeStorage>> types for {keyleft}/{keyright}: {type(valueleft)}/{type(valueright)}") from e
 
-                if self._remove_connected_inputs:
+                if self._remove_connected_inputs and isinstance(keyright, Input):
                     to_remove.append(keyright)
                 nconnections+=1
 
         if nconnections==0:
-            raise RuntimeError("No connections are done")
+            raise ConnectionError("No connections are done")
 
         for key in to_remove:
             del other[key]

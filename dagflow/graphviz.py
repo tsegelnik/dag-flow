@@ -534,7 +534,7 @@ else:
                 br_left, br_right = '[', ']'
             if hasnodes:
                 br_right+='…'
-            info_type = f"{br_left}{shape0}{br_right}{dtype0}{nlimbs}"
+            info_type = f"{br_left}{shape0}{br_right}{dtype0}\\n{nlimbs}"
             if 'type' in self._show:
                 left.append(info_type)
             if 'mark' in self._show and (mark:=node.labels.mark) is not None:

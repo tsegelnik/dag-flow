@@ -6,7 +6,7 @@ from ..nodes import FunctionNode
 from ..typefunctions import (
     check_has_inputs,
     eval_output_dtype,
-    copy_input_shape_to_output,
+    copy_input_shape_to_outputs,
 )
 
 
@@ -42,7 +42,7 @@ class WeightedSum(FunctionNode):
                 f"The number of weights (={shape}) must coincide "
                 f"with the number of inputs (={leninp})!"
             )
-        copy_input_shape_to_output(self, 0, "result")
+        copy_input_shape_to_outputs(self, 0, "result")
         eval_output_dtype(self, slice(None), "result")
 
     def _fcn_number(self, _, inputs, outputs):

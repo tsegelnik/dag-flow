@@ -5,7 +5,7 @@ from ..nodes import FunctionNode
 from ..typefunctions import (
     check_has_inputs,
     eval_output_dtype,
-    copy_input_shape_to_output,
+    copy_input_shape_to_outputs,
     check_inputs_equivalence,
     AllPositionals
 )
@@ -33,7 +33,7 @@ class SumSq(FunctionNode):
     def _typefunc(self) -> None:
         """A output takes this function to determine the dtype and shape"""
         check_has_inputs(self)
-        copy_input_shape_to_output(self, 0, "result")
+        copy_input_shape_to_outputs(self, 0, "result")
         check_inputs_equivalence(self)
         eval_output_dtype(self, AllPositionals, "result")
 
