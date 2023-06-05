@@ -99,7 +99,8 @@ IsParsCfgDict = Schema({
     Optional('path', default=''): str,
     Optional('replicate', default=((),)): (IsStrSeqOrStr,),
     Optional('replica_key_offset', default=0): int,
-    Optional('correlations', default={}): IsNestedCorrelationsDict
+    Optional('correlations', default={}): IsNestedCorrelationsDict,
+    Optional('joint_nuisance', default=False): bool
     },
     # error = 'Invalid parameters configuration: {}'
 )
@@ -359,11 +360,19 @@ def load_parameters(acfg):
             for subname, subpar in par.iteritems_norm():
                 ret[ntarget+subname] = subpar
 
-    for name, outputs in normpars.items():
-        ssq = ElSumSq(f'nuisance: {pathstr}.{name}')
-        outputs >> ssq
+    joint_nuisance = cfg['joint_nuisance']
+    if joint_nuisance:
+        ssq = ElSumSq(f'nuisance: {pathstr}')
+        for name, outputs in normpars.items():
+            outputs >> ssq
         ssq.close()
-        ret[('stat', 'nuisance_parts', path, name)] = ssq
+        ret[('stat', 'nuisance_parts', path)] = ssq
+    else:
+        for name, outputs in normpars.items():
+            ssq = ElSumSq(f'nuisance: {pathstr}.{name}')
+            outputs >> ssq
+            ssq.close()
+            ret[('stat', 'nuisance_parts', path, name)] = ssq
 
     NodeStorage.update_current(ret, strict=True)
 
