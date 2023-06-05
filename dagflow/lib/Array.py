@@ -10,7 +10,6 @@ from ..node import Node
 from ..output import Output
 from ..typefunctions import check_array_edges_consistency, check_edges_type
 
-
 class Array(FunctionNode):
     """Creates a node with a single data output with predefined array"""
     __slots__ = ('_mode', '_data', '_output')
@@ -28,6 +27,7 @@ class Array(FunctionNode):
         outname="array",
         mark: Optional[str] = None,
         edges: Union[Output, Sequence[Output], Node, None] = None,
+        meshes: Union[Output, Sequence[Output], Node, None] = None,
         **kwargs,
     ):
         super().__init__(name, **kwargs)
@@ -60,40 +60,11 @@ class Array(FunctionNode):
         )
         self.fcn = self._functions[self._mode]
 
-        if edges is not None:
-            if not isinstance(edges, Sequence):
-                edges = (edges,)
-
-            dd = self._output.dd
-            dd.edges_inherited = False
-
-            for edgesi in edges:
-                if isinstance(edgesi, Output):
-                    dd.axes_edges+=(edgesi,)
-                elif isinstance(edgesi, Node):
-                    dd.axes_edges+=(edgesi.outputs[0],)
-                else:
-                    raise InitializationError(
-                        "Array: edges must be `Output/Node` or `Sequence[Output/Node]`, "
-                        f"but given {edges=}, {type(edges)=}"
-                    )
+        self._init_edges(edges)
+        self._init_meshes(meshes)
 
         if mode == "store":
             self.close()
-
-    @classmethod
-    def from_value(cls, name, value: Number, *, edges: Union[Output, Sequence[Output], Node], dtype: DTypeLike=None, **kwargs):
-        if isinstance(edges, Output):
-            shape=(edges.dd.shape[0]-1,)
-        elif isinstance(edges, Node):
-            output = edges.outputs[0]
-            shape=(output.dd.shape[0]-1,)
-        elif isinstance(edges, Sequence):
-            shape = tuple(output.dd.shape[0]-1 for output in edges)
-        else:
-            raise RuntimeError("Invalid edges specification")
-        array = full(shape, value, dtype=dtype)
-        return cls.make_stored(name, array, edges=edges, **kwargs)
 
     def _fcn_store(self, *args):
         return self._data
@@ -115,3 +86,65 @@ class Array(FunctionNode):
 
     def set(self, data: ArrayLike, check_taint: bool = False) -> bool:
         return self._output.set(data, check_taint)
+
+    @classmethod
+    def from_value(
+        cls,
+        name,
+        value: Number,
+        *,
+        edges: Union[Output, Sequence[Output], Node],
+        dtype: DTypeLike=None,
+        **kwargs
+    ):
+        if isinstance(edges, Output):
+            shape=(edges.dd.shape[0]-1,)
+        elif isinstance(edges, Node):
+            output = edges.outputs[0]
+            shape=(output.dd.shape[0]-1,)
+        elif isinstance(edges, Sequence):
+            shape = tuple(output.dd.shape[0]-1 for output in edges)
+        else:
+            raise RuntimeError("Invalid edges specification")
+        array = full(shape, value, dtype=dtype)
+        return cls.make_stored(name, array, edges=edges, **kwargs)
+
+    def _init_edges(self, edges: Union[Output, Sequence[Output], Node]):
+        if not edges:
+            return
+
+        if not isinstance(edges, Sequence):
+            edges = (edges,)
+
+        dd = self._output.dd
+        dd.edges_inherited = False
+        for edgesi in edges:
+            if isinstance(edgesi, Output):
+                dd.axes_edges+=(edgesi,)
+            elif isinstance(edgesi, Node):
+                dd.axes_edges+=(edgesi.outputs[0],)
+            else:
+                raise InitializationError(
+                    "Array: edges must be `Output/Node` or `Sequence[Output/Node]`, "
+                    f"but given {edges=}, {type(edges)=}"
+                )
+
+    def _init_meshes(self, meshes: Union[Output, Sequence[Output], Node]):
+        if not meshes:
+            return
+
+        if not isinstance(meshes, Sequence):
+            meshes = (meshes,)
+
+        dd = self._output.dd
+        dd.meshes_inherited = False
+        for meshesi in meshes:
+            if isinstance(meshesi, Output):
+                dd.axes_meshes+=(meshesi,)
+            elif isinstance(meshesi, Node):
+                dd.axes_meshes+=(meshesi.outputs[0],)
+            else:
+                raise InitializationError(
+                    "Array: meshes must be `Output/Node` or `Sequence[Output/Node]`, "
+                    f"but given {meshes=}, {type(meshes)=}"
+                )
