@@ -3,9 +3,10 @@ from multikeydict.nestedmkdict import NestedMKDict
 
 from schema import Schema, Or, Optional, Use, And, Schema, SchemaError
 from pathlib import Path
-from typing import Tuple, Generator
+from typing import Tuple, Generator, Mapping, Optional as OptionalType
 
 from ..tools.schema import NestedSchema, LoadFileWithExt, LoadYaml, MakeLoaderPy
+from ..tools.schema import IsStrSeqOrStr
 from ..exception import InitializationError
 from ..labels import inherit_labels
 from ..storage import NodeStorage
@@ -89,8 +90,6 @@ IsCorrelationsDict = And({
 IsNestedCorrelationsDict = NestedSchema(IsCorrelationsDict, processdicts=True)
 
 IsFormat = Schema(IsFormatOk, error='Invalid parameter format "{}".')
-IsStrSeq = (str,)
-IsStrSeqOrStr = Or(IsStrSeq, And(str, Use(lambda s: (s,))))
 IsParsCfgDict = Schema({
     'parameters': IsValuesDict,
     'labels': IsLabelsDict,
@@ -229,7 +228,8 @@ def check_correlations_consistent(cfg: NestedMKDict) -> None:
         if names!=inames:
             raise InitializationError(f'Keys in {".".join(key)} are not consistent with names: {inames} and {names}')
 
-def load_parameters(acfg):
+def load_parameters(acfg: OptionalType[Mapping]=None, **kwargs):
+    acfg = dict(acfg or {}, **kwargs)
     cfg = ValidateParsCfg(acfg)
     cfg = NestedMKDict(cfg)
 

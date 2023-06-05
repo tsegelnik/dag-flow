@@ -95,6 +95,7 @@ class Integrator(FunctionNode):
                 211: self._fcn_21d_y,
             }
         )
+        self.labels.setdefault('mark', '∫')
 
     @property
     def dropdim(self) -> bool:

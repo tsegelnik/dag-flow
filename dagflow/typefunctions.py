@@ -681,7 +681,6 @@ def check_array_edges_consistency(
                         output=output,
                     )
 
-
 # NOTE: may be it will be needed later, but for now is not
 #def check_if_input_sorted(
 #    node: NodeT,

@@ -4,12 +4,11 @@ from .Integrator import Integrator
 from .IntegratorSampler import IntegratorSampler, ModeType
 from ..meta_node import MetaNode
 
-from typing import Mapping, TYPE_CHECKING, Tuple, Union
-if TYPE_CHECKING:
-    from ..node import Node
-    from ..storage import NodeStorage
+from typing import Mapping, Tuple, Union
 
 from ..meta_node import MetaNode
+from ..node import Node
+from ..storage import NodeStorage
 from .Integrator import Integrator
 from .IntegratorSampler import IntegratorSampler
 
@@ -82,7 +81,6 @@ class IntegratorGroup(MetaNode):
         replicate: Tuple[KeyLike,...]=((),),
         dropdim: bool=True
     ) -> Union["IntegratorGroup", "NodeStorage"]:
-        from ..storage import NodeStorage
         storage = NodeStorage(default_containers=True)
         nodes = storage('nodes')
         inputs = storage('inputs')
@@ -93,6 +91,8 @@ class IntegratorGroup(MetaNode):
         integrators._init_sampler(mode, name_sampler, labels.get("sampler", {}))
         label_int = labels.get("integrator", {})
         for key in replicate:
+            if isinstance(key, str):
+                key = key,
             name = ".".join((name_integrator,) + key)
             integrator = integrators._add_integrator(name, label_int, positionals=False, dropdim=dropdim)
             integrator()

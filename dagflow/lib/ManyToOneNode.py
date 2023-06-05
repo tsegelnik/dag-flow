@@ -52,6 +52,8 @@ class ManyToOneNode(FunctionNode):
         outputs = storage('outputs')
 
         for outkey in replicate:
+            if isinstance(outkey, str):
+                outkey = outkey,
             outname = (name,)+outkey
             instance = cls('.'.join(outname), **kwargs)
             nodes[outname] = instance
