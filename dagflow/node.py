@@ -169,12 +169,6 @@ class Node(Limbs):
     def __str__(self):
         return f"{{{self.name}}} {super().__str__()}"
 
-    def to_dict(self, *, label_from: str='text') -> dict:
-        return {
-                'label': self._labels[label_from],
-                'flags': ''
-                }
-
     #
     # Properties
     #

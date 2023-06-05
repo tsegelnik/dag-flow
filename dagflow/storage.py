@@ -49,10 +49,14 @@ class NodeStorage(NestedMKDict):
         self,
         *args,
         show_all: bool = False,
+        folder: Optional[str] = None,
+        format: str = 'pdf',
         **kwargs
     ) -> None:
         from .plot import plot_auto
         from matplotlib.pyplot import subplots, show
+        from os import makedirs
+        from os.path import dirname
 
         if show_all:
             kwargs['show'] = False
@@ -61,9 +65,15 @@ class NodeStorage(NestedMKDict):
         else:
             def mkfigure(): pass
 
-        for _, output in self.walkitems():
+        for key, output in self.walkitems():
             if not isinstance(output, Output) or not output.labels.plottable:
                 continue
+
+            if folder:
+                path = '/'.join(key).replace('.', '_')
+                filename = f'{folder}/{path}.{format}'
+                makedirs(dirname(filename), exist_ok=True)
+                kwargs.setdefault('save', filename)
 
             mkfigure()
             plot_auto(output, *args, **kwargs)
