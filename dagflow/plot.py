@@ -14,147 +14,146 @@ from matplotlib.pyplot import Axes
 from matplotlib import colormaps
 from .output import Output
 from .limbs import Limbs
-from .types import EdgesLike, NodesLike
+from .types import EdgesLike, MeshesLike
 from .logger import logger, SUBINFO
 
-from typing import Union, List, Optional, Tuple, Mapping
+from typing import Union, List, Optional, Tuple, Mapping, Literal
 from numpy.typing import ArrayLike, NDArray
 from numpy import asanyarray, meshgrid, zeros_like
 from numpy.ma import array as masked_array
 
-def _mask_if_needed(datain: ArrayLike, /, *, masked_value: Optional[float]=None) -> NDArray:
-    data = asanyarray(datain)
-    if masked_value is None:
-        return data
+class plot_auto:
+    __slots__ = ('_object', '_output', '_array', '_edges', '_meshes', '_plotmethod')
+    def __init__(
+        self,
+        object: Union[Output, Limbs, ArrayLike],
+        *args,
+        filter_kw: dict = {},
+        show_path: bool = True,
+        save: Optional[str] = None,
+        close: bool = False,
+        show: bool = False,
+        save_kw: dict = {},
+        plotmethod: Literal["auto"] = "auto",
+        **kwargs
+    ):
+        self._object = object
+        self._plotmethod = plotmethod
+        self._get_data(**filter_kw)
 
-    mask = (data==masked_value)
-    return masked_array(data, mask=mask)
+        ndim = len(self._array.shape)
+        if ndim==1:
+            self._edges = self._edges[0] if self._edges else None
+            self._meshes = self._meshes[0] if self._meshes else None
+            ret = plot_array_1d(self._array, self._edges, self._meshes, *args, **kwargs)
+        elif ndim==2:
+            colorbar = kwargs.pop('colorbar', {})
+            if colorbar==True:
+                colorbar={}
+            if self._output and isinstance(colorbar, Mapping):
+                colorbar.setdefault('label', self._output.labels.axis)
+            ret = plot_array_2d(self._array, self._edges, self._meshes, *args, colorbar=colorbar, **kwargs)
+        else:
+            raise RuntimeError(f"Do not know how to plot {ndim}d")
 
-def _get_node_data(node: Limbs, *args, **kwargs) -> Tuple[Optional[Output], NDArray, EdgesLike, NodesLike]:
-    return _get_output_data(node.outputs[0], *args, **kwargs)
+        if self._output is not None:
+            self.annotate_axes(show_path=show_path)
 
-def _get_output_data(output: Output, *args, **kwargs) -> Tuple[Output, NDArray, EdgesLike, NodesLike]:
-    data = _mask_if_needed(output.data, *args, **kwargs)
-    return output, data, output.dd.edges_arrays, output.dd.nodes_arrays
+        if save:
+            logger.log(SUBINFO, f'Write: {save}')
+            savefig(save, **save_kw)
+        if show: showfig()
+        if close: closefig()
 
-def _get_array_data(array: ArrayLike, *args, **kwargs) -> Tuple[Optional[Output], NDArray, EdgesLike, NodesLike]:
-    data = _mask_if_needed(array, *args, **kwargs)
-    return None, data, (), ()
+    def _get_output_data(self, *args, **kwargs):
+        data = _mask_if_needed(self._output.data, *args, **kwargs)
+        self._array = data
+        self._edges = self._output.dd.edges_arrays
+        self._meshes = self._output.dd.meshes_arrays
 
-def _get_data(object: Union[Output, Limbs, ArrayLike], *args, **kwargs) -> Tuple[Optional[Output], NDArray, EdgesLike, NodesLike]:
-    if isinstance(object, Output):
-        return _get_output_data(object, *args, **kwargs)
-    elif isinstance(object, Limbs):
-        return _get_node_data(object, *args, **kwargs)
-    else:
-        return _get_array_data(object, *args, **kwargs)
+    def _get_array_data(self, *args, **kwargs):
+        self._array = _mask_if_needed(self._object, *args, **kwargs)
+        self._edges = ()
+        self._meshes = ()
 
-def plot_auto(
-    object: Union[Output, Limbs, ArrayLike],
-    *args,
-    filter_kw: dict = {},
-    show_path: bool = True,
-    save: Optional[str] = None,
-    close: bool = False,
-    show: bool = False,
-    save_kw: dict = {},
-    **kwargs
-) -> Tuple[tuple, ...]:
-    output, array, edges, nodes = _get_data(object, **filter_kw)
-
-    ndim = len(array.shape)
-    if ndim==1:
-        edges = edges[0] if edges else None
-        nodes = nodes[0] if nodes else None
-        ret = plot_array_1d(array, edges, nodes, *args, **kwargs)
-    elif ndim==2:
-        colorbar = kwargs.pop('colorbar', {})
-        if colorbar==True:
-            colorbar={}
-        if isinstance(colorbar, Mapping):
-            colorbar.setdefault('label', output.labels.axis)
-        ret = plot_array_2d(array, edges, nodes, *args, colorbar=colorbar, **kwargs)
-    else:
-        raise RuntimeError(f"Do not know how to plot {ndim}d")
-
-    if output is not None:
-        annotate_axes(output, show_path=show_path)
-
-    if save:
-        logger.log(SUBINFO, f'Write: {save}')
-        savefig(save, **save_kw)
-    if show: showfig()
-    if close: closefig()
-
-    return ret
-
-def annotate_axes(output: Output, /, ax: Optional[Axes]=None, *, show_path: bool=True) -> None:
-    ax = ax or gca()
-    labels = output.labels
-
-    title = labels.plottitle
-    xlabel = output.dd.axis_label(0) or labels.xaxis or 'Index'
-
-    ylabel = labels.axis
-    if output.dd.dim==2:
-        zlabel = ylabel
-        ylabel = output.dd.axis_label(1)
-    else:
-        zlabel = None
-
-    if title: ax.set_title(title)
-    if xlabel: ax.set_xlabel(xlabel)
-    if ylabel: ax.set_ylabel(ylabel)
-    if zlabel:
-        try:
-            ax.set_zlabel(zlabel)
-        except AttributeError:
-            pass
-
-    if show_path:
-        path = labels.paths
-        if not path:
+    def _get_data(self, *args, **kwargs):
+        if isinstance(self._object, Output):
+            self._output = self._object
+        elif isinstance(self._object, Limbs):
+            self._output = self._object.outputs[0]
+        else:
+            self._get_array_data(*args, **kwargs)
             return
 
-        fig = gcf()
-        try:
-            ax.text2D(0.05, 0.05, path[0], transform=fig.dpi_scale_trans)
-        except AttributeError:
-            ax.text(0.05, 0.05, path[0], transform=fig.dpi_scale_trans)
+        self._get_output_data(*args, **kwargs)
+
+    def annotate_axes(self, /, ax: Optional[Axes]=None, *, show_path: bool=True) -> None:
+        ax = ax or gca()
+        labels = self._output.labels
+
+        title = labels.plottitle
+        xlabel = self._output.dd.axis_label(0) or labels.xaxis or 'Index'
+
+        ylabel = labels.axis
+        if self._output.dd.dim==2:
+            zlabel = ylabel
+            ylabel = self._output.dd.axis_label(1)
+        else:
+            zlabel = None
+
+        if title: ax.set_title(title)
+        if xlabel: ax.set_xlabel(xlabel)
+        if ylabel: ax.set_ylabel(ylabel)
+        if zlabel:
+            try:
+                ax.set_zlabel(zlabel)
+            except AttributeError:
+                pass
+
+        if show_path:
+            path = labels.paths
+            if not path:
+                return
+
+            fig = gcf()
+            try:
+                ax.text2D(0.05, 0.05, path[0], transform=fig.dpi_scale_trans)
+            except AttributeError:
+                ax.text(0.05, 0.05, path[0], transform=fig.dpi_scale_trans)
 
 def plot_array_1d(
     array: NDArray,
     edges: Optional[NDArray],
-    nodes: Optional[NDArray],
+    meshes: Optional[NDArray],
     *args, **kwargs
 ) -> Tuple[tuple, ...]:
     if edges is not None:
         return plot_array_1d_hist(array, edges, *args, **kwargs)
-    elif nodes is not None:
-        return plot_array_1d_vs(array, nodes, *args, **kwargs)
+    elif meshes is not None:
+        return plot_array_1d_vs(array, meshes, *args, **kwargs)
     else:
         return plot_array_1d_array(array, *args, **kwargs)
 
 def plot_array_1d_hist(array: NDArray, edges: Optional[NDArray], *args, **kwargs) -> Tuple:
     return stairs(array, edges, *args, **kwargs)
 
-def plot_array_1d_vs(array: NDArray, nodes: Optional[NDArray], *args, **kwargs) -> Tuple:
-    return plot(nodes, array, *args, **kwargs)
+def plot_array_1d_vs(array: NDArray, meshes: Optional[NDArray], *args, **kwargs) -> Tuple:
+    return plot(meshes, array, *args, **kwargs)
 
 def plot_array_1d_array(array: NDArray, *args, **kwargs) -> Tuple:
     return plot(array, *args, **kwargs)
 
 def plot_output_1d(output: Output, *args, **kwargs) -> Tuple:
-    array, edges, nodes = _get_data(output)
-    return plot_array_1d(array, edges, nodes, *args, **kwargs)
+    array, edges, meshes = _get_data(output)
+    return plot_array_1d(array, edges, meshes, *args, **kwargs)
 
 def plot_output_1d_vs(output: Output, args, **kwargs) -> Tuple:
     array, edges, _ = _get_data(output)
     return plot_array_1d_vs(array, edges, *args, **kwargs)
 
-def plot_output_1d_nodes(output: Output, args, **kwargs) -> Tuple:
-    array, _, nodes = _get_data(output)
-    return plot_array_1d_vs(array, nodes, *args, **kwargs)
+def plot_output_1d_meshes(output: Output, args, **kwargs) -> Tuple:
+    array, _, meshes = _get_data(output)
+    return plot_array_1d_vs(array, meshes, *args, **kwargs)
 
 def plot_output_1d_array(output: Output, args, **kwargs) -> Tuple:
     return plot_array_1d_array(output.data, *args, **kwargs)
@@ -162,13 +161,13 @@ def plot_output_1d_array(output: Output, args, **kwargs) -> Tuple:
 def plot_array_2d(
     array: NDArray,
     edges: EdgesLike,
-    nodes: NodesLike,
+    meshes: MeshesLike,
     *args, **kwargs
 ) -> Tuple[tuple, ...]:
     if edges:
         plot_array_2d_hist(array, edges, *args, **kwargs)
-    elif nodes:
-        plot_array_2d_vs(array, nodes, *args, **kwargs)
+    elif meshes:
+        plot_array_2d_vs(array, meshes, *args, **kwargs)
     else:
         plot_array_2d_array(array, *args, **kwargs)
 
@@ -195,7 +194,7 @@ def plot_array_2d_hist(
 
 def plot_array_2d_vs(
     array: NDArray,
-    nodes: List[NDArray],
+    meshes: List[NDArray],
     *args,
     method: str = 'pcolormesh',
     **kwargs
@@ -209,7 +208,7 @@ def plot_array_2d_vs(
     if fcn is None:
         raise RuntimeError("unimplemented")
 
-    return fcn(array, nodes, *args, **kwargs)
+    return fcn(array, meshes, *args, **kwargs)
 
 def plot_array_2d_array(
     array: NDArray,
@@ -273,29 +272,29 @@ def plot_array_2d_hist_matshow(Z: NDArray, edges: Optional[EdgesLike]=None, *arg
         kwargs.setdefault('extent', extent)
     return matshow(Z.T, *args, **kwargs)
 
-def plot_array_2d_vs_pcolormesh(Z: NDArray, nodes: List[NDArray], *args, **kwargs) -> Tuple:
-    x, y = nodes
+def plot_array_2d_vs_pcolormesh(Z: NDArray, meshes: List[NDArray], *args, **kwargs) -> Tuple:
+    x, y = meshes
     kwargs.setdefault('shading', 'nearest')
     return pcolormesh(x, y, Z, *args, **kwargs)
 
-def plot_array_2d_vs_pcolor(Z: NDArray, nodes: List[NDArray], *args, **kwargs) -> Tuple:
-    x, y = nodes
+def plot_array_2d_vs_pcolor(Z: NDArray, meshes: List[NDArray], *args, **kwargs) -> Tuple:
+    x, y = meshes
     kwargs.setdefault('shading', 'nearest')
     return pcolormesh(x, y, Z, *args, **kwargs)
 
-def plot_array_2d_vs_surface(Z: NDArray, nodes: List[NDArray], *args, **kwargs) -> Tuple:
-    return plot_surface(nodes[0], nodes[1], Z, *args, **kwargs)
+def plot_array_2d_vs_surface(Z: NDArray, meshes: List[NDArray], *args, **kwargs) -> Tuple:
+    return plot_surface(meshes[0], meshes[1], Z, *args, **kwargs)
 
 def plot_array_2d_vs_wireframe(
     Z: NDArray,
-    nodes: List[NDArray],
+    meshes: List[NDArray],
     *args,
     # facecolors: Optional[str] = None,
     cmap: Union[str, bool, None] = None,
     colorbar: Union[dict, bool] = False,
     **kwargs
 ) -> Tuple:
-    X, Y = nodes
+    X, Y = meshes
 
     ax = gca()
     if cmap is not None:
@@ -310,6 +309,14 @@ def plot_array_2d_vs_wireframe(
             return _colorbar_or_not_3d(res, colorbar, Z)
 
     return ax.plot_wireframe(X, Y, Z, *args, **kwargs)
+
+def _mask_if_needed(datain: ArrayLike, /, *, masked_value: Optional[float]=None) -> NDArray:
+    data = asanyarray(datain)
+    if masked_value is None:
+        return data
+
+    mask = (data==masked_value)
+    return masked_array(data, mask=mask)
 
 def _patch_with_colorbar(fcn, mode3d=False):
     '''Patch pyplot.function or ax.method by adding a "colorbar" option'''
