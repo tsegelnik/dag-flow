@@ -1,12 +1,12 @@
-from multikeydict.typing import Key
+from multikeydict.typing import Key, KeyLike
 from multikeydict.nestedmkdict import NestedMKDict
 from multikeydict.visitor import NestedMKDictVisitor
 from .output import Output
 from .input import Input
-from .node import Node, Limbs
+from .node import Node
 from .logger import logger, DEBUG
 
-from typing import Union, Tuple, List, Optional, Dict, Mapping
+from typing import Union, Tuple, List, Optional, Dict, Mapping, Sequence, FrozenSet
 
 from tabulate import tabulate
 from pandas import DataFrame
@@ -44,42 +44,8 @@ class NodeStorage(NestedMKDict):
         for name in ('parameters', 'nodes', 'inputs', 'outputs'):
             self.child(name)
 
-
-    def plot(
-        self,
-        *args,
-        show_all: bool = False,
-        folder: Optional[str] = None,
-        format: str = 'pdf',
-        **kwargs
-    ) -> None:
-        from .plot import plot_auto
-        from matplotlib.pyplot import subplots, show
-        from os import makedirs
-        from os.path import dirname
-
-        if show_all:
-            kwargs['show'] = False
-            kwargs['close'] = False
-            def mkfigure(): return subplots(1,1)
-        else:
-            def mkfigure(): pass
-
-        for key, output in self.walkitems():
-            if not isinstance(output, Output) or not output.labels.plottable:
-                continue
-
-            if folder:
-                path = '/'.join(key).replace('.', '_')
-                filename = f'{folder}/{path}.{format}'
-                makedirs(dirname(filename), exist_ok=True)
-                kwargs.setdefault('save', filename)
-
-            mkfigure()
-            plot_auto(output, *args, **kwargs)
-
-        if show_all:
-            show()
+    def plot(self, *args, **kwargs) -> None:
+        self.visit(PlotVisitor(*args, **kwargs))
 
     #
     # Connectors
@@ -187,9 +153,10 @@ class NodeStorage(NestedMKDict):
                 if object.labels is object.node.labels:
                     object.labels = object.node.labels.copy()
                 object.labels.update(labels)
-                if subkey:
-                    skey = '.'.join(subkey)
-                    object.labels.format(space_key=f" {skey}", key_space=f"{skey} ")
+
+            if subkey:
+                skey = '.'.join(subkey)
+                object.labels.format(space_key=f" {skey}", key_space=f"{skey} ")
 
         if strict:
             for key in processed_keys:
@@ -304,6 +271,131 @@ class NodeStorage(NestedMKDict):
             common_storage|=storage
 
 _context_storage: List[NodeStorage] = []
+
+class PlotVisitor(NestedMKDictVisitor):
+    __slots__ = ('_show_all', '_folder', '_format', '_args', '_kwargs', '_active_figures', '_replicate', '_indices')
+    _show_all: bool
+    _folder: Optional[str]
+    _format: Optional[str]
+    _args: Sequence
+    _kwargs: Dict
+    _active_figures: Dict
+    _replicate: Optional[Sequence[KeyLike]]
+    _indices: FrozenSet[str]
+    def __init__(
+        self,
+        *args,
+        show_all: bool = False,
+        folder: Optional[str] = None,
+        format: str = 'pdf',
+        replicate: Optional[Sequence[KeyLike]] = None,
+        indices: Optional[FrozenSet[str]] = None,
+        **kwargs
+    ):
+        self._show_all = show_all
+        self._folder = folder
+        self._format = format
+        self._args = args
+        self._kwargs = kwargs
+        self._replicate = replicate
+        self._indices = indices if indices is not None else frozenset()
+        self._active_figures = {}
+
+        if self._show_all:
+            self._kwargs['show'] = False
+            self._kwargs['close'] = False
+        elif self._folder is not None:
+            self._kwargs['close'] = False
+
+    def makefigure(self, key, *, force_new: bool=False):
+        from matplotlib.pyplot import subplots, sca
+
+        def mkfig():
+            fig, _ = subplots(1,1)
+            self._active_figures[fig] = fig
+            return fig, key, None, True
+
+        if self._replicate is None or force_new:
+            return mkfig()
+
+        key_set = frozenset(key)
+        if self._indices:
+            index = key_set.intersection(self._indices)
+            path = tuple(k for k in key if k not in index)
+        else:
+            index = key_set
+            path = ()
+        if not index:
+            return mkfig()
+
+        for major_index in self._replicate:
+            if isinstance(major_index, str):
+                major_index = major_index,
+            if index.issuperset(major_index):
+                break
+        else:
+            return mkfig()
+        minor_index = index.difference(major_index)
+        minor_index = tuple(s for s in key if s in minor_index)
+
+        if (fig:=self._active_figures.get(major_index, None)) is not None:
+            sca(fig.axes[0])
+            return fig, path+major_index, minor_index, False
+
+        fig, _ = subplots(1,1)
+        self._active_figures[major_index] = fig
+        return fig, path+major_index, minor_index, True
+
+    def _close_figures(self):
+        from matplotlib.pyplot import close
+        for fig in self._active_figures.values():
+            close(fig)
+        self._active_figures = {}
+
+    def start(self, dct):
+        pass
+
+    def enterdict(self, key, v):
+        pass
+
+    def exitdict(self, key, v):
+        if self._show_all:
+            return
+        if not key or key[-1] not in self._indices:
+            self._close_figures()
+
+    def visit(self, key, output):
+        from dagflow.plot import plot_auto
+        from os import makedirs
+        from os.path import dirname
+
+        if not isinstance(output, Output) or not output.labels.plottable:
+            return
+
+        nd = output.dd.dim
+        _, major_index, minor_index, newfig = self.makefigure(key, force_new=(nd==2))
+
+        kwargs = self._kwargs.copy()
+        if self._folder:
+            path = '/'.join(major_index).replace('.', '_')
+            filename = f'{self._folder}/{path}.{self._format}'
+            makedirs(dirname(filename), exist_ok=True)
+            kwargs.setdefault('save', filename)
+
+            if not minor_index:
+                kwargs['close'] = True
+
+        if minor_index:
+            kwargs.setdefault('label', '.'.join(minor_index))
+        kwargs.setdefault('show_path', newfig)
+        kwargs.setdefault('close')
+        plot_auto(output, *self._args, **kwargs)
+
+    def stop(self, dct):
+        from matplotlib.pyplot import show
+        if self._show_all:
+            show()
+        self._close_figures()
 
 class ParametersVisitor(NestedMKDictVisitor):
     __slots__ = ('_kwargs', '_data_list', '_localdata', '_path')

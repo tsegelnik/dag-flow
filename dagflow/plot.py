@@ -102,7 +102,8 @@ class plot_auto:
             raise RuntimeError(f"Do not know how to plot {ndim}d")
 
         if self._output is not None:
-            self.annotate_axes(show_path=show_path)
+            has_legend = 'label' in kwargs
+            self.annotate_axes(show_path=show_path, legend=has_legend)
 
         if save:
             logger.log(SUBINFO, f'Write: {save}')
@@ -157,10 +158,17 @@ class plot_auto:
             elif self._plotmethod=='slicesy':
                 self._zlabel = self._output.dd.axis_label(1) or labels.xaxis or 'Index'
             else:
-                self._zlabel = ylabel
+                self._zlabel = self._ylabel
                 self._ylabel = self._output.dd.axis_label(1)
 
-    def annotate_axes(self, /, ax: Optional[Axes]=None, *, show_path: bool=True) -> None:
+    def annotate_axes(
+        self,
+        /,
+        ax: Optional[Axes]=None,
+        *,
+        legend: bool=False,
+        show_path: bool=True
+    ) -> None:
         ax = ax or gca()
         labels = self._output.labels
 
@@ -172,6 +180,9 @@ class plot_auto:
                 ax.set_zlabel(self._zlabel)
             except AttributeError:
                 pass
+
+        if legend:
+            ax.legend()
 
         if show_path:
             path = labels.paths
