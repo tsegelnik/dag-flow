@@ -78,6 +78,8 @@ class IntegratorGroup(MetaNode):
         name_integrator: str="integrator",
         labels: Mapping={},
         *,
+        name_x: str="mesh_x",
+        name_y: str="mesh_y",
         replicate: Tuple[KeyLike,...]=((),),
         dropdim: bool=True
     ) -> Union["IntegratorGroup", "NodeStorage"]:
@@ -87,18 +89,23 @@ class IntegratorGroup(MetaNode):
         outputs = storage('outputs')
 
         integrators = cls(mode, bare=True)
+        key_integrator = (name_integrator,)
+        key_sampler = (name_sampler,)
 
         integrators._init_sampler(mode, name_sampler, labels.get("sampler", {}))
+        outputs[key_sampler+(name_x,)] = integrators._sampler.outputs['x']
+        outputs[key_sampler+(name_y,)] = integrators._sampler.outputs['y']
+
         label_int = labels.get("integrator", {})
         for key in replicate:
             if isinstance(key, str):
                 key = key,
-            name = ".".join((name_integrator,) + key)
+            name = ".".join(key_integrator + key)
             integrator = integrators._add_integrator(name, label_int, positionals=False, dropdim=dropdim)
             integrator()
-            nodes.child(name_integrator)[key] = integrator
-            inputs.child(name_integrator)[key] = integrator.inputs[0]
-            outputs.child(name_integrator)[key] = integrator.outputs[0]
+            nodes[key_integrator+key] = integrator
+            inputs[key_integrator+key] = integrator.inputs[0]
+            outputs[key_integrator+key] = integrator.outputs[0]
 
         NodeStorage.update_current(storage, strict=True)
 
