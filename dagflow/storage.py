@@ -155,10 +155,10 @@ class NodeStorage(NestedMKDict):
                 pass
             else:
                 processed_keys.add(key)
-                return labels
+                return labels, None
 
             keyleft = list(key[:-1])
-            keyright = []
+            keyright = [key[-1]]
             while keyleft:
                 groupkey = keyleft+['group']
                 try:
@@ -167,14 +167,17 @@ class NodeStorage(NestedMKDict):
                     keyright.insert(0, keyleft.pop())
                 else:
                     processed_keys.add(tuple(groupkey))
-                    return labels
+                    return labels, keyright
+
+            return None, None
 
         for key, object in self.walkitems():
             if not isinstance(object, (Node, Output)):
                 continue
 
             logger.log(DEBUG, f"Look up label for {'.'.join(key)}")
-            if (labels := get_label(key)) is None:
+            labels, subkey = get_label(key)
+            if labels is None:
                 continue
             logger.log(DEBUG, "... found")
 
@@ -184,6 +187,9 @@ class NodeStorage(NestedMKDict):
                 if object.labels is object.node.labels:
                     object.labels = object.node.labels.copy()
                 object.labels.update(labels)
+                if subkey:
+                    skey = '.'.join(subkey)
+                    object.labels.format(space_key=f" {skey}", key_space=f"{skey} ")
 
         if strict:
             for key in processed_keys:
