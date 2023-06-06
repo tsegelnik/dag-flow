@@ -36,7 +36,13 @@ class ManyToOneNode(FunctionNode):
         """A output takes this function to determine the dtype and shape"""
         check_has_inputs(self) # at least one input
         check_inputs_equivalence(self, broadcastable=self._broadcastable) # all the inputs are have same dd fields
-        copy_from_input_to_output(self, AllPositionals, "result", prefer_largest_input=self._broadcastable, prefer_edges=True) # copy shape to result
+        copy_from_input_to_output(
+            self,
+            AllPositionals,
+            "result",
+            prefer_largest_input=self._broadcastable,
+            prefer_input_with_edges=True
+        ) # copy shape to result
         eval_output_dtype(self, AllPositionals, "result") # eval dtype of result
 
     @classmethod

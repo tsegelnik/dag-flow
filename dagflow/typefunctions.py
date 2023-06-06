@@ -90,12 +90,12 @@ def copy_from_input_to_output(
     dtype: bool = True,
     shape: bool = True,
     edges: bool = True,
-    nodes: bool = True,
+    meshes: bool = True,
     prefer_largest_input: bool = False,
-    prefer_edges: bool = False
+    prefer_input_with_edges: bool = False
 ) -> None:
     """Coping input dtype and setting for the output"""
-    if not any((dtype, shape, edges, nodes)):
+    if not any((dtype, shape, edges, meshes)):
         return
 
     inputs = tuple(node.inputs.iter(inputkey))
@@ -108,10 +108,10 @@ def copy_from_input_to_output(
         caller.add(cpy_shape)
     if edges:
         caller.add(cpy_edges)
-    if nodes:
+    if meshes:
         caller.add(cpy_meshes)
 
-    has_preference = prefer_edges or prefer_largest_input
+    has_preference = prefer_input_with_edges or prefer_largest_input
     if has_preference and len(inputs)>1:
         largest_input = inputs[0]
         largest_size = largest_input.dd.size
@@ -119,7 +119,7 @@ def copy_from_input_to_output(
         for input in inputs[1:]:
             if (newsize:=input.dd.size)<=largest_size and prefer_largest_input:
                 continue
-            if prefer_edges and found_edges and not bool(input.dd.axes_edges):
+            if prefer_input_with_edges and found_edges and not bool(input.dd.axes_edges):
                 continue
             largest_size = newsize
             largest_input = input
@@ -479,23 +479,31 @@ def assign_output_edges(input: Union[Input, Sequence[Input]], output: Output, ig
                 input=input
             )
 
-    output.dd.axes_edges = edges
+    output.dd.axes_edges = tuple(edges)
 
-def assign_output_meshes(input: Union[Input, Sequence[Input]], output: Output, *, ignore_assigned: bool = False):
+def assign_output_meshes(
+    input: Union[Input, Sequence[Input]],
+    output: Output,
+    *,
+    ignore_assigned: bool = False,
+    overwrite_assigned: bool = False
+):
     """Assign output's edges from input's parent output"""
     dd = output.dd
 
     if dd.axes_meshes:
         if ignore_assigned:
             return
-        raise TypeFunctionError("Meshes already assigned", output=output, input=input)
+        elif not overwrite_assigned:
+            raise TypeFunctionError("Meshes already assigned", output=output, input=input)
 
     if isinstance(input, Input):
         meshes = [input.parent_output]
     else:
         meshes = [inp.parent_output for inp in input]
 
-    if len(dd.shape)!=len(meshes):
+    naxes = len(dd.shape)
+    if naxes!=len(meshes) and (not overwrite_assigned or naxes!=len(dd.axes_meshes)):
         raise TypeFunctionError(
             f"Output ndim={len(dd.shape)} is inconsistent with meshes ndim={len(meshes)}",
             output=output,
@@ -510,7 +518,13 @@ def assign_output_meshes(input: Union[Input, Sequence[Input]], output: Output, *
                 input=input
             )
 
-    output.dd.axes_meshes = meshes
+    if overwrite_assigned:
+        newmeshes = list(output.dd.axes_meshes)
+        for i, mesh in enumerate(meshes):
+            newmeshes[i] = mesh
+        dd.axes_meshes = tuple(newmeshes)
+    else:
+        dd.axes_meshes = tuple(meshes)
 
 def assign_output_axes_from_inputs(
     node: NodeT,
@@ -521,7 +535,7 @@ def assign_output_axes_from_inputs(
     assign_meshes: bool = False,
     **kwargs
 ) -> None:
-    """Set output edges/nodes based on inputs (take parent_output)"""
+    """Set output edges/meshes based on inputs (take parent_output)"""
     if not (assign_edges^assign_meshes):
         raise TypeFunctionError("assign_output_axes_from_input: may not assign {assign_edges=} and {assign_meshes=}")
 
@@ -545,7 +559,7 @@ def assign_outputs_axes_from_inputs(
     ignore_Nd: bool = False,
     **kwargs
 ) -> None:
-    """Set outputs' edges/nodes based on inputs (take parent_output). Process each pair."""
+    """Set outputs' edges/meshes based on inputs (take parent_output). Process each pair."""
     if not (assign_edges^assign_meshes):
         raise TypeFunctionError("assign_output_axes_from_input: may not assign {assign_edges=} and {assign_meshes=}")
 

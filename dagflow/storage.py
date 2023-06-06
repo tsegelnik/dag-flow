@@ -181,7 +181,8 @@ class NodeStorage(NestedMKDict):
             if isinstance(object, Node):
                 object.labels.update(labels)
             elif isinstance(object, Output):
-                object.labels = object.labels or {}
+                if object.labels is object.node.labels:
+                    object.labels = object.node.labels.copy()
                 object.labels.update(labels)
 
         if strict:

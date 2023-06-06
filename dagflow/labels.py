@@ -51,7 +51,7 @@ class Labels:
         '_roottitle',
         '_rootaxis',
         '_paths',
-        'plottable'
+        '_plotmethod'
     )
 
     _name: Optional[str]
@@ -65,13 +65,12 @@ class Labels:
     _rootaxis: Optional[str]
     _mark: Optional[str]
     _paths: List[str]
-    plottable: bool
+    _plotmethod: Optional[str]
 
     def __init__(self, label: Union[Dict[str, str], str, Path, None]=None):
         for slot in self.__slots__:
             setattr(self, slot, None)
         self._paths = []
-        self.plottable = True
 
         if isinstance(label, str):
             if label.endswith('.yaml'):
@@ -82,6 +81,15 @@ class Labels:
             self._update_from(str(label))
         elif isinstance(label, dict):
             self.update(label)
+
+    def __str__(self):
+        return str({
+            slot.removeprefix('_'): v
+            for slot in self.__slots__
+            if (v:=getattr(self, slot)) is not None
+        })
+
+    _repr_pretty_ = repr_pretty
 
     def _update_from(self, path: str):
         d = LoadYaml(path)
@@ -178,12 +186,24 @@ class Labels:
         self._mark = value
 
     @property
-    def paths(self) -> str:
+    def paths(self) -> List[str]:
         return self._paths
 
     @paths.setter
-    def paths(self, value: str):
+    def paths(self, value: List[str]):
         self._paths = value
+
+    @property
+    def plottable(self) -> bool:
+        return self._plotmethod!='none'
+
+    @property
+    def plotmethod(self) -> str:
+        return self._plotmethod
+
+    @plotmethod.setter
+    def plotmethod(self, value: str):
+        self._plotmethod = value.lower()
 
     def items(self):
         for k in self.__slots__:
@@ -222,3 +242,10 @@ class Labels:
             newv = fmtshort(label) if _key in kshort else fmtlong(label)
             if newv is not None:
                 self[_key] = newv
+
+    def copy(self) -> "Labels":
+        l = Labels()
+        for slot in self.__slots__:
+            setattr(l, slot, getattr(self, slot))
+        return l
+

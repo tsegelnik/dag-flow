@@ -50,7 +50,7 @@ class SegmentIndex(FunctionNode):
         """
         check_inputs_number(self, 2)
         copy_from_input_to_output(
-            self, 1, 0, dtype=False, shape=True, edges=False, nodes=False
+            self, 1, 0, dtype=False, shape=True, edges=False, meshes=False
         )
         self.outputs[0].dd.dtype = "i"
 

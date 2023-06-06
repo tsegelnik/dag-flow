@@ -107,7 +107,7 @@ class Output:
 
     @property
     def labels(self) -> Optional[Labels]:
-        return self._node is not None and self._node.labels or self._labels
+        return self._labels if self._labels is not None else self._node and self._node.labels
 
     @labels.setter
     def labels(self, labels: Labels):
