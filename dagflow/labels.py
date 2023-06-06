@@ -99,6 +99,17 @@ class Labels:
         for k, v in d.items():
             setattr(self, k, v)
 
+    def format(self, *args, **kwargs):
+        for name in (
+                'text', 'graph', 'latex',
+                'xaxis', 'plottitle', 'roottitle',
+                'rootaxis'
+                ):
+            name = f'_{name}'
+            oldvalue = getattr(self, name)
+            if isinstance(oldvalue, str):
+                setattr(self, name, oldvalue.format(*args, **kwargs))
+
     @property
     def name(self) -> str:
         return self._name
