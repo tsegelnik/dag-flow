@@ -521,7 +521,10 @@ def assign_output_meshes(
     if overwrite_assigned:
         newmeshes = list(output.dd.axes_meshes)
         for i, mesh in enumerate(meshes):
-            newmeshes[i] = mesh
+            try:
+                newmeshes[i] = mesh
+            except IndexError:
+                newmeshes.append(mesh)
         dd.axes_meshes = tuple(newmeshes)
     else:
         dd.axes_meshes = tuple(meshes)
