@@ -4,7 +4,6 @@ from numpy.typing import NDArray
 from ..nodes import FunctionNode
 from ..input import Input
 from ..output import Output
-# from ..input_extra import MissingInputAddOne
 from ..typefunctions import (
     check_has_inputs,
     eval_output_dtype,
@@ -39,9 +38,9 @@ class MatrixProductDVDt(FunctionNode):
         return out
 
     def _fcn_square(self, inputs, outputs):
-        out = outputs["result"].data
-        left = inputs["left"].data
-        square = inputs["square"].data
+        left = self._left.data
+        square = self._square.data
+        out = self._out.data
         matmul(left, square, out=self._buffer)
         matmul(self._buffer, left.T, out=out)
         return out

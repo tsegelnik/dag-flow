@@ -1,12 +1,11 @@
-from dagflow.exception import TypeFunctionError
+#!/usr/bin/env python
+
 from dagflow.graph import Graph
 from dagflow.lib.Array import Array
 from dagflow.lib.MatrixProductDVDt import MatrixProductDVDt
-import numpy as np
-import scipy
-from pytest import raises
 from dagflow.graphviz import savegraph
 
+import numpy as np
 import pytest
 
 @pytest.mark.parametrize("dtype", ('d', 'f'))
@@ -27,7 +26,7 @@ def test_MatrixProductDVDt_2d(dtype):
 
     assert np.allclose(desired, actual, atol=0, rtol=0)
     
-    savegraph(graph, f"output/test_MatrixProductDVDt_1d_{dtype}.png")
+    savegraph(graph, f"output/test_MatrixProductDVDt_2d_{dtype}.png")
 
 
 @pytest.mark.parametrize("dtype", ('d', 'f'))
@@ -48,7 +47,7 @@ def test_MatrixProductDVDt_1d(dtype):
 
     assert np.allclose(desired, actual, atol=0, rtol=0)
 
-    savegraph(graph, f"output/test_MatrixProductDVDt_2d_{dtype}.png")
+    savegraph(graph, f"output/test_MatrixProductDVDt_1d_{dtype}.png")
 
 
     
