@@ -192,8 +192,8 @@ def get_label(key: tuple, labelscfg: dict) -> dict:
         if not subkey and 'text' not in lcfg:
             break
 
-        sidx = '.'.join(key[n-1:])
-        return format_dict(lcfg, sidx)
+        key_str = '.'.join(key[n-1:])
+        return format_dict(lcfg, key_str, key=key_str, space_key=f' {key_str}', key_space=f'{key_str} ')
 
     return {}
 
@@ -287,7 +287,7 @@ def load_parameters(acfg: OptionalType[Mapping]=None, **kwargs):
             key_str = '.'.join(key)
             subkey_str = '.'.join(subkey)
 
-            label = format_dict(label_general.copy(), subkey=subkey_str, space_subkey=f' {subkey_str}', subkey_space=f'{subkey_str} ')
+            label = format_dict(label_general.copy(), subkey=key_str, space_key=f' {subkey_str}', key_space=f'{subkey_str} ')
             varcfg_sub = varcfg.copy()
             varcfg_sub['label'] = label
             label['paths'] = [key_str]
@@ -305,7 +305,7 @@ def load_parameters(acfg: OptionalType[Mapping]=None, **kwargs):
         mark_matrix = matrixtype=='correlation' and 'C' or 'V'
         label_mat = inherit_labels(label, fmtlong=f'{matrixtype.capitalize()}'' matrix: {}', fmtshort=mark_matrix+'({})')
         label_mat['mark'] = mark_matrix
-        label_mat = format_dict(label_mat, subkey='', space_subkey='', subkey_space='')
+        label_mat = format_dict(label_mat, key='', space_key='', key_space='')
         matrix_array = Array('matrixtype', matrix, label=label_mat)
 
         for subkey in subkeys:
@@ -328,7 +328,7 @@ def load_parameters(acfg: OptionalType[Mapping]=None, **kwargs):
                 names.append(name)
                 processed_cfgs.add(fullkey+name)
 
-            labelsub = format_dict(label, subkey=subkey_str, space_subkey=f' {subkey_str}', subkey_space=f'{subkey_str} ')
+            labelsub = format_dict(label, subkey=key_str, space_key=f' {subkey_str}', key_space=f'{subkey_str} ')
             pars[fullkey] = Parameters.from_numbers(label=labelsub, **kwargs)
 
     for key, varcfg in varcfgs.walkdicts(ignorekeys=('label',)):
