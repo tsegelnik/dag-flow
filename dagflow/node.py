@@ -414,7 +414,8 @@ class Node(Limbs):
         input_kws = input_kws or {}
         output_kws = output_kws or {}
         output = self.add_output(oname, **output_kws)
-        input = self.add_input(iname, child_output=output, **input_kws)
+        child_output = output if isinstance(output, Output) else None
+        input = self.add_input(iname, child_output=child_output, **input_kws)
         return input, output
 
     def touch(self, force=False):
