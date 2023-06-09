@@ -146,8 +146,11 @@ class Interpolator(FunctionNode):
         copy_from_input_to_output(self, "fine", "result")
         if self.inputs["fine"].dd.dim == 1:
             assign_output_axes_from_inputs(
-                self, "fine", "result", assign_meshes=True, ignore_assigned=True
+                self, "fine", "result", assign_meshes=True, ignore_assigned=False
             )
+        else:
+            # TODO: add a choice of what axis to overwrite
+            assign_output_axes_from_inputs(self, "fine", "result", assign_meshes=True, ignore_assigned=False, overwrite_assigned=True)
 
     def _fcn(self, _, inputs, outputs):
         """Runs interpolation method choosen within `method` arg"""
