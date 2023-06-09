@@ -1,27 +1,53 @@
 from typing import Optional, Mapping, Tuple
 from numpy.typing import NDArray
-from schema import Schema, Optional as SchemaOptional, And
+from schema import Schema, Optional as SchemaOptional, And, Use, Or
+from pathlib import Path
 
-from ..tools.schema import IsStrSeqOrStr, IsFilenameSeqOrFilename, AllFileswithExt
+from ..tools.schema import (
+    IsStrSeqOrStr,
+    IsFilenameSeqOrFilename,
+    AllFileswithExt,
+    LoadFileWithExt,
+    LoadYaml
+)
 from ..storage import NodeStorage
 from ..lib.Array import Array
 
 from numpy import allclose
 
 _extensions = "root", "hdf5", "tsv", "txt"
-_load_arrays_cfg = Schema({
+_schema_cfg = Schema({
     "name": str,
     "filenames": And(IsFilenameSeqOrFilename, AllFileswithExt(*_extensions)),
     SchemaOptional("merge_x", default=False): bool,
     SchemaOptional("x", default="x"): str,
     SchemaOptional("y", default="y"): str,
-    SchemaOptional("replicate", default=((),)): (IsStrSeqOrStr,),
-    SchemaOptional("objects", default={}): {str: str}
+    SchemaOptional("replicate", default=((),)): Or((IsStrSeqOrStr,),[IsStrSeqOrStr]),
+    SchemaOptional("objects", default={}): {str: str},
     })
 
-def load_arrays(acfg: Optional[Mapping]=None, **kwargs):
+_schema_loadable_cfg = And(
+            {
+                'load': Or(str, And(Path, Use(str))),
+                SchemaOptional(str): object
+            },
+            Use(LoadFileWithExt(
+                yaml=LoadYaml,
+                key='load',
+                update=True
+            ), error='Failed to load {}'),
+            _schema_cfg
+        )
+
+def _validate_cfg(cfg):
+    if isinstance(cfg, dict) and 'load' in cfg:
+        return _schema_loadable_cfg.validate(cfg)
+    else:
+        return _schema_cfg.validate(cfg)
+
+def load_graph(acfg: Optional[Mapping]=None, **kwargs):
     acfg = dict(acfg or {}, **kwargs)
-    cfg = _load_arrays_cfg.validate(acfg)
+    cfg = _validate_cfg(acfg)
 
     name = cfg["name"]
     filenames = cfg["filenames"]
@@ -34,6 +60,8 @@ def load_arrays(acfg: Optional[Mapping]=None, **kwargs):
     for ext in _extensions:
         if filenames[0].endswith(f".{ext}"):
             break
+    else:
+        raise RuntimeError(f"Unable to process extension: {ext}")
 
     loader = _loaders.get(ext)
     match_filename = len(filenames)>1
@@ -59,7 +87,7 @@ def load_arrays(acfg: Optional[Mapping]=None, **kwargs):
         x0 = meshes[0]
         for xi in meshes[1:]:
             if not allclose(x0, xi, atol=0, rtol=0):
-                raise RuntimeError('load_arrays: inconsistent x axes, unable to merge.')
+                raise RuntimeError('load_graph: inconsistent x axes, unable to merge.')
 
         commonmesh, _ = Array.make_stored(f"{name}.{xname}", x0)
     else:
