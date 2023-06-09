@@ -7,7 +7,7 @@ from pathlib import Path
 from os import access, R_OK
 from typing import Callable
 
-IsStrSeq = (str,)
+IsStrSeq = Or((str,),And([str], Use(tuple)))
 IsStrSeqOrStr = Or(IsStrSeq, And(str, Use(lambda s: (s,))))
 
 def IsReadable(filename: str):
@@ -57,14 +57,16 @@ def LoadFileWithExt(*, key: Union[str, dict, None]=None, update: bool=False, **k
             dct = None
         for ext, loader in kwargs.items():
             if filename.endswith(f'.{ext}'):
-                ret = loader(filename)
+                break
+        else:
+            raise SchemaError(f'Do not know how to load {filename}')
 
-                if update and dct is not None:
-                    ret.update(dct)
+        ret = loader(filename)
+        if update and dct is not None:
+            ret.update(dct)
 
-                return ret
+        return ret
 
-        raise SchemaError(f'Do not know how to load {filename}')
     return checkfilename
 
 from yaml import load, Loader
