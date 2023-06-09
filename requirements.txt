@@ -3,6 +3,7 @@ coverage
 latexdatax
 numba
 numpy
+orderedset
 pandas
 pygraphviz
 pytest
