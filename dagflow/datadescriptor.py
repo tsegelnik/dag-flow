@@ -41,7 +41,7 @@ class DataDescriptor:
     def __str__(self):
         return (f'{self.dtype} {self.shape}'
                 f'{bool(self.axes_edges) and " [edges]" or ""}'
-                f'{bool(self.axes_meshes) and " [nodes]" or ""}')
+                f'{bool(self.axes_meshes) and " [meshes]" or ""}')
 
     _repr_pretty_ = repr_pretty
 
