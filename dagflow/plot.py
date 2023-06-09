@@ -172,10 +172,10 @@ class plot_auto:
         ax = ax or gca()
         labels = self._output.labels
 
-        if self._title: ax.set_title(self._title)
-        if self._xlabel: ax.set_xlabel(self._xlabel)
-        if self._ylabel: ax.set_ylabel(self._ylabel)
-        if self._zlabel:
+        if self._title and not ax.get_title(): ax.set_title(self._title)
+        if self._xlabel and not ax.get_xlabel(): ax.set_xlabel(self._xlabel)
+        if self._ylabel and not ax.get_ylabel(): ax.set_ylabel(self._ylabel)
+        if self._zlabel and not ax.get_zlabel():
             try:
                 ax.set_zlabel(self._zlabel)
             except AttributeError:
@@ -191,9 +191,9 @@ class plot_auto:
 
             fig = gcf()
             try:
-                ax.text2D(0.05, 0.05, path[0], transform=fig.dpi_scale_trans)
+                ax.text2D(0.05, 0.05, path[0], transform=fig.dpi_scale_trans, fontsize='small')
             except AttributeError:
-                ax.text(0.05, 0.05, path[0], transform=fig.dpi_scale_trans)
+                ax.text(0.05, 0.05, path[0], transform=fig.dpi_scale_trans, fontsize='small')
 
     @property
     def zlabel(self) -> Optional[str]:
