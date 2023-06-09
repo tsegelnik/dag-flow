@@ -287,8 +287,8 @@ class PlotVisitor(NestedMKDictVisitor):
     _args: Sequence
     _kwargs: Dict
     _active_figures: Dict
-    _overlay_priority: Sequence[OrderedSet[str]]
-    _currently_active_overlay: Optional[OrderedSet[str]]
+    _overlay_priority: Sequence[OrderedSet]
+    _currently_active_overlay: Optional[OrderedSet]
     _close_on_exitdict: bool
     def __init__(
         self,
