@@ -175,7 +175,11 @@ class plot_auto:
         if self._title and not ax.get_title(): ax.set_title(self._title)
         if self._xlabel and not ax.get_xlabel(): ax.set_xlabel(self._xlabel)
         if self._ylabel and not ax.get_ylabel(): ax.set_ylabel(self._ylabel)
-        if self._zlabel and not ax.get_zlabel():
+        try:
+            prev_zlabel = ax.get_zlabel()
+        except:
+            prev_zlabel = ""
+        if self._zlabel and prev_zlabel:
             try:
                 ax.set_zlabel(self._zlabel)
             except AttributeError:
