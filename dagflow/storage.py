@@ -226,9 +226,20 @@ class NodeStorage(NestedMKDict):
 
         return ret
 
-    def to_latex(self, *, return_df: bool=False, **kwargs) -> Union[str, Tuple[str, DataFrame]]:
+    def to_latex(
+        self,
+        filename: Optional[str]=None,
+        *,
+        return_df: bool=False,
+        **kwargs
+    ) -> Union[str, Tuple[str, DataFrame]]:
         df = self.to_df(label_from="latex", **kwargs)
         tex = df.to_latex(escape=False)
+
+        if filename:
+            with open(filename, 'w') as out:
+                logger.log(SUBINFO, f'Write: {filename}')
+                out.write(tex)
 
         return tex, df if return_df else tex
 
@@ -236,6 +247,7 @@ class NodeStorage(NestedMKDict):
         data = self.to_dict(**kwargs)
         include = ("value", "central", "sigma", "sigma_rel_perc")
         odict = {".".join(k): v for k, v in data.walkitems() if (k and k[-1] in include)}
+        logger.log(SUBINFO, f'Write: {filename}')
         datax(filename, **odict)
 
     def to_root(self, filename: str) -> None:
