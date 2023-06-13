@@ -1,5 +1,5 @@
 from .Integrator import Integrator
-from .IntegratorSampler import IntegratorSampler
+from .IntegratorSampler import IntegratorSampler, ModeType
 from ..meta_node import MetaNode
 from ..storage import NodeStorage
 
@@ -16,7 +16,14 @@ class IntegratorGroup(MetaNode):
     __slots__ = ("_sampler")
 
     _sampler: "Node"
-    def __init__(self, mode: str, *, bare: bool=False, dropdim: bool=True, labels: Mapping={}):
+    def __init__(
+        self,
+        mode: ModeType,
+        *,
+        bare: bool=False,
+        dropdim: bool=True,
+        labels: Mapping={}
+    ):
         super().__init__()
         if bare:
             return
@@ -24,7 +31,7 @@ class IntegratorGroup(MetaNode):
         self._init_sampler(mode, "sampler", labels.get("sampler", {}))
         self._add_integrator("integrator", labels.get("integrator", {}), dropdim=dropdim)
 
-    def _init_sampler(self, mode: str, name: str="sampler", label: Mapping={}):
+    def _init_sampler(self, mode: ModeType, name: str="sampler", label: Mapping={}):
         self._sampler = IntegratorSampler(name, mode=mode, label=label)
 
         self._add_node(
@@ -65,7 +72,7 @@ class IntegratorGroup(MetaNode):
     @classmethod
     def replicate(
         cls,
-        mode: str,
+        mode: ModeType,
         name_sampler: str="sampler",
         name_integrator: str="integrator",
         labels: Mapping={},

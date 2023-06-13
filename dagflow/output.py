@@ -3,7 +3,7 @@ from typing import List, Optional
 from numpy import zeros
 from numpy.typing import ArrayLike, DTypeLike, NDArray
 
-from dagflow.exception import DagflowError
+from .exception import DagflowError
 
 from .edges import EdgeContainer
 from .exception import (

@@ -39,7 +39,7 @@ class NodeStorage(NestedMKDict):
         show_all: bool = False,
         **kwargs
     ) -> None:
-        from dagflow.plot import plot_auto
+        from .plot import plot_auto
         from matplotlib.pyplot import subplots, show
 
         if show_all:
@@ -163,12 +163,7 @@ class NodeStorage(NestedMKDict):
 
     def remove_connected_inputs(self, key: Key=()):
         source = self(key)
-        to_remove = []
-        for key, input in source.walkitems():
-            if not isinstance(input, Input):
-                continue
-            to_remove.append(key)
-
+        to_remove = [key for key,input in source.walkitems() if isinstance(input, Input)]
         for key in to_remove:
             source.delete_with_parents(key)
 

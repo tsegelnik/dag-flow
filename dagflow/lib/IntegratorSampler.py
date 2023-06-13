@@ -13,6 +13,7 @@ from ..typefunctions import (
     check_inputs_number,
 )
 
+ModeType = Literal["rect", "trap", "gl", "2d"]
 
 def _gl_sampler(
     orders: NDArray, sample: NDArray, weights: NDArray, edges: NDArray
@@ -59,7 +60,7 @@ class IntegratorSampler(FunctionNode):
     def __init__(
         self,
         *args,
-        mode: Literal["rect", "trap", "gl", "2d"],
+        mode: ModeType,
         dtype: DTypeLike = "d",
         align: Optional[Literal["left", "center", "right"]] = None,
         **kwargs,
