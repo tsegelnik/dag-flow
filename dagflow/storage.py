@@ -408,7 +408,7 @@ class PlotVisitor(NestedMKDictVisitor):
             self._currently_active_overlay = None
 
     def visit(self, key, output):
-        from dagflow.plot import plot_auto
+        from .plot import plot_auto
         if not isinstance(output, Output) or not output.labels.plottable:
             return
 
