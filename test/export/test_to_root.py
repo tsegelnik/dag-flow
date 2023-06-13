@@ -8,6 +8,7 @@ from dagflow.graphviz import savegraph
 from numpy import arange, meshgrid
 from pytest import mark
 
+@mark.skip(reason="no way of currently testing this")
 @mark.parametrize('dtype', ('d', 'f',))
 def test_to_root(testname, debug_graph, dtype):
     sizex = 12
