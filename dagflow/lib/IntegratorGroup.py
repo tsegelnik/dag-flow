@@ -5,6 +5,7 @@ from .IntegratorSampler import IntegratorSampler, ModeType
 from ..meta_node import MetaNode
 
 from typing import Mapping, Tuple, Union
+from multikeydict.typing import KeyLike
 
 class IntegratorGroup(MetaNode):
     __slots__ = ("_sampler")
