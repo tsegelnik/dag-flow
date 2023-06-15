@@ -1,3 +1,5 @@
+from ..node import Node
+from ..storage import NodeStorage
 from .Integrator import Integrator
 from .IntegratorSampler import IntegratorSampler, ModeType
 from ..meta_node import MetaNode
@@ -6,11 +8,6 @@ from ..storage import NodeStorage
 from typing import Mapping, TYPE_CHECKING, Tuple, Union
 if TYPE_CHECKING:
     from ..node import Node
-
-from ..meta_node import MetaNode
-from .Integrator import Integrator
-from .IntegratorSampler import IntegratorSampler
-
 
 class IntegratorGroup(MetaNode):
     __slots__ = ("_sampler")

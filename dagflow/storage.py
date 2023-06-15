@@ -74,7 +74,7 @@ class NodeStorage(NestedMKDict):
             setleft = set(keyleft)
 
             for keyright, valueright in other.walkitems():
-                if not isinstance(right, (Input, Node)):
+                if not isinstance(valueright, (Input, Node)):
                     raise RuntimeError(f"Invalid right value type for {keyright}: {type(valueright)} (need Input/Node)")
                 setright = set(keyright)
 
