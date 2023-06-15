@@ -3,6 +3,8 @@ from typing import List, Optional
 from numpy import zeros
 from numpy.typing import ArrayLike, DTypeLike, NDArray
 
+from .exception import DagflowError
+
 from .edges import EdgeContainer
 from .exception import (
     ClosedGraphError,
@@ -354,12 +356,19 @@ class Output:
         return tainted
 
     def to_dict(self, *, label_from: str = "text") -> dict:
-        data = self.data
-        shape = data.shape
+        try:
+            data = self.data
+            shape = data.shape
+        except DagflowError:
+            return {
+                    "label": self.labels[label_from],
+                    "shape": '?'
+                    }
+
 
         ret = {
             "label": self.labels[label_from],
-            "shape": shape[0] if len(data.shape)==1 else shape
+            "shape": shape[0] if len(shape)==1 else shape
         }
 
         if data.size > 1:

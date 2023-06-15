@@ -1,6 +1,8 @@
+from multikeydict.typing import Key
 from multikeydict.nestedmkdict import NestedMKDict
 from multikeydict.visitor import NestedMKDictVisitor
 from .output import Output
+from .input import Input
 from .node import Node
 from .logger import logger, DEBUG
 
@@ -21,19 +23,15 @@ def trunc(text: str, width: int) -> str:
     return '\n'.join(line[:width] for line in text.split('\n'))
 
 class NodeStorage(NestedMKDict):
-    def __init__(self, *args, **kwargs):
+    __slots__ = ('_remove_connected_inputs',)
+    _remove_connected_inputs: bool
+
+    def __init__(self, *args, remove_connected_inputs: bool=True, **kwargs):
         kwargs.setdefault('sep', '.')
         kwargs.setdefault('recursive_to_others', True)
         super().__init__(*args, **kwargs)
 
-    def read_paths(self) -> None:
-        for key, value in self.walkitems():
-            labels = getattr(value, 'labels', None)
-            if labels is None:
-                continue
-
-            key = '.'.join(key)
-            labels.paths.append(key)
+        self._remove_connected_inputs = remove_connected_inputs
 
     def plot(
         self,
@@ -41,7 +39,7 @@ class NodeStorage(NestedMKDict):
         show_all: bool = False,
         **kwargs
     ) -> None:
-        from dagflow.plot import plot_auto
+        from .plot import plot_auto
         from matplotlib.pyplot import subplots, show
 
         if show_all:
@@ -61,22 +59,93 @@ class NodeStorage(NestedMKDict):
         if show_all:
             show()
 
-    def process_indices(self, index_values: Tuple[str, ...]) -> None:
-        from multikeydict.flatten import flatten
-        newdict = flatten(self, index_values)
-        for k, v in newdict.items():
-            self[k] = v
+    #
+    # Connectors
+    #
+    def __rshift__(self, other: NestedMKDict):
+        if not isinstance(other, NestedMKDict):
+            raise RuntimeError("Operator >> RHS should be NestedMKDict")
 
-    def read_labels(self, source: Union[NestedMKDict, Dict]) -> None:
+        nconnections = 0
+        to_remove = []
+        for keyleft, valueleft in self.walkitems():
+            if not isinstance(valueleft, Output):
+                raise RuntimeError(f"Invalid left value type for {keyleft}: {type(valueleft)} (need Output)")
+            setleft = set(keyleft)
+
+            for keyright, valueright in other.walkitems():
+                if not isinstance(valueright, (Input, Node)):
+                    raise RuntimeError(f"Invalid right value type for {keyright}: {type(valueright)} (need Input/Node)")
+                setright = set(keyright)
+
+                if not setleft.issubset(setright):
+                    continue
+
+                valueleft >> valueright
+
+                if self._remove_connected_inputs:
+                    to_remove.append(keyright)
+                nconnections+=1
+
+        if nconnections==0:
+            raise RuntimeError("No connections are done")
+
+        for key in to_remove:
+            print('remove', key)
+            del other[key]
+
+    #
+    # Finalizers
+    #
+    def read_paths(self) -> None:
+        for key, value in self.walkitems():
+            labels = getattr(value, 'labels', None)
+            if labels is None:
+                continue
+
+            key = '.'.join(key)
+            labels.paths.append(key)
+
+    # def process_indices(self, index_values: Tuple[str, ...]) -> None:
+    #     from multikeydict.flatten import flatten
+    #     newdict = flatten(self, index_values)
+    #     for k, v in newdict.items():
+    #         self[k] = v
+
+    def read_labels(self, source: Union[NestedMKDict, Dict], *, strict: bool=False) -> None:
         source = NestedMKDict(source, sep='.')
+
+        processed_keys = set()
+        def get_label(key):
+            try:
+                # if strict:
+                #     labels = source.pop(key, delete_parents=True)
+                # else:
+                labels = source(key)
+            except (KeyError, TypeError):
+                pass
+            else:
+                processed_keys.add(key)
+                return labels
+
+            keyleft = list(key[:-1])
+            keyright = []
+            while keyleft:
+                groupkey = keyleft+['group']
+                try:
+                    labels = source(groupkey)
+                except (KeyError, TypeError):
+                    keyright.insert(0, keyleft.pop())
+                else:
+                    processed_keys.add(tuple(groupkey))
+                    return labels
+
         for key, object in self.walkitems():
             if not isinstance(object, (Node, Output)):
                 continue
 
             logger.log(DEBUG, f"Look up label for {'.'.join(key)}")
-            try:
-                labels = source(key)
-            except (KeyError, TypeError):
+            if (labels := get_label(key)) is None:
                 continue
             logger.log(DEBUG, "... found")
 
@@ -85,6 +154,22 @@ class NodeStorage(NestedMKDict):
             elif isinstance(object, Output):
                 object.labels = object.labels or {}
                 object.labels.update(labels)
+
+        if strict:
+            for key in processed_keys:
+                source.delete_with_parents(key)
+            if source:
+                raise RuntimeError(f'The following label groups were not used: {tuple(source.keys())}')
+
+    def remove_connected_inputs(self, key: Key=()):
+        source = self(key)
+        to_remove = [key for key,input in source.walkitems() if isinstance(input, Input)]
+        for key in to_remove:
+            source.delete_with_parents(key)
+
+    #
+    # Converters
+    #
 
     def to_list(self, **kwargs) -> list:
         return self.visit(ParametersVisitor(kwargs)).data_list
@@ -158,6 +243,9 @@ class NodeStorage(NestedMKDict):
         visitor = ExportToRootVisitor(filename)
         self.visit(visitor)
 
+    #
+    # Current storage, context
+    #
     @staticmethod
     def current() -> Optional["NodeStorage"]:
         return _context_storage[-1] if _context_storage else None

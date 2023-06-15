@@ -1,9 +1,12 @@
 from .iter import IsIterable, StopNesting
+from multikeydict.nestedmkdict import NestedMKDict
 
 def get_proper_iterator(obj, methodname, onerror, **kwargs):
     if methodname:
         if method := getattr(obj, methodname, None):
             return method(**kwargs)
+    if isinstance(obj, NestedMKDict):
+        return obj.walkvalues()
     if IsIterable(obj):
         return obj
     raise RuntimeError(

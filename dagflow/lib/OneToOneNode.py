@@ -19,4 +19,4 @@ class OneToOneNode(FunctionNode):
         )
         check_has_inputs(self)
         copy_from_input_to_output(self, slice(None), slice(None), edges=True, nodes=True)
-        assign_outputs_axes_from_inputs(self, slice(None), slice(None), assign_nodes=True, ignore_assigned=True, ignore_Nd=True)
+        assign_outputs_axes_from_inputs(self, slice(None), slice(None), assign_meshes=True, ignore_assigned=True, ignore_Nd=True)
