@@ -1,5 +1,4 @@
-from numpy import copyto, empty_like, multiply, matmul, ndarray
-from numpy.typing import NDArray
+from numpy import empty, multiply, matmul, ndarray
 
 from ..nodes import FunctionNode
 from ..input import Input
@@ -8,12 +7,14 @@ from ..typefunctions import (
     check_has_inputs,
     eval_output_dtype,
     check_input_dimension,
-    check_input_square_or_diag,
+    check_input_square_or_diag,     
     check_inputs_multiplicable_mat
 )
 
 
 class MatrixProductDVDt(FunctionNode):
+    __slots__ = ('_left', '_square', '_out', '_buffer')
+
     _left: Input
     _square: Input
     _out: Output
@@ -29,7 +30,7 @@ class MatrixProductDVDt(FunctionNode):
             "square": self._fcn_square
             })
 
-    def _fcn_diagonal(self, inputs, outputs):
+    def _fcn_diagonal(self, node, inputs, outputs):
         left = self._left.data
         diagonal = self._square.data    # square matrix stored as diagonal
         out = self._out.data
@@ -37,7 +38,7 @@ class MatrixProductDVDt(FunctionNode):
         matmul(self._buffer, left.T, out=out)
         return out
 
-    def _fcn_square(self, inputs, outputs):
+    def _fcn_square(self, node, inputs, outputs):
         left = self._left.data
         square = self._square.data
         out = self._out.data
@@ -54,9 +55,10 @@ class MatrixProductDVDt(FunctionNode):
         self._out.dd.shape=((self._left.dd.shape[0], 
                              self._left.dd.shape[0]))
         if ndim == 1:
-            self._fcn = self._functions["diagonal"]
+            self.fcn = self._functions["diagonal"]
         else:
-            self._fcn = self._functions["square"]
+            self.fcn = self._functions["square"]
 
     def _post_allocate(self):
-        self._buffer = empty_like(self.inputs["left"].get_data_unsafe())
+        self._buffer = empty(shape=self._left.dd.shape, 
+                             dtype=self._left.dd.dtype)
