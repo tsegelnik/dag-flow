@@ -13,7 +13,7 @@ from ..typefunctions import (
 class ManyToOneNode(FunctionNode):
     """
     The abstract node with only one output `result`,
-    which is the result of some function on all the positional inputs
+    which is the result of some function of all the positional inputs
     """
 
     def __init__(self, *args, **kwargs):
@@ -24,8 +24,8 @@ class ManyToOneNode(FunctionNode):
 
     def _typefunc(self) -> None:
         """A output takes this function to determine the dtype and shape"""
-        check_has_inputs(self) # at least one input
-        check_inputs_equivalence(self) # all the inputs are have same dd fields
-        copy_input_shape_to_output(self, 0, "result") # copy shape to result
-        copy_input_edges_to_output(self, 0, "result") # copy edges to result
-        eval_output_dtype(self, AllPositionals, "result") # eval dtype of result
+        check_has_inputs(self)  # at least one input
+        check_inputs_equivalence(self)  # all the inputs are have same dd fields
+        copy_input_shape_to_output(self, 0, "result")  # copy shape to result
+        copy_input_edges_to_output(self, 0, "result")  # copy edges to result
+        eval_output_dtype(self, AllPositionals, "result")  # eval dtype of result

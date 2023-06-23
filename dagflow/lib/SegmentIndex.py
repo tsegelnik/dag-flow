@@ -2,10 +2,7 @@ from typing import Literal, Optional
 
 from ..exception import InitializationError
 from ..nodes import FunctionNode
-from ..typefunctions import (
-    check_inputs_number,
-    copy_from_input_to_output,
-)
+from ..typefunctions import check_inputs_number, copy_from_input_to_output
 
 
 class SegmentIndex(FunctionNode):
@@ -54,11 +51,11 @@ class SegmentIndex(FunctionNode):
         )
         self.outputs[0].dd.dtype = "i"
 
-    def _fcn(self, _, inputs, outputs) -> Optional[list]:
+    def _fcn(self) -> Optional[list]:
         """Uses `numpy.ndarray.searchsorted` and `numpy.ndarray.argsort`"""
-        out = outputs[0].data.ravel()
-        coarse = inputs[0].data.ravel()
-        fine = inputs[1].data.ravel()
+        out = self.outputs[0].data.ravel()
+        coarse = self.inputs[0].data.ravel()
+        fine = self.inputs[1].data.ravel()
         # NOTE: `searchsorted` and `argsort` allocate a memory!
         #       it is better to use another algorithm if possible
         sorter = coarse.argsort()

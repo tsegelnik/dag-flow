@@ -30,7 +30,7 @@ class ViewConcat(FunctionNode):
         kwargs = {"child_output": self._output}
         return self._add_input(iname, allocatable=True, **kwargs)
 
-    def _fcn(self, _, inputs, outputs):
+    def _fcn(self):
         self.inputs.touch()
         return self._output._data
 
@@ -41,9 +41,9 @@ class ViewConcat(FunctionNode):
         cdtype = self.inputs[0].dd.dtype
         check_input_dtype(self, slice(None), cdtype)
         check_input_dimension(self, slice(None), 1)
-        for input in self.inputs:
+        for _input in self.inputs:
             self._offsets.append(size)
-            size += input.dd.shape[0]
+            size += _input.dd.shape[0]
 
         output = self.outputs[0]
         output.dd.dtype = cdtype
@@ -51,7 +51,7 @@ class ViewConcat(FunctionNode):
         data = zeros(shape=size, dtype=cdtype)
         output._set_data(data, owns_buffer=True)
 
-        for offset, input in zip(self._offsets, self.inputs):
-            size = input.dd.shape[0]
+        for offset, _input in zip(self._offsets, self.inputs):
+            size = _input.dd.shape[0]
             idata = data[offset : offset + size]
-            input.set_own_data(idata, owns_buffer=False)
+            _input.set_own_data(idata, owns_buffer=False)

@@ -26,13 +26,13 @@ class Strategy(IntEnum):
 
 class Interpolator(FunctionNode):
     """
-    inputs:
+    self.inputs:
         `0` or `y`: array of the `y=f(coarse)`
         `coarse`: array of the coarse x points
         `fine`: array of the fine x points
         `indices`: array of the indices of the coarse segments for every fine point
 
-    outputs:
+    self.outputs:
         `0` or `result`: array of the `y≈f(fine)`
 
     extra arguments:
@@ -66,12 +66,8 @@ class Interpolator(FunctionNode):
         *args,
         method: Literal["linear", "log", "logx", "exp"] = "linear",
         tolerance: float = 1e-10,
-        underflow: Literal[
-            "constant", "nearestedge", "extrapolate"
-        ] = "extrapolate",
-        overflow: Literal[
-            "constant", "nearestedge", "extrapolate"
-        ] = "extrapolate",
+        underflow: Literal["constant", "nearestedge", "extrapolate"] = "extrapolate",
+        overflow: Literal["constant", "nearestedge", "extrapolate"] = "extrapolate",
         fillvalue: float = 0.0,
         **kwargs,
     ) -> None:
@@ -135,8 +131,8 @@ class Interpolator(FunctionNode):
     def _typefunc(self) -> None:
         """
         The function to determine the dtype and shape.
-        Checks inputs dimension and, selects an interpolation algorithm,
-        determines dtype and shape for outputs
+        Checks self.inputs dimension and, selects an interpolation algorithm,
+        determines dtype and shape for self.outputs
         """
         check_inputs_number(self, 1)
         check_has_inputs(self, ("coarse", "y", "fine", "indices"))
@@ -146,16 +142,20 @@ class Interpolator(FunctionNode):
         copy_from_input_to_output(self, "fine", "result")
         if self.inputs["fine"].dd.dim == 1:
             assign_output_axes_from_inputs(
-                self, "fine", "result", assign_meshes=True, ignore_assigned=True
+                self,
+                "fine",
+                "result",
+                assign_meshes=True,
+                ignore_assigned=True,
             )
 
-    def _fcn(self, _, inputs, outputs):
+    def _fcn(self):
         """Runs interpolation method choosen within `method` arg"""
-        coarse = inputs["coarse"].data.ravel()
-        yc = inputs["y"].data.ravel()
-        fine = inputs["fine"].data.ravel()
-        indices = inputs["indices"].data.ravel()
-        out = outputs["result"].data.ravel()
+        coarse = self.inputs["coarse"].data.ravel()
+        yc = self.inputs["y"].data.ravel()
+        fine = self.inputs["fine"].data.ravel()
+        indices = self.inputs["indices"].data.ravel()
+        out = self.outputs["result"].data.ravel()
 
         sortedindices = coarse.argsort()  # indices to sort the arrays
         _interpolation(
@@ -235,9 +235,7 @@ def _interpolation(
                 )
         else:
             # interpolate
-            result[i] = method(
-                coarse[j - 1], coarse[j], yc[j - 1], yc[j], fine[i]
-            )
+            result[i] = method(coarse[j - 1], coarse[j], yc[j - 1], yc[j], fine[i])
 
 
 @njit(
@@ -278,8 +276,7 @@ def _log_interpolation(
     fine: float,
 ) -> float:
     return log(
-        exp(yc0)
-        + (fine - coarse0) * (exp(yc1) - exp(yc0)) / (coarse1 - coarse0)
+        exp(yc0) + (fine - coarse0) * (exp(yc1) - exp(yc0)) / (coarse1 - coarse0)
     )
 
 

@@ -1,14 +1,14 @@
-from numpy import empty, multiply, matmul, ndarray
+from numpy import empty, matmul, multiply, ndarray
 
-from ..nodes import FunctionNode
 from ..input import Input
+from ..nodes import FunctionNode
 from ..output import Output
 from ..typefunctions import (
     check_has_inputs,
-    eval_output_dtype,
     check_input_dimension,
     check_input_square_or_diag,
     check_inputs_multiplicable_mat,
+    eval_output_dtype,
 )
 
 
@@ -37,7 +37,7 @@ class MatrixProductDVDt(FunctionNode):
         )
         self._labels.setdefault("mark", "LDLᵀ")
 
-    def _fcn_diagonal(self, node, inputs, outputs):
+    def _fcn_diagonal(self):
         left = self._left.data
         diagonal = self._square.data  # square matrix stored as diagonal
         out = self._out.data
@@ -45,7 +45,7 @@ class MatrixProductDVDt(FunctionNode):
         matmul(self._buffer, left.T, out=out)
         return out
 
-    def _fcn_square(self, node, inputs, outputs):
+    def _fcn_square(self):
         left = self._left.data
         square = self._square.data
         out = self._out.data
@@ -63,6 +63,4 @@ class MatrixProductDVDt(FunctionNode):
         self.fcn = self._functions["diagonal" if ndim == 1 else "square"]
 
     def _post_allocate(self):
-        self._buffer = empty(
-            shape=self._left.dd.shape, dtype=self._left.dd.dtype
-        )
+        self._buffer = empty(shape=self._left.dd.shape, dtype=self._left.dd.dtype)

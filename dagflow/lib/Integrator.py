@@ -67,7 +67,7 @@ class Integrator(FunctionNode):
     of every input within the `weight`, `ordersX` and `ordersY` (for 2 dim).
 
     The `dim` and `precision=dtype` of integration are chosen *automaticly*
-    in the type function within the inputs.
+    in the type function within the self.inputs.
 
     For 2d-integration the `ordersY` input must be connected.
     If any dimension has only one bin, the integrator drops this dimension and
@@ -103,8 +103,8 @@ class Integrator(FunctionNode):
     def _typefunc(self) -> None:
         """
         The function to determine the dtype and shape.
-        Checks inputs dimension and, selects an integration algorithm,
-        determines dtype and shape for outputs
+        Checks self.inputs dimension and, selects an integration algorithm,
+        determines dtype and shape for self.outputs
         """
         if len(self.inputs) == 0:
             return
@@ -114,7 +114,7 @@ class Integrator(FunctionNode):
         dim = 1 if self.inputs.get("ordersY", None) is None else 2
         if (ndim := len(input0.dd.shape)) != dim:
             raise TypeFunctionError(
-                f"The Integrator works only with {dim}d inputs, but the first is {ndim}d!",
+                f"The Integrator works only with {dim}d self.inputs, but the first is {ndim}d!",
                 node=self,
             )
         check_input_dimension(self, (slice(None), "weights"), dim)
@@ -160,7 +160,7 @@ class Integrator(FunctionNode):
         orders = self.inputs[name]
         if (y := sum(orders.data)) != shape:
             raise TypeFunctionError(
-                f"Orders '{name}' must be consistent with inputs len={shape}, "
+                f"Orders '{name}' must be consistent with self.inputs len={shape}, "
                 f"but given '{y}'!",
                 node=self,
                 input=orders,
@@ -174,43 +174,43 @@ class Integrator(FunctionNode):
         weights = self.inputs["weights"].dd
         self.__buffer = empty(shape=weights.shape, dtype=weights.dtype)
 
-    def _fcn_1d(self, _, inputs, outputs):
+    def _fcn_1d(self):
         """1d version of integration function"""
-        weights = inputs["weights"].data
-        ordersX = inputs["ordersX"].data
-        for input, output in zip(inputs.iter_data(), outputs.iter_data()):
+        weights = self.inputs["weights"].data
+        ordersX = self.inputs["ordersX"].data
+        for input, output in zip(self.inputs.iter_data(), self.outputs.iter_data()):
             multiply(input, weights, out=self.__buffer)
             _integrate1d(output, self.__buffer, ordersX)
         if self.debug:
-            return list(outputs.iter_data())
+            return list(self.outputs.iter_data())
 
-    def _fcn_2d(self, _, inputs, outputs):
+    def _fcn_2d(self):
         """2d version of integration function"""
-        weights = inputs["weights"].data  # (n, m)
-        ordersX = inputs["ordersX"].data  # (n, )
-        ordersY = inputs["ordersY"].data  # (m, )
-        for input, output in zip(inputs.iter_data(), outputs.iter_data()):
+        weights = self.inputs["weights"].data  # (n, m)
+        ordersX = self.inputs["ordersX"].data  # (n, )
+        ordersY = self.inputs["ordersY"].data  # (m, )
+        for input, output in zip(self.inputs.iter_data(), self.outputs.iter_data()):
             multiply(input, weights, out=self.__buffer)
             _integrate2d(output, self.__buffer, ordersX, ordersY)
         if self.debug:
-            return list(outputs.iter_data())
+            return list(self.outputs.iter_data())
 
-    def _fcn_21d_x(self, _, inputs, outputs):
+    def _fcn_21d_x(self):
         """21d version of integration function where x-axis is dropped"""
-        weights = inputs["weights"].data  # (1, m)
-        ordersY = inputs["ordersY"].data  # (m, )
-        for input, output in zip(inputs.iter_data(), outputs.iter_data()):
+        weights = self.inputs["weights"].data  # (1, m)
+        ordersY = self.inputs["ordersY"].data  # (m, )
+        for input, output in zip(self.inputs.iter_data(), self.outputs.iter_data()):
             multiply(input, weights, out=self.__buffer)
             _integrate2to1d(output, self.__buffer.T, ordersY)
         if self.debug:
-            return list(outputs.iter_data())
+            return list(self.outputs.iter_data())
 
-    def _fcn_21d_y(self, _, inputs, outputs):
+    def _fcn_21d_y(self):
         """21d version of integration function where y-axis is dropped"""
-        weights = inputs["weights"].data  # (m, 1)
-        ordersX = inputs["ordersX"].data  # (m, )
-        for input, output in zip(inputs.iter_data(), outputs.iter_data()):
+        weights = self.inputs["weights"].data  # (m, 1)
+        ordersX = self.inputs["ordersX"].data  # (m, )
+        for input, output in zip(self.inputs.iter_data(), self.outputs.iter_data()):
             multiply(input, weights, out=self.__buffer)
             _integrate2to1d(output, self.__buffer, ordersX)
         if self.debug:
-            return list(outputs.iter_data())
+            return list(self.outputs.iter_data())

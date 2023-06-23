@@ -5,8 +5,8 @@ from ..input_extra import MissingInputAddOne
 from ..nodes import FunctionNode
 from ..typefunctions import (
     check_has_inputs,
-    eval_output_dtype,
     copy_input_shape_to_output,
+    eval_output_dtype,
 )
 
 
@@ -30,9 +30,7 @@ class WeightedSum(FunctionNode):
         shape = weight.dd.shape[0]
         leninp = len(self.inputs)
         if shape == 0:
-            raise TypeFunctionError(
-                "Cannot use WeightedSum with empty 'weight'!"
-            )
+            raise TypeFunctionError("Cannot use WeightedSum with empty 'weight'!")
         elif shape == 1:
             self.fcn = self._functions["number"]
         elif shape == leninp:
@@ -45,27 +43,27 @@ class WeightedSum(FunctionNode):
         copy_input_shape_to_output(self, 0, "result")
         eval_output_dtype(self, slice(None), "result")
 
-    def _fcn_number(self, _, inputs, outputs):
+    def _fcn_number(self):
         """
         The function for one weight for all inputs:
         `len(weight) == 1`
         """
-        out = outputs[0].data
+        out = self.outputs[0].data
         weight = self.inputs["weight"].data
-        copyto(out, inputs[0].data.copy())
-        for input in inputs[1:]:
-            out += input.data
+        copyto(out, self.inputs[0].data.copy())
+        for _input in self.inputs[1:]:
+            out += _input.data
         out *= weight
         return out
 
-    def _fcn_iterable(self, _, inputs, outputs):
+    def _fcn_iterable(self):
         """
         The function for one weight for every input:
         `len(weight) == len(inputs)`
         """
-        out = outputs[0].data
+        out = self.outputs[0].data
         weights = self.inputs["weight"].data
-        copyto(out, inputs[0].data * weights[0])
-        for input, weight in zip(inputs[1:], weights[1:]):
-            out += input.data * weight
+        copyto(out, self.inputs[0].data * weights[0])
+        for _input, weight in zip(self.inputs[1:], weights[1:]):
+            out += _input.data * weight
         return out
