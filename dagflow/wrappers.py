@@ -1,34 +1,34 @@
 from .printl import next_level, printl
 
 
-def printer(fcn, node, inputs, outputs):
+def printer(fcn, node):
     printl(f"Evaluate {node.name}")
     with next_level():
-        fcn(node, inputs, outputs)
+        fcn()
     printl(f"... done with {node.name}")
 
 
-def before_printer(fcn, node, inputs, outputs):
+def before_printer(fcn, node):
     printl(f"Evaluate {node.name}: {node.label()}")
     with next_level():
-        fcn(node, inputs, outputs)
+        fcn()
 
 
-def after_printer(fcn, node, inputs, outputs):
+def after_printer(fcn, node):
     with next_level():
-        fcn(node, inputs, outputs)
+        fcn()
     printl(f"Evaluate {node.name}: {node.label()}")
 
 
-def dataprinter(fcn, node, inputs, outputs):
-    fcn(node, inputs, outputs)
-    for i, output in enumerate(outputs):
+def dataprinter(fcn, node):
+    fcn()
+    for i, output in enumerate(node.outputs):
         printl("{: 2d} {}: {!s}".format(i, output.name, output._data))
 
 
-def toucher(fcn, node, inputs, outputs):
-    for i, input in enumerate(inputs):
-        printl("touch input {: 2d} {}.{}".format(i, node.name, input.name))
+def toucher(fcn, node):
+    for i, _input in enumerate(node.inputs):
+        printl("touch input {: 2d} {}.{}".format(i, node.name, _input.name))
         with next_level():
-            input.touch()
-    fcn(node, inputs, outputs)
+            _input.touch()
+    fcn()

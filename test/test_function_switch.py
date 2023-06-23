@@ -1,10 +1,11 @@
 #!/usr/bin/env python
 
+from numpy import arange, array, copyto, result_type
+
 from dagflow.graph import Graph
 from dagflow.input_extra import MissingInputAddOne
 from dagflow.lib import Array
 from dagflow.nodes import FunctionNode
-from numpy import arange, array, copyto, result_type
 
 
 class SumIntProductFloatElseNothing(FunctionNode):
@@ -13,27 +14,25 @@ class SumIntProductFloatElseNothing(FunctionNode):
             "missing_input_handler", MissingInputAddOne(output_fmt="result")
         )
         super().__init__(name, **kwargs)
-        self._functions.update(
-            {"int": self._fcn_int, "float": self._fcn_float}
-        )
+        self._functions.update({"int": self._fcn_int, "float": self._fcn_float})
 
-    def _fcn(self, _, inputs, outputs):
-        return outputs[0].data
+    def _fcn(self):
+        return self.outputs[0].data
 
-    def _fcn_int(self, _, inputs, outputs):
-        out = outputs[0].data
-        copyto(out, inputs[0].data.copy())
-        if len(inputs) > 1:
-            for input in inputs[1:]:
-                out += input.data
+    def _fcn_int(self):
+        out = self.outputs[0].data
+        copyto(out, self.inputs[0].data.copy())
+        if len(self.inputs) > 1:
+            for _input in self.inputs[1:]:
+                out += _input.data
         return out
 
-    def _fcn_float(self, _, inputs, outputs):
-        out = outputs[0].data
-        copyto(out, inputs[0].data.copy())
-        if len(inputs) > 1:
-            for input in inputs[1:]:
-                out *= input.data
+    def _fcn_float(self):
+        out = self.outputs[0].data
+        copyto(out, self.inputs[0].data.copy())
+        if len(self.inputs) > 1:
+            for _input in self.inputs[1:]:
+                out *= _input.data
         return out
 
     def _typefunc(self) -> bool:

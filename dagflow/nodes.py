@@ -1,12 +1,11 @@
-from .node import Node
+from typing import Any, Callable, Dict
 
 from .exception import DagflowError
+from .node import Node
 
 
 class FunctionNode(Node):
-    """Function signature: fcn(node, inputs, outputs)
-
-    Note: _fcn should be a static function with signature (node, inputs, outputs)
+    """Function signature: fcn(node)
 
     - Function defined as instance property will become a static method:
         class Node(...):
@@ -17,22 +16,9 @@ class FunctionNode(Node):
 
     - Fucntion defined in a nested class with staticmethod:
         class Other(Node)
-            @staticmethod
             def _fcn():
                 ...
 
-        node = Node()
-        node.fcn() # will have NO self provided as first argument
-
-    - [deprecated] Function defined as class property will become a bound method:
-        class Node(...):
-            _fcn = ...
-        node = Node()
-        node.fcn() # will have self provided as first argument
-
-    - [deprecated] Function defined via staticmethod decorator as class property will become a static method:
-        class Node(...):
-            _fcn = staticmethod(...)
         node = Node()
         node.fcn() # will have NO self provided as first argument
     """
@@ -43,7 +29,7 @@ class FunctionNode(Node):
         super().__init__(name, **kwargs)
         self._fcn_chain = []
 
-        self._functions = {"default": self._fcn}
+        self._functions: Dict[Any, Callable] = {"default": self._fcn}
         self.fcn = self._functions["default"]
 
     def _stash_fcn(self):
@@ -51,8 +37,8 @@ class FunctionNode(Node):
         return self.fcn
 
     def _make_wrap(self, prev_fcn, wrap_fcn):
-        def wrapped_fcn(node, inputs, outputs):
-            wrap_fcn(prev_fcn, node, inputs, outputs)
+        def wrapped_fcn():
+            wrap_fcn(prev_fcn, self)
 
         return wrapped_fcn
 

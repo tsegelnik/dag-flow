@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-from numpy import arange, copyto, result_type
+from numpy import arange, copyto
 from pytest import raises
 
 from dagflow.exception import (
@@ -9,36 +9,26 @@ from dagflow.exception import (
     UnclosedGraphError,
 )
 from dagflow.graph import Graph
-from dagflow.input_extra import MissingInputAddOne
 from dagflow.lib.Array import Array
+from dagflow.lib.ManyToOneNode import ManyToOneNode
 from dagflow.lib.WeightedSum import WeightedSum
-from dagflow.nodes import FunctionNode
 
 
-class ThreeInputsSum(FunctionNode):
-    def __init__(self, *args, **kwargs):
-        kwargs.setdefault(
-            "missing_input_handler", MissingInputAddOne(output_fmt="result")
-        )
-        super().__init__(*args, **kwargs)
-
-    def _fcn(self, _, inputs, outputs):
-        out = outputs["result"].data
-        copyto(out, inputs[0].data.copy())
-        for input in inputs[1:3]:
-            out += input.data
+class ThreeInputsSum(ManyToOneNode):
+    def _fcn(self):
+        out = self.outputs["result"].data
+        copyto(out, self.inputs[0].data.copy())
+        for _input in self.inputs[1:3]:
+            out += _input.data
         return out
 
     def _typefunc(self) -> None:
         """A output takes this function to determine the dtype and shape"""
+        super()._typefunc()
         if (y := len(self.inputs)) != 3:
             raise CriticalError(
                 f"The node must have only 3 inputs, but given {y}: {self.inputs}!"
             )
-        self.outputs["result"].dd.shape = self.inputs[0].dd.shape
-        self.outputs["result"].dd.dtype = result_type(
-            *tuple(inp.dd.dtype for inp in self.inputs)
-        )
         self.logger.debug(
             f"Node '{self.name}': dtype={self.outputs['result'].dd.dtype}, "
             f"shape={self.outputs['result'].dd.shape}"

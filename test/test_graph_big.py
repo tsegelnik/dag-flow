@@ -3,7 +3,7 @@ from dagflow.graph import Graph
 from dagflow.graphviz import GraphDot
 from dagflow.printl import current_level, set_prefix_function
 from dagflow.lib.Dummy import Dummy
-from dagflow.wrappers import *
+from dagflow.wrappers import toucher, printer
 
 set_prefix_function(lambda: "{:<2d} ".format(current_level()))
 
@@ -24,9 +24,9 @@ def test_graph_big_01():
         d.savegraph("output/test_graph_big_{:03d}.png".format(counter))
         counter += 1
 
-    def plotter(fcn, node, inputs, outputs):
+    def plotter(fcn, node):
         plot(f"[start evaluating {node.name}]")
-        fcn(node, inputs, outputs)
+        fcn()
         plot(f"[done evaluating {node.name}]")
 
     with g:

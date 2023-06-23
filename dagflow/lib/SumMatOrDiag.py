@@ -49,7 +49,7 @@ class SumMatOrDiag(FunctionNode):
         if len(self.inputs) > 1:
             for _input in self.inputs[1:]:
                 if len(_input.dd.shape) == 1:
-                    _addtodiag(input.data, out)
+                    _addtodiag(_input.data, out)
                 else:
                     add(_input.data, out, out=out)
         return out
