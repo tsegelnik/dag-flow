@@ -2,6 +2,7 @@ from .node import Node
 
 from .exception import DagflowError
 
+
 class FunctionNode(Node):
     """Function signature: fcn(node, inputs, outputs)
 
@@ -15,7 +16,7 @@ class FunctionNode(Node):
         node.fcn() # will have NO self provided as first argument
 
     - Fucntion defined in a nested class with staticmethod:
-        class Other(Node
+        class Other(Node)
             @staticmethod
             def _fcn():
                 ...
@@ -36,7 +37,7 @@ class FunctionNode(Node):
         node.fcn() # will have NO self provided as first argument
     """
 
-    __slots__ = ('fcn', '_fcn_chain', '_functions')
+    __slots__ = ("fcn", "_fcn_chain", "_functions")
 
     def __init__(self, name, **kwargs):
         super().__init__(name, **kwargs)
@@ -66,9 +67,8 @@ class FunctionNode(Node):
             raise DagflowError("Unable to unwrap bare function")
         self.fcn = self._fcn_chain.pop()
 
-    def _fcn(self, _, inputs, outputs):
+    def _fcn(self):
         pass
 
     def _eval(self):
-        return self.fcn(self, self.inputs, self.outputs)
-
+        return self.fcn()
