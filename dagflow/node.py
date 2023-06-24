@@ -1,13 +1,13 @@
 from typing import (
+    TYPE_CHECKING,
     Any,
     Callable,
     List,
+    Mapping,
     Optional,
     Sequence,
     Tuple,
     Union,
-    Mapping,
-    TYPE_CHECKING
 )
 from weakref import ReferenceType
 from weakref import ref as weakref
@@ -25,13 +25,15 @@ from .exception import (
 )
 from .input import Input
 from .iter import IsIterable
+from .labels import Labels
 from .limbs import Limbs
 from .logger import Logger, get_logger
 from .output import Output
 from .types import GraphT
-from .labels import Labels
+
 if TYPE_CHECKING:
     from .meta_node import MetaNode
+
 
 class Node(Limbs):
     __slots__ = (
@@ -160,7 +162,7 @@ class Node(Limbs):
         if (common_storage := NodeStorage.current()) is None:
             return node
 
-        storage = NestedMKDict({}, sep='.')
+        storage = NestedMKDict({}, sep=".")
         storage.child("nodes")[name] = node
         if len(node.outputs) == 1:
             storage.child("outputs")[name] = node.outputs[0]
@@ -171,11 +173,8 @@ class Node(Limbs):
     def __str__(self):
         return f"{{{self.name}}} {super().__str__()}"
 
-    def to_dict(self, *, label_from: str='text') -> dict:
-        return {
-                'label': self._labels[label_from],
-                'flags': ''
-                }
+    def to_dict(self, *, label_from: str = "text") -> dict:
+        return {"label": self._labels[label_from], "flags": ""}
 
     #
     # Properties
@@ -258,7 +257,7 @@ class Node(Limbs):
     def invalid(self, invalid) -> None:
         if invalid:
             self.invalidate_self()
-        elif any(input.invalid for input in self.inputs.iter_all()):
+        elif any(_input.invalid for _input in self.inputs.iter_all()):
             return
         else:
             self.invalidate_self(False)
@@ -276,8 +275,8 @@ class Node(Limbs):
             output.invalid = True
 
     def invalidate_parents(self) -> None:
-        for input in self.inputs.iter_all():
-            node = input.parent_node
+        for _input in self.inputs.iter_all():
+            node = _input.parent_node
             node.invalidate_self()
             node.invalidate_parents()
 
@@ -422,8 +421,8 @@ class Node(Limbs):
         input_kws = input_kws or {}
         output_kws = output_kws or {}
         output = self.add_output(oname, **output_kws)
-        input = self.add_input(iname, child_output=output, **input_kws)
-        return input, output
+        _input = self.add_input(iname, child_output=output, **input_kws)
+        return _input, output
 
     def touch(self, force=False):
         if self._frozen:
@@ -503,10 +502,10 @@ class Node(Limbs):
 
     def print(self):
         print(f"Node {self._name}: →[{len(self.inputs)}],[{len(self.outputs)}]→")
-        for i, input in enumerate(self.inputs):
-            print("  ", i, input)
-        for input in self.inputs.iter_nonpos():
-            print("    ", input)
+        for i, _input in enumerate(self.inputs):
+            print("  ", i, _input)
+        for _input in self.inputs.iter_nonpos():
+            print("    ", _input)
         for i, output in enumerate(self.outputs):
             print("  ", i, output)
         for output in self.outputs.iter_nonpos():
@@ -522,13 +521,13 @@ class Node(Limbs):
     def _post_allocate(self):
         pass
 
-    def update_types(self, recursive: bool = True) -> bool:
+    def update_types(self, recursive: bool = True):
         if not self._types_tainted:
             return True
         if recursive:
             self.logger.debug(f"Node '{self.name}': Trigger recursive update types...")
-            for input in self.inputs.iter_all():
-                input.parent_node.update_types(recursive)
+            for _input in self.inputs.iter_all():
+                _input.parent_node.update_types(recursive)
         self.logger.debug(f"Node '{self.name}': Update types...")
         self._typefunc()
         self._types_tainted = False
@@ -541,8 +540,8 @@ class Node(Limbs):
                 f"Node '{self.name}': Trigger recursive memory allocation..."
             )
             if not all(
-                input.parent_node.allocate(recursive)
-                for input in self.inputs.iter_all()
+                _input.parent_node.allocate(recursive)
+                for _input in self.inputs.iter_all()
             ):
                 return False
         self.logger.debug(f"Node '{self.name}': Allocate memory on inputs")
@@ -569,7 +568,7 @@ class Node(Limbs):
         for node in [self] + together:
             node.allocate(recursive=recursive)
         if recursive and not all(
-            input.parent_node.close(recursive) for input in self.inputs.iter_all()
+            _input.parent_node.close(recursive) for _input in self.inputs.iter_all()
         ):
             return False
         for node in together:
@@ -586,9 +585,9 @@ class Node(Limbs):
             return True
         self.logger.debug(f"Node '{self.name}': Open")
         if not all(
-            input.node.open(force)
+            _input.node.open(force)
             for output in self.outputs
-            for input in output.child_inputs
+            for _input in output.child_inputs
         ):
             raise OpeningError(node=self)
         self.unfreeze()
