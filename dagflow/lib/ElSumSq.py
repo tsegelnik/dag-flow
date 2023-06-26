@@ -1,4 +1,3 @@
-from numpy import ndarray
 from numpy.typing import NDArray
 
 from numba import njit
@@ -22,8 +21,6 @@ def _sumsq(data: NDArray, out: NDArray):
 
 class ElSumSq(FunctionNode):
     """Sum of the squared of all the inputs"""
-
-    _buffer: ndarray
 
     def __init__(self, *args, **kwargs):
         kwargs.setdefault(
