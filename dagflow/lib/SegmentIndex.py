@@ -1,8 +1,12 @@
-from typing import Literal, Optional
+from typing import TYPE_CHECKING, Literal, Optional
 
 from ..exception import InitializationError
 from ..nodes import FunctionNode
 from ..typefunctions import check_inputs_number, copy_from_input_to_output
+
+if TYPE_CHECKING:
+    from ..input import Input
+    from ..output import Output
 
 
 class SegmentIndex(FunctionNode):
@@ -20,6 +24,17 @@ class SegmentIndex(FunctionNode):
         `right`: `a[i-1] <= v < a[i]`
     """
 
+    __slots__ = (
+        "_mode",
+        "_coarse",
+        "_fine",
+        "_indices",
+    )
+
+    _coarse: "Input"
+    _fine: "Input"
+    _indices: "Output"
+
     def __init__(
         self,
         *args,
@@ -33,9 +48,9 @@ class SegmentIndex(FunctionNode):
                 node=self,
             )
         self._mode = mode
-        self._add_input("coarse")  # 0
-        self._add_input("fine")  # 1
-        self._add_output("indices")  # 0
+        self._coarse = self._add_input("coarse")  # 0
+        self._fine = self._add_input("fine")  # 1
+        self._indices = self._add_output("indices")  # 0
 
     @property
     def mode(self) -> str:
@@ -49,13 +64,13 @@ class SegmentIndex(FunctionNode):
         copy_from_input_to_output(
             self, 1, 0, dtype=False, shape=True, edges=False, nodes=False
         )
-        self.outputs[0].dd.dtype = "i"
+        self._indices.dd.dtype = "i"
 
     def _fcn(self) -> Optional[list]:
         """Uses `numpy.ndarray.searchsorted` and `numpy.ndarray.argsort`"""
-        out = self.outputs[0].data.ravel()
-        coarse = self.inputs[0].data.ravel()
-        fine = self.inputs[1].data.ravel()
+        out = self._indices.data.ravel()
+        coarse = self._coarse.data.ravel()
+        fine = self._fine.data.ravel()
         # NOTE: `searchsorted` and `argsort` allocate a memory!
         #       it is better to use another algorithm if possible
         sorter = coarse.argsort()
