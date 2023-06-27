@@ -1,19 +1,23 @@
-from typing import List, Optional
+from typing import TYPE_CHECKING, List, Optional
 
-from numpy import zeros
+from numpy import ndarray, zeros
 
 from ..nodes import FunctionNode
-from ..output import Output
 from ..typefunctions import check_input_dimension, check_input_dtype
+
+if TYPE_CHECKING:
+    from ..input import Input
+    from ..output import Output
 
 
 class ViewConcat(FunctionNode):
     """Creates a node with a single data output which is a concatenated memory of the inputs"""
 
-    _output: Output
+    __slots__ = ("_output", "_offsets")
+    _output: "Output"
     _offsets: List[int]
 
-    def __init__(self, name, outname="concat", **kwargs):
+    def __init__(self, name, outname="concat", **kwargs) -> None:
         super().__init__(name, **kwargs)
         self._output = self._add_output(
             outname, allocatable=False, forbid_reallocation=True
@@ -22,15 +26,12 @@ class ViewConcat(FunctionNode):
 
     def missing_input_handler(
         self, idx: Optional[int] = None, scope: Optional[int] = None
-    ):
-        icount = len(self.inputs)
-        idx = idx if idx is not None else icount
-        iname = "input_{:02d}".format(idx)
+    ) -> "Input":
+        idx = idx if idx is not None else len(self.inputs)
+        iname = f"input_{idx:02d}"
+        return self._add_input(iname, allocatable=True, child_output=self._output)
 
-        kwargs = {"child_output": self._output}
-        return self._add_input(iname, allocatable=True, **kwargs)
-
-    def _fcn(self):
+    def _fcn(self) -> ndarray:
         self.inputs.touch()
         return self._output._data
 

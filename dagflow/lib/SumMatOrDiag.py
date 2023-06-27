@@ -29,14 +29,14 @@ def _addtodiag(inarray: NDArray, outmatrix: NDArray):
 class SumMatOrDiag(FunctionNode):
     """Sum of all the inputs together. Inputs are square matrices or diagonals of square matrices"""
 
-    _ndim: int = 0
+    __slots__ = ("_ndim",)
+    _ndim: int
 
     def __init__(self, *args, **kwargs):
         kwargs.setdefault(
             "missing_input_handler", MissingInputAddOne(output_fmt="result")
         )
         super().__init__(*args, **kwargs)
-
         self._functions.update({2: self._fcn2d, 1: self._fcn1d})
 
     def _fcn2d(self):
