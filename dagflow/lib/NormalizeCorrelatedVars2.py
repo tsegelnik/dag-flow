@@ -1,7 +1,17 @@
-from numpy import add, copyto, divide, matmul, multiply, subtract, zeros
+from typing import TYPE_CHECKING
+
+from numpy import (
+    add,
+    copyto,
+    divide,
+    matmul,
+    multiply,
+    ndarray,
+    subtract,
+    zeros,
+)
 from scipy.linalg import solve_triangular
 
-from ..node import Input, Output
 from ..nodes import FunctionNode
 from ..typefunctions import (
     check_has_inputs,
@@ -11,6 +21,10 @@ from ..typefunctions import (
     check_inputs_multiplicable_mat,
     copy_from_input_to_output,
 )
+
+if TYPE_CHECKING:
+    from ..input import Input
+    from ..output import Output
 
 
 class NormalizeCorrelatedVars2(FunctionNode):
@@ -22,19 +36,34 @@ class NormalizeCorrelatedVars2(FunctionNode):
     x = Lz + μ
     """
 
-    _input_value: Input
-    _input_normvalue: Input
-    _output_value: Output
-    _output_normvalue: Output
+    __slots__ = (
+        "_ndim",
+        "_matrix",
+        "_central",
+        "_input_value",
+        "_input_normvalue",
+        "_output_value",
+        "_output_normvalue",
+        "_valuedata",
+        "_normvaluedata",
+    )
 
     _ndim: str
+    _matrix: "Input"
+    _central: "Input"
+    _input_value: "Input"
+    _input_normvalue: "Input"
+    _output_value: "Output"
+    _output_normvalue: "Output"
+    _valuedata: ndarray
+    _normvaluedata: ndarray
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args, **kwargs) -> None:
         super().__init__(*args, **kwargs)
         self._labels.setdefault("mark", "c↔u")
 
-        self._add_input("matrix", positional=False)
-        self._add_input("central", positional=False)
+        self._matrix = self._add_input("matrix", positional=False)
+        self._central = self._add_input("central", positional=False)
 
         self._input_value, self._output_value = self._add_pair(
             "value",
@@ -58,14 +87,13 @@ class NormalizeCorrelatedVars2(FunctionNode):
             }
         )
 
-    def _fcn_forward_2d(self):
+    def _fcn_forward_2d(self) -> None:
         self.inputs.touch()
-        L = self.inputs["matrix"].data
-        central = self.inputs["central"].data
-
-        input_value = self.inputs["value"].data
-        output_value = self.outputs["value"].data
-        output_normvalue = self.outputs["normvalue"].data
+        L = self._matrix.data
+        central = self._central.data
+        input_value = self._input_value.data
+        output_value = self._output_value.data
+        output_normvalue = self._output_normvalue.data
 
         subtract(input_value, central, out=output_normvalue)
         solve_triangular(
@@ -77,46 +105,43 @@ class NormalizeCorrelatedVars2(FunctionNode):
         )
         copyto(output_value, input_value)
 
-    def _fcn_backward_2d(self):
+    def _fcn_backward_2d(self) -> None:
         self.inputs.touch()
-        L = self.inputs["matrix"].data
-        central = self.inputs["central"].data
-
-        input_normvalue = self.inputs["normvalue"].data
-        output_normvalue = self.outputs["normvalue"].data
-        output_value = self.outputs["value"].data
+        L = self._matrix.data
+        central = self._central.data
+        input_normvalue = self._input_normvalue.data
+        output_value = self._output_value.data
+        output_normvalue = self._output_normvalue.data
 
         matmul(L, input_normvalue, out=output_value)
         add(output_value, central, out=output_value)
         copyto(output_normvalue, input_normvalue)
 
-    def _fcn_forward_1d(self):
+    def _fcn_forward_1d(self) -> None:
         self.inputs.touch()
-        Ldiag = self.inputs["matrix"].data
-        central = self.inputs["central"].data
-
-        input_value = self.inputs["value"].data
-        output_value = self.outputs["value"].data
-        output_normvalue = self.outputs["normvalue"].data
+        Ldiag = self._matrix.data
+        central = self._central.data
+        input_value = self._input_value.data
+        output_value = self._output_value.data
+        output_normvalue = self._output_normvalue.data
 
         subtract(input_value, central, out=output_normvalue)
         divide(output_normvalue, Ldiag, out=output_normvalue)
         copyto(output_value, input_value)
 
-    def _fcn_backward_1d(self):
+    def _fcn_backward_1d(self) -> None:
         self.inputs.touch()
-        Ldiag = self.inputs["matrix"].data
-        central = self.inputs["central"].data
-
-        input_normvalue = self.inputs["normvalue"].data
-        output_normvalue = self.outputs["normvalue"].data
-        output_value = self.outputs["value"].data
+        Ldiag = self._matrix.data
+        central = self._central.data
+        input_normvalue = self._input_normvalue.data
+        output_value = self._output_value.data
+        output_normvalue = self._output_normvalue.data
 
         multiply(Ldiag, input_normvalue, out=output_value)
         add(output_value, central, out=output_value)
         copyto(output_normvalue, input_normvalue)
 
-    def _on_taint(self, caller: Input) -> None:
+    def _on_taint(self, caller: "Input") -> None:
         """Choose the function to call based on the modified input:
         - if normvalue is modified, the value should be updated
         - if value is modified, the normvalue should be updated

@@ -1,3 +1,5 @@
+from typing import TYPE_CHECKING
+
 from numpy import add, divide, matmul, multiply, subtract
 from scipy.linalg import solve_triangular
 
@@ -13,6 +15,9 @@ from ..typefunctions import (
     copy_from_input_to_output,
 )
 
+if TYPE_CHECKING:
+    from ..input import Input
+
 
 class NormalizeCorrelatedVars(FunctionNode):
     """Normalize correlated variables or correlate normal variables with linear expression
@@ -23,7 +28,10 @@ class NormalizeCorrelatedVars(FunctionNode):
     x = Lz + μ
     """
 
+    __slots__ = ("_mode", "_matrix", "_central")
     _mode: str
+    _matrix: "Input"
+    _central: "Input"
 
     def __init__(self, *args, mode="forward", **kwargs):
         if mode == "forward":
@@ -41,8 +49,8 @@ class NormalizeCorrelatedVars(FunctionNode):
         super().__init__(*args, missing_input_handler=MissingInputAddPair(), **kwargs)
         self._labels.setdefault("mark", mark)
 
-        self._add_input("matrix", positional=False)
-        self._add_input("central", positional=False)
+        self._matrix = self._add_input("matrix", positional=False)
+        self._central = self._add_input("central", positional=False)
 
         self._functions.update(
             {
@@ -55,34 +63,34 @@ class NormalizeCorrelatedVars(FunctionNode):
 
     def _fcn_forward_2d(self):
         self.inputs.touch()
-        L = self.inputs["matrix"].data
-        central = self.inputs["central"].data
-        for input, output in zip(self.inputs.iter_data(), self.outputs.iter_data()):
-            subtract(input, central, out=output)
+        L = self._matrix.data
+        central = self._central.data
+        for _input, _output in zip(self.inputs.iter_data(), self.outputs.iter_data()):
+            subtract(_input, central, out=_output)
             solve_triangular(
-                L, output, lower=True, overwrite_b=True, check_finite=False
+                L, _output, lower=True, overwrite_b=True, check_finite=False
             )
 
     def _fcn_backward_2d(self):
         self.inputs.touch()
-        L = self.inputs["matrix"].data
-        central = self.inputs["central"].data
-        for input, output in zip(self.inputs.iter_data(), self.outputs.iter_data()):
-            matmul(L, input, out=output)
-            add(output, central, out=output)
+        L = self._matrix.data
+        central = self._central.data
+        for _input, _output in zip(self.inputs.iter_data(), self.outputs.iter_data()):
+            matmul(L, _input, out=_output)
+            add(_output, central, out=_output)
 
     def _fcn_forward_1d(self):
         self.inputs.touch()
-        Ldiag = self.inputs["matrix"].data
-        central = self.inputs["central"].data
+        Ldiag = self._matrix.data
+        central = self._central.data
         for _input, _output in zip(self.inputs.iter_data(), self.outputs.iter_data()):
             subtract(_input, central, out=_output)
             divide(_output, Ldiag, out=_output)
 
     def _fcn_backward_1d(self):
         self.inputs.touch()
-        Ldiag = self.inputs["matrix"].data
-        central = self.inputs["central"].data
+        Ldiag = self._matrix.data
+        central = self._central.data
         for _input, _output in zip(self.inputs.iter_data(), self.outputs.iter_data()):
             multiply(Ldiag, _input, out=_output)
             add(_output, central, out=_output)
