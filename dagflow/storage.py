@@ -9,7 +9,7 @@ from .logger import logger, DEBUG, SUBINFO
 
 from typing import Union, Tuple, List, Optional, Dict, Mapping, Sequence, TYPE_CHECKING
 if TYPE_CHECKING:
-    from matplotlib.pyplot import Axes, Figure
+    from matplotlib.pyplot import Axes
 
 from tabulate import tabulate
 from pandas import DataFrame
@@ -338,12 +338,11 @@ class PlotVisitor(NestedMKDictVisitor):
                     break
             else:
                 return key, None, True
+        elif match:=self._currently_active_overlay.intersection(key_set):
+            need_new_figure = False
         else:
-            if match:=self._currently_active_overlay.intersection(key_set):
-                need_new_figure = False
-            else:
-                self._currently_active_overlay = None
-                return key, None, True
+            self._currently_active_overlay = None
+            return key, None, True
 
         key_major = key_set.difference(self._currently_active_overlay)
         return tuple(key_major), match[0], need_new_figure

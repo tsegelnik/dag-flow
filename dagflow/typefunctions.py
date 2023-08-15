@@ -294,12 +294,7 @@ def check_inputs_square_or_diag(
     return dim_max
 
 def shapes_are_broadcastable(shape1: Sequence[int], shape2: Sequence[int]) -> bool:
-    for a, b in zip(shape1[::-1], shape2[::-1]):
-        if a == 1 or b == 1 or a == b:
-            pass
-        else:
-            return False
-    return True
+    return all(a == 1 or b == 1 or a == b for a, b in zip(shape1[::-1], shape2[::-1]))
 
 def check_inputs_equivalence(
     node: NodeT,

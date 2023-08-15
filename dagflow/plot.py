@@ -18,7 +18,7 @@ from .limbs import Limbs
 from .types import EdgesLike, MeshesLike
 from .logger import logger, SUBINFO
 
-from typing import Union, List, Optional, Tuple, Mapping, Literal
+from typing import Union, List, Optional, Tuple, Mapping
 from numpy.typing import ArrayLike, NDArray
 from numpy import asanyarray, meshgrid, zeros_like
 from numpy.ma import array as masked_array
@@ -37,7 +37,7 @@ class plot_auto:
         '_ylabel',
         '_zlabel'
     )
-    _object: Union[Node, Output, NDArray]
+    _object: Union[Node, Output, ArrayLike]
     _output: Optional[Output]
     _array: NDArray
     _edges: EdgesLike
@@ -177,7 +177,7 @@ class plot_auto:
         if self._ylabel and not ax.get_ylabel(): ax.set_ylabel(self._ylabel)
         try:
             prev_zlabel = ax.get_zlabel()
-        except:
+        except Exception:
             prev_zlabel = ""
         if self._zlabel and prev_zlabel:
             try:
@@ -243,41 +243,6 @@ def plot_array_1d_array(
 ) -> Tuple:
     return plot(array, *args, **kwargs)
 
-def plot_output_1d(
-    output: Output,
-    *args,
-    plotter: Optional[plot_auto]=None,
-    **kwargs
-) -> Tuple:
-    array, edges, meshes = _get_data(output)
-    return plot_array_1d(array, edges, meshes, *args, **kwargs)
-
-def plot_output_1d_vs(
-    output: Output,
-    *args,
-    plotter: Optional[plot_auto]=None,
-    **kwargs
-) -> Tuple:
-    array, edges, _ = _get_data(output)
-    return plot_array_1d_vs(array, edges, *args, **kwargs)
-
-def plot_output_1d_meshes(
-    output: Output,
-    *args,
-    plotter: Optional[plot_auto]=None,
-    **kwargs
-) -> Tuple:
-    array, _, meshes = _get_data(output)
-    return plot_array_1d_vs(array, meshes, *args, **kwargs)
-
-def plot_output_1d_array(
-    output: Output,
-    *args,
-    plotter: Optional[plot_auto]=None,
-    **kwargs
-) -> Tuple:
-    return plot_array_1d_array(output.data, *args, **kwargs)
-
 def plot_array_2d(
     array: NDArray,
     edges: EdgesLike,
@@ -286,11 +251,11 @@ def plot_array_2d(
     **kwargs
 ) -> Tuple[tuple, ...]:
     if edges:
-        plot_array_2d_hist(array, edges, *args, **kwargs)
+        return plot_array_2d_hist(array, edges, *args, **kwargs)
     elif meshes:
-        plot_array_2d_vs(array, meshes, *args, **kwargs)
+        return plot_array_2d_vs(array, meshes, *args, **kwargs)
     else:
-        plot_array_2d_array(array, *args, **kwargs)
+        return plot_array_2d_array(array, *args, **kwargs)
 
 def plot_array_2d_hist(
     dZ: NDArray,
@@ -403,7 +368,7 @@ def plot_array_2d_hist_pcolor(
 
 def plot_array_2d_hist_imshow(
     Z: NDArray,
-    edges: EdgesLike=None,
+    edges: Optional[EdgesLike]=None,
     *args,
     plotter: Optional[plot_auto]=None,
     **kwargs
@@ -470,8 +435,8 @@ def plot_array_2d_vs_slicesx(
             label = None
         plot(slicex, data, label=label)
 
-    ax=gca()
     if haslabels is not None:
+        ax=gca()
         ax.legend()
 
 def plot_array_2d_vs_slicesy(

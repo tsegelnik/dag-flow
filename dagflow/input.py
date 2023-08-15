@@ -115,7 +115,7 @@ class Input:
         return self._node.closed if self.node else False
 
     def set_child_output(
-        self, child_output: Output, force: bool = False
+        self, child_output: Optional[Output], force: bool = False
     ) -> None:
         if not self.closed:
             return self._set_child_output(child_output, force)

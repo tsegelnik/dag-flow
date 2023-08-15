@@ -82,7 +82,7 @@ class ManyToOneNode(FunctionNode):
 
         NodeStorage.update_current(storage, strict=True)
 
-        if len(outkey)==1:
+        if len(replicate)==1:
             return instance, storage
 
         return None, storage
