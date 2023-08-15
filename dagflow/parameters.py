@@ -165,7 +165,7 @@ class NormalizedGaussianParameter(Parameter):
         return dct
 
 class Constraint:
-    __slots__ = ('_pars')
+    __slots__ = ('_pars',)
     _pars: "Parameters"
 
     def __init__(self, parameters: "Parameters"):

@@ -15,7 +15,7 @@ from ..lib.Array import Array
 
 from numpy import allclose
 
-_extensions = "root", "hdf5", "tsv", "txt"
+_extensions = {"root", "hdf5", "tsv", "txt"}
 _schema_cfg = Schema({
     "name": str,
     "filenames": And(IsFilenameSeqOrFilename, AllFileswithExt(*_extensions)),
@@ -61,9 +61,11 @@ def load_graph(acfg: Optional[Mapping]=None, **kwargs):
         if filenames[0].endswith(f".{ext}"):
             break
     else:
-        raise RuntimeError(f"Unable to process extension: {ext}")
+        raise RuntimeError(f"Unable to process extension for: {filenames[0]}")
 
     loader = _loaders.get(ext)
+    if loader is None:
+        raise RuntimeError(f"Unable to find loader for: {filenames[0]}")
     match_filename = len(filenames)>1
 
     meshes = []
@@ -108,7 +110,7 @@ def load_graph(acfg: Optional[Mapping]=None, **kwargs):
 
     return storage
 
-def _load_tsv(filename: str, name: str) -> Tuple[NDArray, NDArray]:
+def _load_tsv(filename: str, name: str) -> NDArray:
     from numpy import loadtxt
     return loadtxt(filename, unpack=True)
 

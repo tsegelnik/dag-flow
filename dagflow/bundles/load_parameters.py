@@ -76,11 +76,7 @@ def CheckCorrelationSizes(cfg):
     if nrows!=nnames:
         return False
 
-    for row in matrix:
-        if nnames!=len(row):
-            return False
-
-    return True
+    return all(nnames == len(row) for row in matrix)
 
 IsCorrelationsDict = And({
         'names': Or((str,), And([str], Use(tuple))),
@@ -328,7 +324,7 @@ def load_parameters(acfg: OptionalType[Mapping]=None, **kwargs):
                 names.append(name)
                 processed_cfgs.add(fullkey+name)
 
-            labelsub = format_dict(label, subkey=key_str, space_key=f' {subkey_str}', key_space=f'{subkey_str} ')
+            labelsub = format_dict(label, subkey=subkey_str, space_key=f' {subkey_str}', key_space=f'{subkey_str} ')
             pars[fullkey] = Parameters.from_numbers(label=labelsub, **kwargs)
 
     for key, varcfg in varcfgs.walkdicts(ignorekeys=('label',)):

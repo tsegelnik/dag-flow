@@ -4,11 +4,11 @@ from .Integrator import Integrator
 from .IntegratorSampler import IntegratorSampler, ModeType
 from ..meta_node import MetaNode
 
-from typing import Mapping, Tuple, Union
+from typing import Mapping, Tuple
 from multikeydict.typing import KeyLike
 
 class IntegratorGroup(MetaNode):
-    __slots__ = ("_sampler")
+    __slots__ = ("_sampler", )
 
     _sampler: "Node"
     def __init__(
@@ -76,7 +76,7 @@ class IntegratorGroup(MetaNode):
         name_y: str="mesh_y",
         replicate: Tuple[KeyLike,...]=((),),
         dropdim: bool=True
-    ) -> Union["IntegratorGroup", "NodeStorage"]:
+    ) -> Tuple["IntegratorGroup", "NodeStorage"]:
         storage = NodeStorage(default_containers=True)
         nodes = storage('nodes')
         inputs = storage('inputs')

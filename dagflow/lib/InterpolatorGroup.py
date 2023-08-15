@@ -1,4 +1,4 @@
-from typing import Literal, Mapping, Tuple, Union
+from typing import Literal, Mapping, Tuple
 from multikeydict.typing import KeyLike
 
 from ..meta_node import MetaNode
@@ -8,7 +8,7 @@ from .Interpolator import Interpolator
 from .SegmentIndex import SegmentIndex
 
 class InterpolatorGroup(MetaNode):
-    __slots__ = ("_indexer")
+    __slots__ = ("_indexer",)
 
     _indexer: "Node"
     def __init__(
@@ -82,7 +82,7 @@ class InterpolatorGroup(MetaNode):
         *,
         replicate: Tuple[KeyLike,...]=((),),
         **kwargs
-    ) -> Union["interpolatorGroup", "NodeStorage"]:
+    ) -> Tuple["InterpolatorGroup", "NodeStorage"]:
         storage = NodeStorage(default_containers=True)
         nodes = storage('nodes')
         inputs = storage('inputs')
