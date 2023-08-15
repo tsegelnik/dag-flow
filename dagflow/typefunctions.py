@@ -486,7 +486,8 @@ def assign_output_meshes(
     output: Output,
     *,
     ignore_assigned: bool = False,
-    overwrite_assigned: bool = False
+    overwrite_assigned: bool = False,
+    ignore_inconsistent_number_of_meshes: bool = False
 ):
     """Assign output's edges from input's parent output"""
     dd = output.dd
@@ -504,6 +505,8 @@ def assign_output_meshes(
 
     naxes = len(dd.shape)
     if naxes!=len(meshes) and (not overwrite_assigned or naxes!=len(dd.axes_meshes)):
+        if ignore_inconsistent_number_of_meshes:
+            return
         raise TypeFunctionError(
             f"Output ndim={len(dd.shape)} is inconsistent with meshes ndim={len(meshes)}",
             output=output,

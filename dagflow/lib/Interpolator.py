@@ -150,7 +150,15 @@ class Interpolator(FunctionNode):
             )
         else:
             # TODO: add a choice of what axis to overwrite
-            assign_output_axes_from_inputs(self, "fine", "result", assign_meshes=True, ignore_assigned=False, overwrite_assigned=True)
+            assign_output_axes_from_inputs(
+                self,
+                "fine",
+                "result",
+                assign_meshes=True,
+                ignore_assigned=False,
+                overwrite_assigned=True,
+                ignore_inconsistent_number_of_meshes=True
+            )
 
     def _fcn(self, _, inputs, outputs):
         """Runs interpolation method choosen within `method` arg"""

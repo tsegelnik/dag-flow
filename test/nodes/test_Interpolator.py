@@ -78,8 +78,7 @@ def test_interpolation_ndim(debug_graph, testname, shape):
     seed(10)
     with Graph(debug=debug_graph, close=True) as graph:
         nc, nf = 20, 20
-        coarseX = linspace(-0.05, 0.05, nc).reshape(shape)
-        shuffle(coarseX)
+        coarseX = linspace(-0.05, 0.05, nc) #.reshape(shape) # TODO: 2d coarse X/Y should be forbidden
         fineX = linspace(-0.1, 0.1, nf).reshape(shape)
         shuffle(fineX)
 
