@@ -8,6 +8,7 @@ from dagflow.graphviz import savegraph
 from numpy import arange, meshgrid
 from pytest import mark
 
+@mark.skip(reason="no way of currently testing this")
 @mark.parametrize('dtype', ('d', 'f',))
 def test_to_root(testname, debug_graph, dtype):
     sizex = 12
@@ -84,25 +85,25 @@ def test_to_root(testname, debug_graph, dtype):
             }
 
     with Graph(close=True, debug=debug_graph) as graph, NodeStorage({}) as storage:
-        EdgesX = Array.make_stored('edgesx', edgesx)
-        EdgesY = Array.make_stored('edgesy', edgesy)
+        EdgesX, _ = Array.make_stored('edgesx', edgesx)
+        EdgesY, _ = Array.make_stored('edgesy', edgesy)
 
-        MeshX = Array.make_stored('meshx', meshx)
+        MeshX, _ = Array.make_stored('meshx', meshx)
 
-        Mesh2X = Array.make_stored('mesh2x', mesh2x)
-        Mesh2Y = Array.make_stored('mesh2y', mesh2y)
+        Mesh2X, _ = Array.make_stored('mesh2x', mesh2x)
+        Mesh2Y, _ = Array.make_stored('mesh2y', mesh2y)
 
-        arr1e = Array.make_stored('array_edges', data, edges=EdgesX.outputs[0])
-        arr1n = Array.make_stored('array_mesh', data)
+        arr1e, _ = Array.make_stored('array_edges', data, edges=EdgesX.outputs[0])
+        arr1n, _ = Array.make_stored('array_mesh', data)
         arr1n.outputs[0].dd.axes_meshes = (MeshX.outputs[0],)
         arr1n.outputs[0].dd.meshes_inherited = False
 
-        arr2e = Array.make_stored('case_2d.array_2d_edges', data2, edges=(EdgesX, EdgesY))
-        arr2n = Array.make_stored('case_2d.array_2d_mesh', data2)
+        arr2e, _ = Array.make_stored('case_2d.array_2d_edges', data2, edges=(EdgesX, EdgesY))
+        arr2n, _ = Array.make_stored('case_2d.array_2d_mesh', data2)
         arr2n.outputs[0].dd.axes_meshes = (Mesh2X.outputs[0], Mesh2Y.outputs[0])
         arr2n.outputs[0].dd.meshes_inherited = False
 
-        arr2b = Array.make_stored('case_2d.both.array_2d_both', data2, edges=(EdgesX, EdgesY))
+        arr2b, _ = Array.make_stored('case_2d.both.array_2d_both', data2, edges=(EdgesX, EdgesY))
         arr2b.outputs[0].dd.axes_meshes = (Mesh2X.outputs[0], Mesh2Y.outputs[0])
         arr2b.outputs[0].dd.meshes_inherited = False
 

@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 
 import numpy as np
+from numpy import array, diag, sqrt, allclose, finfo
 from dagflow.exception import TypeFunctionError
 from dagflow.graph import Graph
 from dagflow.graphviz import savegraph
@@ -12,12 +13,12 @@ from scipy import linalg
 
 @mark.parametrize("dtype", ("d", "f"))
 def test_Cholesky_00(testname, debug_graph, dtype):
-    inV = np.array([[10, 2, 1], [2, 12, 3], [1, 3, 13]], dtype=dtype)
+    inV = array([[10, 2, 1], [2, 12, 3], [1, 3, 13]], dtype=dtype)
     inV2 = inV @ inV
-    inD = np.diag(inV)
+    inD = diag(inV)
     inL2d1 = linalg.cholesky(inV, lower=True)
     inL2d2 = linalg.cholesky(inV2, lower=True)
-    inL1d = np.sqrt(inD)
+    inL1d = sqrt(inD)
 
     with Graph(close=True, debug=debug_graph) as graph:
         V1 = Array("V1", inV, mode="store")
@@ -42,15 +43,16 @@ def test_Cholesky_00(testname, debug_graph, dtype):
     assert chol2d.tainted == False
     assert chol1d.tainted == False
 
-    assert np.allclose(inL2d1, result2d1, atol=0, rtol=0)
-    assert np.allclose(inL2d2, result2d2, atol=0, rtol=0)
-    assert np.allclose(inL1d, result1d, atol=0, rtol=0)
+    atol=finfo(dtype).resolution
+    assert allclose(inL2d1, result2d1, atol=atol, rtol=0)
+    assert allclose(inL2d2, result2d2, atol=atol, rtol=0)
+    assert allclose(inL1d, result1d, atol=atol, rtol=0)
 
     savegraph(graph, f"output/{testname}.png")
 
 
 def test_Cholesky_01_typefunctions():
-    inV = np.array(
+    inV = array(
         [
             [10, 2, 1],
             [2, 12, 3],

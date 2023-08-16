@@ -1,5 +1,11 @@
 from ..input_extra import MissingInputAddPair
 from ..nodes import FunctionNode
+from ..node import Node
+from ..storage import NodeStorage
+
+from multikeydict.typing import KeyLike
+
+from typing import Tuple, Optional
 
 
 class OneToOneNode(FunctionNode):
@@ -21,7 +27,7 @@ class OneToOneNode(FunctionNode):
 
         check_has_inputs(self)
         copy_from_input_to_output(
-            self, slice(None), slice(None), edges=True, nodes=True
+            self, slice(None), slice(None), edges=True, meshes=True
         )
         assign_outputs_axes_from_inputs(
             self,
@@ -29,5 +35,32 @@ class OneToOneNode(FunctionNode):
             slice(None),
             assign_meshes=True,
             ignore_assigned=True,
-            ignore_Nd=True,
+            ignore_Nd=True
         )
+
+    @classmethod
+    def replicate(
+        cls,
+        name: str,
+        replicate: Tuple[KeyLike,...]=((),),
+        **kwargs
+    ) -> Tuple[Optional[Node], NodeStorage]:
+        storage = NodeStorage(default_containers=True)
+        nodes = storage('nodes')
+        inputs = storage('inputs')
+        outputs = storage('outputs')
+
+        for outkey in replicate:
+            outname = (name,)+outkey
+            instance = cls('.'.join(outname), **kwargs)
+            nodes[outname] = instance
+            instance()
+            inputs[outname] = instance.inputs[0]
+            outputs[outname] = instance.outputs[0]
+
+        NodeStorage.update_current(storage, strict=True)
+
+        if len(replicate)==1:
+            return instance, storage
+
+        return None, storage

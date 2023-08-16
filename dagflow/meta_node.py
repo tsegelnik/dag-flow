@@ -122,19 +122,27 @@ class MetaNode(Limbs):
 
     def print(self, recursive: bool=False):
         print(f"MetaNode: →[{len(self.inputs)}],[{len(self.outputs)}]→")
-        def getstr(name, o):
-            if isinstance(o, Tuple):
-                return f'{name}: {len(o)} objects'
-            return f'{name}: {o!s}'
+        def getstr(prefix_disconnected, prefix_connected, name, obj):
+            if isinstance(obj, Tuple):
+                nconnected = sum(1 for limb in obj if limb.connected())
+                nlimbs = len(obj)
+                ndisconnected = nlimbs-nconnected
+                if nconnected==0:
+                    return f'{name}: {prefix_disconnected}{ndisconnected}'
+                elif ndisconnected>0:
+                    return f'{name}: {prefix_disconnected}{ndisconnected} + {prefix_connected}{nconnected}'
+                else:
+                    return f'{name}: {prefix_connected}{nlimbs}'
+            return f'{name}: {obj!s}'
 
         for i, (name, input) in enumerate(self.inputs.pos_edges.items()):
-            print("  ", i, getstr(name, input))
+            print(f"     {i} {getstr('→○', '→●', name, input)}")
         for name, input in self.inputs.nonpos_edges.items():
-            print(f"     {getstr(name, input)}")
+            print(f"     {getstr('→○', '→●', name, input)}")
         for i, (name, output) in enumerate(self.outputs.pos_edges.items()):
-            print("  ", i, getstr(name, output))
+            print(f"     {i} {getstr('○→', '●→', name, output)}")
         for name, output in self.outputs.nonpos_edges.items():
-            print(f"     {getstr(name, output)}")
+            print(f"     {getstr('○→', '●→', name, output)}")
 
         if recursive:
             for i, node in enumerate(self._nodes):

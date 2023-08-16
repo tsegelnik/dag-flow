@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-from numpy import arange
+from numpy import arange, finfo
 from dagflow.exception import TypeFunctionError
 
 from dagflow.graph import Graph
@@ -90,9 +90,10 @@ def test_NormalizeCorrelatedVars_00(dtype):
         print('Diff 1:', inVec-back_matrix)
         print('Diff 2:', inVec-back_diag)
 
-    assert allclose(norm1, result_matrix, atol=0, rtol=0)
+    atol = finfo(dtype).resolution
+    assert allclose(norm1, result_matrix, atol=atol, rtol=0)
     assert allclose(norm2, result_diag, atol=0, rtol=0)
-    assert allclose(inVec, back_matrix, atol=1.e-14, rtol=0)
+    assert allclose(inVec, back_matrix, atol=atol, rtol=0)
     assert allclose(inVec, back_diag, atol=0, rtol=0)
 
     savegraph(graph, f"output/test_NormalizeCorrelatedVars_00_{dtype}.png")

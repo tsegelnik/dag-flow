@@ -2,7 +2,7 @@ from typing import List, Optional, Literal
 from numpy.typing import DTypeLike, NDArray
 from numpy import product
 
-from .types import EdgesLike, ShapeLike
+from .types import EdgesLike, ShapeLike, MeshesLike
 from .labels import repr_pretty
 
 class DataDescriptor:
@@ -25,7 +25,7 @@ class DataDescriptor:
         dtype: DTypeLike,  # DTypeLike is already Optional
         shape: Optional[ShapeLike],
         axes_edges: Optional[EdgesLike] = None,
-        axes_meshes: Optional[EdgesLike] = None,
+        axes_meshes: Optional[MeshesLike] = None,
     ) -> None:
         """
         Sets the attributes
@@ -41,7 +41,7 @@ class DataDescriptor:
     def __str__(self):
         return (f'{self.dtype} {self.shape}'
                 f'{bool(self.axes_edges) and " [edges]" or ""}'
-                f'{bool(self.axes_meshes) and " [nodes]" or ""}')
+                f'{bool(self.axes_meshes) and " [meshes]" or ""}')
 
     _repr_pretty_ = repr_pretty
 
@@ -60,7 +60,7 @@ class DataDescriptor:
         return tuple(o.data for o in self.axes_edges)
 
     @property
-    def nodes_arrays(self) -> Optional[List[NDArray]]:
+    def meshes_arrays(self) -> Optional[List[NDArray]]:
         return tuple(o.data for o in self.axes_meshes)
 
     def axis_label(
@@ -73,18 +73,18 @@ class DataDescriptor:
         if self.axes_edges and axistype in {'any', 'edges'}:
             try:
                 if root:
-                    return self.axes_edges[axis].node.labels.rootaxis
+                    return self.axes_edges[axis].labels.rootaxis
                 else:
-                    return self.axes_edges[axis].node.labels.axis
+                    return self.axes_edges[axis].labels.axis
             except IndexError as e:
                 raise RuntimeError(f'Invalid axis index {axis}') from e
 
         if self.axes_meshes and axistype in {'any', 'mesh'}:
             try:
                 if root:
-                    return self.axes_meshes[axis].node.labels.rootaxis
+                    return self.axes_meshes[axis].labels.rootaxis
                 else:
-                    return self.axes_meshes[axis].node.labels.axis
+                    return self.axes_meshes[axis].labels.axis
             except IndexError as e:
                 raise RuntimeError(f'Invalid axis index {axis}') from e
 

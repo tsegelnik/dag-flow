@@ -3,9 +3,10 @@ from multikeydict.nestedmkdict import NestedMKDict
 
 from schema import Schema, Or, Optional, Use, And, Schema, SchemaError
 from pathlib import Path
-from typing import Tuple, Generator
+from typing import Tuple, Generator, Mapping, Optional as OptionalType
 
 from ..tools.schema import NestedSchema, LoadFileWithExt, LoadYaml, MakeLoaderPy
+from ..tools.schema import IsStrSeqOrStr
 from ..exception import InitializationError
 from ..labels import inherit_labels
 from ..storage import NodeStorage
@@ -75,11 +76,7 @@ def CheckCorrelationSizes(cfg):
     if nrows!=nnames:
         return False
 
-    for row in matrix:
-        if nnames!=len(row):
-            return False
-
-    return True
+    return all(nnames == len(row) for row in matrix)
 
 IsCorrelationsDict = And({
         'names': Or((str,), And([str], Use(tuple))),
@@ -89,8 +86,6 @@ IsCorrelationsDict = And({
 IsNestedCorrelationsDict = NestedSchema(IsCorrelationsDict, processdicts=True)
 
 IsFormat = Schema(IsFormatOk, error='Invalid parameter format "{}".')
-IsStrSeq = (str,)
-IsStrSeqOrStr = Or(IsStrSeq, And(str, Use(lambda s: (s,))))
 IsParsCfgDict = Schema({
     'parameters': IsValuesDict,
     'labels': IsLabelsDict,
@@ -99,7 +94,8 @@ IsParsCfgDict = Schema({
     Optional('path', default=''): str,
     Optional('replicate', default=((),)): (IsStrSeqOrStr,),
     Optional('replica_key_offset', default=0): int,
-    Optional('correlations', default={}): IsNestedCorrelationsDict
+    Optional('correlations', default={}): IsNestedCorrelationsDict,
+    Optional('joint_nuisance', default=False): bool
     },
     # error = 'Invalid parameters configuration: {}'
 )
@@ -192,8 +188,8 @@ def get_label(key: tuple, labelscfg: dict) -> dict:
         if not subkey and 'text' not in lcfg:
             break
 
-        sidx = '.'.join(key[n-1:])
-        return format_dict(lcfg, sidx)
+        key_str = '.'.join(key[n-1:])
+        return format_dict(lcfg, key_str, key=key_str, space_key=f' {key_str}', key_space=f'{key_str} ')
 
     return {}
 
@@ -228,7 +224,8 @@ def check_correlations_consistent(cfg: NestedMKDict) -> None:
         if names!=inames:
             raise InitializationError(f'Keys in {".".join(key)} are not consistent with names: {inames} and {names}')
 
-def load_parameters(acfg):
+def load_parameters(acfg: OptionalType[Mapping]=None, **kwargs):
+    acfg = dict(acfg or {}, **kwargs)
     cfg = ValidateParsCfg(acfg)
     cfg = NestedMKDict(cfg)
 
@@ -286,7 +283,7 @@ def load_parameters(acfg):
             key_str = '.'.join(key)
             subkey_str = '.'.join(subkey)
 
-            label = format_dict(label_general.copy(), subkey=subkey_str, space_subkey=f' {subkey_str}', subkey_space=f'{subkey_str} ')
+            label = format_dict(label_general.copy(), subkey=key_str, space_key=f' {subkey_str}', key_space=f'{subkey_str} ')
             varcfg_sub = varcfg.copy()
             varcfg_sub['label'] = label
             label['paths'] = [key_str]
@@ -304,7 +301,7 @@ def load_parameters(acfg):
         mark_matrix = matrixtype=='correlation' and 'C' or 'V'
         label_mat = inherit_labels(label, fmtlong=f'{matrixtype.capitalize()}'' matrix: {}', fmtshort=mark_matrix+'({})')
         label_mat['mark'] = mark_matrix
-        label_mat = format_dict(label_mat, subkey='', space_subkey='', subkey_space='')
+        label_mat = format_dict(label_mat, key='', space_key='', key_space='')
         matrix_array = Array('matrixtype', matrix, label=label_mat)
 
         for subkey in subkeys:
@@ -327,7 +324,7 @@ def load_parameters(acfg):
                 names.append(name)
                 processed_cfgs.add(fullkey+name)
 
-            labelsub = format_dict(label, subkey=subkey_str, space_subkey=f' {subkey_str}', subkey_space=f'{subkey_str} ')
+            labelsub = format_dict(label, subkey=subkey_str, space_key=f' {subkey_str}', key_space=f'{subkey_str} ')
             pars[fullkey] = Parameters.from_numbers(label=labelsub, **kwargs)
 
     for key, varcfg in varcfgs.walkdicts(ignorekeys=('label',)):
@@ -359,13 +356,20 @@ def load_parameters(acfg):
             for subname, subpar in par.iteritems_norm():
                 ret[ntarget+subname] = subpar
 
-    for name, outputs in normpars.items():
-        ssq = ElSumSq(f'nuisance: {pathstr}.{name}')
-        outputs >> ssq
+    joint_nuisance = cfg['joint_nuisance']
+    if joint_nuisance:
+        ssq = ElSumSq(f'nuisance: {pathstr}')
+        for outputs in normpars.values():
+            outputs >> ssq
         ssq.close()
-        ret[('stat', 'nuisance_parts', path, name)] = ssq
+        ret[('stat', 'nuisance_parts', path)] = ssq
+    else:
+        for name, outputs in normpars.items():
+            ssq = ElSumSq(f'nuisance: {pathstr}.{name}')
+            outputs >> ssq
+            ssq.close()
+            ret[('stat', 'nuisance_parts', path, name)] = ssq
 
-    if (storage:=NodeStorage.current()) is not None:
-        storage^=ret
+    NodeStorage.update_current(ret, strict=True)
 
     return ret

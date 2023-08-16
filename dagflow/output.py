@@ -1,13 +1,17 @@
-from typing import List, Optional
+from typing import List, Optional, Union, Sequence, Mapping, TYPE_CHECKING
+if TYPE_CHECKING:
+    from .input import Input
+    from .node import Node
+    from multikeydict.nestedmkdict import NestedMKDict
 
 from numpy import zeros
 from numpy.typing import ArrayLike, DTypeLike, NDArray
 
-from .exception import DagflowError
-
 from .edges import EdgeContainer
 from .exception import (
+    DagflowError,
     ClosedGraphError,
+    ConnectionError,
     CriticalError,
     InitializationError,
     AllocationError,
@@ -16,7 +20,8 @@ from .exception import (
 )
 from .shift import rshift
 from .iter import StopNesting
-from .types import EdgesLike, InputT, NodeT, ShapeLike
+from .types import EdgesLike, ShapeLike
+
 from .datadescriptor import DataDescriptor
 from .labels import repr_pretty, Labels
 
@@ -24,12 +29,12 @@ class Output:
     _data: Optional[NDArray] = None
     _dd: DataDescriptor
 
-    _node: Optional[NodeT]
+    _node: Optional["Node"]
     _name: Optional[str]
 
-    _child_inputs: List[InputT]
-    _parent_input: Optional[InputT] = None
-    _allocating_input: Optional[InputT] = None
+    _child_inputs: List["Input"]
+    _parent_input: Optional["Input"] = None
+    _allocating_input: Optional["Input"] = None
 
     _allocatable: bool = True
     _owns_buffer: bool = False
@@ -42,7 +47,7 @@ class Output:
     def __init__(
         self,
         name: Optional[str],
-        node: Optional[NodeT],
+        node: Optional["Node"],
         *,
         debug: Optional[bool] = None,
         allocatable: Optional[bool] = None,
@@ -102,7 +107,7 @@ class Output:
 
     @property
     def labels(self) -> Optional[Labels]:
-        return self._node is not None and self._node.labels or self._labels
+        return self._labels if self._labels is not None else self._node and self._node.labels
 
     @labels.setter
     def labels(self, labels: Labels):
@@ -219,7 +224,7 @@ class Output:
     def data_unsafe(self):
         return self._data
 
-    def connect_to(self, input) -> InputT:
+    def connect_to(self, input) -> "Input":
         if not self.closed and input.closed:
             raise ConnectionError(
                 "Cannot connect an output to a closed input!",
@@ -236,7 +241,7 @@ class Output:
             )
         return self._connect_to(input)
 
-    def _connect_to(self, input) -> InputT:
+    def _connect_to(self, input) -> "Input":
         if input.allocatable:
             if self._allocating_input:
                 raise ConnectionError(
@@ -255,11 +260,43 @@ class Output:
         input._set_parent_output(self)
         return input
 
-    def __rshift__(self, other):
+    def deep_iter_outputs(self, disconnected_only=False):
+        if disconnected_only and self.connected():
+            return iter(tuple())
+        raise StopNesting(self)
+
+    def deep_iter_child_outputs(self):
+        raise StopNesting(self)
+
+    def __rshift__(self, other: Union[
+        "Input",
+        "Node",
+        Sequence["Input"],
+        Sequence["Node"],
+        Mapping[str, "Node"],
+        "NestedMKDict"
+    ]):
         """
         self >> other
         """
-        return rshift(self, other)
+        from .input import Input
+        from .node import Node
+        from multikeydict.nestedmkdict import NestedMKDict
+        if isinstance(other, Input):
+            self.connect_to(other)
+        elif isinstance(other, Node):
+            rshift(self, other)
+        elif isinstance(other, Sequence):
+            for subother in other:
+                self >> subother
+        elif isinstance(other, Mapping):
+            for subother in other.values():
+                self >> subother
+        elif isinstance(other, NestedMKDict):
+            for subother in other.walkvalues():
+                self >> subother
+        else:
+            rshift(self, other)
 
     def taint_children(self, **kwargs) -> None:
         for input in self._child_inputs:
@@ -274,14 +311,6 @@ class Output:
 
     def connected(self):
         return bool(self._child_inputs)
-
-    def deep_iter_outputs(self, disconnected_only=False):
-        if disconnected_only and self.connected():
-            return iter(tuple())
-        raise StopNesting(self)
-
-    def deep_iter_child_outputs(self):
-        raise StopNesting(self)
 
     def allocate(self, **kwargs):
         if not self._allocatable:

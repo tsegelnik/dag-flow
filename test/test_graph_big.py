@@ -61,8 +61,11 @@ def test_graph_big_01():
     _, other = F._add_pair("i1", "o1", output_kws={"allocatable": False})
     _, final = E._add_pair("i1", "o1", output_kws={"allocatable": False})
 
-    (A1, A2, (P >> A3), D[:1]) >> B >> (E, H)
-    ((C1, C2) >> D[:, 1]) >> F
+    (P >> A3)
+    (A1, A2, A3, D[:1]) >> B
+    B >> (E, H)
+    (C1, C2) >> D
+    D[:, 1] >> F
 
     g.print()
     g.close()

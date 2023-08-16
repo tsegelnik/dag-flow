@@ -33,6 +33,7 @@ from .types import GraphT
 
 if TYPE_CHECKING:
     from .meta_node import MetaNode
+    from .storage import NodeStorage
 
 
 class Node(Limbs):
@@ -144,7 +145,7 @@ class Node(Limbs):
     @classmethod
     def make_stored(
         cls, name: str, *args, label_from: Optional[Mapping] = None, **kwargs
-    ) -> "Node":
+    ) -> Tuple[Optional["Node"], "NodeStorage"]:
         from multikeydict.nestedmkdict import NestedMKDict
 
         if label_from is not None:
@@ -158,23 +159,17 @@ class Node(Limbs):
         node = cls(name, *args, **kwargs)
 
         from .storage import NodeStorage
-
-        if (common_storage := NodeStorage.current()) is None:
-            return node
-
-        storage = NestedMKDict({}, sep=".")
-        storage.child("nodes")[name] = node
+        storage = NodeStorage(default_containers=True)
+        storage("nodes")[name] = node
         if len(node.outputs) == 1:
-            storage.child("outputs")[name] = node.outputs[0]
-        common_storage ^= storage
+            storage("outputs")[name] = node.outputs[0]
 
-        return node
+        NodeStorage.update_current(storage, strict=True)
+
+        return node, storage
 
     def __str__(self):
         return f"{{{self.name}}} {super().__str__()}"
-
-    def to_dict(self, *, label_from: str = "text") -> dict:
-        return {"label": self._labels[label_from], "flags": ""}
 
     #
     # Properties
@@ -421,8 +416,9 @@ class Node(Limbs):
         input_kws = input_kws or {}
         output_kws = output_kws or {}
         output = self.add_output(oname, **output_kws)
-        _input = self.add_input(iname, child_output=output, **input_kws)
-        return _input, output
+        child_output = output if isinstance(output, Output) else None
+        input = self.add_input(iname, child_output=child_output, **input_kws)
+        return input, output
 
     def touch(self, force=False):
         if self._frozen:
@@ -526,8 +522,10 @@ class Node(Limbs):
             return True
         if recursive:
             self.logger.debug(f"Node '{self.name}': Trigger recursive update types...")
-            for _input in self.inputs.iter_all():
-                _input.parent_node.update_types(recursive)
+            for input in self.inputs.iter_all():
+                if not input.connected():
+                    raise ClosingError('Input is not connected', node=self, input=input)
+                input.parent_node.update_types(recursive)
         self.logger.debug(f"Node '{self.name}': Update types...")
         self._typefunc()
         self._types_tainted = False
@@ -555,7 +553,7 @@ class Node(Limbs):
         self._allocated = True
         return True
 
-    def close(self, recursive: bool = True, together: List["Node"] = []) -> bool:
+    def close(self, recursive: bool = True, together: Sequence["Node"] = []) -> bool:
         # Caution: `together` list should not be written in!
 
         if self._closed:

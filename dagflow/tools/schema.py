@@ -1,20 +1,51 @@
 from ..logger import logger, SUBINFO
-from typing import Any, Union
-from schema import Schema, Schema, SchemaError
+from typing import Any, Union, Sequence
+from schema import Schema, Schema, SchemaError, Use, And, Or
 from contextlib import suppress
+from pathlib import Path
 
 from os import access, R_OK
 from typing import Callable
 
+IsStrSeq = Or((str,),And([str], Use(tuple)))
+IsStrSeqOrStr = Or(IsStrSeq, And(str, Use(lambda s: (s,))))
+
 def IsReadable(filename: str):
     """Returns True if the file is readable"""
     return access(filename, R_OK)
+
+IsReadableFilename = And(
+    Or(str, And(Path, Use(str))),
+    IsReadable
+)
+IsFilenameSeqOrFilename = Or(
+    [IsReadableFilename], (IsReadableFilename,),
+    And(IsReadableFilename, Use(lambda s: (s,)))
+)
 
 def IsFilewithExt(*exts: str):
     """Returns a function that retunts True if the file extension is consistent"""
     def checkfilename(filename: str):
         return filename.endswith(f'.{ext}' for ext in exts)
     return checkfilename
+
+def AllFileswithExt(*exts: str):
+    """Returns a function that retunts True if the file extensions are consistent"""
+    def checkfilenames(filenames: Sequence[str]):
+        if not filenames:
+            return False
+        if isinstance(filenames, str):
+            filename = filenames
+            filenames = filenames,
+        else:
+            filename = filenames[0]
+        for ext in exts:
+            if filename.endswith(f'.{ext}'): break
+        else:
+            return False
+        return all(filename.endswith(f'.{ext}') for filename in filenames)
+    return checkfilenames
+
 
 def LoadFileWithExt(*, key: Union[str, dict, None]=None, update: bool=False, **kwargs: Callable):
     """Returns a function that retunts True if the file extension is consistent"""
@@ -26,14 +57,16 @@ def LoadFileWithExt(*, key: Union[str, dict, None]=None, update: bool=False, **k
             dct = None
         for ext, loader in kwargs.items():
             if filename.endswith(f'.{ext}'):
-                ret = loader(filename)
+                break
+        else:
+            raise SchemaError(f'Do not know how to load {filename}')
 
-                if update and dct is not None:
-                    ret.update(dct)
+        ret = loader(filename)
+        if update and dct is not None:
+            ret.update(dct)
 
-                return ret
+        return ret
 
-        raise SchemaError(f'Do not know how to load {filename}')
     return checkfilename
 
 from yaml import load, Loader

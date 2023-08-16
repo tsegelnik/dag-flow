@@ -24,8 +24,8 @@ class Input:
     _node: Optional[NodeT]
     _name: Optional[str]
 
-    _parent_output: Optional[Output]
-    _child_output: Optional[Output]
+    _parent_output: Optional[Output] = None
+    _child_output: Optional[Output] = None
 
     _allocatable: bool = False
     _owns_buffer: bool = False
@@ -54,7 +54,7 @@ class Input:
 
         self._name = name
         self._node = node
-        self._child_output = child_output
+        self._set_child_output(child_output)
         self._parent_output = parent_output
         self._allocatable = allocatable
         if debug is not None:
@@ -115,7 +115,7 @@ class Input:
         return self._node.closed if self.node else False
 
     def set_child_output(
-        self, child_output: Output, force: bool = False
+        self, child_output: Optional[Output], force: bool = False
     ) -> None:
         if not self.closed:
             return self._set_child_output(child_output, force)
@@ -127,7 +127,8 @@ class Input:
         if self.child_output and not force:
             raise ReconnectionError(output=self.child_output, node=self.node)
         self._child_output = child_output
-        child_output.parent_input = self
+        if child_output:
+            child_output.parent_input = self
 
     def set_parent_output(
         self, parent_output: Output, force: bool = False

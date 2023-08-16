@@ -4,7 +4,7 @@ from .tools.schema import LoadYaml
 
 def repr_pretty(self, p, cycle):
     """Pretty repr for IPython. To be used as __repr__ method"""
-    p.text(str(self) if not cycle else '...')
+    p.text(str(self) if not cycle else "...")
 
 def _make_formatter(fmt: Union[str, Callable, dict]) -> Callable:
     if isinstance(fmt, str):
@@ -27,8 +27,8 @@ def inherit_labels(
     fmtlong = _make_formatter(fmtlong)
     fmtshort = _make_formatter(fmtshort)
 
-    kshort = {'mark'}
-    kskip = {'key', 'name'}
+    kshort = {"mark"}
+    kskip = {"key", "name"}
     for k, v in source.items():
         if k in kskip:
             continue
@@ -40,18 +40,18 @@ def inherit_labels(
 
 class Labels:
     __slots__ = (
-        '_name',
-        '_text',
-        '_graph',
-        '_latex',
-        '_mark',
-        '_xaxis',
-        '_axis',
-        '_plottitle',
-        '_roottitle',
-        '_rootaxis',
-        '_paths',
-        'plottable'
+        "_name",
+        "_text",
+        "_graph",
+        "_latex",
+        "_mark",
+        "_xaxis",
+        "_axis",
+        "_plottitle",
+        "_roottitle",
+        "_rootaxis",
+        "_paths",
+        "_plotmethod"
     )
 
     _name: Optional[str]
@@ -65,16 +65,15 @@ class Labels:
     _rootaxis: Optional[str]
     _mark: Optional[str]
     _paths: List[str]
-    plottable: bool
+    _plotmethod: Optional[str]
 
     def __init__(self, label: Union[Dict[str, str], str, Path, None]=None):
         for slot in self.__slots__:
             setattr(self, slot, None)
         self._paths = []
-        self.plottable = True
 
         if isinstance(label, str):
-            if label.endswith('.yaml'):
+            if label.endswith(".yaml"):
                 self._update_from(label)
             else:
                 self._text = label
@@ -83,6 +82,15 @@ class Labels:
         elif isinstance(label, dict):
             self.update(label)
 
+    def __str__(self):
+        return str({
+            slot.removeprefix("_"): v
+            for slot in self.__slots__
+            if (v:=getattr(self, slot)) is not None
+        })
+
+    _repr_pretty_ = repr_pretty
+
     def _update_from(self, path: str):
         d = LoadYaml(path)
         self.update(d)
@@ -90,6 +98,17 @@ class Labels:
     def update(self, d: Dict[str,str]):
         for k, v in d.items():
             setattr(self, k, v)
+
+    def format(self, *args, **kwargs):
+        for name in (
+                "text", "graph", "latex",
+                "xaxis", "plottitle", "roottitle",
+                "rootaxis"
+                ):
+            name = f"_{name}"
+            oldvalue = getattr(self, name)
+            if isinstance(oldvalue, str):
+                setattr(self, name, oldvalue.format(*args, **kwargs))
 
     @property
     def name(self) -> str:
@@ -135,8 +154,7 @@ class Labels:
     def roottitle(self) -> Optional[str]:
         if self._roottitle is not None:
             return self._roottitle
-        title = self.plottitle
-        return title and title.replace('\\', '#').replace('$','')
+        return _latex_to_root(self.plottitle)
 
     @roottitle.setter
     def roottitle(self, value: Optional[str]):
@@ -146,8 +164,7 @@ class Labels:
     def rootaxis(self) -> Optional[str]:
         if self._rootaxis is not None:
             return self._rootaxis
-        axis = self.axis
-        return axis and axis.replace('\\', '#').replace('$','')
+        return _latex_to_root(self.axis)
 
     @rootaxis.setter
     def rootaxis(self, value: Optional[str]):
@@ -178,12 +195,24 @@ class Labels:
         self._mark = value
 
     @property
-    def paths(self) -> str:
+    def paths(self) -> List[str]:
         return self._paths
 
     @paths.setter
-    def paths(self, value: str):
+    def paths(self, value: List[str]):
         self._paths = value
+
+    @property
+    def plottable(self) -> bool:
+        return self._plotmethod!="none"
+
+    @property
+    def plotmethod(self) -> str:
+        return self._plotmethod
+
+    @plotmethod.setter
+    def plotmethod(self, value: str):
+        self._plotmethod = value.lower()
 
     def items(self):
         for k in self.__slots__:
@@ -214,11 +243,22 @@ class Labels:
         fmtlong = _make_formatter(fmtlong)
         fmtshort = _make_formatter(fmtshort)
 
-        inherit = ('_text', '_graph', '_latex', '_mark', '_axis', '_plottitle')
-        kshort = {'_mark'}
+        inherit = ("_text", "_graph", "_latex", "_mark", "_axis", "_plottitle")
+        kshort = {"_mark"}
         for _key in inherit:
             label = getattr(source, _key, None)
             if label is None: continue
             newv = fmtshort(label) if _key in kshort else fmtlong(label)
             if newv is not None:
                 self[_key] = newv
+
+    def copy(self) -> "Labels":
+        l = Labels()
+        for slot in self.__slots__:
+            setattr(l, slot, getattr(self, slot))
+        return l
+
+def _latex_to_root(text: Optional[str]) -> Optional[str]:
+    if not text:
+        return text
+    return text.replace(r"\rm ", "").replace("\\", "#").replace("$","")

@@ -25,7 +25,7 @@ def test_interpolation_linear_01(debug_graph, testname, k, b):
         coarse = Array("coarse", coarseX)
         fine = Array("fine", fineX)
         yc = Array("yc", ycX)
-        segmentIndex = SegmentIndex("segmentIndex")
+        segmentIndex = SegmentIndex("indexer")
         interpolator = Interpolator("interpolator", method="linear")
 
         (coarse, fine) >> segmentIndex
@@ -55,7 +55,7 @@ def test_interpolation_linear_02(debug_graph, testname):
         coarse = Array("coarse", coarseX)
         fine = Array("fine", fineX)
         ssin = Sin("sin")
-        segmentIndex = SegmentIndex("segmentIndex")
+        segmentIndex = SegmentIndex("indexer")
         interpolator = Interpolator("interpolator", method="linear")
 
         (coarse, fine) >> segmentIndex
@@ -78,15 +78,14 @@ def test_interpolation_ndim(debug_graph, testname, shape):
     seed(10)
     with Graph(debug=debug_graph, close=True) as graph:
         nc, nf = 20, 20
-        coarseX = linspace(-0.05, 0.05, nc).reshape(shape)
-        shuffle(coarseX)
+        coarseX = linspace(-0.05, 0.05, nc) #.reshape(shape) # TODO: 2d coarse X/Y should be forbidden
         fineX = linspace(-0.1, 0.1, nf).reshape(shape)
         shuffle(fineX)
 
         coarse = Array("coarse", coarseX)
         fine = Array("fine", fineX)
         ssin = Sin("sin")
-        segmentIndex = SegmentIndex("segmentIndex")
+        segmentIndex = SegmentIndex("indexer")
         interpolator = Interpolator("interpolator", method="linear")
 
         (coarse, fine) >> segmentIndex
@@ -119,7 +118,7 @@ def test_interpolation_log_01(debug_graph, testname, k, b):
         coarse = Array("coarse", coarseX)
         fine = Array("fine", fineX)
         yc = Array("yc", ycX)
-        segmentIndex = SegmentIndex("segmentIndex")
+        segmentIndex = SegmentIndex("indexer")
         interpolator = Interpolator("interpolator", method="log")
 
         (coarse, fine) >> segmentIndex
@@ -152,7 +151,7 @@ def test_interpolation_logx_01(debug_graph, testname, k, b):
         coarse = Array("coarse", coarseX)
         fine = Array("fine", fineX)
         yc = Array("yc", ycX)
-        segmentIndex = SegmentIndex("segmentIndex")
+        segmentIndex = SegmentIndex("indexer")
         interpolator = Interpolator("interpolator", method="logx")
 
         (coarse, fine) >> segmentIndex
@@ -184,7 +183,7 @@ def test_interpolation_exp_01(debug_graph, testname, k, b):
         coarse = Array("coarse", coarseX)
         fine = Array("fine", fineX)
         yc = Array("yc", ycX)
-        segmentIndex = SegmentIndex("segmentIndex")
+        segmentIndex = SegmentIndex("indexer")
         interpolator = Interpolator("interpolator", method="exp")
 
         (coarse, fine) >> segmentIndex
@@ -221,7 +220,7 @@ def test_interpolation_extrapolation_strategy(
         coarse = Array("coarse", coarseX)
         fine = Array("fine", fineX)
         yc = Array("yc", ycX)
-        segmentIndex = SegmentIndex("segmentIndex")
+        segmentIndex = SegmentIndex("indexer")
         interpolator = Interpolator(
             "interpolator",
             method="linear",

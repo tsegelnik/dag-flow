@@ -16,11 +16,11 @@ class DagflowError(Exception):
         output: Optional[OutputT] = None,
     ):
         if node:
-            message = f"{message} [node={node.name if hasattr(node, 'name') else node}]"
+            message = f"{message} [node={getattr(node, 'name', node)}]"
         if input:
-            message = f"{message} [input={input.name if hasattr(input, 'name') else input}]"
+            message = f"{message} [input={getattr(input, 'name', input)}]"
         if output:
-            message = f"{message} [output={output.name if hasattr(output, 'name') else output}]"
+            message = f"{message} [output={getattr(output, 'name', output)}]"
         super().__init__(message)
         self.node = node
         self.input = input

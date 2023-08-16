@@ -1,7 +1,13 @@
 from numpy import add, empty, ndarray, square
 
+from ..typefunctions import (
+    check_has_inputs,
+    eval_output_dtype,
+    copy_input_shape_to_outputs,
+    check_inputs_equivalence,
+    AllPositionals
+)
 from .ManyToOneNode import ManyToOneNode
-
 
 class SumSq(ManyToOneNode):
     """Sum of the squares of all the inputs"""
@@ -21,6 +27,13 @@ class SumSq(ManyToOneNode):
                 square(_input.data, out=self._buffer)
                 add(self._buffer, out, out=out)
         return out
+
+    def _typefunc(self) -> None:
+        """A output takes this function to determine the dtype and shape"""
+        check_has_inputs(self)
+        copy_input_shape_to_outputs(self, 0, "result")
+        check_inputs_equivalence(self)
+        eval_output_dtype(self, AllPositionals, "result")
 
     def _post_allocate(self) -> None:
         inpdd = self.inputs[0].dd

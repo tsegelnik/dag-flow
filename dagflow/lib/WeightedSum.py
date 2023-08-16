@@ -3,12 +3,14 @@ from typing import TYPE_CHECKING
 from numpy import copyto, ndarray
 
 from ..exception import TypeFunctionError
-from ..typefunctions import check_has_inputs
+from ..typefunctions import (
+    check_has_inputs,
+    eval_output_dtype,
+    copy_input_shape_to_outputs,
+)
 from .ManyToOneNode import ManyToOneNode
-
 if TYPE_CHECKING:
     from ..input import Input
-
 
 class WeightedSum(ManyToOneNode):
     """Weighted sum of all the inputs together"""
@@ -47,6 +49,8 @@ class WeightedSum(ManyToOneNode):
                 node=self,
                 input=weight,
             )
+        copy_input_shape_to_outputs(self, 0, "result")
+        eval_output_dtype(self, slice(None), "result")
 
     def _fcn_number(self) -> ndarray:
         """
