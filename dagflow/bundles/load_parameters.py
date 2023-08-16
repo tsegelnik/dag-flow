@@ -359,7 +359,7 @@ def load_parameters(acfg: OptionalType[Mapping]=None, **kwargs):
     joint_nuisance = cfg['joint_nuisance']
     if joint_nuisance:
         ssq = ElSumSq(f'nuisance: {pathstr}')
-        for name, outputs in normpars.items():
+        for outputs in normpars.values():
             outputs >> ssq
         ssq.close()
         ret[('stat', 'nuisance_parts', path)] = ssq

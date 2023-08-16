@@ -150,18 +150,7 @@ class Limbs:
             for input in self.inputs:
                 other >> input
         else:
-            # TODO: clean this item
             return rshift(other, self)
-        # elif isinstance(other, Sequence):
-        #     if len(other)!=len(self.inputs):
-        #         raise ConnectionError(
-        #             f"Inconsistent outputs/inputs: {len(other), len(self.inputs)}",
-        #             node=self
-        #         )
-        #     for output, input in zip(other, self.inputs):
-        #         output >> input
-        # else:
-        #     raise ConnectionError(f"Unsupported LHS>> type: {type(other)}", node=self)
 
     def __lshift__(self, storage: Mapping[str, Output]) -> None:
         """

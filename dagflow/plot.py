@@ -37,7 +37,7 @@ class plot_auto:
         '_ylabel',
         '_zlabel'
     )
-    _object: Union[Node, Output, ArrayLike]
+    _object: Union[Limbs, Output, ArrayLike]
     _output: Optional[Output]
     _array: NDArray
     _edges: EdgesLike
@@ -51,7 +51,7 @@ class plot_auto:
     _zlabel: Optional[str]
     def __init__(
         self,
-        object: Union[Output, Limbs, ArrayLike],
+        object: Union[Limbs, Output, ArrayLike],
         *args,
         filter_kw: dict = {},
         show_path: bool = True,
