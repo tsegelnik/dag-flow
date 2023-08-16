@@ -1,7 +1,6 @@
 from typing import (
     Any,
     Callable,
-    List,
     Optional,
     Sequence,
     Tuple,
@@ -551,7 +550,7 @@ class Node(Limbs):
         self._allocated = True
         return True
 
-    def close(self, recursive: bool = True, together: List["Node"] = []) -> bool:
+    def close(self, recursive: bool = True, together: Sequence["Node"] = []) -> bool:
         # Caution: `together` list should not be written in!
 
         if self._closed:
