@@ -145,7 +145,6 @@ class Limbs:
         """
         other >> self
         """
-        from .node import Node
         if isinstance(other, Output):
             for input in self.inputs:
                 other >> input
