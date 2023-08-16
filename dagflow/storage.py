@@ -95,14 +95,27 @@ class NodeStorage(NestedMKDict):
     #
     # Finalizers
     #
-    def read_paths(self) -> None:
+    def read_paths(self, *, index: Mapping[str, Sequence[str]]={}) -> None:
         for key, value in self.walkitems():
             labels = getattr(value, "labels", None)
             if labels is None:
                 continue
 
-            key = ".".join(key)
-            labels.paths.append(key)
+            path = ".".join(key)
+            labels.paths.append(path)
+
+            if index and not labels.index_values:
+                for subkey in key:
+                    for category, values in index.items():
+                        try:
+                            pos = values.index(subkey)
+                        except ValueError:
+                            continue
+                        else:
+                            value = values[pos]
+                            labels.index_values.append(value)
+                            labels.index_dict[category] = value, pos
+                            break
 
     def read_labels(self, source: Union[NestedMKDict, Dict], *, strict: bool=False) -> None:
         source = NestedMKDict(source, sep=".")

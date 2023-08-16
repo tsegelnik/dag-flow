@@ -41,6 +41,8 @@ def inherit_labels(
 class Labels:
     __slots__ = (
         "_name",
+        "_index",
+        "_index_num",
         "_text",
         "_graph",
         "_latex",
@@ -55,6 +57,8 @@ class Labels:
     )
 
     _name: Optional[str]
+    _index: Dict[str, str]
+    _index_num: Dict[str, int]
     _text: Optional[str]
     _graph: Optional[str]
     _latex: Optional[str]
@@ -71,6 +75,8 @@ class Labels:
         for slot in self.__slots__:
             setattr(self, slot, None)
         self._paths = []
+        self._index = {}
+        self._index_num = {}
 
         if isinstance(label, str):
             if label.endswith(".yaml"):
@@ -111,15 +117,23 @@ class Labels:
                 setattr(self, name, oldvalue.format(*args, **kwargs))
 
     @property
-    def name(self) -> str:
+    def name(self) -> Optional[str]:
         return self._name
+
+    @property
+    def index(self) -> Dict[str,str]:
+        return self._index
+
+    @property
+    def index_num(self) -> Dict[str,int]:
+        return self._index_num
 
     @name.setter
     def name(self, value: str):
         self._name = value
 
     @property
-    def text(self) -> str:
+    def text(self) -> Optional[str]:
         return self._text
 
     @text.setter
@@ -135,7 +149,7 @@ class Labels:
         self._graph = value
 
     @property
-    def latex(self) -> str:
+    def latex(self) -> Optional[str]:
         return self._latex
 
     @latex.setter
@@ -187,7 +201,7 @@ class Labels:
         self._xaxis = value
 
     @property
-    def mark(self) -> str:
+    def mark(self) -> Optional[str]:
         return self._mark
 
     @mark.setter
@@ -207,7 +221,7 @@ class Labels:
         return self._plotmethod!="none"
 
     @property
-    def plotmethod(self) -> str:
+    def plotmethod(self) -> Optional[str]:
         return self._plotmethod
 
     @plotmethod.setter
