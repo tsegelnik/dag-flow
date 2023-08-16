@@ -4,7 +4,7 @@ from .ManyToOneNode import ManyToOneNode
 
 
 class Sum(ManyToOneNode):
-    """Sum of all the self.inputs together"""
+    """Sum of all the inputs together"""
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -19,7 +19,7 @@ class Sum(ManyToOneNode):
 
 
 class Product(ManyToOneNode):
-    """Product of all the self.inputs together"""
+    """Product of all the inputs together"""
 
     def _fcn(self):
         out = self.outputs["result"].data
