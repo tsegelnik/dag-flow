@@ -1,5 +1,5 @@
 from enum import IntEnum
-from typing import Callable, Literal
+from typing import TYPE_CHECKING, Callable, Literal
 
 from numba import float64, int32, njit, void
 from numba.core.types import FunctionType
@@ -17,8 +17,12 @@ from ..typefunctions import (
     copy_from_input_to_output,
 )
 
+if TYPE_CHECKING:
+    from ..input import Input
+    from ..output import Output
 
-class Strategy(IntEnum):
+
+class ExtrapolationStrategy(IntEnum):
     constant = 0
     nearestedge = 1
     extrapolate = 2
@@ -26,13 +30,13 @@ class Strategy(IntEnum):
 
 class Interpolator(FunctionNode):
     """
-    inputs:
+    self.inputs:
         `0` or `y`: array of the `y=f(coarse)`
         `coarse`: array of the coarse x points
         `fine`: array of the fine x points
         `indices`: array of the indices of the coarse segments for every fine point
 
-    outputs:
+    self.outputs:
         `0` or `result`: array of the `y≈f(fine)`
 
     extra arguments:
@@ -59,19 +63,26 @@ class Interpolator(FunctionNode):
         "_underflow",
         "_overflow",
         "_fillvalue",
+        "_y",
+        "_coarse",
+        "_fine",
+        "_indices",
+        "_result",
     )
+
+    _y: "Input"
+    _coarse: "Input"
+    _fine: "Input"
+    _indices: "Input"
+    _result: "Output"
 
     def __init__(
         self,
         *args,
         method: Literal["linear", "log", "logx", "exp"] = "linear",
         tolerance: float = 1e-10,
-        underflow: Literal[
-            "constant", "nearestedge", "extrapolate"
-        ] = "extrapolate",
-        overflow: Literal[
-            "constant", "nearestedge", "extrapolate"
-        ] = "extrapolate",
+        underflow: Literal["constant", "nearestedge", "extrapolate"] = "extrapolate",
+        overflow: Literal["constant", "nearestedge", "extrapolate"] = "extrapolate",
         fillvalue: float = 0.0,
         **kwargs,
     ) -> None:
@@ -104,9 +115,12 @@ class Interpolator(FunctionNode):
         self._underflow = underflow
         self._overflow = overflow
         self._fillvalue = fillvalue
-        self.add_input("y")
-        self.add_input(("coarse", "fine", "indices"), positional=False)
-        self.add_output("result")
+        # inputs/outputs
+        self._y = self._add_input("y")
+        self._coarse = self._add_input("coarse", positional=False)
+        self._fine = self._add_input("fine", positional=False)
+        self._indices = self._add_input("indices", positional=False)
+        self._result = self._add_output("result")
 
     @property
     def methods(self) -> dict:
@@ -135,16 +149,16 @@ class Interpolator(FunctionNode):
     def _typefunc(self) -> None:
         """
         The function to determine the dtype and shape.
-        Checks inputs dimension and, selects an interpolation algorithm,
-        determines dtype and shape for outputs
+        Checks self.inputs dimension and, selects an interpolation algorithm,
+        determines dtype and shape for self.outputs
         """
         check_inputs_number(self, 1)
         check_has_inputs(self, ("coarse", "y", "fine", "indices"))
         check_input_dtype(self, "indices", "i")
-        check_input_shape(self, "y", self.inputs["coarse"].dd.shape)
-        check_input_shape(self, "fine", self.inputs["indices"].dd.shape)
+        check_input_shape(self, "y", self._coarse.dd.shape)
+        check_input_shape(self, "fine", self._indices.dd.shape)
         copy_from_input_to_output(self, "fine", "result")
-        if self.inputs["fine"].dd.dim == 1:
+        if self._fine.dd.dim == 1:
             assign_output_axes_from_inputs(
                 self, "fine", "result", assign_meshes=True, ignore_assigned=False
             )
@@ -160,13 +174,13 @@ class Interpolator(FunctionNode):
                 ignore_inconsistent_number_of_meshes=True
             )
 
-    def _fcn(self, _, inputs, outputs):
-        """Runs interpolation method choosen within `method` arg"""
-        coarse = inputs["coarse"].data.ravel()
-        yc = inputs["y"].data.ravel()
-        fine = inputs["fine"].data.ravel()
-        indices = inputs["indices"].data.ravel()
-        out = outputs["result"].data.ravel()
+    def _fcn(self):
+        """Runs interpolation method chosen within `method` arg"""
+        coarse = self._coarse.data.ravel()
+        yc = self._y.data.ravel()
+        fine = self._fine.data.ravel()
+        indices = self._indices.data.ravel()
+        out = self._result.data.ravel()
 
         sortedindices = coarse.argsort()  # indices to sort the arrays
         _interpolation(
@@ -219,9 +233,9 @@ def _interpolation(
             # get precise value from coarse
             result[i] = yc[j]
         elif j > nseg:  # overflow
-            if overflow == Strategy.constant:  # constant
+            if overflow == ExtrapolationStrategy.constant:  # constant
                 result[i] = fillvalue
-            elif overflow == Strategy.nearestedge:  # nearestedge
+            elif overflow == ExtrapolationStrategy.nearestedge:  # nearestedge
                 result[i] = yc[nseg]
             else:  # extrapolate
                 result[i] = method(
@@ -232,9 +246,9 @@ def _interpolation(
                     fine[i],
                 )
         elif j <= 0:  # underflow
-            if underflow == Strategy.constant:  # constant
+            if underflow == ExtrapolationStrategy.constant:  # constant
                 result[i] = fillvalue
-            elif underflow == Strategy.nearestedge:  # nearestedge
+            elif underflow == ExtrapolationStrategy.nearestedge:  # nearestedge
                 result[i] = yc[0]
             else:  # extrapolate
                 result[i] = method(
@@ -246,9 +260,7 @@ def _interpolation(
                 )
         else:
             # interpolate
-            result[i] = method(
-                coarse[j - 1], coarse[j], yc[j - 1], yc[j], fine[i]
-            )
+            result[i] = method(coarse[j - 1], coarse[j], yc[j - 1], yc[j], fine[i])
 
 
 @njit(
@@ -289,8 +301,7 @@ def _log_interpolation(
     fine: float,
 ) -> float:
     return log(
-        exp(yc0)
-        + (fine - coarse0) * (exp(yc1) - exp(yc0)) / (coarse1 - coarse0)
+        exp(yc0) + (fine - coarse0) * (exp(yc1) - exp(yc0)) / (coarse1 - coarse0)
     )
 
 

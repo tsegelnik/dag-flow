@@ -1,64 +1,67 @@
-from numpy import copyto, add
-from numpy.typing import NDArray
 from numba import njit
+from numpy import add, copyto
+from numpy.typing import NDArray
 
 from ..input_extra import MissingInputAddOne
 from ..nodes import FunctionNode
 from ..typefunctions import (
+    AllPositionals,
     check_has_inputs,
     eval_output_dtype,
     copy_input_shape_to_outputs,
     check_inputs_square_or_diag,
     check_inputs_same_dtype,
-    AllPositionals
+    check_inputs_square_or_diag,
+    eval_output_dtype,
 )
+
 
 @njit(cache=True)
 def _settodiag1(inarray: NDArray, outmatrix: NDArray):
     for i in range(inarray.size):
         outmatrix[i, i] = inarray[i]
 
+
 @njit(cache=True)
 def _addtodiag(inarray: NDArray, outmatrix: NDArray):
     for i in range(inarray.size):
         outmatrix[i, i] += inarray[i]
 
+
 class SumMatOrDiag(FunctionNode):
     """Sum of all the inputs together. Inputs are square matrices or diagonals of square matrices"""
 
-    _ndim: int = 0
+    __slots__ = ("_ndim",)
+    _ndim: int
+
     def __init__(self, *args, **kwargs):
         kwargs.setdefault(
             "missing_input_handler", MissingInputAddOne(output_fmt="result")
         )
         super().__init__(*args, **kwargs)
+        self._functions.update({2: self._fcn2d, 1: self._fcn1d})
 
-        self._functions.update({
-                "2d":  self._fcn2d,
-                "1d":  self._fcn1d,
-                })
-
-    def _fcn2d(self, _, inputs, outputs):
-        out = outputs["result"].data
-        inp = inputs[0].data
-        if len(inp.shape)==1:
+    def _fcn2d(self):
+        out = self.outputs["result"].data
+        inp = self.inputs[0].data
+        if len(inp.shape) == 1:
             _settodiag1(inp, out)
         else:
             out[:] = inp
-        if len(inputs) > 1:
-            for input in inputs[1:]:
-                if len(input.dd.shape)==1:
-                    _addtodiag(input.data, out)
+        if len(self.inputs) > 1:
+            for _input in self.inputs[1:]:
+                if len(_input.dd.shape) == 1:
+                    _addtodiag(_input.data, out)
                 else:
-                    add(input.data, out, out=out)
+                    add(_input.data, out, out=out)
         return out
 
-    def _fcn1d(self, _, inputs, outputs):
-        out = outputs["result"].data
-        copyto(out, inputs[0].data)
-        if len(inputs) > 1:
-            for input in inputs[1:]:
-                add(out, input.data, out=out)
+    def _fcn1d(self):
+        out = self.outputs["result"].data
+        copyto(out, self.inputs[0].data)
+        if len(self.inputs) > 1:
+            for _input in self.inputs[1:]:
+                add(out, _input.data, out=out)
         return out
 
     def _typefunc(self) -> None:
@@ -71,11 +74,11 @@ class SumMatOrDiag(FunctionNode):
 
         size = self.inputs[0].dd.shape[0]
         output = self.outputs[0]
-        if self._ndim==2:
+        if self._ndim == 2:
             output.dd.shape = size, size
-        elif self._ndim==1:
-            output.dd.shape = size,
+        elif self._ndim == 1:
+            output.dd.shape = (size,)
         else:
             assert False
 
-        self.fcn = self._functions[f"{self._ndim}d"]
+        self.fcn = self._functions[self._ndim]

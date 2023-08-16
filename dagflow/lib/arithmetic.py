@@ -11,11 +11,11 @@ class Sum(ManyToOneNode):
         super().__init__(*args, **kwargs)
         self._labels.setdefault("mark", "Σ")
 
-    def _fcn(self, _, inputs, outputs):
-        out = outputs["result"].data
-        copyto(out, inputs[0].data)
-        for input in inputs[1:]:
-            add(out, input.data, out=out)
+    def _fcn(self):
+        out = self.outputs["result"].data
+        copyto(out, self.inputs[0].data)
+        for _input in self.inputs[1:]:
+            add(out, _input.data, out=out)
         return out
 
 
@@ -27,11 +27,11 @@ class Product(ManyToOneNode):
         super().__init__(*args, **kwargs)
         self._labels.setdefault("mark", "Π")
 
-    def _fcn(self, _, inputs, outputs):
-        out = outputs["result"].data
-        copyto(out, inputs[0].data)
-        for input in inputs[1:]:
-            multiply(out, input.data, out=out)
+    def _fcn(self):
+        out = self.outputs["result"].data
+        copyto(out, self.inputs[0].data)
+        for _input in self.inputs[1:]:
+            multiply(out, _input.data, out=out)
         return out
 
 
@@ -46,9 +46,9 @@ class Division(ManyToOneNode):
         super().__init__(*args, **kwargs)
         self._labels.setdefault("mark", "÷")
 
-    def _fcn(self, _, inputs, outputs):
-        out = outputs[0].data
-        copyto(out, inputs[0].data.copy())
-        for input in inputs[1:]:
-            divide(out, input.data, out=out)
+    def _fcn(self):
+        out = self.outputs[0].data
+        copyto(out, self.inputs[0].data.copy())
+        for _input in self.inputs[1:]:
+            divide(out, _input.data, out=out)
         return out

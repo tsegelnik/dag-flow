@@ -1,7 +1,5 @@
-from numpy import add, square, ndarray, empty_like
+from numpy import add, empty, ndarray, square
 
-from ..input_extra import MissingInputAddOne
-from ..nodes import FunctionNode
 from ..typefunctions import (
     check_has_inputs,
     eval_output_dtype,
@@ -9,24 +7,24 @@ from ..typefunctions import (
     check_inputs_equivalence,
     AllPositionals
 )
+from .ManyToOneNode import ManyToOneNode
 
-class SumSq(FunctionNode):
+class SumSq(ManyToOneNode):
     """Sum of the squares of all the inputs"""
 
+    __slots__ = ("_buffer",)
     _buffer: ndarray
-    def __init__(self, *args, **kwargs):
-        kwargs.setdefault(
-            "missing_input_handler", MissingInputAddOne(output_fmt="result")
-        )
-        super().__init__(*args, **kwargs)
-        self._labels.setdefault('mark', 'Σ()²')
 
-    def _fcn(self, _, inputs, outputs):
-        out = outputs["result"].data
-        square(inputs[0].data, out=out)
-        if len(inputs) > 1:
-            for input in inputs[1:]:
-                square(input.data, out=self._buffer)
+    def __init__(self, *args, **kwargs) -> None:
+        super().__init__(*args, **kwargs)
+        self._labels.setdefault("mark", "Σ()²")
+
+    def _fcn(self) -> ndarray:
+        out = self.outputs["result"].data
+        square(self.inputs[0].data, out=out)
+        if len(self.inputs) > 1:
+            for _input in self.inputs[1:]:
+                square(_input.data, out=self._buffer)
                 add(self._buffer, out, out=out)
         return out
 
@@ -38,4 +36,5 @@ class SumSq(FunctionNode):
         eval_output_dtype(self, AllPositionals, "result")
 
     def _post_allocate(self) -> None:
-        self._buffer = empty_like(self.inputs[0].data_unsafe)
+        inpdd = self.inputs[0].dd
+        self._buffer = empty(shape=inpdd.shape, dtype=inpdd.dtype)

@@ -28,17 +28,17 @@ class Concatenation(FunctionNode):
         cdtype = self.inputs[0].dd.dtype
         check_input_dtype(self, slice(None), cdtype)
         check_input_dimension(self, slice(None), 1)
-        output = self.outputs["result"]
+        _output = self.outputs["result"]
         size = 0
         for input in self.inputs:
             self._offsets.append(size)
             size += input.dd.shape[0]
-        output.dd.shape = (size,)
-        output.dd.dtype = cdtype
+        _output.dd.shape = (size,)
+        _output.dd.dtype = cdtype
 
-    def _fcn(self, _, inputs, outputs):
-        output = outputs["result"]
-        data = output.data
-        for offset, input in zip(self._offsets, self.inputs):
-            size = input.dd.shape[0]
-            data[offset : offset + size] = input.data[:]
+    def _fcn(self):
+        _output = self.outputs["result"]
+        data = _output.data
+        for offset, _input in zip(self._offsets, self.inputs):
+            size = _input.dd.shape[0]
+            data[offset : offset + size] = _input.data[:]

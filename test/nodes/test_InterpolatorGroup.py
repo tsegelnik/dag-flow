@@ -1,3 +1,7 @@
+from matplotlib.pyplot import close, gca
+from numpy import allclose, finfo, linspace
+from numpy.random import seed, shuffle
+
 from dagflow.graph import Graph
 from dagflow.graphviz import savegraph
 from dagflow.lib.Array import Array
@@ -5,9 +9,6 @@ from dagflow.lib.InterpolatorGroup import InterpolatorGroup
 from dagflow.lib.OneToOneNode import OneToOneNode
 from dagflow.meta_node import MetaNode
 from dagflow.plot import plot_auto
-from matplotlib.pyplot import close, gca
-from numpy import allclose, finfo, linspace
-from numpy.random import seed, shuffle
 
 
 class LinearF(OneToOneNode):
@@ -20,10 +21,10 @@ class LinearF(OneToOneNode):
         self._k = k
         self._b = b
 
-    def _fcn(self, _, inputs, outputs):
-        for inp, out in zip(inputs, outputs):
+    def _fcn(self):
+        for inp, out in zip(self.inputs, self.outputs):
             out.data[:] = self._k * inp.data + self._b
-        return list(outputs.iter_data())
+        return list(self.outputs.iter_data())
 
 
 def test_InterpolatorGroup(debug_graph, testname):
@@ -47,9 +48,7 @@ def test_InterpolatorGroup(debug_graph, testname):
         yc = Array("yc", ycX)
         metaint = InterpolatorGroup(
             method="linear",
-            labels={
-                "interpolator": {"plottitle": "Interpolator", "axis": "y"}
-            },
+            labels={"interpolator": {"plottitle": "Interpolator", "axis": "y"}},
         )
         coarse >> metaint.inputs["coarse"]
         yc >> metaint.inputs["y"]

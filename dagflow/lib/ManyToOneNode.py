@@ -19,7 +19,7 @@ from multikeydict.typing import KeyLike
 class ManyToOneNode(FunctionNode):
     """
     The abstract node with only one output `result`,
-    which is the result of some function on all the positional inputs
+    which is the result of some function of all the positional inputs
     """
     __slots__ = ('_broadcastable',)
     _broadcastable: bool

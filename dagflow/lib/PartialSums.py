@@ -1,3 +1,5 @@
+from typing import TYPE_CHECKING
+
 from numba import njit
 from numpy import integer
 from numpy.typing import NDArray
@@ -12,6 +14,9 @@ from ..typefunctions import (
     copy_input_dtype_to_output,
 )
 from .OneToOneNode import OneToOneNode
+
+if TYPE_CHECKING:
+    from ..input import Input
 
 
 @njit(cache=True)
@@ -34,9 +39,12 @@ class PartialSums(OneToOneNode):
     .. note:: now works only with 1d arrays
     """
 
+    __slots__ = ("_array",)
+    _array: "Input"
+
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self._add_input("array", positional=False)
+        self._array = self._add_input("array", positional=False)
 
     def _typefunc(self) -> None:
         check_has_inputs(self, "array")
@@ -49,17 +57,17 @@ class PartialSums(OneToOneNode):
             out.dd.shape = (1,)
         # TODO: axes_edges and axes_meshes?
         # now edges are restricted
-        a = self.inputs["array"]
-        if a.dd.axes_edges:
+        add = self._array.dd
+        if add.axes_edges:
             raise TypeFunctionError(
                 "The PartialSums doesn't support edges functional, "
-                f"but given {a.dd.axes_edges}",
+                f"but given {add.axes_edges}",
                 node=self,
-                input=a,
+                input=self._array,
             )
 
-    def _fcn(self, _, inputs, outputs):
-        data = inputs["array"].data
-        for inp, out in zip(inputs, outputs):
+    def _fcn(self) -> list:
+        data = self._array.data
+        for inp, out in zip(self.inputs, self.outputs):
             _psum(data, inp.data, out.data)
-        return list(outputs.iter_data())
+        return list(self.outputs.iter_data())

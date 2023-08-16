@@ -7,6 +7,7 @@ from multikeydict.typing import KeyLike
 
 from typing import Tuple, Optional
 
+
 class OneToOneNode(FunctionNode):
     """
     The abstract node with an output for every positional input
@@ -19,13 +20,23 @@ class OneToOneNode(FunctionNode):
     def _typefunc(self) -> None:
         """A output takes this function to determine the dtype and shape"""
         from ..typefunctions import (
+            assign_outputs_axes_from_inputs,
             check_has_inputs,
             copy_from_input_to_output,
-            assign_outputs_axes_from_inputs
         )
+
         check_has_inputs(self)
-        copy_from_input_to_output(self, slice(None), slice(None), edges=True, meshes=True)
-        assign_outputs_axes_from_inputs(self, slice(None), slice(None), assign_meshes=True, ignore_assigned=True, ignore_Nd=True)
+        copy_from_input_to_output(
+            self, slice(None), slice(None), edges=True, meshes=True
+        )
+        assign_outputs_axes_from_inputs(
+            self,
+            slice(None),
+            slice(None),
+            assign_meshes=True,
+            ignore_assigned=True,
+            ignore_Nd=True
+        )
 
     @classmethod
     def replicate(
