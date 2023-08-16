@@ -3,6 +3,9 @@ from .limbs import Limbs
 
 from typing import Sequence, List, Optional, Union, Tuple, Callable, Dict
 
+TStrOrPair = Union[str,Tuple[str,str]]
+TPairsOrDict = Union[Sequence[TStrOrPair], Dict]
+
 class MetaNode(Limbs):
     """A node containing multiple nodes and exposing part of their inputs and outputs"""
     __slots__ = (
@@ -32,10 +35,10 @@ class MetaNode(Limbs):
         *,
         inputs_pos: bool=False,
         outputs_pos: bool=False,
-        kw_inputs: Sequence[Union[str, Tuple[str, str], Dict[str, str]]]=[],
-        kw_inputs_optional: Sequence[Union[str, Tuple[str, str], Dict[str, str]]]=[],
-        kw_outputs: Sequence[Union[str, Tuple[str, str], Dict[str, str]]]=[],
-        kw_outputs_optional: Sequence[Union[str, Tuple[str, str], Dict[str, str]]]=[],
+        kw_inputs: TPairsOrDict=[],
+        kw_inputs_optional: TPairsOrDict=[],
+        kw_outputs: TPairsOrDict=[],
+        kw_outputs_optional: TPairsOrDict=[],
         merge_inputs: Sequence[str]=[],
         missing_inputs: bool=False,
         also_missing_outputs: bool=False,
@@ -77,7 +80,7 @@ class MetaNode(Limbs):
     def _import_kw_inputs(
         self,
         node: Node,
-        kw_inputs: Sequence[Union[str, Tuple[str, str], Dict[str, str]]]=[],
+        kw_inputs: TPairsOrDict=[],
         merge: Sequence[str]=[],
         optional: bool = False
     ) -> None:
@@ -100,7 +103,7 @@ class MetaNode(Limbs):
     def _import_kw_outputs(
         self,
         node: Node,
-        kw_outputs: Sequence[Union[str, Tuple[str, str], Dict[str, str]]]=[],
+        kw_outputs: TPairsOrDict=[],
         *,
         optional: bool = True
     ) -> None:
