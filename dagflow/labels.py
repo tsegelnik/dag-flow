@@ -1,4 +1,4 @@
-from typing import Optional, Union, Callable, Dict, List
+from typing import Optional, Union, Callable, Dict, List, Tuple
 from pathlib import Path
 from .tools.schema import LoadYaml
 
@@ -14,35 +14,11 @@ def _make_formatter(fmt: Union[str, Callable, dict]) -> Callable:
 
     return fmt
 
-def inherit_labels(
-        source: dict,
-        destination: Optional[dict]=None,
-        *,
-        fmtlong: Union[str, Callable],
-        fmtshort: Union[str, Callable]
-) -> dict:
-    if destination is None:
-        destination = {}
-
-    fmtlong = _make_formatter(fmtlong)
-    fmtshort = _make_formatter(fmtshort)
-
-    kshort = {"mark"}
-    kskip = {"key", "name"}
-    for k, v in source.items():
-        if k in kskip:
-            continue
-        newv = fmtshort(v) if k in kshort else fmtlong(v)
-        if newv is not None:
-            destination[k] = newv
-
-    return destination
-
 class Labels:
     __slots__ = (
         "_name",
-        "_index",
-        "_index_num",
+        "_index_values",
+        "_index_dict",
         "_text",
         "_graph",
         "_latex",
@@ -57,8 +33,8 @@ class Labels:
     )
 
     _name: Optional[str]
-    _index: Dict[str, str]
-    _index_num: Dict[str, int]
+    _index_values: List[str]
+    _index_dict: Dict[str, Tuple[str, int]]
     _text: Optional[str]
     _graph: Optional[str]
     _latex: Optional[str]
@@ -75,8 +51,8 @@ class Labels:
         for slot in self.__slots__:
             setattr(self, slot, None)
         self._paths = []
-        self._index = {}
-        self._index_num = {}
+        self._index_values = []
+        self._index_dict = {}
 
         if isinstance(label, str):
             if label.endswith(".yaml"):
@@ -121,12 +97,12 @@ class Labels:
         return self._name
 
     @property
-    def index(self) -> Dict[str,str]:
-        return self._index
+    def index_values(self) -> List[str]:
+        return self._index_values
 
     @property
-    def index_num(self) -> Dict[str,int]:
-        return self._index_num
+    def index_dict(self) -> Dict[str,Tuple[str,int]]:
+        return self._index_dict
 
     @name.setter
     def name(self, value: str):
@@ -253,6 +229,12 @@ class Labels:
             if getattr(self, k) is None:
                 setattr(self, k, v)
 
+    def copy(self) -> "Labels":
+        l = Labels()
+        for slot in self.__slots__:
+            setattr(l, slot, getattr(self, slot))
+        return l
+
     def inherit(self, source: "Labels", fmtlong: Union[str, Callable], fmtshort: Union[str, Callable]):
         fmtlong = _make_formatter(fmtlong)
         fmtshort = _make_formatter(fmtshort)
@@ -262,15 +244,39 @@ class Labels:
         for _key in inherit:
             label = getattr(source, _key, None)
             if label is None: continue
-            newv = fmtshort(label) if _key in kshort else fmtlong(label)
-            if newv is not None:
-                self[_key] = newv
+            if isinstance(label, str):
+                newv = fmtshort(label) if _key in kshort else fmtlong(label)
+                if newv is not None:
+                    self[_key] = newv
+            else:
+                self[_key] = label
 
-    def copy(self) -> "Labels":
-        l = Labels()
-        for slot in self.__slots__:
-            setattr(l, slot, getattr(self, slot))
-        return l
+def inherit_labels(
+        source: dict,
+        destination: Optional[dict]=None,
+        *,
+        fmtlong: Union[str, Callable],
+        fmtshort: Union[str, Callable]
+) -> dict:
+    if destination is None:
+        destination = {}
+
+    fmtlong = _make_formatter(fmtlong)
+    fmtshort = _make_formatter(fmtshort)
+
+    kshort = {"mark"}
+    kskip = {"key", "name"}
+    for k, v in source.items():
+        if k in kskip:
+            continue
+        if isinstance(v, str):
+            newv = fmtshort(v) if k in kshort else fmtlong(v)
+            if newv is not None:
+                destination[k] = newv
+        else:
+            destination[k] = v
+
+    return destination
 
 def _latex_to_root(text: Optional[str]) -> Optional[str]:
     if not text:

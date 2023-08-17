@@ -4,6 +4,7 @@ from .lib.NormalizeCorrelatedVars2 import NormalizeCorrelatedVars2
 from .lib.Cholesky import Cholesky
 from .lib.Array import Array
 from .lib.CovmatrixFromCormatrix import CovmatrixFromCormatrix
+from .labels import inherit_labels
 
 from numpy import zeros_like, array
 from numpy.typing import DTypeLike, ArrayLike
@@ -512,22 +513,17 @@ class GaussianConstraint(Constraint):
         if isinstance(sigma, (float, int)):
             sigma = (sigma,)
 
-        def fmtlabels(labels: dict, fmtlong: str, fmtshort: str) -> dict:
-            return {
-                    k: k=='mark' and fmtshort.format(v) or fmtlong.format(v) for k,v in labels.items()
-             }
-
         node_central = Array(
             f'{name}_central',
             array(central, dtype=dtype),
-            label = fmtlabels(label, 'central: {}', 'c({})'),
+            label = inherit_labels(label, fmtlong='central: {}', fmtshort='c({})'),
             mode='store_weak'
         )
 
         node_sigma = Array(
             f'{name}_sigma',
             array(sigma, dtype=dtype),
-            label = fmtlabels(label, 'sigma: {}', 'σ({})'),
+            label = inherit_labels(label, fmtlong='sigma: {}', fmtshort='σ({})'),
             mode='store_weak'
         )
 

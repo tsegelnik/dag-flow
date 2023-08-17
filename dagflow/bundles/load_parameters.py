@@ -299,7 +299,11 @@ def load_parameters(acfg: OptionalType[Mapping]=None, **kwargs):
         matrixtype = corrcfg['matrix_type']
         matrix = corrcfg['matrix']
         mark_matrix = matrixtype=='correlation' and 'C' or 'V'
-        label_mat = inherit_labels(label, fmtlong=f'{matrixtype.capitalize()}'' matrix: {}', fmtshort=mark_matrix+'({})')
+        label_mat = inherit_labels(
+            label,
+            fmtlong=f'{matrixtype.capitalize()}'' matrix: {}',
+            fmtshort=mark_matrix+'({})'
+        )
         label_mat['mark'] = mark_matrix
         label_mat = format_dict(label_mat, key='', space_key='', key_space='')
         matrix_array = Array('matrixtype', matrix, label=label_mat)
