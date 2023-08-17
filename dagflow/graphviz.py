@@ -308,7 +308,7 @@ else:
             if self._node_is_filtered(nodedag):
                 return
             for input in nodedag.inputs.iter_all():
-                if not input.connected():
+                if not input.connected() or self._node_is_filtered(input.parent_node):
                     self._add_open_input(input, nodedag)
 
         def _add_open_input(self, input, nodedag):
@@ -366,7 +366,7 @@ else:
                     self._add_mesh(output)
 
         def _add_edges_multi(self, nodedag, output):
-            if self._node_is_filtered(nodedag) or self._node_is_filtered(output.node):
+            if self._node_is_filtered(nodedag):
                 return
             vnode = self.get_id(output, "_mid")
             self._graph.add_node(vnode, label="", shape="none", width=0, height=0, penwidth=0, weight=10)
@@ -408,10 +408,11 @@ else:
                 styledict[target] = str(idx)
 
         def _add_edge(self, nodedag, output, input, *, vsource: Optional[str]=None, vtarget: Optional[str]=None, style: Optional[dict]=None) -> None:
-            if self._node_is_filtered(nodedag) \
-                or self._node_is_filtered(output.node) \
-                or self._node_is_filtered(input.node):
-                    return
+            if self._node_is_filtered(nodedag):
+                return
+            if self._node_is_filtered(input.node):
+                # self._add_open_output()
+                return
             styledict = style or {}
 
             if vsource is not None:
