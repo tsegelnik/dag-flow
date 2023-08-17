@@ -2,6 +2,14 @@ from typing import Optional, Union, Callable, Dict, List, Tuple, Sequence, Mappi
 from pathlib import Path
 from .tools.schema import LoadYaml
 
+def format_latex(k, s, /, *args, **kwargs) -> str:
+    if not isinstance(s, str):
+        return s
+    if (k=='latex' and '$' in s) or '{' not in s:
+        return s
+
+    return s.format(*args, **kwargs)
+
 def repr_pretty(self, p, cycle):
     """Pretty repr for IPython. To be used as __repr__ method"""
     p.text(str(self) if not cycle else "...")
@@ -89,10 +97,10 @@ class Labels:
                 "xaxis", "plottitle", "roottitle",
                 "rootaxis"
                 ):
-            name = f"_{name}"
-            oldvalue = getattr(self, name)
-            if isinstance(oldvalue, str):
-                setattr(self, name, oldvalue.format(*args, **kwargs))
+            aname = f"_{name}"
+            oldvalue = getattr(self, aname)
+            newvalue = format_latex(name, oldvalue, *args, **kwargs)
+            setattr(self, aname, newvalue)
 
     @property
     def name(self) -> Optional[str]:

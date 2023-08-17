@@ -8,7 +8,7 @@ from typing import Tuple, Generator, Mapping, Optional as OptionalType
 from ..tools.schema import NestedSchema, LoadFileWithExt, LoadYaml, MakeLoaderPy
 from ..tools.schema import IsStrSeqOrStr
 from ..exception import InitializationError
-from ..labels import inherit_labels
+from ..labels import inherit_labels, format_latex
 from ..storage import NodeStorage
 
 class ParsCfgHasProperFormat(object):
@@ -160,14 +160,6 @@ def get_format_processor(format):
         return process_var_relative
     else:
         return process_var_percent
-
-def format_latex(k, s, /, *args, **kwargs) -> str:
-    if not isinstance(s, str):
-        return s
-    if (k=='latex' and '$' in s) or '{' not in s:
-        return s
-
-    return s.format(*args, **kwargs)
 
 def format_dict(dct: dict, /, *args, **kwargs) -> dict:
     return {
