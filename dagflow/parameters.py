@@ -452,6 +452,10 @@ class GaussianConstraint(Constraint):
         self.central >> self._norm_node.inputs['central']
         self.sigma >> self._norm_node.inputs['matrix']
 
+        for nodename in ('_cholesky_node', '_covariance_node', '_norm_node'):
+            if (cnode:=getattr(self, nodename)):
+                cnode.labels.inherit(self._pars._value_node.labels, fields=('index_values',))
+
         (parameters.value, self.normvalue) >> self._norm_node
         self.normvalue_final = self._norm_node.outputs['normvalue']
 

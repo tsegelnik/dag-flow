@@ -1,4 +1,4 @@
-from typing import Optional, Union, Callable, Dict, List, Tuple
+from typing import Optional, Union, Callable, Dict, List, Tuple, Sequence, Mapping
 from pathlib import Path
 from .tools.schema import LoadYaml
 
@@ -6,11 +6,13 @@ def repr_pretty(self, p, cycle):
     """Pretty repr for IPython. To be used as __repr__ method"""
     p.text(str(self) if not cycle else "...")
 
-def _make_formatter(fmt: Union[str, Callable, dict]) -> Callable:
+def _make_formatter(fmt: Union[str, Callable, dict, None]) -> Callable:
     if isinstance(fmt, str):
         return fmt.format
     elif isinstance(fmt, dict):
         return lambda s: fmt.get(s, s)
+    elif fmt is None:
+        return lambda s: s
 
     return fmt
 
@@ -97,12 +99,44 @@ class Labels:
         return self._name
 
     @property
+    def index_dict(self) -> Dict[str,Tuple[str,int]]:
+        return self._index_dict
+
+    @index_dict.setter
+    def index_dict(self, index_dict: Dict[str,Tuple[str,int]]):
+        self._index_dict = index_dict
+
+    def build_index_dict(self, index: Mapping[str, Sequence[str]]={}):
+        if not index or self.index_dict:
+            return
+
+        if not self.index_values and self.paths:
+            path = self.paths[0]
+            self.index_values = path.split('.')
+
+        to_remove = []
+        index_values = self.index_values
+        for value in index_values:
+            for category, possible_values in index.items():
+                try:
+                    pos = possible_values.index(value)
+                except ValueError:
+                    continue
+                else:
+                    self.index_dict[category] = value, pos
+                    break
+            else:
+                to_remove.append(value)
+        for v in to_remove:
+            index_values.remove(v)
+
+    @property
     def index_values(self) -> List[str]:
         return self._index_values
 
-    @property
-    def index_dict(self) -> Dict[str,Tuple[str,int]]:
-        return self._index_dict
+    @index_values.setter
+    def index_values(self, index_values: List[str]):
+        self._index_values = list(index_values)
 
     @name.setter
     def name(self, value: str):
@@ -235,11 +269,29 @@ class Labels:
             setattr(l, slot, getattr(self, slot))
         return l
 
-    def inherit(self, source: "Labels", fmtlong: Union[str, Callable], fmtshort: Union[str, Callable]):
+    def inherit(
+        self,
+        source: "Labels",
+        fmtlong: Union[str, Callable, None]=None,
+        fmtshort: Union[str, Callable, None]=None,
+        fields: Sequence[str] = []
+    ):
         fmtlong = _make_formatter(fmtlong)
         fmtshort = _make_formatter(fmtshort)
 
-        inherit = ("_text", "_graph", "_latex", "_mark", "_axis", "_plottitle")
+        if fields:
+            inherit = tuple('_'+s for s in fields)
+        else:
+            inherit = (
+                "_text",
+                "_graph",
+                "_latex",
+                "_mark",
+                "_axis",
+                "_plottitle",
+                '_index_values',
+                '_index_dict'
+            )
         kshort = {"_mark"}
         for _key in inherit:
             label = getattr(source, _key, None)

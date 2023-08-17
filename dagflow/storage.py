@@ -104,19 +104,6 @@ class NodeStorage(NestedMKDict):
             path = ".".join(key)
             labels.paths.append(path)
 
-            if index and not labels.index_values:
-                for subkey in key:
-                    for category, values in index.items():
-                        try:
-                            pos = values.index(subkey)
-                        except ValueError:
-                            continue
-                        else:
-                            value = values[pos]
-                            labels.index_values.append(value)
-                            labels.index_dict[category] = value, pos
-                            break
-
     def read_labels(self, source: Union[NestedMKDict, Dict], *, strict: bool=False) -> None:
         source = NestedMKDict(source, sep=".")
 

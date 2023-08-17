@@ -597,8 +597,8 @@ else:
                 right.append(text)
             if 'path' in self._show and (paths:=node.labels.paths):
                 right.append(f'path: {paths[0]}')
-            if 'index' in self._show and (index:=node.labels.index_dict):
-                right.append(f'index: {", ".join(idxnum[0] for idxnum in index.values())}')
+            if 'index' in self._show and (index:=node.labels.index_values):
+                right.append(f'index: {", ".join(index)}')
             if 'status' in self._show:
                 status = []
                 try:
