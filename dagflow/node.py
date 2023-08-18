@@ -1,14 +1,4 @@
-from typing import (
-    TYPE_CHECKING,
-    Any,
-    Callable,
-    List,
-    Mapping,
-    Optional,
-    Sequence,
-    Tuple,
-    Union,
-)
+from typing import TYPE_CHECKING, Any, Callable, Mapping, Optional, Sequence, Tuple, Union, List
 from weakref import ReferenceType
 from weakref import ref as weakref
 
@@ -32,11 +22,11 @@ from .labels import Labels
 from .nodebase import NodeBase
 from .logger import Logger, get_logger
 from .output import Output
-from .types import GraphT
 
 if TYPE_CHECKING:
     from .metanode import MetaNode
     from .storage import NodeStorage
+    from .graph import Graph
 
 
 class Node(NodeBase):
@@ -57,8 +47,9 @@ class Node(NodeBase):
     _name: str
     _labels: Labels
     _allowed_kw_inputs: Tuple[str, ...]
-    _graph: Optional[GraphT]
+    _graph: Optional["Graph"]
     _exception: Optional[str]
+    _logger: Logger
 
     _metanode: Optional[ReferenceType]
     _fd: FlagsDescriptor
@@ -74,7 +65,7 @@ class Node(NodeBase):
         name,
         *,
         label: Union[str, dict, None] = None,
-        graph: Optional[GraphT] = None,
+        graph: Optional["Graph"] = None,
         debug: Optional[bool] = None,
         logger: Optional[Any] = None,
         missing_input_handler: Optional[Callable] = None,
@@ -86,17 +77,16 @@ class Node(NodeBase):
     ):
         super().__init__(missing_input_handler=missing_input_handler)
         self._graph = None
-        self._logger = None
         self._exception = None
         self._metanode = None
 
         self._name = name
         self._allowed_kw_inputs = tuple(allowed_kw_inputs)
         self._name = name
-        self._fd = FlagsDescriptor(**kwargs)
+        self._fd = FlagsDescriptor(children=self.outputs, parents=self.inputs, **kwargs)
 
         if graph is None:
-            from .graph import Graph  # fmt:skip
+            from .graph import Graph  # fmt: skip
             self.graph = Graph.current()
         else:
             self.graph = graph
@@ -108,8 +98,10 @@ class Node(NodeBase):
 
         self._labels = Labels(label or name)
 
-        if logger is not None:
+        if isinstance(logger, Logger):
             self._logger = logger
+        elif logger is not None:
+            raise InitializationError(f"Cannot initialize a node with logger={logger}", node=self)
         elif self.graph is not None:
             self._logger = self.graph.logger
         else:
@@ -117,7 +109,7 @@ class Node(NodeBase):
 
         self._immediate = immediate
         self._auto_freeze = auto_freeze
-        self._fd.frozen = frozen
+        self.fd.frozen = frozen
 
         if kwargs:
             raise InitializationError(f"Unparsed arguments: {kwargs}!")
@@ -129,20 +121,18 @@ class Node(NodeBase):
     def make_stored(
         cls, name: str, *args, label_from: Optional[Mapping] = None, **kwargs
     ) -> Tuple[Optional["Node"], "NodeStorage"]:
-        from multikeydict.nestedmkdict import NestedMKDict
-
+        from multikeydict.nestedmkdict import NestedMKDict  # fmt: skip
         if label_from is not None:
             label_from = NestedMKDict(label_from, sep=".")
             try:
                 label = label_from.any(name, object=True)
-            except KeyError:
-                raise RuntimeError(f"Could not find label for {name}")
+            except KeyError as exc:
+                raise RuntimeError(f"Could not find label for {name}") from exc
             kwargs.setdefault("label", label)
 
         node = cls(name, *args, **kwargs)
 
-        from .storage import NodeStorage
-
+        from .storage import NodeStorage  # fmt: skip
         storage = NodeStorage(default_containers=True)
         storage("nodes")[name] = node
         if len(node.outputs) == 1:
@@ -242,19 +232,19 @@ class Node(NodeBase):
 
     @property
     def tainted(self) -> bool:
-        return self._fd.tainted
+        return self.fd.tainted
 
     @property
     def types_tainted(self) -> bool:
-        return self._fd.types_tainted
+        return self.fd.types_tainted
 
     @property
     def frozen_tainted(self) -> bool:
-        return self._fd.frozen_tainted
+        return self.fd.frozen_tainted
 
     @property
     def frozen(self) -> bool:
-        return self._fd.frozen
+        return self.fd.frozen
 
     @property
     def auto_freeze(self) -> bool:
@@ -262,11 +252,11 @@ class Node(NodeBase):
 
     # @property
     # def always_tainted(self) -> bool:
-    # return self._fd.always_tainted
+    # return self.fd.always_tainted
 
     @property
     def closed(self) -> bool:
-        return self._fd.closed
+        return self.fd.closed
 
     @property
     def debug(self) -> bool:
@@ -274,11 +264,11 @@ class Node(NodeBase):
 
     @property
     def being_evaluated(self) -> bool:
-        return self._fd.being_evaluated
+        return self.fd.being_evaluated
 
     @property
     def allocated(self) -> bool:
-        return self._fd.allocated
+        return self.fd.allocated
 
     @property
     def immediate(self) -> bool:
@@ -286,34 +276,24 @@ class Node(NodeBase):
 
     @property
     def invalid(self) -> bool:
-        return self._fd.invalid
+        return self.fd.invalid
+
+    @property
+    def fd(self) -> FlagsDescriptor:
+        return self._fd
 
     @invalid.setter
-    def invalid(self, invalid) -> None:
-        if invalid:
-            self.invalidate_self()
-        elif any(_input.invalid for _input in self.inputs.iter_all()):
-            return
-        else:
-            self.invalidate_self(False)
-        for output in self.outputs:
-            output.invalid = invalid
+    def invalid(self, invalid: bool) -> None:
+        self.fd._invalidate(invalid)
 
-    def invalidate_self(self, invalid=True) -> None:
-        self._fd.invalid = bool(invalid)
-        self._fd.frozen_tainted = False
-        self._fd.frozen = False
-        self._fd.tainted = True
+    def invalidate(self, invalid: bool = True) -> None:
+        return self.fd.invalidate(invalid)
 
-    def invalidate_children(self) -> None:
-        for output in self.outputs:
-            output.invalid = True
+    def invalidate_children(self, invalid: bool = True) -> None:
+        return self.fd.invalidate_children(invalid)
 
-    def invalidate_parents(self) -> None:
-        for _input in self.inputs.iter_all():
-            node = _input.parent_node
-            node.invalidate_self()
-            node.invalidate_parents()
+    def invalidate_parents(self, invalid: bool = True) -> None:
+        return self.fd.invalidate_parents(invalid)
 
     @property
     def graph(self):
@@ -361,6 +341,19 @@ class Node(NodeBase):
         if inp is None:
             inp = self.add_input(name, **kwargs)
         elif isinstance(inp, Input) and inp.connected and (output := inp.parent_output):
+            #        self.logger.debug(
+            #            f"Node '{self.name}': Try to get or create the input '{name}'"
+            #        )
+            #        kwargs.setdefault("positional", False)
+            #        inp = self.inputs.get(name, None)  # get may return Sequence
+            #        output = None  # to avoid possible unbound in the second condition
+            #        if inp is None:
+            #            if self.closed:
+            #                raise ClosedGraphError(node=self)
+            #            return self._add_input(name, **kwargs)
+            #        elif not isinstance(inp, Input) or (
+            #            inp.connected and (output := inp.parent_output)
+            #        ):
             raise ReconnectionError(input=inp, node=self, output=output)
         return inp
 
@@ -545,9 +538,9 @@ class Node(NodeBase):
             return
         self.logger.debug(f"Node '{self.name}': Touch")
         ret = self.eval()
-        self._fd.tainted = False  # self._always_tainted
+        self.fd.tainted = False  # self._always_tainted
         if self._auto_freeze:
-            self._fd.frozen = True
+            self.fd.frozen = True
         return ret
 
     def _eval(self):
@@ -556,60 +549,55 @@ class Node(NodeBase):
     def eval(self):
         if not self.closed:
             raise UnclosedGraphError("Cannot evaluate the node!", node=self)
-        self._fd.being_evaluated = True
+        self.fd.being_evaluated = True
         try:
             ret = self._eval()
             self.logger.debug(f"Node '{self.name}': Evaluated return={ret}")
         except Exception as exc:
             raise exc
+        self.fd.being_evaluated = False
         return ret
 
     def freeze(self):
-        if self._fd.frozen:
+        if self.frozen:
             return
-        self.logger.debug(f"Node '{self.name}': Freeze")
+        self.logger.debug(f"Node '{self.name}': Freezing...")
         if self.tainted:
             raise CriticalError("Unable to freeze tainted node!", node=self)
-        self._fd.frozen = True
-        self._fd.frozen_tainted = False
+        self.fd.freeze()
 
     def unfreeze(self, force: bool = False):
-        if not self._fd.frozen and not force:
+        if not self.frozen and not force:
             return
         self.logger.debug(f"Node '{self.name}': Unfreeze")
-        self._fd.frozen = False
+        self.fd.frozen = False
         if self.frozen_tainted:
-            self._fd.frozen_tainted = False
+            self.fd.frozen_tainted = False
             self.taint(force=True)
 
     def taint(self, *, caller: Optional[Input] = None, force: bool = False):
         self.logger.debug(f"Node '{self.name}': Taint...")
-        if self._fd.tainted and not force:
+        if self.tainted and not force:
             return
         if self.frozen:
-            self._fd.frozen_tainted = True
+            self.fd.frozen_tainted = True
             return
-        self._fd.tainted = True
+        self.fd.tainted = True
         self._on_taint(caller)
         ret = self.touch() if (self._immediate or force) else None
         self.taint_children(force=force)
         return ret
 
     def taint_children(self, **kwargs):
-        for output in self.outputs:
-            output.taint_children(**kwargs)
+        self.fd.taint_children(**kwargs)
 
     def taint_type(self, force: bool = False):
         self.logger.debug(f"Node '{self.name}': Taint types...")
-        if self._fd.closed:
+        if self.closed:
             raise ClosedGraphError("Unable to taint type", node=self)
         if self.types_tainted and not force:
             return
-        self._fd.types_tainted = True
-        self._fd.tainted = True
-        self._fd.frozen = False
-        for output in self.outputs:
-            output.taint_children_type(force)
+        self.fd.taint_type(force)
 
     def print(self):
         print(f"Node {self._name}: →[{len(self.inputs)}],[{len(self.outputs)}]→")
@@ -643,10 +631,10 @@ class Node(NodeBase):
                 input.parent_node.update_types(recursive)
         self.logger.debug(f"Node '{self.name}': Update types...")
         self._typefunc()
-        self._fd.types_tainted = False
+        self.fd.types_tainted = False
 
     def allocate(self, recursive: bool = True):
-        if self._fd.allocated:
+        if self.allocated:
             return True
         if recursive:
             self.logger.debug(f"Node '{self.name}': Trigger recursive memory allocation...")
@@ -665,7 +653,7 @@ class Node(NodeBase):
             raise AllocationError("Cannot allocate memory for outputs!", node=self)
         self.logger.debug(f"Node '{self.name}': Post allocate")
         self._post_allocate()
-        self._fd.allocated = True
+        self.fd.allocated = True
         return True
 
     def close(
@@ -676,7 +664,7 @@ class Node(NodeBase):
     ) -> bool:
         # Caution: `together` list should not be written in!
 
-        if self._fd.closed:
+        if self.closed:
             return True
         if self.invalid:
             raise ClosingError("Cannot close an invalid node!", node=self)
@@ -700,7 +688,7 @@ class Node(NodeBase):
         for node in together:
             if not node.close(recursive=recursive):
                 return False
-        self._fd.closed = self._fd.allocated
+        self.fd.closed = self.fd.allocated
         if strict and not self.closed:
             raise ClosingError(node=self)
         self.logger.debug(f"Node '{self.name}': {self.closed and 'closed' or 'failed to close'}")
@@ -716,5 +704,5 @@ class Node(NodeBase):
             raise OpeningError(node=self)
         self.unfreeze()
         self.taint()
-        self._fd.closed = False
+        self.fd.closed = False
         return not self.closed
