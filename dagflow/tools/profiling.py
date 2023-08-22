@@ -7,20 +7,20 @@ from ..nodes import FunctionNode
 class EstimateRecord:
 
     _node: FunctionNode
-    _exec_times: int
+    _n_runs: int
     _total_time: float
 
     # It is weird to use __slots__ with __dict__,  
     # but it works slightly faster than without it. 
     # __dict__ is required for @functools.cached_property 
-    __slots__ = ("_node", "_exec_times", "_total_time", "__dict__")
+    __slots__ = ("_node", "_n_runs", "_total_time", "__dict__")
 
     def __init__(self, 
                  node: FunctionNode, 
-                 exec_times: int, 
+                 n_runs: int, 
                  estimated_time: float):
         self._node = node
-        self._exec_times = exec_times
+        self._n_runs = n_runs
         self._total_time = estimated_time
 
     @property
@@ -31,10 +31,9 @@ class EstimateRecord:
     def type(self):
         return type(self._node).__name__
     
-    # n runs
     @property
-    def exec_times(self):
-        return self._exec_times
+    def n_runs(self):
+        return self._n_runs
     
     @property
     def time(self):
@@ -42,26 +41,29 @@ class EstimateRecord:
     
     @cached_property
     def avg_time(self):
-        if self._exec_times > 0:
-            return self._total_time / self._exec_times
+        if self._n_runs > 0:
+            return self._total_time / self._n_runs
         return 0
     
     def __lt__(self, other):
         return self.avg_time < other.avg_time
+    
+    def __str__(self) -> str:
+        return f"name={self.node_name}, runs={self._n_runs}, avg={self.avg_time}"
 
 
 class Profiling:
-    _exec_times: int
+    _n_runs: int
     _results: List[EstimateRecord]
-    __slots__ = ("_exec_times", "_results")
+    __slots__ = ("_n_runs", "_results")
 
-    def __init__(self, exec_times: int=100):
-        self._exec_times = exec_times
+    def __init__(self, n_runs: int=100):
+        self._n_runs = n_runs
         self._results = []
 
-    def estimate_node(self, node: FunctionNode, times: int=None):
-        if not times:
-            times = self._exec_times
+    def estimate_node(self, node: FunctionNode, n_runs: int=None):
+        if not n_runs:
+            n_runs = self._n_runs
 
         # check node inputs 
         for input in node.inputs:
@@ -69,40 +71,35 @@ class Profiling:
                 input.touch()
         # node.touch(force=True)
 
-        estimations = timeit(stmt=node._eval, number=times)
+        testing_function = lambda : node._fcn(node, node.inputs, node.outputs)
+        estimations = timeit(stmt=testing_function, number=n_runs)
 
-        # Maybe it's more appropriate to user node._fcn, 
-        # because _fcn performs only related to calculations stuff
-        # testing_function = lambda : node._fcn(node, node.inputs, node.outputs)
-        # estimations = timeit(stmt=testing_function, number=times)
-
-        result = EstimateRecord(node, times, estimations)
-
-        # result = {
-        #     "name": node.name, 
-        #     "type": type(node).__name__, 
-        #     "exec_times": times,
-        #     "total_time": estimations
-        # }
+        result = EstimateRecord(node, n_runs, estimations)
 
         self._results.append(result)
         return result
     
+    def estimate_graph(self, graph):
+        for node in graph._nodes:
+            self.estimate_node(node, n_runs=10000)
+
+        return self
+    
     def make_report(self, top_n=10):
         self._results.sort(reverse=True)
-        print(f"\nTop {top_n} operations")
+        print(f"\nTop {min(top_n, len(self._results))} operations")
         print('=' * 93)
         line_format = "%-3s %-25s %-25s %-25s %11s" 
         print(line_format % ('#',
                              'Operation type',
                              'Name', 
                              'Average time',
-                             'Exec. times'))
+                             'Exec. runs'))
         print('-' * 93)
         for i, record in enumerate(self._results):
-            print(line_format % (i,
+            print(line_format % (i + 1,
                                  record.type,
                                  record.node_name,
                                  record.avg_time,
-                                 record.exec_times))
+                                 record.n_runs))
         
