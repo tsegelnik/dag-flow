@@ -26,9 +26,5 @@ with Graph(close=True) as graph:
     s2_array >> prod2.inputs["square"]
 
 
-profiling = Profiling()
-
-for node in graph._nodes:
-    profiling.estimate_node(node, times=1000000)
-
+profiling = Profiling().estimate_graph(graph)
 profiling.make_report()
