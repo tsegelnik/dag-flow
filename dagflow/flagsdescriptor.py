@@ -33,8 +33,9 @@ class FlagsDescriptor:
     being_evaluated: bool
     types_tainted: bool
     # observers and observed
-    _children: "Outputs"
-    _parents: "Inputs"
+    # _node: "Node"
+    _children: "Outputs"  # List[FlagsDescriptor]
+    _parents: "Inputs"  # List[FlagsDescriptor]
 
     def __init__(
         self,
