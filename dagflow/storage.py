@@ -7,7 +7,7 @@ from .input import Input
 from .node import Node
 from .logger import logger, DEBUG, SUBINFO
 
-from typing import Union, Tuple, List, Optional, Dict, Mapping, Sequence, TYPE_CHECKING
+from typing import Union, Tuple, List, Optional, Dict, Mapping, Sequence, MutableSet, TYPE_CHECKING
 if TYPE_CHECKING:
     from matplotlib.pyplot import Axes
 
@@ -95,19 +95,26 @@ class NodeStorage(NestedMKDict):
     #
     # Finalizers
     #
-    def read_paths(self) -> None:
+    def read_paths(self, *, index: Mapping[str, Sequence[str]]={}) -> None:
         for key, value in self.walkitems():
             labels = getattr(value, "labels", None)
             if labels is None:
                 continue
 
-            key = ".".join(key)
-            labels.paths.append(key)
+            path = ".".join(key)
+            labels.paths.append(path)
 
-    def read_labels(self, source: Union[NestedMKDict, Dict], *, strict: bool=False) -> None:
+    def read_labels(
+        self,
+        source: Union[NestedMKDict, Dict],
+        *,
+        strict: bool=False,
+        processed_keys_set: Optional[MutableSet[Key]]=None
+    ) -> None:
         source = NestedMKDict(source, sep=".")
 
-        processed_keys = set()
+        if processed_keys_set is None:
+            processed_keys_set = set()
         def get_label(key):
             try:
                 # if strict:
@@ -117,7 +124,7 @@ class NodeStorage(NestedMKDict):
             except (KeyError, TypeError):
                 pass
             else:
-                processed_keys.add(key)
+                processed_keys_set.add(key)
                 return labels, None
 
             keyleft = list(key[:-1])
@@ -129,7 +136,7 @@ class NodeStorage(NestedMKDict):
                 except (KeyError, TypeError):
                     keyright.insert(0, keyleft.pop())
                 else:
-                    processed_keys.add(tuple(groupkey))
+                    processed_keys_set.add(tuple(groupkey))
                     return labels, keyright
 
             return None, None
@@ -147,7 +154,7 @@ class NodeStorage(NestedMKDict):
             if isinstance(object, Node):
                 object.labels.update(labels)
             elif isinstance(object, Output):
-                if object.labels is object.node.labels:
+                if object.labels is object.node.labels and len(object.node.outputs)!=1:
                     object.labels = object.node.labels.copy()
                 object.labels.update(labels)
 
@@ -156,7 +163,7 @@ class NodeStorage(NestedMKDict):
                 object.labels.format(space_key=f" {skey}", key_space=f"{skey} ")
 
         if strict:
-            for key in processed_keys:
+            for key in processed_keys_set:
                 source.delete_with_parents(key)
             if source:
                 raise RuntimeError(f"The following label groups were not used: {tuple(source.keys())}")

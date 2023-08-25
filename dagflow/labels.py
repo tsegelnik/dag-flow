@@ -1,46 +1,34 @@
-from typing import Optional, Union, Callable, Dict, List
+from typing import Optional, Union, Callable, Dict, List, Tuple, Sequence, Mapping
 from pathlib import Path
 from .tools.schema import LoadYaml
+
+def format_latex(k, s, /, *args, **kwargs) -> str:
+    if not isinstance(s, str):
+        return s
+    if (k=='latex' and '$' in s) or '{' not in s:
+        return s
+
+    return s.format(*args, **kwargs)
 
 def repr_pretty(self, p, cycle):
     """Pretty repr for IPython. To be used as __repr__ method"""
     p.text(str(self) if not cycle else "...")
 
-def _make_formatter(fmt: Union[str, Callable, dict]) -> Callable:
+def _make_formatter(fmt: Union[str, Callable, dict, None]) -> Callable:
     if isinstance(fmt, str):
         return fmt.format
     elif isinstance(fmt, dict):
         return lambda s: fmt.get(s, s)
+    elif fmt is None:
+        return lambda s: s
 
     return fmt
-
-def inherit_labels(
-        source: dict,
-        destination: Optional[dict]=None,
-        *,
-        fmtlong: Union[str, Callable],
-        fmtshort: Union[str, Callable]
-) -> dict:
-    if destination is None:
-        destination = {}
-
-    fmtlong = _make_formatter(fmtlong)
-    fmtshort = _make_formatter(fmtshort)
-
-    kshort = {"mark"}
-    kskip = {"key", "name"}
-    for k, v in source.items():
-        if k in kskip:
-            continue
-        newv = fmtshort(v) if k in kshort else fmtlong(v)
-        if newv is not None:
-            destination[k] = newv
-
-    return destination
 
 class Labels:
     __slots__ = (
         "_name",
+        "_index_values",
+        "_index_dict",
         "_text",
         "_graph",
         "_latex",
@@ -55,6 +43,8 @@ class Labels:
     )
 
     _name: Optional[str]
+    _index_values: List[str]
+    _index_dict: Dict[str, Tuple[str, int]]
     _text: Optional[str]
     _graph: Optional[str]
     _latex: Optional[str]
@@ -71,6 +61,8 @@ class Labels:
         for slot in self.__slots__:
             setattr(self, slot, None)
         self._paths = []
+        self._index_values = []
+        self._index_dict = {}
 
         if isinstance(label, str):
             if label.endswith(".yaml"):
@@ -105,21 +97,61 @@ class Labels:
                 "xaxis", "plottitle", "roottitle",
                 "rootaxis"
                 ):
-            name = f"_{name}"
-            oldvalue = getattr(self, name)
-            if isinstance(oldvalue, str):
-                setattr(self, name, oldvalue.format(*args, **kwargs))
+            aname = f"_{name}"
+            oldvalue = getattr(self, aname)
+            newvalue = format_latex(name, oldvalue, *args, **kwargs)
+            setattr(self, aname, newvalue)
 
     @property
-    def name(self) -> str:
+    def name(self) -> Optional[str]:
         return self._name
+
+    @property
+    def index_dict(self) -> Dict[str,Tuple[str,int]]:
+        return self._index_dict
+
+    @index_dict.setter
+    def index_dict(self, index_dict: Dict[str,Tuple[str,int]]):
+        self._index_dict = index_dict
+
+    def build_index_dict(self, index: Mapping[str, Sequence[str]]={}):
+        if not index or self.index_dict:
+            return
+
+        if not self.index_values and self.paths:
+            path = self.paths[0]
+            self.index_values = path.split('.')
+
+        to_remove = []
+        index_values = self.index_values
+        for value in index_values:
+            for category, possible_values in index.items():
+                try:
+                    pos = possible_values.index(value)
+                except ValueError:
+                    continue
+                else:
+                    self.index_dict[category] = value, pos
+                    break
+            else:
+                to_remove.append(value)
+        for v in to_remove:
+            index_values.remove(v)
+
+    @property
+    def index_values(self) -> List[str]:
+        return self._index_values
+
+    @index_values.setter
+    def index_values(self, index_values: List[str]):
+        self._index_values = list(index_values)
 
     @name.setter
     def name(self, value: str):
         self._name = value
 
     @property
-    def text(self) -> str:
+    def text(self) -> Optional[str]:
         return self._text
 
     @text.setter
@@ -135,7 +167,7 @@ class Labels:
         self._graph = value
 
     @property
-    def latex(self) -> str:
+    def latex(self) -> Optional[str]:
         return self._latex
 
     @latex.setter
@@ -187,7 +219,7 @@ class Labels:
         self._xaxis = value
 
     @property
-    def mark(self) -> str:
+    def mark(self) -> Optional[str]:
         return self._mark
 
     @mark.setter
@@ -207,7 +239,7 @@ class Labels:
         return self._plotmethod!="none"
 
     @property
-    def plotmethod(self) -> str:
+    def plotmethod(self) -> Optional[str]:
         return self._plotmethod
 
     @plotmethod.setter
@@ -239,24 +271,72 @@ class Labels:
             if getattr(self, k) is None:
                 setattr(self, k, v)
 
-    def inherit(self, source: "Labels", fmtlong: Union[str, Callable], fmtshort: Union[str, Callable]):
-        fmtlong = _make_formatter(fmtlong)
-        fmtshort = _make_formatter(fmtshort)
-
-        inherit = ("_text", "_graph", "_latex", "_mark", "_axis", "_plottitle")
-        kshort = {"_mark"}
-        for _key in inherit:
-            label = getattr(source, _key, None)
-            if label is None: continue
-            newv = fmtshort(label) if _key in kshort else fmtlong(label)
-            if newv is not None:
-                self[_key] = newv
-
     def copy(self) -> "Labels":
         l = Labels()
         for slot in self.__slots__:
             setattr(l, slot, getattr(self, slot))
         return l
+
+    def inherit(
+        self,
+        source: "Labels",
+        fmtlong: Union[str, Callable, None]=None,
+        fmtshort: Union[str, Callable, None]=None,
+        fields: Sequence[str] = []
+    ):
+        fmtlong = _make_formatter(fmtlong)
+        fmtshort = _make_formatter(fmtshort)
+
+        if fields:
+            inherit = tuple(f'_{s}' for s in fields)
+        else:
+            inherit = (
+                "_text",
+                "_graph",
+                "_latex",
+                "_mark",
+                "_axis",
+                "_plottitle",
+                '_index_values',
+                '_index_dict'
+            )
+        kshort = {"_mark"}
+        for _key in inherit:
+            label = getattr(source, _key, None)
+            if label is None: continue
+            if isinstance(label, str):
+                newv = fmtshort(label) if _key in kshort else fmtlong(label)
+                if newv is not None:
+                    self[_key] = newv
+            else:
+                self[_key] = label
+
+def inherit_labels(
+        source: dict,
+        destination: Optional[dict]=None,
+        *,
+        fmtlong: Union[str, Callable],
+        fmtshort: Union[str, Callable]
+) -> dict:
+    if destination is None:
+        destination = {}
+
+    fmtlong = _make_formatter(fmtlong)
+    fmtshort = _make_formatter(fmtshort)
+
+    kshort = {"mark"}
+    kskip = {"key", "name"}
+    for k, v in source.items():
+        if k in kskip:
+            continue
+        if isinstance(v, str):
+            newv = fmtshort(v) if k in kshort else fmtlong(v)
+            if newv is not None:
+                destination[k] = newv
+        else:
+            destination[k] = v
+
+    return destination
 
 def _latex_to_root(text: Optional[str]) -> Optional[str]:
     if not text:

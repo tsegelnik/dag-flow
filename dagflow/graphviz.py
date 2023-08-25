@@ -4,7 +4,16 @@ from .types import NodeT
 from .logger import logger, SUBINFO
 
 from numpy import square, printoptions
-from typing import Union, Set, Optional, Dict, Sequence, Literal
+from typing import (
+    Dict,
+    List,
+    Literal,
+    Mapping,
+    Optional,
+    Sequence,
+    Set,
+    Union
+)
 
 from .graph import Graph
 from .node import Node
@@ -39,26 +48,33 @@ else:
                 '_nodes_map_dag',
                 '_nodes_open_input',
                 '_nodes_open_output',
-                '_edges'
+                '_edges',
+                '_filter',
+                '_filtered_nodes'
                 )
         _graph: G.AGraph
         _node_id_map: dict
         _nodes_map_dag: Dict[Node, G.agraph.Node]
+        _filter: Dict[str, List[Union[str, int]]]
+        _filtered_nodes: Set
 
-        _show: Set[Literal['type', 'mark', 'label', 'path', 'status', 'data', 'data_part', 'data_summary']]
+        _show: Set[Literal['type', 'mark', 'label', 'path', 'index', 'status', 'data', 'data_part', 'data_summary']]
         def __init__(
             self,
             graph_or_node: Union[Graph, Node, None],
             graphattr: dict={}, edgeattr: dict={}, nodeattr: dict={},
             show: Union[Sequence,str] = ['type', 'mark', 'label'],
+            filter: Mapping[str, Sequence[Union[str, int]]] = {},
             **kwargs
         ):
             if show=='full' or 'full' in show:
-                self._show = {'type', 'mark', 'label', 'path', 'status', 'data', 'data_summary'}
+                self._show = {'type', 'mark', 'label', 'path', 'index', 'status', 'data', 'data_summary'}
             elif show=='all' or 'all' in show:
-                self._show = {'type', 'mark', 'label', 'path', 'status', 'data_part', 'data_summary'}
+                self._show = {'type', 'mark', 'label', 'path', 'index', 'status', 'data_part', 'data_summary'}
             else:
                 self._show = set(show)
+            self._filter = {k:list(v) for k,v in filter.items()}
+            self._filtered_nodes = set()
 
             graphattr = dict(graphattr)
             graphattr.setdefault("rankdir", "LR")
@@ -104,11 +120,12 @@ else:
 
         def _transform_graph(self, dag: Graph) -> None:
             for nodedag in dag._nodes:
-                # if nodedag.meta_node:
-                #     self._add_node(nodedag.meta_node)
-                # else:
+                if self._node_is_filtered(nodedag):
+                    continue
                 self._add_node(nodedag)
             for nodedag in dag._nodes:
+                if self._node_is_filtered(nodedag):
+                    continue
                 self._add_open_inputs(nodedag)
                 self._add_edges(nodedag)
             self.update_style()
@@ -145,6 +162,9 @@ else:
             no_forward: bool = False,
             no_backward: bool = False,
         ) -> None:
+            if self._node_is_filtered(node):
+                return
+
             self._add_nodes_backward_recursive(
                 node,
                 including_self=True,
@@ -161,21 +181,6 @@ else:
 
             self.update_style()
 
-        def _add_node(self, nodedag: Node, *, depth: Optional[int]=None) -> None:
-            if nodedag in self._nodes_map_dag:
-                return
-
-            styledict = {
-                "shape": "Mrecord",
-                "label": self.get_label(nodedag, depth=depth)
-            }
-            target = self.get_id(nodedag)
-            self._graph.add_node(target, **styledict)
-            nodedot = self._graph.get_node(target)
-            nodedot.attr['nodedag'] = nodedag
-            nodedot.attr['depth'] = depth
-            self._nodes_map_dag[nodedag] = nodedot
-
         def _add_nodes_backward_recursive(
             self,
             node: Node,
@@ -191,6 +196,8 @@ else:
         ) -> None:
             if no_forward and no_backward:
                 raise RuntimeError('May not set no_forward and no_backward simultaneously')
+            if self._node_is_filtered(node):
+                return
             if node not in visited_nodes:
                 visited_nodes.add(node)
 
@@ -243,10 +250,11 @@ else:
             visited_nodes: Set[Node] = set(),
             ignore_visit: bool = False
         ) -> None:
+            if self._node_is_filtered(node):
+                return
             if node in visited_nodes and not ignore_visit:
                 return
             visited_nodes.add(node)
-
             if including_self:
                 if node in self._nodes_map_dag:
                     return
@@ -281,12 +289,31 @@ else:
                         ignore_visit=True
                     )
 
+        def _add_node(self, nodedag: Node, *, depth: Optional[int]=None) -> None:
+            if nodedag in self._nodes_map_dag or self._node_is_filtered(nodedag):
+                return
+
+            styledict = {
+                "shape": "Mrecord",
+                "label": self.get_label(nodedag, depth=depth)
+            }
+            target = self.get_id(nodedag)
+            self._graph.add_node(target, **styledict)
+            nodedot = self._graph.get_node(target)
+            nodedot.attr['nodedag'] = nodedag
+            nodedot.attr['depth'] = depth
+            self._nodes_map_dag[nodedag] = nodedot
+
         def _add_open_inputs(self, nodedag):
+            if self._node_is_filtered(nodedag):
+                return
             for input in nodedag.inputs.iter_all():
-                if not input.connected():
+                if not input.connected() or self._node_is_filtered(input.parent_node):
                     self._add_open_input(input, nodedag)
 
         def _add_open_input(self, input, nodedag):
+            if self._node_is_filtered(nodedag):
+                return
             styledict = {}
             source = self.get_id(input, "_in")
             target = self.get_id(nodedag)
@@ -301,43 +328,9 @@ else:
             self._nodes_open_input[input] = nodein
             self._edges[input] = EdgeDef(nodein, None, nodeout, edge)
 
-        def _add_edges(self, nodedag):
-            for output in nodedag.outputs.iter_all():
-                if output.connected():
-                    if len(output.child_inputs)>1:
-                        self._add_edges_multi(nodedag, output)
-                    else:
-                        self._add_edge(nodedag, output, output.child_inputs[0])
-                else:
-                    self._add_open_output(nodedag, output)
-
-                if output.dd.axes_edges:
-                    self._add_edge_hist(output)
-                if output.dd.axes_meshes:
-                    self._add_mesh(output)
-
-        def _add_edges_multi(self, nodedag, output):
-            vnode = self.get_id(output, "_mid")
-            self._graph.add_node(vnode, label="", shape="none", width=0, height=0, penwidth=0, weight=10)
-            firstinput = output.child_inputs[0]
-            self._add_edge(nodedag, output, firstinput, vtarget=vnode)
-            for input in output.child_inputs:
-                self._add_edge(nodedag, output, input, vsource=vnode)
-
-        def _add_edge_hist(self, output: Output) -> None:
-            if output.dd.edges_inherited:
-                return
-
-            for eoutput in output.dd.axes_edges:
-                self._add_edge(eoutput.node, eoutput, output, style={'style': 'dotted'})
-
-        def _add_mesh(self, output: Output) -> None:
-            if output.dd.meshes_inherited:
-                return
-            for noutput in output.dd.axes_meshes:
-                self._add_edge(noutput.node, noutput, output, style={'style': 'dotted'})
-
         def _add_open_output(self, nodedag, output):
+            if self._node_is_filtered(nodedag):
+                return
             styledict = {}
             source = self.get_id(nodedag)
             target = self.get_id(output, "_out")
@@ -353,6 +346,51 @@ else:
 
             self._nodes_open_output[output] = nodeout
             self._edges[output] = EdgeDef(nodein, None, nodeout, edge)
+
+
+        def _add_edges(self, nodedag):
+            if self._node_is_filtered(nodedag):
+                return
+            for output in nodedag.outputs.iter_all():
+                if output.connected():
+                    if len(output.child_inputs)>1:
+                        self._add_edges_multi(nodedag, output)
+                    else:
+                        self._add_edge(nodedag, output, output.child_inputs[0])
+                else:
+                    self._add_open_output(nodedag, output)
+
+                if output.dd.axes_edges:
+                    self._add_edge_hist(output)
+                if output.dd.axes_meshes:
+                    self._add_mesh(output)
+
+        def _add_edges_multi(self, nodedag, output):
+            if self._node_is_filtered(nodedag):
+                return
+            vnode = self.get_id(output, "_mid")
+            self._graph.add_node(vnode, label="", shape="none", width=0, height=0, penwidth=0, weight=10)
+            firstinput = output.child_inputs[0]
+            self._add_edge(nodedag, output, firstinput, vtarget=vnode)
+            for input in output.child_inputs:
+                self._add_edge(nodedag, output, input, vsource=vnode)
+
+        def _add_edge_hist(self, output: Output) -> None:
+            if self._node_is_filtered(output.node):
+                return
+            if output.dd.edges_inherited:
+                return
+
+            for eoutput in output.dd.axes_edges:
+                self._add_edge(eoutput.node, eoutput, output, style={'style': 'dotted'})
+
+        def _add_mesh(self, output: Output) -> None:
+            if self._node_is_filtered(output.node):
+                return
+            if output.dd.meshes_inherited:
+                return
+            for noutput in output.dd.axes_meshes:
+                self._add_edge(noutput.node, noutput, output, style={'style': 'dotted'})
 
         def _get_index(self, leg, styledict: dict, target: str):
             if isinstance(leg, Input):
@@ -370,6 +408,11 @@ else:
                 styledict[target] = str(idx)
 
         def _add_edge(self, nodedag, output, input, *, vsource: Optional[str]=None, vtarget: Optional[str]=None, style: Optional[dict]=None) -> None:
+            if self._node_is_filtered(nodedag):
+                return
+            if self._node_is_filtered(input.node):
+                # self._add_open_output()
+                return
             styledict = style or {}
 
             if vsource is not None:
@@ -397,6 +440,18 @@ else:
                 self._edges[input] = EdgeDef(nodein, None, nodeout, edge)
             else:
                 edgedef.append(edge)
+
+        def _node_is_filtered(self, node: Node) -> bool:
+            if node in self._filtered_nodes:
+                return True
+
+            index = node.labels.index_dict
+            for category, list_accepted in self._filter.items():
+                if (idxnum:=index.get(category)) is not None and idxnum[0] not in list_accepted and idxnum[1] not in list_accepted:
+                    self._filtered_nodes.add(node)
+                    return True
+
+            return False
 
         def _set_style_node(self, node, attr):
             if node is None:
@@ -543,6 +598,8 @@ else:
                 right.append(text)
             if 'path' in self._show and (paths:=node.labels.paths):
                 right.append(f'path: {paths[0]}')
+            if 'index' in self._show and (index:=node.labels.index_values):
+                right.append(f'index: {", ".join(index)}')
             if 'status' in self._show:
                 status = []
                 try:

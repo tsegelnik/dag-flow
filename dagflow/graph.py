@@ -119,6 +119,13 @@ class Graph(NodeGroup):
             raise UnclosedGraphError("The graph is still open!")
         return not self._closed
 
+    def build_index_dict(self, index):
+        for node in self:
+            node.labels.build_index_dict(index)
+
+            for output in node.outputs.iter_all():
+                output.labels.build_index_dict(index)
+
     @classmethod
     def current(cls) -> Optional["Graph"]:
         return _context_graph[-1] if _context_graph else None

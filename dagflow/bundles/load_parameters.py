@@ -8,7 +8,7 @@ from typing import Tuple, Generator, Mapping, Optional as OptionalType
 from ..tools.schema import NestedSchema, LoadFileWithExt, LoadYaml, MakeLoaderPy
 from ..tools.schema import IsStrSeqOrStr
 from ..exception import InitializationError
-from ..labels import inherit_labels
+from ..labels import inherit_labels, format_latex
 from ..storage import NodeStorage
 
 class ParsCfgHasProperFormat(object):
@@ -33,7 +33,7 @@ class ParsCfgHasProperFormat(object):
 
 IsNumber = Or(float, int, error='Invalid number "{}", expect int of float')
 IsNumberOrTuple = Or(IsNumber, (IsNumber,), And([IsNumber], Use(tuple)), error='Invalid number/tuple {}')
-label_keys = {'text', 'latex', 'graph', 'mark', 'name'}
+label_keys = {'text', 'latex', 'graph', 'mark', 'name', 'index_values'}
 IsLabel = Or({
         'text': str,
         Optional('latex'): str,
@@ -161,12 +161,6 @@ def get_format_processor(format):
     else:
         return process_var_percent
 
-def format_latex(k, s: str, /, *args, **kwargs) -> str:
-    if (k=='latex' and '$' in s) or '{' not in s:
-        return s
-
-    return s.format(*args, **kwargs)
-
 def format_dict(dct: dict, /, *args, **kwargs) -> dict:
     return {
         k: format_latex(k, v, *args, **kwargs) for k, v in dct.items() if k in label_keys
@@ -174,9 +168,12 @@ def format_dict(dct: dict, /, *args, **kwargs) -> dict:
 
 def get_label(key: tuple, labelscfg: dict) -> dict:
     try:
-        return labelscfg.any(key)
+        ret = labelscfg.any(key)
     except KeyError:
         pass
+    else:
+        ret['index_values'] = list(key)
+        return dict(ret)
 
     for n in range(1, len(key)+1):
         subkey = key[:-n]
@@ -189,7 +186,9 @@ def get_label(key: tuple, labelscfg: dict) -> dict:
             break
 
         key_str = '.'.join(key[n-1:])
-        return format_dict(lcfg, key_str, key=key_str, space_key=f' {key_str}', key_space=f'{key_str} ')
+        ret = format_dict(lcfg, key_str, key=key_str, space_key=f' {key_str}', key_space=f'{key_str} ')
+        ret['index_values'] = list(key)
+        return ret
 
     return {}
 
@@ -287,6 +286,7 @@ def load_parameters(acfg: OptionalType[Mapping]=None, **kwargs):
             varcfg_sub = varcfg.copy()
             varcfg_sub['label'] = label
             label['paths'] = [key_str]
+            label['index_values'] = key + subkey
             label.setdefault('text', key_str)
 
             varcfgs[key] = varcfg_sub
@@ -299,7 +299,11 @@ def load_parameters(acfg: OptionalType[Mapping]=None, **kwargs):
         matrixtype = corrcfg['matrix_type']
         matrix = corrcfg['matrix']
         mark_matrix = matrixtype=='correlation' and 'C' or 'V'
-        label_mat = inherit_labels(label, fmtlong=f'{matrixtype.capitalize()}'' matrix: {}', fmtshort=mark_matrix+'({})')
+        label_mat = inherit_labels(
+            label,
+            fmtlong=f'{matrixtype.capitalize()}'' matrix: {}',
+            fmtshort=mark_matrix+'({})'
+        )
         label_mat['mark'] = mark_matrix
         label_mat = format_dict(label_mat, key='', space_key='', key_space='')
         matrix_array = Array('matrixtype', matrix, label=label_mat)
@@ -325,6 +329,7 @@ def load_parameters(acfg: OptionalType[Mapping]=None, **kwargs):
                 processed_cfgs.add(fullkey+name)
 
             labelsub = format_dict(label, subkey=subkey_str, space_key=f' {subkey_str}', key_space=f'{subkey_str} ')
+            labelsub['index_values'] = list(key+subkey)
             pars[fullkey] = Parameters.from_numbers(label=labelsub, **kwargs)
 
     for key, varcfg in varcfgs.walkdicts(ignorekeys=('label',)):
