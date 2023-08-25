@@ -288,7 +288,7 @@ class Labels:
         fmtshort = _make_formatter(fmtshort)
 
         if fields:
-            inherit = tuple('_'+s for s in fields)
+            inherit = tuple(f'_{s}' for s in fields)
         else:
             inherit = (
                 "_text",

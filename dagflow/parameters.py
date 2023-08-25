@@ -505,7 +505,7 @@ class GaussianConstraint(Constraint):
         label: Optional[Dict[str,str]]=None,
         dtype: DTypeLike='d',
         **kwargs
-    ) -> 'GaussianParameters':
+    ) -> Parameters:
         if label is None:
             label = {'text': 'gaussian parameter'}
         else:

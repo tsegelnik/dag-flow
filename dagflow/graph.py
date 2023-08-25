@@ -124,7 +124,7 @@ class Graph(NodeGroup):
             node.labels.build_index_dict(index)
 
             for output in node.outputs.iter_all():
-                node.labels.build_index_dict(index)
+                output.labels.build_index_dict(index)
 
     @classmethod
     def current(cls) -> Optional["Graph"]:
