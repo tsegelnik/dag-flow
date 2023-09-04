@@ -347,7 +347,7 @@ def check_inputs_equivalence(
 
 def check_inputs_same_dtype(
     node: NodeT, inputkey: LimbKey = AllPositionals
-):
+) -> DTypeLike:
     """Checking dtypes of all the inputs are same"""
     inputs = tuple(node.inputs.iter(inputkey))
     input0, inputs = inputs[0], inputs[1:]
@@ -360,11 +360,12 @@ def check_inputs_same_dtype(
                 node=node,
                 input=input,
             )
+    return dtype
 
 
 def check_inputs_same_shape(
     node: NodeT, inputkey: LimbKey = AllPositionals
-):
+) -> Tuple[int,...]:
     """Checking shapes of all the inputs are same"""
     inputs = tuple(node.inputs.iter(inputkey))
     input0, inputs = inputs[0], inputs[1:]
@@ -377,6 +378,7 @@ def check_inputs_same_shape(
                 node=node,
                 input=input,
             )
+    return shape
 
 
 def check_input_subtype(
