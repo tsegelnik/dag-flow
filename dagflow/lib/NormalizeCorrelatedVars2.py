@@ -16,7 +16,7 @@ from ..nodes import FunctionNode
 from ..typefunctions import (
     check_has_inputs,
     check_input_dimension,
-    check_input_square_or_diag,
+    check_input_matrix_or_diag,
     check_inputs_equivalence,
     check_inputs_multiplicable_mat,
     copy_from_input_to_output,
@@ -158,7 +158,7 @@ class NormalizeCorrelatedVars2(FunctionNode):
 
     def _typefunc(self) -> None:
         check_has_inputs(self)
-        ndim = check_input_square_or_diag(self, "matrix")
+        ndim = check_input_matrix_or_diag(self, "matrix", check_square=True)
         check_input_dimension(self, "central", 1)
         check_inputs_equivalence(self, ("central", slice(None)))
         check_inputs_multiplicable_mat(self, "matrix", slice(None))

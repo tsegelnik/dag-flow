@@ -3,7 +3,7 @@ from ..nodes import FunctionNode
 from ..typefunctions import (
     check_has_inputs,
     copy_from_input_to_output,
-    check_input_square_or_diag,
+    check_input_matrix_or_diag,
 )
 from scipy.linalg import cholesky
 from numpy import sqrt
@@ -49,7 +49,7 @@ class Cholesky(FunctionNode):
 
     def _typefunc(self) -> None:
         check_has_inputs(self)
-        ndim = check_input_square_or_diag(self, slice(None))
+        ndim = check_input_matrix_or_diag(self, slice(None), check_square=True)
         copy_from_input_to_output(self, slice(None), slice(None))
 
         if ndim == 2:
