@@ -1,6 +1,6 @@
 from typing import TYPE_CHECKING
 
-from numpy import empty, matmul, multiply, ndarray
+from numpy import matmul, multiply, ndarray
 
 from ..nodes import FunctionNode
 from ..typefunctions import (

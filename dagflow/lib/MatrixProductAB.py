@@ -1,11 +1,10 @@
 from typing import TYPE_CHECKING
 
-from numpy import empty, matmul, multiply, ndarray
+from numpy import matmul, multiply, ndarray
 
 from ..nodes import FunctionNode
 from ..typefunctions import (
     check_has_inputs,
-    check_input_dimension,
     check_input_matrix_or_diag,
     check_inputs_multiplicable_mat,
     eval_output_dtype,
