@@ -408,9 +408,11 @@ def check_output_subtype(
 def check_inputs_multiplicable_mat(
     node: NodeT,
     inputkey1: LimbKey,
-    inputkey2: LimbKey,
-):
-    """Checking that inputs from key1 and key2 may be multiplied (matrix)"""
+    inputkey2: LimbKey
+) -> Tuple[Tuple[int,int],...]:
+    """Checking that inputs from key1 and key2 may be multiplied (matrix)
+    Return shapes of the multiplications.
+    """
     inputs1 = tuple(node.inputs.iter(inputkey1))
     inputs2 = tuple(node.inputs.iter(inputkey2))
 
@@ -422,6 +424,7 @@ def check_inputs_multiplicable_mat(
     elif len2 == 1:
         inputs2 = repeat(inputs2[0], len1)
 
+    ret = []
     for input1, input2 in zip(inputs1, inputs2, strict=True):
         shape1 = input1.dd.shape
         shape2 = input2.dd.shape
@@ -431,6 +434,9 @@ def check_inputs_multiplicable_mat(
                 node=node,
                 input=input,
             )
+        ret.append((shape1[0], shape2[-1]))
+
+    return tuple(ret)
 
 
 def copy_input_edges_to_output(
