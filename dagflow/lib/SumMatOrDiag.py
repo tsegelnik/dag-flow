@@ -9,9 +9,8 @@ from ..typefunctions import (
     check_has_inputs,
     eval_output_dtype,
     copy_input_shape_to_outputs,
-    check_inputs_square_or_diag,
     check_inputs_same_dtype,
-    check_inputs_square_or_diag,
+    check_inputs_consistent_square_or_diag,
     eval_output_dtype,
 )
 
@@ -68,7 +67,7 @@ class SumMatOrDiag(FunctionNode):
         """A output takes this function to determine the dtype and shape"""
         check_has_inputs(self)
         copy_input_shape_to_outputs(self, 0, "result")
-        self._ndim = check_inputs_square_or_diag(self)
+        self._ndim = check_inputs_consistent_square_or_diag(self)
         check_inputs_same_dtype(self)
         eval_output_dtype(self, AllPositionals, "result")
 

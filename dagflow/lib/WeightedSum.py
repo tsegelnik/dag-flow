@@ -1,6 +1,7 @@
 from typing import TYPE_CHECKING
 
-from numpy import copyto, ndarray
+from numpy import copyto
+from numpy.typing import NDArray
 
 from ..exception import TypeFunctionError
 from ..typefunctions import (
@@ -52,7 +53,7 @@ class WeightedSum(ManyToOneNode):
         copy_input_shape_to_outputs(self, 0, "result")
         eval_output_dtype(self, slice(None), "result")
 
-    def _fcn_number(self) -> ndarray:
+    def _fcn_number(self) -> NDArray:
         """
         The function for one weight for all inputs:
         `len(weight) == 1`
@@ -65,7 +66,7 @@ class WeightedSum(ManyToOneNode):
         out *= weight
         return out
 
-    def _fcn_iterable(self) -> ndarray:
+    def _fcn_iterable(self) -> NDArray:
         """
         The function for one weight for every input:
         `len(weight) == len(inputs)`

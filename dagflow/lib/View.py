@@ -1,6 +1,6 @@
 from typing import TYPE_CHECKING, Optional
 
-from numpy import ndarray
+from numpy.typing import NDArray
 
 from ..nodes import FunctionNode
 from ..typefunctions import copy_from_input_to_output
@@ -30,7 +30,7 @@ class View(FunctionNode):
             if output.closed:
                 self.close()
 
-    def _fcn(self) -> ndarray:
+    def _fcn(self) -> NDArray:
         return self._input.data
 
     def _typefunc(self) -> None:

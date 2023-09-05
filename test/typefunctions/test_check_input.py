@@ -11,7 +11,7 @@ from dagflow.typefunctions import (
     check_input_dtype,
     check_input_shape,
     check_input_square,
-    check_input_square_or_diag,
+    check_input_matrix_or_diag,
     check_input_subtype,
     check_inputs_equivalence,
     check_inputs_multiplicable_mat,
@@ -70,7 +70,7 @@ def test_check_input_square_00(testname, debug_graph, data):
         check_input_square(node, 0)
     if arr1.outputs["array"].dd.dim != 1:
         with raises(TypeFunctionError):
-            check_input_square_or_diag(node, 0)
+            check_input_matrix_or_diag(node, 0, check_square=True)
     savegraph(graph, f"output/{testname}.png")
 
 
@@ -91,7 +91,7 @@ def test_check_input_square_01(testname, debug_graph, data):
         )
         arr1 >> node
         check_input_square(node, 0)
-        check_input_square_or_diag(node, 0)
+        check_input_matrix_or_diag(node, 0, check_square=True)
     savegraph(graph, f"output/{testname}.png")
 
 

@@ -236,35 +236,52 @@ def check_input_square(
             )
 
 
-def check_input_square_or_diag(
-    node: NodeT,
-    inputkey: LimbKey,
-) -> int:
-    """Check if input is a square matrix or diagonal (1d) of a square matrix.
+def _check_input_block_or_diag(node: NodeT, input: Input, *, check_square: bool=False) -> int:
+    """Check if input is a block/square matrix or a diagonal (1d) of a square matrix.
     Returns the maximal dimension."""
-    dim_max = 0
-    for input in node.inputs.iter(inputkey):
-        shape = input.dd.shape
-        dim = len(shape)
-        dim_max = max(dim, dim_max)
-        if dim > 2:
-            raise TypeFunctionError(
-                f"The node supports only 1d or 2d. Got {dim}d!",
-                node=node,
-                input=input,
-            )
-        if (dim == 2 and shape[0] != shape[1]) and dim != 1:
+    shape = input.dd.shape
+    dim = len(shape)
+    if dim > 2:
+        raise TypeFunctionError(
+            f"The node supports only 1d or 2d. Got {dim}d!",
+            node=node,
+            input=input,
+        )
+    if dim == 2:
+        if check_square and shape[0] != shape[1]:
             raise TypeFunctionError(
                 f"The node supports only square inputs (or 1d as diagonal). Got {shape}!",
                 node=node,
                 input=input,
             )
+    elif dim != 1:
+        mtype = check_square and 'square' or 'matrix'
+        raise TypeFunctionError(
+            f"The node supports only {mtype} inputs (or 1d as diagonal). Got {shape}!",
+            node=node,
+            input=input,
+        )
+
+    return dim
+
+
+def check_input_matrix_or_diag(
+    node: NodeT,
+    inputkey: LimbKey,
+    check_square: bool=False
+) -> int:
+    """Check if input is a square matrix or diagonal (1d) of a square matrix.
+    Returns the maximal dimension."""
+    dim_max = 0
+    for input in node.inputs.iter(inputkey):
+        dim = _check_input_block_or_diag(node, input, check_square=check_square)
+        dim_max = max(dim, dim_max)
     return dim_max
 
 
-def check_inputs_square_or_diag(
+def check_inputs_consistent_square_or_diag(
     node: NodeT,
-    inputkey: LimbKey = AllPositionals,
+    inputkey: LimbKey = AllPositionals
 ) -> int:
     """Check if inputs are square matrices or diagonals (1d) of a square matrices of the same size.
     Returns the maximal dimension."""
@@ -274,23 +291,17 @@ def check_inputs_square_or_diag(
     shape0 = inputs[0].dd.shape[0]
 
     for input in inputs:
-        shape = input.dd.shape
-        dim = len(shape)
+        dim = _check_input_block_or_diag(node, input, check_square=True)
         dim_max = max(dim, dim_max)
-        if dim > 2:
+
+        shape = input.dd.shape[0]
+        if shape!=shape0:
             raise TypeFunctionError(
-                f"The node supports only 1d or 2d. Got {dim}d!",
-                node=node,
-                input=input,
+                    f"All inputs should have the same size {shape0}, got {shape}",
+                    node=node,
+                    input=input,
             )
-        if shape0 != shape[0] or (
-            (dim == 2 and shape[0] != shape[1]) and dim != 1
-        ):
-            raise TypeFunctionError(
-                f"The node supports only square inputs (or 1d as diagonal) of size {shape0}x{shape0}. Got {shape}!",
-                node=node,
-                input=input,
-            )
+
     return dim_max
 
 def shapes_are_broadcastable(shape1: Sequence[int], shape2: Sequence[int]) -> bool:
@@ -336,7 +347,7 @@ def check_inputs_equivalence(
 
 def check_inputs_same_dtype(
     node: NodeT, inputkey: LimbKey = AllPositionals
-):
+) -> DTypeLike:
     """Checking dtypes of all the inputs are same"""
     inputs = tuple(node.inputs.iter(inputkey))
     input0, inputs = inputs[0], inputs[1:]
@@ -349,11 +360,12 @@ def check_inputs_same_dtype(
                 node=node,
                 input=input,
             )
+    return dtype
 
 
 def check_inputs_same_shape(
     node: NodeT, inputkey: LimbKey = AllPositionals
-):
+) -> Tuple[int,...]:
     """Checking shapes of all the inputs are same"""
     inputs = tuple(node.inputs.iter(inputkey))
     input0, inputs = inputs[0], inputs[1:]
@@ -366,6 +378,7 @@ def check_inputs_same_shape(
                 node=node,
                 input=input,
             )
+    return shape
 
 
 def check_input_subtype(
@@ -397,9 +410,11 @@ def check_output_subtype(
 def check_inputs_multiplicable_mat(
     node: NodeT,
     inputkey1: LimbKey,
-    inputkey2: LimbKey,
-):
-    """Checking that inputs from key1 and key2 may be multiplied (matrix)"""
+    inputkey2: LimbKey
+) -> Tuple[Tuple[int,int],...]:
+    """Checking that inputs from key1 and key2 may be multiplied (matrix)
+    Return shapes of the multiplications.
+    """
     inputs1 = tuple(node.inputs.iter(inputkey1))
     inputs2 = tuple(node.inputs.iter(inputkey2))
 
@@ -411,6 +426,7 @@ def check_inputs_multiplicable_mat(
     elif len2 == 1:
         inputs2 = repeat(inputs2[0], len1)
 
+    ret = []
     for input1, input2 in zip(inputs1, inputs2, strict=True):
         shape1 = input1.dd.shape
         shape2 = input2.dd.shape
@@ -420,6 +436,9 @@ def check_inputs_multiplicable_mat(
                 node=node,
                 input=input,
             )
+        ret.append((shape1[0], shape2[-1]))
+
+    return tuple(ret)
 
 
 def copy_input_edges_to_output(
