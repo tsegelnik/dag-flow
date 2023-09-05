@@ -1,6 +1,7 @@
 from typing import TYPE_CHECKING, List, Optional
 
-from numpy import ndarray, zeros
+from numpy import zeros
+from numpy.typing import NDArray
 
 from ..nodes import FunctionNode
 from ..typefunctions import check_input_dimension, check_input_dtype
@@ -31,7 +32,7 @@ class ViewConcat(FunctionNode):
         iname = f"input_{idx:02d}"
         return self._add_input(iname, allocatable=True, child_output=self._output)
 
-    def _fcn(self) -> ndarray:
+    def _fcn(self) -> NDArray:
         self.inputs.touch()
         return self._output._data
 

@@ -1,6 +1,7 @@
 from typing import TYPE_CHECKING
 
-from numpy import matmul, multiply, ndarray
+from numpy import matmul, multiply
+from numpy.typing import NDArray
 
 from ..nodes import FunctionNode
 from ..typefunctions import (
@@ -43,28 +44,28 @@ class MatrixProductAB(FunctionNode):
             }
         )
 
-    def _fcn_block_block(self) -> ndarray:
+    def _fcn_block_block(self) -> NDArray:
         left = self._left.data
         right = self._right.data
         out = self._out.data
         matmul(left, right, out=out)
         return out
 
-    def _fcn_block_diagonal(self) -> ndarray:
+    def _fcn_block_diagonal(self) -> NDArray:
         left = self._left.data
         right = self._right.data
         out = self._out.data
         multiply(left, right, out=out)
         return out
 
-    def _fcn_diagonal_block(self) -> ndarray:
+    def _fcn_diagonal_block(self) -> NDArray:
         left = self._left.data
         right = self._right.data
         out = self._out.data
         multiply(left[:,None], right, out=out)
         return out
 
-    def _fcn_diagonal_diagonal(self) -> ndarray:
+    def _fcn_diagonal_diagonal(self) -> NDArray:
         left = self._left.data
         right = self._right.data
         out = self._out.data

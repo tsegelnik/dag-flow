@@ -1,6 +1,7 @@
 from typing import TYPE_CHECKING
 
-from numpy import matmul, multiply, ndarray
+from numpy import matmul, multiply
+from numpy.typing import NDArray
 
 from ..nodes import FunctionNode
 from ..typefunctions import (
@@ -42,14 +43,14 @@ class VectorMatrixProduct(FunctionNode):
             }
         )
 
-    def _fcn_block(self) -> ndarray:
+    def _fcn_block(self) -> NDArray:
         row = self._vec.data
         mat = self._mat.data
         out = self._out.data
         matmul(row, mat, out=out)
         return out
 
-    def _fcn_diagonal(self) -> ndarray:
+    def _fcn_diagonal(self) -> NDArray:
         row = self._vec.data
         diag = self._mat.data
         out = self._out.data

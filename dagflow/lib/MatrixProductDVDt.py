@@ -1,6 +1,7 @@
 from typing import TYPE_CHECKING
 
-from numpy import empty, matmul, multiply, ndarray
+from numpy import empty, matmul, multiply
+from numpy.typing import NDArray
 
 from ..nodes import FunctionNode
 from ..typefunctions import (
@@ -29,7 +30,7 @@ class MatrixProductDVDt(FunctionNode):
     _left: "Input"
     _square: "Input"
     _out: "Output"
-    _buffer: ndarray
+    _buffer: NDArray
 
     def __init__(self, *args, **kwargs) -> None:
         super().__init__(*args, **kwargs)
@@ -44,7 +45,7 @@ class MatrixProductDVDt(FunctionNode):
         )
         self._labels.setdefault("mark", "LDLᵀ")
 
-    def _fcn_diagonal(self) -> ndarray:
+    def _fcn_diagonal(self) -> NDArray:
         left = self._left.data
         diagonal = self._square.data  # square matrix stored as diagonal
         out = self._out.data
@@ -52,7 +53,7 @@ class MatrixProductDVDt(FunctionNode):
         matmul(self._buffer, left.T, out=out)
         return out
 
-    def _fcn_square(self) -> ndarray:
+    def _fcn_square(self) -> NDArray:
         left = self._left.data
         square = self._square.data
         out = self._out.data

@@ -1,4 +1,5 @@
-from numpy import add, empty, ndarray, square
+from numpy import add, empty, square
+from numpy.typing import NDArray
 
 from ..typefunctions import (
     check_has_inputs,
@@ -13,13 +14,13 @@ class SumSq(ManyToOneNode):
     """Sum of the squares of all the inputs"""
 
     __slots__ = ("_buffer",)
-    _buffer: ndarray
+    _buffer: NDArray
 
     def __init__(self, *args, **kwargs) -> None:
         super().__init__(*args, **kwargs)
         self._labels.setdefault("mark", "Σ()²")
 
-    def _fcn(self) -> ndarray:
+    def _fcn(self) -> NDArray:
         out = self.outputs["result"].data
         square(self.inputs[0].data, out=out)
         if len(self.inputs) > 1:
