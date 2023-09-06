@@ -152,7 +152,7 @@ class Output:
             )
         try:
             self.touch()
-            return self.data_unsafe
+            return self._data
         except Exception as exc:
             raise CriticalError(
                 "An exception occured during touching of the parent node!",
