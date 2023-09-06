@@ -205,6 +205,30 @@ def check_input_shape(
                 input=input,
             )
 
+def check_input_size(
+    node: NodeT,
+    inputkey: LimbKey,
+    *,
+    min: Optional[int] = None,
+    max: Optional[int] = None,
+    **kwargs
+):
+    """Checking the shape equivalence for inputs"""
+    for input in node.inputs.iter(inputkey, **kwargs):
+        size = input.dd.size
+        if min is not None and size<min:
+            raise TypeFunctionError(
+                f"The input size {size} is below {min}",
+                node=node,
+                input=input,
+            )
+        if max is not None and size>max:
+            raise TypeFunctionError(
+                f"The input size {size} is above {max}",
+                node=node,
+                input=input,
+            )
+
 
 def check_input_dtype(
     node: NodeT, inputkey: LimbKey, dtype, **kwargs
