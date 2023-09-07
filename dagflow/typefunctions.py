@@ -46,14 +46,18 @@ class MethodSequenceCaller:
 def cpy_dtype(input, output):
     output.dd.dtype = input.dd.dtype
 
+
 def cpy_shape(input, output):
     output.dd.shape = input.dd.shape
+
 
 def cpy_edges(input, output):
     output.dd.axes_edges = input.dd.axes_edges
 
+
 def cpy_meshes(input, output):
     output.dd.axes_meshes = input.dd.axes_meshes
+
 
 def check_has_inputs(
     node: NodeT, inputkey: Union[str, int, slice, Sequence, None] = None
@@ -82,6 +86,7 @@ def check_inputs_number(node: NodeT, n: int) -> None:
             f"The node must have only {n} inputs, but given {ninp}!", node=node
         )
 
+
 def copy_from_input_to_output(
     node: NodeT,
     inputkey: LimbKey = 0,
@@ -92,7 +97,7 @@ def copy_from_input_to_output(
     edges: bool = True,
     meshes: bool = True,
     prefer_largest_input: bool = False,
-    prefer_input_with_edges: bool = False
+    prefer_input_with_edges: bool = False,
 ) -> None:
     """Coping input dtype and setting for the output"""
     if not any((dtype, shape, edges, meshes)):
@@ -112,14 +117,18 @@ def copy_from_input_to_output(
         caller.add(cpy_meshes)
 
     has_preference = prefer_input_with_edges or prefer_largest_input
-    if has_preference and len(inputs)>1:
+    if has_preference and len(inputs) > 1:
         largest_input = inputs[0]
         largest_size = largest_input.dd.size
         found_edges = bool(largest_input.dd.axes_edges)
         for input in inputs[1:]:
-            if (newsize:=input.dd.size)<=largest_size and prefer_largest_input:
+            if (newsize := input.dd.size) <= largest_size and prefer_largest_input:
                 continue
-            if prefer_input_with_edges and found_edges and not bool(input.dd.axes_edges):
+            if (
+                prefer_input_with_edges
+                and found_edges
+                and not bool(input.dd.axes_edges)
+            ):
                 continue
             largest_size = newsize
             largest_input = input
@@ -162,6 +171,7 @@ def eval_output_dtype(
     for output in outputs:
         output.dd.dtype = dtype
 
+
 def copy_input_shape_to_outputs(
     node: NodeT,
     inputkey: Union[str, int] = 0,
@@ -178,9 +188,7 @@ def copy_input_shape_to_outputs(
         output.dd.shape = input.dd.shape
 
 
-def check_input_dimension(
-    node: NodeT, inputkey: LimbKey, ndim: int, **kwargs
-):
+def check_input_dimension(node: NodeT, inputkey: LimbKey, ndim: int, **kwargs):
     """Checking the dimension of the input"""
     for input in node.inputs.iter(inputkey, **kwargs):
         dim = len(input.dd.shape)
@@ -192,9 +200,7 @@ def check_input_dimension(
             )
 
 
-def check_input_shape(
-    node: NodeT, inputkey: LimbKey, shape: tuple, **kwargs
-):
+def check_input_shape(node: NodeT, inputkey: LimbKey, shape: tuple, **kwargs):
     """Checking the shape equivalence for inputs"""
     for input in node.inputs.iter(inputkey, **kwargs):
         sshape = input.dd.shape
@@ -205,24 +211,25 @@ def check_input_shape(
                 input=input,
             )
 
+
 def check_input_size(
     node: NodeT,
     inputkey: LimbKey,
     *,
     min: Optional[int] = None,
     max: Optional[int] = None,
-    **kwargs
+    **kwargs,
 ):
     """Checking the shape equivalence for inputs"""
     for input in node.inputs.iter(inputkey, **kwargs):
         size = input.dd.size
-        if min is not None and size<min:
+        if min is not None and size < min:
             raise TypeFunctionError(
                 f"The input size {size} is below {min}",
                 node=node,
                 input=input,
             )
-        if max is not None and size>max:
+        if max is not None and size > max:
             raise TypeFunctionError(
                 f"The input size {size} is above {max}",
                 node=node,
@@ -230,9 +237,7 @@ def check_input_size(
             )
 
 
-def check_input_dtype(
-    node: NodeT, inputkey: LimbKey, dtype, **kwargs
-):
+def check_input_dtype(node: NodeT, inputkey: LimbKey, dtype, **kwargs):
     """Checking the dtype equivalence for inputs"""
     for input in node.inputs.iter(inputkey, **kwargs):
         dtt = input.dd.dtype
@@ -260,7 +265,9 @@ def check_input_square(
             )
 
 
-def _check_input_block_or_diag(node: NodeT, input: Input, *, check_square: bool=False) -> int:
+def _check_input_block_or_diag(
+    node: NodeT, input: Input, *, check_square: bool = False
+) -> int:
     """Check if input is a block/square matrix or a diagonal (1d) of a square matrix.
     Returns the maximal dimension."""
     shape = input.dd.shape
@@ -279,7 +286,7 @@ def _check_input_block_or_diag(node: NodeT, input: Input, *, check_square: bool=
                 input=input,
             )
     elif dim != 1:
-        mtype = check_square and 'square' or 'matrix'
+        mtype = check_square and "square" or "matrix"
         raise TypeFunctionError(
             f"The node supports only {mtype} inputs (or 1d as diagonal). Got {shape}!",
             node=node,
@@ -290,9 +297,7 @@ def _check_input_block_or_diag(node: NodeT, input: Input, *, check_square: bool=
 
 
 def check_input_matrix_or_diag(
-    node: NodeT,
-    inputkey: LimbKey,
-    check_square: bool=False
+    node: NodeT, inputkey: LimbKey, check_square: bool = False
 ) -> int:
     """Check if input is a square matrix or diagonal (1d) of a square matrix.
     Returns the maximal dimension."""
@@ -304,8 +309,7 @@ def check_input_matrix_or_diag(
 
 
 def check_inputs_consistent_square_or_diag(
-    node: NodeT,
-    inputkey: LimbKey = AllPositionals
+    node: NodeT, inputkey: LimbKey = AllPositionals
 ) -> int:
     """Check if inputs are square matrices or diagonals (1d) of a square matrices of the same size.
     Returns the maximal dimension."""
@@ -319,17 +323,19 @@ def check_inputs_consistent_square_or_diag(
         dim_max = max(dim, dim_max)
 
         shape = input.dd.shape[0]
-        if shape!=shape0:
+        if shape != shape0:
             raise TypeFunctionError(
-                    f"All inputs should have the same size {shape0}, got {shape}",
-                    node=node,
-                    input=input,
+                f"All inputs should have the same size {shape0}, got {shape}",
+                node=node,
+                input=input,
             )
 
     return dim_max
 
+
 def shapes_are_broadcastable(shape1: Sequence[int], shape2: Sequence[int]) -> bool:
     return all(a == 1 or b == 1 or a == b for a, b in zip(shape1[::-1], shape2[::-1]))
+
 
 def check_inputs_equivalence(
     node: NodeT,
@@ -339,7 +345,7 @@ def check_inputs_equivalence(
     check_shape: bool = True,
     check_edges: bool = True,
     check_meshes: bool = False,
-    broadcastable: bool = False
+    broadcastable: bool = False,
 ):
     """Checking the equivalence of the dtype, shape, axes_edges and axes_meshes of all the inputs"""
     inputs = tuple(node.inputs.iter(inputkey))
@@ -353,14 +359,29 @@ def check_inputs_equivalence(
     )
     for input in inputs:
         dd = input.dd
-        dtype_inconsistent = check_dtype and dd.dtype!=dtype
+        dtype_inconsistent = check_dtype and dd.dtype != dtype
         if check_shape:
-            shape_inconsistent = not shapes_are_broadcastable(shape, dd.shape) if broadcastable else dd.shape!=shape
+            shape_inconsistent = (
+                not shapes_are_broadcastable(shape, dd.shape)
+                if broadcastable
+                else dd.shape != shape
+            )
         else:
             shape_inconsistent = False
-        edges_inconsistent = check_edges and dd.axes_edges and edges and dd.axes_edges!=edges
-        meshes_inconsistent = check_meshes and dd.axes_meshes and meshes and dd.axes_meshes!=meshes
-        if any((dtype_inconsistent, shape_inconsistent, edges_inconsistent, meshes_inconsistent)):
+        edges_inconsistent = (
+            check_edges and dd.axes_edges and edges and dd.axes_edges != edges
+        )
+        meshes_inconsistent = (
+            check_meshes and dd.axes_meshes and meshes and dd.axes_meshes != meshes
+        )
+        if any(
+            (
+                dtype_inconsistent,
+                shape_inconsistent,
+                edges_inconsistent,
+                meshes_inconsistent,
+            )
+        ):
             raise TypeFunctionError(
                 f"Input data [{dd.dtype=}, {dd.shape=}, {dd.axes_edges=}, {dd.axes_meshes=}]"
                 f" is inconsistent with [{dtype=}, {shape=}, {edges=}, {meshes=}]",
@@ -389,7 +410,7 @@ def check_inputs_same_dtype(
 
 def check_inputs_same_shape(
     node: NodeT, inputkey: LimbKey = AllPositionals
-) -> Tuple[int,...]:
+) -> Tuple[int, ...]:
     """Checking shapes of all the inputs are same"""
     inputs = tuple(node.inputs.iter(inputkey))
     input0, inputs = inputs[0], inputs[1:]
@@ -405,9 +426,7 @@ def check_inputs_same_shape(
     return shape
 
 
-def check_input_subtype(
-    node: NodeT, inputkey: LimbKey, dtype: DTypeLike
-):
+def check_input_subtype(node: NodeT, inputkey: LimbKey, dtype: DTypeLike):
     """Checks if the input dtype is some subtype of `dtype`."""
     for input in node.inputs.iter(inputkey):
         if not issubdtype(input.dd.dtype, dtype):
@@ -418,9 +437,7 @@ def check_input_subtype(
             )
 
 
-def check_output_subtype(
-    node: NodeT, outputkey: LimbKey, dtype: DTypeLike
-):
+def check_output_subtype(node: NodeT, outputkey: LimbKey, dtype: DTypeLike):
     """Checks if the output dtype is some subtype of `dtype`."""
     for output in node.outputs.iter(outputkey):
         if not issubdtype(output.dd.dtype, dtype):
@@ -432,10 +449,8 @@ def check_output_subtype(
 
 
 def check_inputs_multiplicable_mat(
-    node: NodeT,
-    inputkey1: LimbKey,
-    inputkey2: LimbKey
-) -> Tuple[Tuple[int,int],...]:
+    node: NodeT, inputkey1: LimbKey, inputkey2: LimbKey
+) -> Tuple[Tuple[int, int], ...]:
     """Checking that inputs from key1 and key2 may be multiplied (matrix)
     Return shapes of the multiplications.
     """
@@ -480,7 +495,10 @@ def copy_input_edges_to_output(
     for input, output in zip(inputs, outputs, strict=True):
         output.dd.axes_edges = input.dd.axes_edges
 
-def assign_output_edges(input: Union[Input, Sequence[Input]], output: Output, ignore_assigned: bool = False):
+
+def assign_output_edges(
+    input: Union[Input, Sequence[Input]], output: Output, ignore_assigned: bool = False
+):
     """Assign output's edges from input's parent output"""
     dd = output.dd
 
@@ -494,30 +512,29 @@ def assign_output_edges(input: Union[Input, Sequence[Input]], output: Output, ig
     else:
         edges = [inp.parent_output for inp in input]
 
-    if len(dd.shape)!=len(edges):
+    if len(dd.shape) != len(edges):
         raise TypeFunctionError(
             f"Output ndim={len(dd.shape)} is inconsistent with edges ndim={len(edges)}",
             output=output,
-            input=input
+            input=input,
         )
 
     for i, (dimsize, edgeoutput) in enumerate(zip(dd.shape, edges)):
         shapeedges = edgeoutput.dd.shape
-        if len(shapeedges)!=1:
+        if len(shapeedges) != 1:
             raise TypeFunctionError(
-                    f"Edges of {i}th dimension has non-1d shape",
-                    output=output,
-                    input=input
-                    )
+                f"Edges of {i}th dimension has non-1d shape", output=output, input=input
+            )
         dimedges = shapeedges[0]
-        if dimsize!=(dimedges-1):
+        if dimsize != (dimedges - 1):
             raise TypeFunctionError(
                 f"Output dimension {i} size={dimsize} is inconsistent with edges size={len(dimedges)}",
                 output=output,
-                input=input
+                input=input,
             )
 
     output.dd.axes_edges = tuple(edges)
+
 
 def assign_output_meshes(
     input: Union[Input, Sequence[Input]],
@@ -525,7 +542,7 @@ def assign_output_meshes(
     *,
     ignore_assigned: bool = False,
     overwrite_assigned: bool = False,
-    ignore_inconsistent_number_of_meshes: bool = False
+    ignore_inconsistent_number_of_meshes: bool = False,
 ):
     """Assign output's edges from input's parent output"""
     dd = output.dd
@@ -534,7 +551,9 @@ def assign_output_meshes(
         if ignore_assigned:
             return
         elif not overwrite_assigned:
-            raise TypeFunctionError("Meshes already assigned", output=output, input=input)
+            raise TypeFunctionError(
+                "Meshes already assigned", output=output, input=input
+            )
 
     if isinstance(input, Input):
         meshes = [input.parent_output]
@@ -542,21 +561,23 @@ def assign_output_meshes(
         meshes = [inp.parent_output for inp in input]
 
     naxes = len(dd.shape)
-    if naxes!=len(meshes) and (not overwrite_assigned or naxes!=len(dd.axes_meshes)):
+    if naxes != len(meshes) and (
+        not overwrite_assigned or naxes != len(dd.axes_meshes)
+    ):
         if ignore_inconsistent_number_of_meshes:
             return
         raise TypeFunctionError(
             f"Output ndim={len(dd.shape)} is inconsistent with meshes ndim={len(meshes)}",
             output=output,
-            input=input
+            input=input,
         )
 
     for i, meshesoutput in enumerate(meshes):
-        if dd.shape!=meshesoutput.dd.shape:
+        if dd.shape != meshesoutput.dd.shape:
             raise TypeFunctionError(
                 f"Output shape={dd.shape} is inconsistent with meshes {i} shape={meshesoutput.dd.shape}",
                 output=output,
-                input=input
+                input=input,
             )
 
     if overwrite_assigned:
@@ -570,6 +591,7 @@ def assign_output_meshes(
     else:
         dd.axes_meshes = tuple(meshes)
 
+
 def assign_output_axes_from_inputs(
     node: NodeT,
     inputkey: LimbKey = 0,
@@ -577,11 +599,13 @@ def assign_output_axes_from_inputs(
     *,
     assign_edges: bool = False,
     assign_meshes: bool = False,
-    **kwargs
+    **kwargs,
 ) -> None:
     """Set output edges/meshes based on inputs (take parent_output)"""
-    if not (assign_edges^assign_meshes):
-        raise TypeFunctionError("assign_output_axes_from_input: may not assign {assign_edges=} and {assign_meshes=}")
+    if not (assign_edges ^ assign_meshes):
+        raise TypeFunctionError(
+            "assign_output_axes_from_input: may not assign {assign_edges=} and {assign_meshes=}"
+        )
 
     inputs = tuple(node.inputs.iter(inputkey))
     outputs = tuple(node.outputs.iter(outputkey))
@@ -593,6 +617,7 @@ def assign_output_axes_from_inputs(
         if assign_meshes:
             assign_output_meshes(inputs, output, **kwargs)
 
+
 def assign_outputs_axes_from_inputs(
     node: NodeT,
     inputkey: LimbKey = 0,
@@ -601,11 +626,13 @@ def assign_outputs_axes_from_inputs(
     assign_edges: bool = False,
     assign_meshes: bool = False,
     ignore_Nd: bool = False,
-    **kwargs
+    **kwargs,
 ) -> None:
     """Set outputs' edges/meshes based on inputs (take parent_output). Process each pair."""
-    if not (assign_edges^assign_meshes):
-        raise TypeFunctionError("assign_output_axes_from_input: may not assign {assign_edges=} and {assign_meshes=}")
+    if not (assign_edges ^ assign_meshes):
+        raise TypeFunctionError(
+            "assign_output_axes_from_input: may not assign {assign_edges=} and {assign_meshes=}"
+        )
 
     inputs = tuple(node.inputs.iter(inputkey))
     outputs = tuple(node.outputs.iter(outputkey))
@@ -614,13 +641,14 @@ def assign_outputs_axes_from_inputs(
         inputs = repeat(inputs[0], len(outputs))
 
     for input, output in zip(inputs, outputs):
-        if ignore_Nd and len(output.dd.shape)!=1:
+        if ignore_Nd and len(output.dd.shape) != 1:
             continue
         if assign_edges:
             assign_output_edges(input, output, **kwargs)
 
         if assign_meshes:
             assign_output_meshes(input, output, **kwargs)
+
 
 def check_input_edges_dim(
     node: NodeT,
@@ -711,9 +739,7 @@ def check_edges_type(
                 )
 
 
-def check_array_edges_consistency(
-    node: NodeT, outputkey: LimbKey = AllPositionals
-):
+def check_array_edges_consistency(node: NodeT, outputkey: LimbKey = AllPositionals):
     """
     Checks the dimension equivalence of edges and the output, then checks that
     `len(output) = N` and `len(edges) = N+1` for each dimension.
@@ -739,11 +765,24 @@ def check_array_edges_consistency(
                         output=output,
                     )
 
+
+def find_max_size_of_inputs(node: NodeT, inputkey: LimbKey = AllPositionals) -> int:
+    """Find maximum size of inputs"""
+    inputs = tuple(node.inputs.iter(inputkey))
+    input0, inputs = inputs[0], inputs[1:]
+
+    size = input0.dd.size
+    for input in inputs:
+        if (y := input.dd.size) > size:
+            size = y
+    return size
+
+
 # NOTE: may be it will be needed later, but for now is not
-#def check_if_input_sorted(
+# def check_if_input_sorted(
 #    node: NodeT,
 #    inputkey: LimbKey = AllPositionals,
-#):
+# ):
 #    """Checking if the inputs are sorted arrays"""
 #    is_sorted = lambda a: all(a[:-1] <= a[1:])
 #    for input in node.inputs.iter(inputkey):
