@@ -170,7 +170,9 @@ class NodeStorage(NestedMKDict):
 
     def remove_connected_inputs(self, key: Key=()):
         source = self(key)
-        to_remove = [key for key,input in source.walkitems() if isinstance(input, Input)]
+        to_remove = [
+            key for key, input in source.walkitems() if isinstance(input, Input) and input.connected()
+        ]
         for key in to_remove:
             source.delete_with_parents(key)
 
