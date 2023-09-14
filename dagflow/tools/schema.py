@@ -14,11 +14,18 @@ def IsReadable(filename: str):
     """Returns True if the file is readable"""
     return access(filename, R_OK)
 
+IsFilename = Or(str, And(Path, Use(str)))
+
 IsReadableFilename = And(
-    Or(str, And(Path, Use(str))),
+    IsFilename,
     IsReadable
 )
+
 IsFilenameSeqOrFilename = Or(
+    [IsFilename], (IsFilename,), And(IsFilename, Use(lambda s: (s,)))
+)
+
+IsReadableFilenameSeqOrFilename = Or(
     [IsReadableFilename], (IsReadableFilename,),
     And(IsReadableFilename, Use(lambda s: (s,)))
 )

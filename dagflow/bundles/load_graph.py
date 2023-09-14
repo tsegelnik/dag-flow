@@ -1,5 +1,5 @@
 from pathlib import Path
-from typing import Mapping, Optional, Tuple
+from typing import Mapping, Optional, Sequence, Tuple
 
 from numpy import allclose
 from numpy.typing import NDArray
@@ -7,10 +7,13 @@ from schema import And
 from schema import Optional as SchemaOptional
 from schema import Or, Schema, Use
 
+from multikeydict.typing import TupleKey
+
 from ..lib.Array import Array
 from ..storage import NodeStorage
 from ..tools.schema import (
     AllFileswithExt,
+    IsReadable,
     IsFilenameSeqOrFilename,
     IsStrSeqOrStr,
     LoadFileWithExt,
@@ -49,6 +52,26 @@ def _validate_cfg(cfg):
         return _schema_cfg.validate(cfg)
 
 
+def get_filename(
+    filenames: Sequence[str], key: TupleKey, *, single_key: bool = False
+) -> str:
+    if single_key and len(filenames) == 1:
+        return filenames[0]
+    checked_filenames = []
+    for filename in filenames:
+        if "{key}" in filename:
+            ifilename = filename.format(key="_".join(key))
+            checked_filenames.append(ifilename)
+            if IsReadable(ifilename):
+                return ifilename
+        elif all(subkey in filename for subkey in key):
+            checked_filenames.append(filename)
+            if IsReadable(filename):
+                return filename
+
+    raise RuntimeError(f"Unable to find readable filename for {key}. Checked: {checked_filenames}")
+
+
 def load_graph(acfg: Optional[Mapping] = None, **kwargs):
     acfg = dict(acfg or {}, **kwargs)
     cfg = _validate_cfg(acfg)
@@ -69,22 +92,12 @@ def load_graph(acfg: Optional[Mapping] = None, **kwargs):
     loader = _loaders.get(ext)
     if loader is None:
         raise RuntimeError(f"Unable to find loader for: {filenames[0]}")
-    match_filename = len(filenames) > 1
+    single_key = len(keys) == 1
 
     meshes = []
     data = {}
     for key in keys:
-        if match_filename:
-            try:
-                filename = next(
-                    filename
-                    for filename in filenames
-                    if all(subkey in filename for subkey in key)
-                )
-            except StopIteration:
-                raise RuntimeError(f"Unable to find a file for {key}")
-        else:
-            filename = filenames[0]
+        filename = get_filename(filenames, key, single_key=single_key)
 
         skey = ".".join(key)
         iname = objects.get(skey, skey)
