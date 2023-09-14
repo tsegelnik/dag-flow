@@ -1,29 +1,44 @@
-from multikeydict.typing import Key, TupleKey
-from multikeydict.nestedmkdict import NestedMKDict
-from multikeydict.visitor import NestedMKDictVisitor
-from orderedset import OrderedSet
-from .output import Output
-from .input import Input
-from .node import Node
-from .logger import logger, DEBUG, SUBINFO
+from typing import (
+    TYPE_CHECKING,
+    Dict,
+    List,
+    Mapping,
+    MutableSet,
+    Optional,
+    Sequence,
+    Tuple,
+    Union,
+)
 
-from typing import Union, Tuple, List, Optional, Dict, Mapping, Sequence, MutableSet, TYPE_CHECKING
+from orderedset import OrderedSet
+
+from multikeydict.nestedmkdict import NestedMKDict
+from multikeydict.typing import Key, TupleKey
+from multikeydict.visitor import NestedMKDictVisitor
+
+from .input import Input
+from .logger import DEBUG, SUBINFO, logger
+from .node import Node
+from .output import Output
+
 if TYPE_CHECKING:
     from matplotlib.pyplot import Axes
 
-from tabulate import tabulate
-from pandas import DataFrame
-from LaTeXDatax import datax
-
-from numpy import nan
 import pandas as pd
+from LaTeXDatax import datax
+from numpy import nan, ndarray
+from pandas import DataFrame
+from tabulate import tabulate
+
 pd.set_option("display.max_rows", None)
 pd.set_option("display.max_colwidth", 100)
 
 from shutil import get_terminal_size
 
+
 def trunc(text: str, width: int) -> str:
     return "\n".join(line[:width] for line in text.split("\n"))
+
 
 class NodeStorage(NestedMKDict):
     __slots__ = ("_remove_connected_inputs",)
@@ -32,9 +47,9 @@ class NodeStorage(NestedMKDict):
     def __init__(
         self,
         *args,
-        remove_connected_inputs: bool=True,
-        default_containers: bool=False,
-        **kwargs
+        remove_connected_inputs: bool = True,
+        default_containers: bool = False,
+        **kwargs,
     ):
         kwargs.setdefault("sep", ".")
         kwargs.setdefault("recursive_to_others", True)
@@ -44,7 +59,7 @@ class NodeStorage(NestedMKDict):
 
         if not default_containers:
             return
-        for name in ("parameter", "stat", "nodes", "inputs", "outputs"):
+        for name in ("parameter", "stat", "nodes", "data", "inputs", "outputs"):
             self.child(name)
 
     def plot(self, *args, **kwargs) -> None:
@@ -70,13 +85,15 @@ class NodeStorage(NestedMKDict):
                 try:
                     valueleft >> valueright
                 except TypeError as e:
-                    raise ConnectionError(f"Invalid NodeStorage>> types for {keyleft}/{keyright}: {type(valueleft)}/{type(valueright)}") from e
+                    raise ConnectionError(
+                        f"Invalid NodeStorage>> types for {keyleft}/{keyright}: {type(valueleft)}/{type(valueright)}"
+                    ) from e
 
                 if self._remove_connected_inputs and isinstance(keyright, Input):
                     to_remove.append(keyright)
-                nconnections+=1
+                nconnections += 1
 
-        if nconnections==0:
+        if nconnections == 0:
             raise ConnectionError("No connections are done")
 
         for key in to_remove:
@@ -90,12 +107,14 @@ class NodeStorage(NestedMKDict):
             try:
                 node << other
             except TypeError as e:
-                raise ConnectionError(f"Invalid NodeStorage<< types for {keyleft}: {type(node)} {type(other)}") from e
+                raise ConnectionError(
+                    f"Invalid NodeStorage<< types for {keyleft}: {type(node)} {type(other)}"
+                ) from e
 
     #
     # Finalizers
     #
-    def read_paths(self, *, index: Mapping[str, Sequence[str]]={}) -> None:
+    def read_paths(self, *, index: Mapping[str, Sequence[str]] = {}) -> None:
         for key, value in self.walkitems():
             labels = getattr(value, "labels", None)
             if labels is None:
@@ -108,13 +127,14 @@ class NodeStorage(NestedMKDict):
         self,
         source: Union[NestedMKDict, Dict],
         *,
-        strict: bool=False,
-        processed_keys_set: Optional[MutableSet[Key]]=None
+        strict: bool = False,
+        processed_keys_set: Optional[MutableSet[Key]] = None,
     ) -> None:
         source = NestedMKDict(source, sep=".")
 
         if processed_keys_set is None:
             processed_keys_set = set()
+
         def get_label(key):
             try:
                 # if strict:
@@ -130,7 +150,7 @@ class NodeStorage(NestedMKDict):
             keyleft = list(key[:-1])
             keyright = [key[-1]]
             while keyleft:
-                groupkey = keyleft+["group"]
+                groupkey = keyleft + ["group"]
                 try:
                     labels = source(groupkey)
                 except (KeyError, TypeError):
@@ -154,7 +174,10 @@ class NodeStorage(NestedMKDict):
             if isinstance(object, Node):
                 object.labels.update(labels)
             elif isinstance(object, Output):
-                if object.labels is object.node.labels and len(object.node.outputs)!=1:
+                if (
+                    object.labels is object.node.labels
+                    and len(object.node.outputs) != 1
+                ):
                     object.labels = object.node.labels.copy()
                 object.labels.update(labels)
 
@@ -166,12 +189,16 @@ class NodeStorage(NestedMKDict):
             for key in processed_keys_set:
                 source.delete_with_parents(key)
             if source:
-                raise RuntimeError(f"The following label groups were not used: {tuple(source.keys())}")
+                raise RuntimeError(
+                    f"The following label groups were not used: {tuple(source.keys())}"
+                )
 
-    def remove_connected_inputs(self, key: Key=()):
+    def remove_connected_inputs(self, key: Key = ()):
         source = self(key)
         to_remove = [
-            key for key, input in source.walkitems() if isinstance(input, Input) and input.connected()
+            key
+            for key, input in source.walkitems()
+            if isinstance(input, Input) and input.connected()
         ]
         for key in to_remove:
             source.delete_with_parents(key)
@@ -186,15 +213,15 @@ class NodeStorage(NestedMKDict):
     def to_dict(self, **kwargs) -> NestedMKDict:
         return self.visit(ParametersVisitor(kwargs)).data_dict
 
-    def to_df(self, *, columns: Optional[List[str]]=None, **kwargs) -> DataFrame:
+    def to_df(self, *, columns: Optional[List[str]] = None, **kwargs) -> DataFrame:
         dct = self.to_list(**kwargs)
         if columns is None:
             columns = ["path", "value", "central", "sigma", "flags", "shape", "label"]
         df = DataFrame(dct, columns=columns)
 
         df.insert(4, "sigma_rel_perc", df["sigma"])
-        df["sigma_rel_perc"] = df["sigma"]/df["central"]*100.
-        df["sigma_rel_perc"].mask(df["central"]==0, nan, inplace=True)
+        df["sigma_rel_perc"] = df["sigma"] / df["central"] * 100.0
+        df["sigma_rel_perc"].mask(df["central"] == 0, nan, inplace=True)
 
         for key in ("central", "sigma", "sigma_rel_perc"):
             if df[key].isna().all():
@@ -207,7 +234,7 @@ class NodeStorage(NestedMKDict):
         df["label"].fillna("", inplace=True)
         df["shape"].fillna("", inplace=True)
 
-        if (df["flags"]=="").all():
+        if (df["flags"] == "").all():
             del df["flags"]
 
         return df
@@ -217,11 +244,7 @@ class NodeStorage(NestedMKDict):
         return df.to_str(**kwargs)
 
     def to_table(
-        self,
-        *,
-        df_kwargs: Mapping={},
-        truncate: Union[int, bool] = False,
-        **kwargs
+        self, *, df_kwargs: Mapping = {}, truncate: Union[int, bool] = False, **kwargs
     ) -> str:
         df = self.to_df(**df_kwargs)
         kwargs.setdefault("headers", df.columns)
@@ -236,18 +259,14 @@ class NodeStorage(NestedMKDict):
         return ret
 
     def to_latex(
-        self,
-        filename: Optional[str]=None,
-        *,
-        return_df: bool=False,
-        **kwargs
+        self, filename: Optional[str] = None, *, return_df: bool = False, **kwargs
     ) -> Union[str, Tuple[str, DataFrame]]:
         df = self.to_df(label_from="latex", **kwargs)
         tex = df.to_latex(escape=False)
 
         if filename:
-            with open(filename, 'w') as out:
-                logger.log(SUBINFO, f'Write: {filename}')
+            with open(filename, "w") as out:
+                logger.log(SUBINFO, f"Write: {filename}")
                 out.write(tex)
 
         return tex, df if return_df else tex
@@ -255,12 +274,15 @@ class NodeStorage(NestedMKDict):
     def to_datax(self, filename: str, **kwargs) -> None:
         data = self.to_dict(**kwargs)
         include = ("value", "central", "sigma", "sigma_rel_perc")
-        odict = {".".join(k): v for k, v in data.walkitems() if (k and k[-1] in include)}
-        logger.log(SUBINFO, f'Write: {filename}')
+        odict = {
+            ".".join(k): v for k, v in data.walkitems() if (k and k[-1] in include)
+        }
+        logger.log(SUBINFO, f"Write: {filename}")
         datax(filename, **odict)
 
     def to_root(self, filename: str) -> None:
         from .export.to_root import ExportToRootVisitor
+
         visitor = ExportToRootVisitor(filename)
         self.visit(visitor)
 
@@ -276,19 +298,21 @@ class NodeStorage(NestedMKDict):
         return self
 
     def __exit__(self, exc_type, exc_val, exc_tb):
-        if _context_storage.pop()!=self:
+        if _context_storage.pop() != self:
             raise RuntimeError("NodeStorage: invalid context exit")
 
     @classmethod
-    def update_current(cls, storage: NestedMKDict, *, strict: bool=True):
+    def update_current(cls, storage: NestedMKDict, *, strict: bool = True):
         if (common_storage := cls.current()) is None:
             return
         if strict:
-            common_storage^=storage
+            common_storage ^= storage
         else:
-            common_storage|=storage
+            common_storage |= storage
+
 
 _context_storage: List[NodeStorage] = []
+
 
 class PlotVisitor(NestedMKDictVisitor):
     __slots__ = (
@@ -300,7 +324,7 @@ class PlotVisitor(NestedMKDictVisitor):
         "_active_figures",
         "_overlay_priority",
         "_currently_active_overlay",
-        "_close_on_exitdict"
+        "_close_on_exitdict",
     )
     _show_all: bool
     _folder: Optional[str]
@@ -311,6 +335,7 @@ class PlotVisitor(NestedMKDictVisitor):
     _overlay_priority: Sequence[OrderedSet]
     _currently_active_overlay: Optional[OrderedSet]
     _close_on_exitdict: bool
+
     def __init__(
         self,
         *args,
@@ -318,7 +343,7 @@ class PlotVisitor(NestedMKDictVisitor):
         folder: Optional[str] = None,
         format: str = "pdf",
         overlay_priority: Optional[Sequence[Sequence[str]]] = None,
-        **kwargs
+        **kwargs,
     ):
         self._show_all = show_all
         self._folder = folder
@@ -336,18 +361,20 @@ class PlotVisitor(NestedMKDictVisitor):
         elif self._folder is not None:
             self._kwargs["close"] = False
 
-    def _try_start_join(self, key: TupleKey) -> Tuple[Optional[Tuple[str]], Optional[str], bool]:
+    def _try_start_join(
+        self, key: TupleKey
+    ) -> Tuple[Optional[Tuple[str]], Optional[str], bool]:
         key_set = OrderedSet(key)
         need_new_figure = True
         if self._currently_active_overlay is None:
             for indices_set in self._overlay_priority:
-                if match:=indices_set.intersection(key_set):
+                if match := indices_set.intersection(key_set):
                     self._currently_active_overlay = indices_set
-                    self._close_on_exitdict = match[0]==key_set[-1]
+                    self._close_on_exitdict = match[0] == key_set[-1]
                     break
             else:
                 return key, None, True
-        elif match:=self._currently_active_overlay.intersection(key_set):
+        elif match := self._currently_active_overlay.intersection(key_set):
             need_new_figure = False
         else:
             self._currently_active_overlay = None
@@ -356,11 +383,13 @@ class PlotVisitor(NestedMKDictVisitor):
         key_major = key_set.difference(self._currently_active_overlay)
         return tuple(key_major), match[0], need_new_figure
 
-    def _makefigure(self, key: TupleKey, *, force_new: bool=False) -> Tuple["Axes", Optional[Tuple[str]], Optional[str], bool]:
-        from matplotlib.pyplot import subplots, sca
+    def _makefigure(
+        self, key: TupleKey, *, force_new: bool = False
+    ) -> Tuple["Axes", Optional[Tuple[str]], Optional[str], bool]:
+        from matplotlib.pyplot import sca, subplots
 
-        def mkfig(storekey: Optional[TupleKey]=None) -> "Axes":
-            fig, ax = subplots(1,1)
+        def mkfig(storekey: Optional[TupleKey] = None) -> "Axes":
+            fig, ax = subplots(1, 1)
             if storekey is not None:
                 self._active_figures[tuple(storekey)] = fig
             return ax
@@ -369,23 +398,28 @@ class PlotVisitor(NestedMKDictVisitor):
             return mkfig(), key, None, True
 
         index_major, index_minor, need_new_figure = self._try_start_join(key)
-        if need_new_figure or (fig:=self._active_figures.get(tuple(index_major))) is None:
+        if (
+            need_new_figure
+            or (fig := self._active_figures.get(tuple(index_major))) is None
+        ):
             return mkfig(index_major), index_major, index_minor, True
 
-        sca(ax:=fig.axes[0])
+        sca(ax := fig.axes[0])
         return ax, index_major, index_minor, False
 
-    def _savefig(self, key: TupleKey, *, close: bool=True):
-        from matplotlib.pyplot import savefig, close as closefig
+    def _savefig(self, key: TupleKey, *, close: bool = True):
         from os import makedirs
         from os.path import dirname
+
+        from matplotlib.pyplot import close as closefig
+        from matplotlib.pyplot import savefig
 
         if self._folder:
             path = "/".join(key).replace(".", "_")
             filename = f"{self._folder}/{path}.{self._format}"
             makedirs(dirname(filename), exist_ok=True)
 
-            logger.log(SUBINFO, f'Write: {filename}')
+            logger.log(SUBINFO, f"Write: {filename}")
             savefig(filename)
 
         if close:
@@ -393,6 +427,7 @@ class PlotVisitor(NestedMKDictVisitor):
 
     def _close_figures(self):
         from matplotlib.pyplot import sca
+
         for key, fig in self._active_figures.items():
             sca(fig.axes[0])
             self._savefig(key, close=True)
@@ -411,17 +446,21 @@ class PlotVisitor(NestedMKDictVisitor):
             self._currently_active_overlay = None
             return
 
-        if self._currently_active_overlay and not self._currently_active_overlay.intersection(key):
+        if (
+            self._currently_active_overlay
+            and not self._currently_active_overlay.intersection(key)
+        ):
             self._close_figures()
             self._currently_active_overlay = None
 
     def visit(self, key, output):
         from .plot import plot_auto
+
         if not isinstance(output, Output) or not output.labels.plottable:
             return
 
         nd = output.dd.dim
-        _, index_major, index_minor, newfig = self._makefigure(key, force_new=(nd==2))
+        _, index_major, index_minor, newfig = self._makefigure(key, force_new=(nd == 2))
 
         kwargs = self._kwargs.copy()
         if index_minor:
@@ -434,9 +473,11 @@ class PlotVisitor(NestedMKDictVisitor):
 
     def stop(self, dct):
         from matplotlib.pyplot import show
+
         if self._show_all:
             show()
         self._close_figures()
+
 
 class ParametersVisitor(NestedMKDictVisitor):
     __slots__ = ("_kwargs", "_data_list", "_localdata", "_path")
@@ -478,26 +519,31 @@ class ParametersVisitor(NestedMKDictVisitor):
         try:
             dct = value.to_dict(**self._kwargs)
         except (AttributeError, IndexError):
-            return
+            if isinstance(value, ndarray):
+                dct = {"shape": value.shape, "label": "data"}
+            else:
+                return
 
         if dct is None:
             return
 
-        subkey = key[len(self._path):]
+        subkey = key[len(self._path) :]
         subkeystr = ".".join(subkey)
 
         dct["path"] = self._path and f".. {subkeystr}" or subkeystr
         self._localdata.append(dct)
 
-        self._data_dict[key]=dct
+        self._data_dict[key] = dct
 
     def exitdict(self, k, v):
         if self._localdata:
-            self._data_list.append({
-                "path": f"group: {'.'.join(self._path)} [{len(self._localdata)}]",
-                "shape": len(self._localdata),
-                "label": "group"
-                })
+            self._data_list.append(
+                {
+                    "path": f"group: {'.'.join(self._path)} [{len(self._localdata)}]",
+                    "shape": len(self._localdata),
+                    "label": "group",
+                }
+            )
             self._data_list.extend(self._localdata)
             self._localdata = []
         if self._paths:
