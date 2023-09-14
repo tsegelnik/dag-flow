@@ -4,6 +4,8 @@ from numbers import Number
 from numpy import array, full
 from numpy.typing import ArrayLike, NDArray, DTypeLike
 
+from multikeydict.nestedmkdict import NestedMKDict
+
 from ..exception import InitializationError
 from ..nodes import FunctionNode
 from ..node import Node
@@ -92,6 +94,21 @@ class Array(FunctionNode):
         array = full(shape, value, dtype=dtype)
         return cls.make_stored(name, array, edges=edges, **kwargs)
 
+    @classmethod
+    def from_storage(
+        cls,
+        path,
+        storage: NestedMKDict,
+        *,
+        edges: Optional[str] = None,
+        mesh: Optional[str] = None,
+        **kwargs,
+    ):
+        localstorage = storage(path)
+        for key, data in localstorage.walkitems():
+            skey = '.'.join((path,)+key)
+            cls.make_stored(skey, data, **kwargs)
+
     def _typefunc(self) -> None:
         check_edges_type(self, slice(None), "array")  # checks List[Output]
         check_array_edges_consistency(self, "array")  # checks dim and N+1 size
@@ -104,28 +121,6 @@ class Array(FunctionNode):
 
     def set(self, data: ArrayLike, check_taint: bool = False) -> bool:
         return self._output.set(data, check_taint)
-
-    @classmethod
-    def from_value(
-        cls,
-        name,
-        value: Number,
-        *,
-        edges: Union[Output, Sequence[Output], Node],
-        dtype: DTypeLike=None,
-        **kwargs
-    ):
-        if isinstance(edges, Output):
-            shape=(edges.dd.shape[0]-1,)
-        elif isinstance(edges, Node):
-            output = edges.outputs[0]
-            shape=(output.dd.shape[0]-1,)
-        elif isinstance(edges, Sequence):
-            shape = tuple(output.dd.shape[0]-1 for output in edges)
-        else:
-            raise RuntimeError("Invalid edges specification")
-        array = full(shape, value, dtype=dtype)
-        return cls.make_stored(name, array, edges=edges, **kwargs)
 
     def _init_edges(self, edges: Union[Output, Sequence[Output], Node]):
         if not edges:
