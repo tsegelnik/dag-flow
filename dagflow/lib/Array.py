@@ -1,16 +1,17 @@
-from typing import Optional, Sequence, Union
 from numbers import Number
+from typing import Optional, Sequence, Union
 
 from numpy import array, full
-from numpy.typing import ArrayLike, NDArray, DTypeLike
+from numpy.typing import ArrayLike, DTypeLike, NDArray
 
 from multikeydict.nestedmkdict import NestedMKDict
 
 from ..exception import InitializationError
-from ..nodes import FunctionNode
 from ..node import Node
+from ..nodes import FunctionNode
 from ..output import Output
 from ..typefunctions import check_array_edges_consistency, check_edges_type
+
 
 class Array(FunctionNode):
     """Creates a node with a single data output with predefined array"""
@@ -59,8 +60,10 @@ class Array(FunctionNode):
         )
         self.fcn = self._functions[self._mode]
 
-        self._init_edges(edges)
-        self._init_meshes(meshes)
+        if edges:
+            self.set_edges(edges)
+        if meshes:
+            self.set_meshes(meshes)
 
         if mode == "store":
             self.close()
@@ -106,7 +109,7 @@ class Array(FunctionNode):
     ):
         localstorage = storage(path)
         for key, data in localstorage.walkitems():
-            skey = '.'.join((path,)+key)
+            skey = ".".join((path,) + key)
             cls.make_stored(skey, data, **kwargs)
 
     def _typefunc(self) -> None:
@@ -122,7 +125,16 @@ class Array(FunctionNode):
     def set(self, data: ArrayLike, check_taint: bool = False) -> bool:
         return self._output.set(data, check_taint)
 
-    def _init_edges(self, edges: Union[Output, Sequence[Output], Node]):
+    def _check_ndim(self, value: int, type: str):
+        ndim = self.dd.ndim
+        if ndim == value:
+            return
+
+        raise InitializationError(
+            f"Array ndim is {ndim}. {type} of {value} are not consistent"
+        )
+
+    def set_edges(self, edges: Union[Output, Sequence[Output], Node]):
         if not edges:
             return
 
@@ -130,34 +142,49 @@ class Array(FunctionNode):
             edges = (edges,)
 
         dd = self._output.dd
+        if dd.axes_edges:
+            raise InitializationError(
+                "Edges already set", node=self, output=self._output
+            )
+
+        self._check_ndim(len(edges))
+
         dd.edges_inherited = False
         for edgesi in edges:
             if isinstance(edgesi, Output):
-                dd.axes_edges+=(edgesi,)
+                dd.axes_edges += (edgesi,)
             elif isinstance(edgesi, Node):
-                dd.axes_edges+=(edgesi.outputs[0],)
+                dd.axes_edges += (edgesi.outputs[0],)
             else:
                 raise InitializationError(
                     "Array: edges must be `Output/Node` or `Sequence[Output/Node]`, "
-                    f"but given {edges=}, {type(edges)=}"
+                    f"got {edges=}, {type(edges)=}"
                 )
 
-    def _init_meshes(self, meshes: Union[Output, Sequence[Output], Node]):
+    def set_meshes(self, meshes: Union[Output, Node, Sequence[Output]]):
         if not meshes:
             return
 
         if not isinstance(meshes, Sequence):
             meshes = (meshes,)
 
+        self._check_ndim(len(meshes))
+
         dd = self._output.dd
+        if dd.axes_meshes:
+            raise InitializationError(
+                "Meshes already set", node=self, output=self._output
+            )
+
         dd.meshes_inherited = False
         for meshesi in meshes:
             if isinstance(meshesi, Output):
-                dd.axes_meshes+=(meshesi,)
+                dd.axes_meshes += (meshesi,)
             elif isinstance(meshesi, Node):
-                dd.axes_meshes+=(meshesi.outputs[0],)
+                dd.axes_meshes += (meshesi.outputs[0],)
             else:
                 raise InitializationError(
                     "Array: meshes must be `Output/Node` or `Sequence[Output/Node]`, "
-                    f"but given {meshes=}, {type(meshes)=}"
+                    f"got {meshes=}, {type(meshes)=}",
+                    node=self,
                 )
