@@ -2,7 +2,7 @@ from typing import Optional
 from .types import NodeT, InputT, OutputT
 
 
-class DagflowError(Exception):
+class DagflowError(RuntimeError):
     node: Optional[NodeT]
     input: Optional[InputT]
     output: Optional[OutputT]
