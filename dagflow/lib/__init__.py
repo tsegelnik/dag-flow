@@ -14,6 +14,7 @@ from .Interpolator import Interpolator
 from .InterpolatorGroup import InterpolatorGroup
 from .ManyToOneNode import ManyToOneNode
 from .MatrixProductAB import MatrixProductAB
+from .MatrixProductDVDt import MatrixProductDVDt
 from .NormalizeCorrelatedVars import NormalizeCorrelatedVars
 from .NormalizeCorrelatedVars2 import NormalizeCorrelatedVars2
 from .OneToOneNode import OneToOneNode
@@ -29,7 +30,8 @@ __all__ = ["Sum", "Product", "Division", "Cos", "Sin", "Tan", "ArcCos",
             "ArcSin", "ArcTan", "Array", "WeightedSum", "Cholesky", 
             "Concatenation", "CovmatrixFromCormatrix", "ElSumSq", "Integrator",
             "IntegratorGroup", "IntegratorSampler", "Interpolator", 
-            "InterpolatorGroup", "ManyToOneNode", "MatrixProductAB",
-            "NormalizeCorrelatedVars", "NormalizeCorrelatedVars2",
-            "OneToOneNode", "PartialSums", "SegmentIndex", "SumMatOrDiag",
-            "SumSq", "VectorMatrixProduct", "View", "ViewConcat"]
+            "InterpolatorGroup", "ManyToOneNode", "MatrixProductAB", 
+            "MatrixProductDVDt" "NormalizeCorrelatedVars", 
+            "NormalizeCorrelatedVars2", "OneToOneNode", "PartialSums", 
+            "SegmentIndex", "SumMatOrDiag", "SumSq", "VectorMatrixProduct",
+            "View", "ViewConcat"]
