@@ -11,6 +11,7 @@ from ..node import Node
 from ..nodes import FunctionNode
 from ..output import Output
 from ..typefunctions import check_array_edges_consistency, check_edges_type
+from ..tools.iter import iter_sequence_not_string
 
 
 class Array(FunctionNode):
@@ -63,7 +64,7 @@ class Array(FunctionNode):
         if edges:
             self.set_edges(edges)
         if meshes:
-            self.set_meshes(meshes)
+            self.set_mesh(meshes)
 
         if mode == "store":
             self.close()
@@ -100,17 +101,29 @@ class Array(FunctionNode):
     @classmethod
     def from_storage(
         cls,
-        path,
+        path: str,
         storage: NestedMKDict,
         *,
-        edges: Optional[str] = None,
-        mesh: Optional[str] = None,
+        edgesname: Union[str, Sequence[str]] = [],
+        meshname: Union[str, Sequence[str]] = [],
         **kwargs,
     ):
         localstorage = storage(path)
+        tmpstorage = NestedMKDict(sep='.')
         for key, data in localstorage.walkitems():
             skey = ".".join((path,) + key)
-            cls.make_stored(skey, data, **kwargs)
+            _, istorage = cls.make_stored(skey, data, **kwargs)
+            tmpstorage|=istorage
+
+        edges = list(tmpstorage[f"nodes.{path}.{name}"] for name in iter_sequence_not_string(edgesname))
+        mesh = list(tmpstorage[f"nodes.{path}.{name}"] for name in iter_sequence_not_string(meshname))
+        if edges or mesh:
+            for node in tmpstorage('nodes').walkvalues():
+                if node in edges or node in mesh:
+                    continue
+                node.set_mesh(mesh)
+                node.set_edges(edges)
+
 
     def _typefunc(self) -> None:
         check_edges_type(self, slice(None), "array")  # checks List[Output]
@@ -126,7 +139,7 @@ class Array(FunctionNode):
         return self._output.set(data, check_taint)
 
     def _check_ndim(self, value: int, type: str):
-        ndim = self.dd.ndim
+        ndim = self._output.dd.dim
         if ndim == value:
             return
 
@@ -147,7 +160,7 @@ class Array(FunctionNode):
                 "Edges already set", node=self, output=self._output
             )
 
-        self._check_ndim(len(edges))
+        self._check_ndim(len(edges), "Edges")
 
         dd.edges_inherited = False
         for edgesi in edges:
@@ -161,14 +174,14 @@ class Array(FunctionNode):
                     f"got {edges=}, {type(edges)=}"
                 )
 
-    def set_meshes(self, meshes: Union[Output, Node, Sequence[Output]]):
+    def set_mesh(self, meshes: Union[Output, Node, Sequence[Output]]):
         if not meshes:
             return
 
         if not isinstance(meshes, Sequence):
             meshes = (meshes,)
 
-        self._check_ndim(len(meshes))
+        self._check_ndim(len(meshes), "Meshes")
 
         dd = self._output.dd
         if dd.axes_meshes:
