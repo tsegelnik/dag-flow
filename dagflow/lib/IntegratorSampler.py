@@ -210,9 +210,6 @@ class IntegratorSampler(FunctionNode):
                 weights[offset : offset + n] = binwidths[i]
             offset += n
 
-        if self.debug:
-            return list(self.outputs.iter_data())
-
     def _fcn_trap(self) -> Optional[list]:
         """The trapezoidal sampling"""
         ordersX = self._ordersX
@@ -235,9 +232,6 @@ class IntegratorSampler(FunctionNode):
             offset += n - 1
         weights[-1] = samplewidths[-1] * 0.5
 
-        if self.debug:
-            return list(self.outputs.iter_data())
-
     def _fcn_gl1d(self) -> Optional[list]:
         """The 1d Gauss-Legendre sampling"""
         ordersX = self._ordersX
@@ -247,9 +241,6 @@ class IntegratorSampler(FunctionNode):
         weights = self._weights.data
 
         _gl_sampler(orders, sample, weights, edges)
-
-        if self.debug:
-            return list(self.outputs.iter_data())
 
     def _fcn_gl2d(self) -> Optional[list]:
         """The 2d Gauss-Legendre sampling"""
@@ -272,6 +263,3 @@ class IntegratorSampler(FunctionNode):
 
         X[:], Y[:] = meshgrid(sampleX, sampleY, indexing="ij")
         matmul(weightsX[newaxis].T, weightsY[newaxis], out=weights)
-
-        if self.debug:
-            return list(self.outputs.iter_data())

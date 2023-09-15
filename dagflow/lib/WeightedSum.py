@@ -64,7 +64,6 @@ class WeightedSum(ManyToOneNode):
         for _input in self.inputs[1:]:
             out += _input.data
         out *= weight
-        return out
 
     def _fcn_iterable(self) -> NDArray:
         """
@@ -76,4 +75,3 @@ class WeightedSum(ManyToOneNode):
         copyto(out, self.inputs[0].data * weights[0])
         for _input, weight in zip(self.inputs[1:], weights[1:]):
             out += _input.data * weight
-        return out

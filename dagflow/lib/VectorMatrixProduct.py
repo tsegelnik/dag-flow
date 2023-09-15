@@ -48,14 +48,12 @@ class VectorMatrixProduct(FunctionNode):
         mat = self._mat.data
         out = self._out.data
         matmul(row, mat, out=out)
-        return out
 
     def _fcn_diagonal(self) -> NDArray:
         row = self._vec.data
         diag = self._mat.data
         out = self._out.data
         multiply(row, diag, out=out)
-        return out
 
     def _typefunc(self) -> None:
         check_has_inputs(self, ("vector", "matrix"))

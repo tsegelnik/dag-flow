@@ -75,5 +75,3 @@ class SegmentIndex(FunctionNode):
         #       it is better to use another algorithm if possible
         sorter = coarse.argsort()
         out[:] = coarse.searchsorted(fine, side=self.mode, sorter=sorter)
-        if self.debug:
-            return out

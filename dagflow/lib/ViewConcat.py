@@ -34,7 +34,6 @@ class ViewConcat(FunctionNode):
 
     def _fcn(self) -> NDArray:
         self.inputs.touch()
-        return self._output._data
 
     def _typefunc(self) -> None:
         """A output takes this function to determine the dtype and shape"""

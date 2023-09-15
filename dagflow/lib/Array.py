@@ -64,12 +64,11 @@ class Array(FunctionNode):
             self.close()
 
     def _fcn_store(self):
-        return self._data
+        pass
 
     def _fcn_fill(self):
         data = self._output._data
         data[:] = self._data
-        return data
 
     @classmethod
     def from_value(

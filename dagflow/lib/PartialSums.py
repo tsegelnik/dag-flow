@@ -70,4 +70,3 @@ class PartialSums(OneToOneNode):
         data = self._array.data
         for inp, out in zip(self.inputs, self.outputs):
             _psum(data, inp.data, out.data)
-        return list(self.outputs.iter_data())

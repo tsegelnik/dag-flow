@@ -206,8 +206,6 @@ class Integrator(FunctionNode):
         for _input, output in zip(self.inputs.iter_data(), self.outputs.iter_data()):
             multiply(_input, weights, out=self.__buffer)
             _integrate1d(output, self.__buffer, ordersX)
-        if self.debug:
-            return list(self.outputs.iter_data())
 
     def _fcn_2d(self):
         """2d version of integration function"""
@@ -217,8 +215,6 @@ class Integrator(FunctionNode):
         for _input, output in zip(self.inputs.iter_data(), self.outputs.iter_data()):
             multiply(_input, weights, out=self.__buffer)
             _integrate2d(output, self.__buffer, ordersX, ordersY)
-        if self.debug:
-            return list(self.outputs.iter_data())
 
     def _fcn_21d_x(self):
         """21d version of integration function where x-axis is dropped"""
@@ -227,8 +223,6 @@ class Integrator(FunctionNode):
         for _input, output in zip(self.inputs.iter_data(), self.outputs.iter_data()):
             multiply(_input, weights, out=self.__buffer)
             _integrate2to1d(output, self.__buffer.T, ordersY)
-        if self.debug:
-            return list(self.outputs.iter_data())
 
     def _fcn_21d_y(self):
         """21d version of integration function where y-axis is dropped"""
@@ -237,5 +231,3 @@ class Integrator(FunctionNode):
         for _input, output in zip(self.inputs.iter_data(), self.outputs.iter_data()):
             multiply(_input, weights, out=self.__buffer)
             _integrate2to1d(output, self.__buffer, ordersX)
-        if self.debug:
-            return list(self.outputs.iter_data())

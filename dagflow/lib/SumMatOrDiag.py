@@ -53,7 +53,6 @@ class SumMatOrDiag(FunctionNode):
                     _addtodiag(_input.data, out)
                 else:
                     add(_input.data, out, out=out)
-        return out
 
     def _fcn1d(self):
         out = self.outputs["result"].data
@@ -61,7 +60,6 @@ class SumMatOrDiag(FunctionNode):
         if len(self.inputs) > 1:
             for _input in self.inputs[1:]:
                 add(out, _input.data, out=out)
-        return out
 
     def _typefunc(self) -> None:
         """A output takes this function to determine the dtype and shape"""

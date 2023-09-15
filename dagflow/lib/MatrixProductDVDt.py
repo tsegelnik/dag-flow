@@ -51,7 +51,6 @@ class MatrixProductDVDt(FunctionNode):
         out = self._out.data
         multiply(left, diagonal, out=self._buffer)
         matmul(self._buffer, left.T, out=out)
-        return out
 
     def _fcn_square(self) -> NDArray:
         left = self._left.data
@@ -59,7 +58,6 @@ class MatrixProductDVDt(FunctionNode):
         out = self._out.data
         matmul(left, square, out=self._buffer)
         matmul(self._buffer, left.T, out=out)
-        return out
 
     def _typefunc(self) -> None:
         check_has_inputs(self, ("left", "square"))

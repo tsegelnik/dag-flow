@@ -27,7 +27,6 @@ class SumSq(ManyToOneNode):
             for _input in self.inputs[1:]:
                 square(_input.data, out=self._buffer)
                 add(self._buffer, out, out=out)
-        return out
 
     def _typefunc(self) -> None:
         """A output takes this function to determine the dtype and shape"""
