@@ -5,7 +5,7 @@ from dagflow.graphviz import savegraph
 from dagflow.lib import Array, Sum
 from dagflow.nodes import FunctionNode
 from dagflow.typefunctions import check_has_inputs, check_inputs_number
-from dagflow.lib.Dummy import Dummy
+from dagflow.lib import Dummy
 from pytest import raises
 
 

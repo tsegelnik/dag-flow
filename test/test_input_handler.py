@@ -5,7 +5,7 @@ from contextlib import suppress
 
 from dagflow.graph import Graph
 from dagflow.graphviz import savegraph
-from dagflow.lib.Dummy import Dummy
+from dagflow.lib import Dummy
 from dagflow.input_extra import *
 from dagflow.wrappers import *
 

@@ -5,7 +5,7 @@ from dagflow.exception import InitializationError
 from dagflow.graph import Graph
 from dagflow.graphviz import savegraph
 from dagflow.lib import Array
-from dagflow.lib.SegmentIndex import SegmentIndex
+from dagflow.lib import SegmentIndex
 from numpy import linspace
 from numpy.random import seed, shuffle
 from pytest import mark, raises

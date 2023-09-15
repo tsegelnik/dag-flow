@@ -6,8 +6,8 @@ from pytest import mark, raises
 from dagflow.exception import TypeFunctionError
 from dagflow.graph import Graph
 from dagflow.graphviz import savegraph
-from dagflow.lib.Array import Array
-from dagflow.lib.SumMatOrDiag import SumMatOrDiag
+from dagflow.lib import Array
+from dagflow.lib import SumMatOrDiag
 
 
 @mark.parametrize("dtype", ("d", "f"))

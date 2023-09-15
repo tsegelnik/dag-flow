@@ -2,8 +2,8 @@
 
 from dagflow.graph import Graph
 from dagflow.graphviz import savegraph
-from dagflow.lib.Array import Array
-from dagflow.lib.CovmatrixFromCormatrix import CovmatrixFromCormatrix
+from dagflow.lib import Array
+from dagflow.lib import CovmatrixFromCormatrix
 from numpy import allclose, arange, array, tril
 from pytest import mark
 

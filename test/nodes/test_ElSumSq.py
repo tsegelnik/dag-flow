@@ -2,8 +2,8 @@
 
 from dagflow.graph import Graph
 from dagflow.graphviz import savegraph
-from dagflow.lib.Array import Array
-from dagflow.lib.ElSumSq import ElSumSq
+from dagflow.lib import Array
+from dagflow.lib import ElSumSq
 from numpy import arange, sum
 from pytest import mark
 

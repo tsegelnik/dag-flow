@@ -6,8 +6,8 @@ from pytest import mark, raises
 from dagflow.exception import TypeFunctionError
 from dagflow.graph import Graph
 from dagflow.graphviz import savegraph
-from dagflow.lib.Array import Array
-from dagflow.lib.PartialSums import PartialSums
+from dagflow.lib import Array
+from dagflow.lib import PartialSums
 
 
 @mark.parametrize("a", (arange(12, dtype="d") * i for i in (1, 2, 3)))

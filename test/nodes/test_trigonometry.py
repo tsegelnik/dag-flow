@@ -1,8 +1,8 @@
 #!/usr/bin/env python
 
 from dagflow.graph import Graph
-from dagflow.lib.Array import Array
-from dagflow.lib.trigonometry import Cos, Sin, Tan, ArcCos, ArcSin, ArcTan # Accessed via globals()
+from dagflow.lib import Array
+from dagflow.lib import Cos, Sin, Tan, ArcCos, ArcSin, ArcTan # Accessed via globals()
 from dagflow.graphviz import savegraph
 from dagflow.plot import plot_auto
 

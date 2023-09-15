@@ -2,8 +2,8 @@
 from dagflow.graph import Graph
 from dagflow.graphviz import savegraph
 from dagflow.input_extra import MissingInputAddOne
-from dagflow.lib.Array import Array
-from dagflow.lib.Dummy import Dummy
+from dagflow.lib import Array
+from dagflow.lib import Dummy
 from dagflow.typefunctions import (
     AllPositionals,
     check_array_edges_consistency,

@@ -6,12 +6,12 @@ from pytest import mark, raises
 from dagflow.exception import TypeFunctionError
 from dagflow.graph import Graph
 from dagflow.graphviz import savegraph
-from dagflow.lib.Array import Array
-from dagflow.lib.Integrator import Integrator
-from dagflow.lib.IntegratorSampler import IntegratorSampler
-from dagflow.lib.ManyToOneNode import ManyToOneNode
-from dagflow.lib.OneToOneNode import OneToOneNode
-from dagflow.lib.trigonometry import Cos, Sin
+from dagflow.lib import Array
+from dagflow.lib import Integrator
+from dagflow.lib import IntegratorSampler
+from dagflow.lib import ManyToOneNode
+from dagflow.lib import OneToOneNode
+from dagflow.lib import Cos, Sin
 from dagflow.plot import plot_auto
 
 

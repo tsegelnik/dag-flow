@@ -4,7 +4,7 @@ from dagflow.exception import ClosedGraphError, UnclosedGraphError, ConnectionEr
 from dagflow.graph import Graph
 from dagflow.input import Input
 from dagflow.nodes import FunctionNode
-from dagflow.lib.Dummy import Dummy
+from dagflow.lib import Dummy
 from dagflow.output import Output
 from pytest import raises
 from dagflow.graphviz import savegraph

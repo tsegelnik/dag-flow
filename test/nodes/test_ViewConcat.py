@@ -5,10 +5,10 @@ import numpy as np
 
 from dagflow.graph import Graph
 from dagflow.graphviz import savegraph
-from dagflow.lib.ViewConcat import ViewConcat
-from dagflow.lib.View import View
-from dagflow.lib.NormalizeCorrelatedVars2 import NormalizeCorrelatedVars2
-from dagflow.lib.Array import Array
+from dagflow.lib import ViewConcat
+from dagflow.lib import View
+from dagflow.lib import NormalizeCorrelatedVars2
+from dagflow.lib import Array
 from dagflow.exception import ConnectionError
 
 import pytest

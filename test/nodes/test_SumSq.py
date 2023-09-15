@@ -1,8 +1,8 @@
 #!/usr/bin/env python
 
 from dagflow.graph import Graph
-from dagflow.lib.Array import Array
-from dagflow.lib.SumSq import SumSq
+from dagflow.lib import Array
+from dagflow.lib import SumSq
 from dagflow.graphviz import savegraph
 
 from numpy import arange, sum

@@ -5,8 +5,8 @@ from numpy import array, diag, sqrt, allclose, finfo
 from dagflow.exception import TypeFunctionError
 from dagflow.graph import Graph
 from dagflow.graphviz import savegraph
-from dagflow.lib.Array import Array
-from dagflow.lib.Cholesky import Cholesky
+from dagflow.lib import Array
+from dagflow.lib import Cholesky
 from pytest import mark, raises
 from scipy import linalg
 
