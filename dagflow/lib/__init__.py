@@ -31,7 +31,7 @@ __all__ = ["Sum", "Product", "Division", "Cos", "Sin", "Tan", "ArcCos",
             "Concatenation", "CovmatrixFromCormatrix", "ElSumSq", "Integrator",
             "IntegratorGroup", "IntegratorSampler", "Interpolator", 
             "InterpolatorGroup", "ManyToOneNode", "MatrixProductAB", 
-            "MatrixProductDVDt" "NormalizeCorrelatedVars", 
+            "MatrixProductDVDt", "NormalizeCorrelatedVars", 
             "NormalizeCorrelatedVars2", "OneToOneNode", "PartialSums", 
             "SegmentIndex", "SumMatOrDiag", "SumSq", "VectorMatrixProduct",
             "View", "ViewConcat"]
