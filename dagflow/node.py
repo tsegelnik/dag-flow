@@ -2,7 +2,6 @@ from typing import (
     TYPE_CHECKING,
     Any,
     Callable,
-    List,
     Mapping,
     Optional,
     Sequence,
@@ -159,6 +158,7 @@ class Node(Limbs):
         node = cls(name, *args, **kwargs)
 
         from .storage import NodeStorage
+
         storage = NodeStorage(default_containers=True)
         storage("nodes")[name] = node
         if len(node.outputs) == 1:
@@ -476,7 +476,7 @@ class Node(Limbs):
             return
         self._tainted = True
         self._on_taint(caller)
-        ret = self.touch() if self._immediate else None
+        ret = self.touch() if (self._immediate or force) else None
         self.taint_children(force=force)
         return ret
 
@@ -524,7 +524,7 @@ class Node(Limbs):
             self.logger.debug(f"Node '{self.name}': Trigger recursive update types...")
             for input in self.inputs.iter_all():
                 if not input.connected():
-                    raise ClosingError('Input is not connected', node=self, input=input)
+                    raise ClosingError("Input is not connected", node=self, input=input)
                 input.parent_node.update_types(recursive)
         self.logger.debug(f"Node '{self.name}': Update types...")
         self._typefunc()

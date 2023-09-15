@@ -1,22 +1,24 @@
 from typing import Optional, Union
 
-class SimpleFormatter():
+
+class SimpleFormatter:
     _base: str
     _numfmt: str
-    def __init__(self, base: str, numfmt: str = '_{:02d}'):
+
+    def __init__(self, base: str, numfmt: str = "_{:02d}"):
         self._base = base
         self._numfmt = numfmt
 
     @staticmethod
     def from_string(string: str):
-        if '{' in string:
-             return string
+        if "{" in string:
+            return string
 
         return SimpleFormatter(string)
 
     def format(self, num: int) -> str:
-        if num>0:
-            return self._base+self._numfmt.format(num)
+        if num > 0:
+            return self._base + self._numfmt.format(num)
 
         return self._base
 
@@ -52,26 +54,25 @@ class MissingInputFail(MissingInputHandler):
 
     def __call__(self, idx=None, scope=None):
         raise RuntimeError(
-            "Unable to iterate inputs further. "
-            "No additional inputs may be created"
+            "Unable to iterate inputs further. " "No additional inputs may be created"
         )
 
 
 class MissingInputAdd(MissingInputHandler):
     """Adds an input for each output in >> operator"""
 
-    input_fmt: Union[str,SimpleFormatter] = SimpleFormatter("input", "_{:02d}")
+    input_fmt: Union[str, SimpleFormatter] = SimpleFormatter("input", "_{:02d}")
     input_kws: dict
-    output_fmt: Union[str,SimpleFormatter] = SimpleFormatter("output", "_{:02d}")
+    output_fmt: Union[str, SimpleFormatter] = SimpleFormatter("output", "_{:02d}")
     output_kws: dict
 
     def __init__(
         self,
         node=None,
         *,
-        input_fmt: Optional[Union[str,SimpleFormatter]] = None,
+        input_fmt: Optional[Union[str, SimpleFormatter]] = None,
         input_kws: Optional[dict] = None,
-        output_fmt: Optional[Union[str,SimpleFormatter]] = None,
+        output_fmt: Optional[Union[str, SimpleFormatter]] = None,
         output_kws: Optional[dict] = None,
     ):
         if input_kws is None:
@@ -89,9 +90,7 @@ class MissingInputAdd(MissingInputHandler):
     def __call__(self, idx=None, scope=None, **kwargs):
         kwargs_combined = dict(self.input_kws, **kwargs)
         return self.node._add_input(
-            self.input_fmt.format(
-                idx if idx is not None else len(self.node.inputs)
-            ),
+            self.input_fmt.format(idx if idx is not None else len(self.node.inputs)),
             **kwargs_combined,
         )
 
@@ -107,9 +106,7 @@ class MissingInputAddPair(MissingInputAdd):
 
     def __call__(self, idx=None, scope=None):
         idx_out = len(self.node.outputs)
-        out = self.node._add_output(
-            self.output_fmt.format(idx_out), **self.output_kws
-        )
+        out = self.node._add_output(self.output_fmt.format(idx_out), **self.output_kws)
         return super().__call__(idx, child_output=out, scope=scope)
 
 
@@ -153,6 +150,34 @@ class MissingInputAddEach(MissingInputAdd):
         if scope == self.scope != 0:
             out = self.node.outputs[-1]
         else:
+            out = self.node._add_output(
+                self.output_fmt.format(len(self.node.outputs)),
+                **self.output_kws,
+            )
+            self.scope = scope
+        if self.add_child_output:
+            return super().__call__(idx, child_output=out, scope=scope)
+        return super().__call__(idx, scope=scope)
+
+
+class MissingInputAddEachN(MissingInputAdd):
+    """
+    Adds an output for each N inputs
+    """
+
+    add_child_output: bool = False
+    scope: int = 0
+    n: int
+
+    def __init__(self, n: int, node=None, *, add_child_output=False, **kwargs):
+        super().__init__(node, **kwargs)
+        self.n = n
+        self.add_child_output = add_child_output
+
+    def __call__(self, idx=None, scope=None):
+        if scope == self.scope != 0:
+            out = self.node.outputs[-1]
+        elif self.node.inputs.len_pos() % self.n == 0:
             out = self.node._add_output(
                 self.output_fmt.format(len(self.node.outputs)),
                 **self.output_kws,

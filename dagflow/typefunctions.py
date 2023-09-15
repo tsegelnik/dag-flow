@@ -87,6 +87,14 @@ def check_inputs_number(node: NodeT, n: int) -> None:
         )
 
 
+def check_outputs_number(node: NodeT, n: int) -> None:
+    """Checking if the node has only `n` outputs"""
+    if (nout := len(node.outputs)) != n:
+        raise TypeFunctionError(
+            f"The node must have only {n} outputs, but given {nout}!", node=node
+        )
+
+
 def copy_from_input_to_output(
     node: NodeT,
     inputkey: LimbKey = 0,
@@ -776,6 +784,15 @@ def find_max_size_of_inputs(node: NodeT, inputkey: LimbKey = AllPositionals) -> 
         if (y := input.dd.size) > size:
             size = y
     return size
+
+
+def check_inputs_multiplicity(node: NodeT, N: int) -> None:
+    """Check whether inputs count multiple to some N or not"""
+    n = node.inputs.len_pos()
+    if n % N != 0:
+        raise TypeFunctionError(
+            f"Node takes only {N}N inputs, but given {n}", node=node
+        )
 
 
 # NOTE: may be it will be needed later, but for now is not
