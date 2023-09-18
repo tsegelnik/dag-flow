@@ -106,14 +106,17 @@ class Array(FunctionNode):
         *,
         edgesname: Union[str, Sequence[str]] = [],
         meshname: Union[str, Sequence[str]] = [],
+        remove_used_arrays: bool = False,
         **kwargs,
     ):
         localstorage = storage(path)
         tmpstorage = NestedMKDict(sep='.')
+        used_array_keys = set()
         for key, data in localstorage.walkitems():
             skey = ".".join((path,) + key)
             _, istorage = cls.make_stored(skey, data, **kwargs)
             tmpstorage|=istorage
+            used_array_keys.add(key)
 
         edges = list(tmpstorage[f"nodes.{path}.{name}"] for name in iter_sequence_not_string(edgesname))
         mesh = list(tmpstorage[f"nodes.{path}.{name}"] for name in iter_sequence_not_string(meshname))
@@ -123,6 +126,10 @@ class Array(FunctionNode):
                     continue
                 node.set_mesh(mesh)
                 node.set_edges(edges)
+
+        if remove_used_arrays:
+            for key in used_array_keys:
+                localstorage.delete_with_parents(key)
 
 
     def _typefunc(self) -> None:
