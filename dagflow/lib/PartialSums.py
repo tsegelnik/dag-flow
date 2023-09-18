@@ -66,7 +66,7 @@ class PartialSums(OneToOneNode):
                 input=self._array,
             )
 
-    def _fcn(self) -> list:
+    def _fcn(self):
         data = self._array.data
         for inp, out in zip(self.inputs, self.outputs):
             _psum(data, inp.data, out.data)

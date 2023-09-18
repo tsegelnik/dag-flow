@@ -43,13 +43,13 @@ class VectorMatrixProduct(FunctionNode):
             }
         )
 
-    def _fcn_block(self) -> NDArray:
+    def _fcn_block(self):
         row = self._vec.data
         mat = self._mat.data
         out = self._out.data
         matmul(row, mat, out=out)
 
-    def _fcn_diagonal(self) -> NDArray:
+    def _fcn_diagonal(self):
         row = self._vec.data
         diag = self._mat.data
         out = self._out.data

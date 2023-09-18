@@ -32,7 +32,7 @@ class ViewConcat(FunctionNode):
         iname = f"input_{idx:02d}"
         return self._add_input(iname, allocatable=True, child_output=self._output)
 
-    def _fcn(self) -> NDArray:
+    def _fcn(self):
         self.inputs.touch()
 
     def _typefunc(self) -> None:

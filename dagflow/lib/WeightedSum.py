@@ -53,7 +53,7 @@ class WeightedSum(ManyToOneNode):
         copy_input_shape_to_outputs(self, 0, "result")
         eval_output_dtype(self, slice(None), "result")
 
-    def _fcn_number(self) -> NDArray:
+    def _fcn_number(self):
         """
         The function for one weight for all inputs:
         `len(weight) == 1`
@@ -65,7 +65,7 @@ class WeightedSum(ManyToOneNode):
             out += _input.data
         out *= weight
 
-    def _fcn_iterable(self) -> NDArray:
+    def _fcn_iterable(self):
         """
         The function for one weight for every input:
         `len(weight) == len(inputs)`

@@ -45,14 +45,14 @@ class MatrixProductDVDt(FunctionNode):
         )
         self._labels.setdefault("mark", "LDLᵀ")
 
-    def _fcn_diagonal(self) -> NDArray:
+    def _fcn_diagonal(self):
         left = self._left.data
         diagonal = self._square.data  # square matrix stored as diagonal
         out = self._out.data
         multiply(left, diagonal, out=self._buffer)
         matmul(self._buffer, left.T, out=out)
 
-    def _fcn_square(self) -> NDArray:
+    def _fcn_square(self):
         left = self._left.data
         square = self._square.data
         out = self._out.data

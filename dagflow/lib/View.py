@@ -30,7 +30,7 @@ class View(FunctionNode):
             if output.closed:
                 self.close()
 
-    def _fcn(self) -> NDArray:
+    def _fcn(self):
         self._input.data
 
     def _typefunc(self) -> None:

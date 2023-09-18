@@ -44,25 +44,25 @@ class MatrixProductAB(FunctionNode):
             }
         )
 
-    def _fcn_block_block(self) -> NDArray:
+    def _fcn_block_block(self):
         left = self._left.data
         right = self._right.data
         out = self._out.data
         matmul(left, right, out=out)
 
-    def _fcn_block_diagonal(self) -> NDArray:
+    def _fcn_block_diagonal(self):
         left = self._left.data
         right = self._right.data
         out = self._out.data
         multiply(left, right, out=out)
 
-    def _fcn_diagonal_block(self) -> NDArray:
+    def _fcn_diagonal_block(self):
         left = self._left.data
         right = self._right.data
         out = self._out.data
         multiply(left[:,None], right, out=out)
 
-    def _fcn_diagonal_diagonal(self) -> NDArray:
+    def _fcn_diagonal_diagonal(self):
         left = self._left.data
         right = self._right.data
         out = self._out.data
