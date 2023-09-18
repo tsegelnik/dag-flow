@@ -99,37 +99,3 @@ class VectorMatrixProduct(FunctionNode):
             self._out.dd.shape = (resshape[-1],)
 
         eval_output_dtype(self, slice(None), "result")
-
-    @classmethod
-    def replicate(
-        cls,
-        name: str,
-        replicate: Tuple[KeyLike, ...] = ((),),
-        **kwargs,
-    ) -> Tuple[Optional[Node], NodeStorage]:
-        storage = NodeStorage(default_containers=True)
-        nodes = storage("nodes")
-        inputs = storage("inputs")
-        outputs = storage("outputs")
-
-        if not replicate:
-            raise RuntimeError("`replicate` tuple should have at least one item")
-
-        tname = name,
-        for key in replicate:
-            if isinstance(key, str):
-                key = (key,)
-            outname = tname + key
-            instance = cls(".".join(outname), **kwargs)
-            nodes[outname] = instance
-
-            inputs[tname+('vector',)+key] = instance.inputs['vector']
-            inputs[tname+('matrix',)+key] = instance.inputs['matrix']
-            outputs[outname] = instance.outputs[0]
-
-        NodeStorage.update_current(storage, strict=True)
-
-        if len(replicate) == 1:
-            return instance, storage
-
-        return None, storage

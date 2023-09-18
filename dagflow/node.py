@@ -11,6 +11,7 @@ from typing import (
 )
 from weakref import ReferenceType
 from weakref import ref as weakref
+from multikeydict.typing import KeyLike
 
 from .exception import (
     AllocationError,
@@ -145,6 +146,9 @@ class Node(Limbs):
         if kwargs:
             raise InitializationError(f"Unparsed arguments: {kwargs}!")
 
+    def __str__(self):
+        return f"{{{self.name}}} {super().__str__()}"
+
     @classmethod
     def make_stored(
         cls, name: str, *args, label_from: Optional[Mapping] = None, **kwargs
@@ -172,8 +176,54 @@ class Node(Limbs):
 
         return node, storage
 
-    def __str__(self):
-        return f"{{{self.name}}} {super().__str__()}"
+    @classmethod
+    def replicate(
+        cls,
+        name: str,
+        replicate: Tuple[KeyLike, ...] = ((),),
+        **kwargs,
+    ) -> Tuple[Optional["Node"], "NodeStorage"]:
+        from .storage import NodeStorage
+        storage = NodeStorage(default_containers=True)
+        nodes = storage("nodes")
+        inputs = storage("inputs")
+        outputs = storage("outputs")
+
+        if not replicate:
+            raise RuntimeError("`replicate` tuple should have at least one item")
+
+        tuplename = name,
+        for key in replicate:
+            if isinstance(key, str):
+                key = (key,)
+            outname = tuplename + key
+            instance = cls(".".join(outname), **kwargs)
+            nodes[outname] = instance
+
+            ninputs = instance.inputs.len_all()
+            iter_inputs = instance.inputs.iter_all_items()
+            if ninputs>1:
+                for iname, input in iter_inputs:
+                    inputs[tuplename+(iname,)+key] = input
+            else:
+                _, input = next(iter_inputs)
+                inputs[tuplename+key] = input
+
+            noutputs = instance.outputs.len_all()
+            iter_outputs = instance.outputs.iter_all_items()
+            if noutputs>1:
+                for oname, output in instance.outputs.iter_all_items():
+                    outputs[tuplename+(oname,)+key] = output
+            else:
+                _, output = next(iter_outputs)
+                outputs[tuplename+key] = output
+
+        NodeStorage.update_current(storage, strict=True)
+
+        if len(replicate) == 1:
+            return instance, storage
+
+        return None, storage
 
     #
     # Properties
