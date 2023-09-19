@@ -87,7 +87,7 @@ class NormalizeCorrelatedVars2(FunctionNode):
             }
         )
 
-    def _fcn_forward_2d(self) -> None:
+    def _fcn_forward_2d(self):
         self.inputs.touch()
         L = self._matrix.data
         central = self._central.data
@@ -105,7 +105,7 @@ class NormalizeCorrelatedVars2(FunctionNode):
         )
         copyto(output_value, input_value)
 
-    def _fcn_backward_2d(self) -> None:
+    def _fcn_backward_2d(self):
         self.inputs.touch()
         L = self._matrix.data
         central = self._central.data
@@ -117,7 +117,7 @@ class NormalizeCorrelatedVars2(FunctionNode):
         add(output_value, central, out=output_value)
         copyto(output_normvalue, input_normvalue)
 
-    def _fcn_forward_1d(self) -> None:
+    def _fcn_forward_1d(self):
         self.inputs.touch()
         Ldiag = self._matrix.data
         central = self._central.data
@@ -129,7 +129,7 @@ class NormalizeCorrelatedVars2(FunctionNode):
         divide(output_normvalue, Ldiag, out=output_normvalue)
         copyto(output_value, input_value)
 
-    def _fcn_backward_1d(self) -> None:
+    def _fcn_backward_1d(self):
         self.inputs.touch()
         Ldiag = self._matrix.data
         central = self._central.data

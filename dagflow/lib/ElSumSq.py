@@ -34,7 +34,6 @@ class ElSumSq(FunctionNode):
         out[0] = 0.0
         for _input in self.inputs.iter_data():
             _sumsq(_input, out)
-        return out
 
     def _typefunc(self) -> None:
         """A output takes this function to determine the dtype and shape"""

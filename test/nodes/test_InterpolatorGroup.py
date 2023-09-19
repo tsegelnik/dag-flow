@@ -4,9 +4,9 @@ from numpy.random import seed, shuffle
 
 from dagflow.graph import Graph
 from dagflow.graphviz import savegraph
-from dagflow.lib.Array import Array
-from dagflow.lib.InterpolatorGroup import InterpolatorGroup
-from dagflow.lib.OneToOneNode import OneToOneNode
+from dagflow.lib import Array
+from dagflow.lib import InterpolatorGroup
+from dagflow.lib import OneToOneNode
 from dagflow.meta_node import MetaNode
 from dagflow.plot import plot_auto
 

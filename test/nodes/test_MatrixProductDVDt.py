@@ -1,8 +1,8 @@
 #!/usr/bin/env python
 
 from dagflow.graph import Graph
-from dagflow.lib.Array import Array
-from dagflow.lib.MatrixProductDVDt import MatrixProductDVDt
+from dagflow.lib import Array
+from dagflow.lib import MatrixProductDVDt
 from dagflow.graphviz import savegraph
 
 import numpy as np

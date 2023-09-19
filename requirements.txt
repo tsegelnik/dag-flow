@@ -11,3 +11,5 @@ pytest-cov
 schema
 scipy
 tabulate
+pyyaml
+matplotlib

@@ -66,7 +66,7 @@ class SegmentIndex(FunctionNode):
         )
         self._indices.dd.dtype = "i"
 
-    def _fcn(self) -> Optional[list]:
+    def _fcn(self):
         """Uses `numpy.ndarray.searchsorted` and `numpy.ndarray.argsort`"""
         out = self._indices.data.ravel()
         coarse = self._coarse.data.ravel()
@@ -75,5 +75,3 @@ class SegmentIndex(FunctionNode):
         #       it is better to use another algorithm if possible
         sorter = coarse.argsort()
         out[:] = coarse.searchsorted(fine, side=self.mode, sorter=sorter)
-        if self.debug:
-            return out

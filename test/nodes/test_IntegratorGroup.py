@@ -1,8 +1,8 @@
 from dagflow.graph import Graph
 from dagflow.meta_node import MetaNode
-from dagflow.lib.Array import Array
-from dagflow.lib.IntegratorGroup import IntegratorGroup
-from dagflow.lib.trigonometry import Cos, Sin
+from dagflow.lib import Array
+from dagflow.lib import IntegratorGroup
+from dagflow.lib import Cos, Sin
 from numpy import allclose, linspace, pi
 
 from dagflow.graphviz import savegraph

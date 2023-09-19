@@ -9,9 +9,9 @@ from dagflow.exception import (
     UnclosedGraphError,
 )
 from dagflow.graph import Graph
-from dagflow.lib.Array import Array
-from dagflow.lib.ManyToOneNode import ManyToOneNode
-from dagflow.lib.WeightedSum import WeightedSum
+from dagflow.lib import Array
+from dagflow.lib import ManyToOneNode
+from dagflow.lib import WeightedSum
 
 
 class ThreeInputsSum(ManyToOneNode):

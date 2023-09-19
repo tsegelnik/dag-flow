@@ -1,8 +1,8 @@
 #!/usr/bin/env python
 from dagflow.graph import Graph
 from dagflow.graphviz import savegraph
-from dagflow.lib.Array import Array
-from dagflow.lib.Concatenation import Concatenation
+from dagflow.lib import Array
+from dagflow.lib import Concatenation
 from numpy import concatenate, linspace
 
 

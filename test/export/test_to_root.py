@@ -2,7 +2,7 @@
 
 from dagflow.storage import NodeStorage
 from dagflow.graph import Graph
-from dagflow.lib.Array import Array
+from dagflow.lib import Array
 from dagflow.graphviz import savegraph
 
 from numpy import arange, meshgrid

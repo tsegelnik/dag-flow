@@ -16,7 +16,6 @@ class Sum(ManyToOneNode):
         copyto(out, self.inputs[0].data)
         for _input in self.inputs[1:]:
             add(out, _input.data, out=out)
-        return out
 
 
 class Product(ManyToOneNode):
@@ -32,7 +31,6 @@ class Product(ManyToOneNode):
         copyto(out, self.inputs[0].data)
         for _input in self.inputs[1:]:
             multiply(out, _input.data, out=out)
-        return out
 
 
 class Division(ManyToOneNode):
@@ -51,4 +49,3 @@ class Division(ManyToOneNode):
         copyto(out, self.inputs[0].data.copy())
         for _input in self.inputs[1:]:
             divide(out, _input.data, out=out)
-        return out

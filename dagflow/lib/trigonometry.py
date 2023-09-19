@@ -9,7 +9,6 @@ class Cos(OneToOneNode):
     def _fcn(self):
         for inp, out in zip(self.inputs, self.outputs):
             cos(inp.data, out=out.data)
-        return list(self.outputs.iter_data())
 
 
 class Sin(OneToOneNode):
@@ -18,7 +17,6 @@ class Sin(OneToOneNode):
     def _fcn(self):
         for inp, out in zip(self.inputs, self.outputs):
             sin(inp.data, out=out.data)
-        return list(self.outputs.iter_data())
 
 
 class ArcCos(OneToOneNode):
@@ -27,7 +25,6 @@ class ArcCos(OneToOneNode):
     def _fcn(self):
         for inp, out in zip(self.inputs, self.outputs):
             arccos(inp.data, out=out.data)
-        return list(self.outputs.iter_data())
 
 
 class ArcSin(OneToOneNode):
@@ -36,7 +33,6 @@ class ArcSin(OneToOneNode):
     def _fcn(self):
         for inp, out in zip(self.inputs, self.outputs):
             arcsin(inp.data, out=out.data)
-        return list(self.outputs.iter_data())
 
 
 class Tan(OneToOneNode):
@@ -45,7 +41,6 @@ class Tan(OneToOneNode):
     def _fcn(self):
         for inp, out in zip(self.inputs, self.outputs):
             tan(inp.data, out=out.data)
-        return list(self.outputs.iter_data())
 
 
 class ArcTan(OneToOneNode):
@@ -54,4 +49,3 @@ class ArcTan(OneToOneNode):
     def _fcn(self):
         for inp, out in zip(self.inputs, self.outputs):
             arctan(inp.data, out=out.data)
-        return list(self.outputs.iter_data())

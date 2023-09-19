@@ -5,9 +5,9 @@ from dagflow.exception import TypeFunctionError
 
 from dagflow.graph import Graph
 from dagflow.graphviz import savegraph
-from dagflow.lib.Array import Array
-from dagflow.lib.NormalizeCorrelatedVars import NormalizeCorrelatedVars
-from dagflow.lib.Cholesky import Cholesky
+from dagflow.lib import Array
+from dagflow.lib import NormalizeCorrelatedVars
+from dagflow.lib import Cholesky
 
 from numpy import array, arange, allclose, sqrt
 from scipy.linalg import solve_triangular, cholesky

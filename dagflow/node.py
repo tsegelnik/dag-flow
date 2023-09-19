@@ -441,11 +441,7 @@ class Node(Limbs):
         if not self._closed:
             raise UnclosedGraphError("Cannot evaluate the node!", node=self)
         self._being_evaluated = True
-        try:
-            ret = self._eval()
-            self.logger.debug(f"Node '{self.name}': Evaluated return={ret}")
-        except Exception as exc:
-            raise exc
+        ret = self._eval()
         self._being_evaluated = False
         return ret
 

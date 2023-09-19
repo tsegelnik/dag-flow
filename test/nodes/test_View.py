@@ -5,8 +5,8 @@ from numpy import arange
 
 from dagflow.graph import Graph
 from dagflow.graphviz import savegraph
-from dagflow.lib.View import View
-from dagflow.lib.Array import Array
+from dagflow.lib import View
+from dagflow.lib import Array
 
 debug = False
 

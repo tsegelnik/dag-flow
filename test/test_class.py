@@ -3,8 +3,8 @@ from numpy import arange
 
 from dagflow.graph import Graph
 from dagflow.graphviz import savegraph
-from dagflow.lib.Array import Array
-from dagflow.lib.arithmetic import Product, Sum
+from dagflow.lib import Array
+from dagflow.lib import Product, Sum
 from dagflow.printl import current_level, printl, set_prefix_function
 
 set_prefix_function(lambda: "{:<2d} ".format(current_level()))

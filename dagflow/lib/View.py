@@ -30,8 +30,8 @@ class View(FunctionNode):
             if output.closed:
                 self.close()
 
-    def _fcn(self) -> NDArray:
-        return self._input.data
+    def _fcn(self):
+        self._input.data
 
     def _typefunc(self) -> None:
         """A output takes this function to determine the dtype and shape"""

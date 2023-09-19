@@ -2,9 +2,9 @@ from dagflow.exception import InitializationError
 from dagflow.graph import Graph
 from dagflow.graphviz import savegraph
 from dagflow.lib import Array
-from dagflow.lib.Interpolator import Interpolator
-from dagflow.lib.SegmentIndex import SegmentIndex
-from dagflow.lib.trigonometry import Sin
+from dagflow.lib import Interpolator
+from dagflow.lib import SegmentIndex
+from dagflow.lib import Sin
 from numpy import allclose, exp, finfo, linspace, log, sin
 from numpy.random import seed, shuffle
 from pytest import mark, raises

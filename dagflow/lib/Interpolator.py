@@ -196,9 +196,6 @@ class Interpolator(FunctionNode):
             self.fillvalue,
         )
 
-        if self.debug:
-            return out
-
 
 @njit(
     void(
