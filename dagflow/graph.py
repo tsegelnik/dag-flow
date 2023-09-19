@@ -1,12 +1,14 @@
+from typing import List, Optional
+
 from .exception import (
-    UnclosedGraphError,
     ClosedGraphError,
-    InitializationError
+    ClosingError,
+    InitializationError,
+    UnclosedGraphError,
 )
 from .logger import Logger, get_logger
 from .node_group import NodeGroup
 
-from typing import Optional, List
 
 class Graph(NodeGroup):
     """
@@ -14,19 +16,31 @@ class Graph(NodeGroup):
     holds nodes as a list, has name, label, logger and uses context
     """
 
-    _label: Optional[str] = None
-    _name = "graph"
-    _close: bool = False
-    _closed: bool = False
-    _debug: bool = False
+    __slots__ = (
+        "_label",
+        "_name",
+        "_close",
+        "_strict",
+        "_closed",
+        "_debug",
+        "_logger",
+    )
+
+    _label: Optional[str]
+    _name: str
+    _close: bool
+    _closed: bool
+    _debug: bool
     _logger: Logger
 
-    def __init__(self, *args, close: bool = False, **kwargs):
+    def __init__(self, *args, close: bool = False, strict: bool = True, **kwargs):
         super().__init__(*args)
         self._label = kwargs.pop("label", None)
         self._name = kwargs.pop("name", "graph")
         self._debug = kwargs.pop("debug", False)
         self._close = close
+        self._strict = strict
+        self._closed = False
         # init or get default logger
         self._logger = get_logger(
             filename=kwargs.pop("logfile", None),
@@ -75,9 +89,8 @@ class Graph(NodeGroup):
         """
         if not self.closed:
             from .nodes import FunctionNode
-            return kwargs.pop("nodeclass", FunctionNode)(
-                name, graph=self, **kwargs
-            )
+
+            return kwargs.pop("nodeclass", FunctionNode)(name, graph=self, **kwargs)
         raise ClosedGraphError(node=name)
 
     def add_nodes(self, nodes, **kwargs):
@@ -91,22 +104,41 @@ class Graph(NodeGroup):
         for node in self._nodes:
             node.print()
 
-    def close(self, **kwargs) -> bool:
+    def close(self, *, strict: bool = True, **kwargs) -> bool:
         """Closes the graph"""
         if self._closed:
             return True
         self.logger.debug(f"Graph '{self.name}': Closing...")
         self.logger.debug(f"Graph '{self.name}': Update types...")
         for node in self._nodes:
-            node.update_types()
+            try:
+                node.update_types()
+            except ClosingError:
+                if strict:
+                    raise
         self.logger.debug(f"Graph '{self.name}': Allocate memory...")
         for node in self._nodes:
-            node.allocate(**kwargs)
+            try:
+                node.allocate(**kwargs)
+            except ClosingError:
+                if strict:
+                    raise
         self.logger.debug(f"Graph '{self.name}': Closing nodes...")
-        self._closed = all(node.close(**kwargs) for node in self._nodes)
-        if not self._closed:
+        for node in self._nodes:
+            try:
+                self._closed = node.close(**kwargs)
+            except ClosingError:
+                if strict:
+                    raise
+            if not self._closed:
+                break
+        else:
+            self._closed = True
+        if strict and not self._closed:
             raise UnclosedGraphError("The graph is still open!")
-        self.logger.debug(f"Graph '{self.name}': The graph is closed!")
+        self.logger.debug(
+            f"Graph '{self.name}': The graph {self._closed and 'is closed' or 'failed to close'}!"
+        )
         return self._closed
 
     def open(self, force: bool = False) -> bool:
@@ -135,13 +167,14 @@ class Graph(NodeGroup):
         return self
 
     def __exit__(self, exc_type, exc_val, exc_tb):
-        if _context_graph.pop()!=self:
+        if _context_graph.pop() != self:
             raise RuntimeError("Graph: invalid context exit")
 
         if exc_val is not None:
             raise exc_val
 
         if self._close:
-            self.close()
+            self.close(strict=self._strict)
 
-_context_graph: List['Graph'] = []
+
+_context_graph: List["Graph"] = []

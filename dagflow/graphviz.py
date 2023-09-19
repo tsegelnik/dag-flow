@@ -215,8 +215,12 @@ else:
             depth-=1
             if not no_backward:
                 for input in node.inputs.iter_all():
+                    try:
+                        parent_node = input.parent_node
+                    except AttributeError:
+                        continue
                     self._add_nodes_backward_recursive(
-                        input.parent_node,
+                        parent_node,
                         including_self=True,
                         depth=depth,
                         mindepth=mindepth,
