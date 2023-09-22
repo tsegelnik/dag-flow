@@ -1,16 +1,16 @@
 #!/usr/bin/env python
+from pytest import raises
+
 from dagflow.exception import TypeFunctionError
 from dagflow.graph import Graph
 from dagflow.graphviz import savegraph
 from dagflow.lib import Array, Sum
-from dagflow.nodes import FunctionNode
 from dagflow.typefunctions import check_has_inputs, check_inputs_number
-from dagflow.lib import Dummy
-from pytest import raises
+from dagflow.lib.Dummy import Dummy
 
 
 def test_inputs_number_00(debug_graph):
-    with Graph(close=True, debug=debug_graph) as graph:
+    with Graph(close=True, debug=debug_graph):
         node = Dummy("node")
     with raises(TypeFunctionError):
         check_has_inputs(node)

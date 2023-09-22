@@ -5,9 +5,17 @@ from contextlib import suppress
 
 from dagflow.graph import Graph
 from dagflow.graphviz import savegraph
-from dagflow.lib import Dummy
-from dagflow.input_extra import *
-from dagflow.wrappers import *
+from dagflow.input_extra import (
+    MissingInputAdd,
+    MissingInputAddEach,
+    MissingInputAddOne,
+    MissingInputAddPair,
+    MissingInputFail,
+)
+from dagflow.lib.Dummy import Dummy
+
+# TODO: add a test for MissingInputAddEachN
+
 
 def test_00():
     """Test default handler: fail on connect"""
@@ -24,15 +32,12 @@ def test_00():
 
     with suppress(Exception):
         (in1, in2, in3) >> s
-    savegraph(
-        graph, "output/missing_input_handler_00.pdf", label="Fail on connect"
-    )
+    savegraph(graph, "output/missing_input_handler_00.pdf", label="Fail on connect")
 
 
 def test_01():
     """Test InputAdd handler: add new input on each new connect"""
     with Graph() as graph:
-
         in1 = Dummy("n1")
         in2 = Dummy("n2")
         in3 = Dummy("n3")
@@ -40,7 +45,12 @@ def test_01():
         for node in (in1, in2, in3, in4):
             node.add_output("o1", allocatable=False)
 
-            s = Dummy("add", missing_input_handler=MissingInputAdd(output_kws={"allocatable": False}))
+            s = Dummy(
+                "add",
+                missing_input_handler=MissingInputAdd(
+                    output_kws={"allocatable": False}
+                ),
+            )
 
     (in1, in2, in3) >> s
     in4 >> s
@@ -50,9 +60,7 @@ def test_01():
     s.print()
     graph.close()
 
-    savegraph(
-        graph, "output/missing_input_handler_01.pdf", label="Add only inputs"
-    )
+    savegraph(graph, "output/missing_input_handler_01.pdf", label="Add only inputs")
 
 
 def test_02():
@@ -61,7 +69,6 @@ def test_02():
     and connect them as inputs to another input
     """
     with Graph() as graph:
-
         in1 = Dummy("n1")
         in2 = Dummy("n2")
         in3 = Dummy("n3")
@@ -69,7 +76,12 @@ def test_02():
         for node in (in1, in2, in3, in4):
             node.add_output("o1", allocatable=False)
 
-            s = Dummy("add", missing_input_handler=MissingInputAddPair( output_kws={"allocatable": False}))
+            s = Dummy(
+                "add",
+                missing_input_handler=MissingInputAddPair(
+                    output_kws={"allocatable": False}
+                ),
+            )
 
     (in1, in2, in3) >> s
     in4 >> s
@@ -95,7 +107,6 @@ def test_03():
     add an output if needed
     """
     with Graph() as graph:
-
         in1 = Dummy("n1")
         in2 = Dummy("n2")
         in3 = Dummy("n3")
@@ -103,7 +114,12 @@ def test_03():
         for node in (in1, in2, in3, in4):
             node.add_output("o1", allocatable=False)
 
-            s = Dummy("add", missing_input_handler=MissingInputAddOne( output_kws={"allocatable": False}))
+            s = Dummy(
+                "add",
+                missing_input_handler=MissingInputAddOne(
+                    output_kws={"allocatable": False}
+                ),
+            )
 
     (in1, in2, in3) >> s
     in4 >> s
@@ -127,7 +143,6 @@ def test_04():
     This version also sets the input for each input
     """
     with Graph() as graph:
-
         in1 = Dummy("n1")
         in2 = Dummy("n2")
         in3 = Dummy("n3")
@@ -135,7 +150,12 @@ def test_04():
         for node in (in1, in2, in3, in4):
             node.add_output("o1", allocatable=False)
 
-            s = Dummy("add", missing_input_handler=MissingInputAddOne( add_child_output=True, output_kws={"allocatable": False}))
+            s = Dummy(
+                "add",
+                missing_input_handler=MissingInputAddOne(
+                    add_child_output=True, output_kws={"allocatable": False}
+                ),
+            )
 
     (in1, in2, in3) >> s
     in4 >> s
@@ -162,7 +182,6 @@ def test_05():
     add an output for each >> group
     """
     with Graph() as graph:
-
         in1 = Dummy("n1")
         in2 = Dummy("n2")
         in3 = Dummy("n3")
@@ -170,7 +189,12 @@ def test_05():
         for node in (in1, in2, in3, in4):
             node.add_output("o1", allocatable=False)
 
-            s = Dummy("add", missing_input_handler=MissingInputAddEach( add_child_output=False, output_kws={"allocatable": False}))
+            s = Dummy(
+                "add",
+                missing_input_handler=MissingInputAddEach(
+                    add_child_output=False, output_kws={"allocatable": False}
+                ),
+            )
 
     (in1, in2, in3) >> s
     in4 >> s
@@ -194,7 +218,6 @@ def test_06():
     This version also sets the child_output for each input
     """
     with Graph() as graph:
-
         in1 = Dummy("n1")
         in2 = Dummy("n2")
         in3 = Dummy("n3")
@@ -202,7 +225,12 @@ def test_06():
         for node in (in1, in2, in3, in4):
             node.add_output("o1", allocatable=False)
 
-            s = Dummy("add", missing_input_handler=MissingInputAddEach( add_child_output=True, output_kws={"allocatable": False}))
+            s = Dummy(
+                "add",
+                missing_input_handler=MissingInputAddEach(
+                    add_child_output=True, output_kws={"allocatable": False}
+                ),
+            )
 
     (in1, in2, in3) >> s
     in4 >> s

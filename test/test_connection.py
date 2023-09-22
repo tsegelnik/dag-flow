@@ -1,13 +1,14 @@
 #!/usr/bin/env python
+from pytest import raises
+from dagflow.graphviz import savegraph
 
 from dagflow.exception import ClosedGraphError, UnclosedGraphError, ConnectionError
 from dagflow.graph import Graph
 from dagflow.input import Input
 from dagflow.nodes import FunctionNode
-from dagflow.lib import Dummy
+from dagflow.lib.Dummy import Dummy
 from dagflow.output import Output
-from pytest import raises
-from dagflow.graphviz import savegraph
+
 
 def test_01():
     i = Input("input", None)
@@ -50,7 +51,7 @@ def test_04():
 
     n2.add_pair("i1", "o1")
 
-    final = out >> n2
+    out >> n2
 
 
 def test_05():
@@ -121,6 +122,7 @@ def test_07():
         n1.add_output("o3")
     final.data
 
+
 def test_08():
     with Graph() as g:
         n1 = Dummy("node1")
@@ -160,6 +162,7 @@ def test_08():
     n3.taint()
     final.data
 
+
 def test_09(testname):
     """Test <<"""
     with Graph(close=True) as g:
@@ -170,24 +173,24 @@ def test_09(testname):
         out12 = n1._add_output("o2", allocatable=False)
         out13 = n1._add_output("o3", allocatable=False)
 
-        in21 = n2._add_input('i1')
-        in22 = n2._add_input('i2')
-        in23 = n2._add_input('i3')
+        n2._add_input("i1")
+        in22 = n2._add_input("i2")
+        n2._add_input("i3")
         out2 = n2._add_output("o2", allocatable=False)
 
         out12 >> in22
 
         with raises(ConnectionError):
-            n2 << {'i1': object()}
+            n2 << {"i1": object()}
 
         with raises(ConnectionError):
-            n2 << {'i2': object()}
+            n2 << {"i2": object()}
 
         n2 << {
-                'i1': out11,
-                'i2': out12,
-                'i3': out13,
-                }
+            "i1": out11,
+            "i2": out12,
+            "i3": out13,
+        }
 
     out2.data
 
