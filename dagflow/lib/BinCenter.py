@@ -14,10 +14,10 @@ def _bincenter(edges: NDArray[double], centers: NDArray[double]) -> None:
 
 class BinCenter(OneToOneNode):
     """
-    The node finds the centers of bins by edges
+    The node finds centers of bins by the edges
 
     inputs:
-        `i`: array with bin edges (N)
+        `i`: array with edges of bins (N)
 
     outputs:
         `i`: array with centers of bins (N-1)

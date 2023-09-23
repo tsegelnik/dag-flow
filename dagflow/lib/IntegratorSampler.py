@@ -90,7 +90,7 @@ class IntegratorSampler(FunctionNode):
         align: Optional[Literal["left", "center", "right"]] = None,
         **kwargs,
     ) -> None:
-        super().__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs, allowed_inputs=("ordersX", "ordersY"))
         if mode not in {"rect", "trap", "gl", "2d"}:
             raise InitializationError(
                 f"Argument `mode` must be 'rect', 'trap', 'gl', or '2d', but given '{mode}'!",

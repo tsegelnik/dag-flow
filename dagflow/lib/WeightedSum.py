@@ -1,7 +1,6 @@
 from typing import TYPE_CHECKING
 
 from numpy import copyto
-from numpy.typing import NDArray
 
 from ..exception import TypeFunctionError
 from ..typefunctions import (
@@ -10,8 +9,10 @@ from ..typefunctions import (
     copy_input_shape_to_outputs,
 )
 from .ManyToOneNode import ManyToOneNode
+
 if TYPE_CHECKING:
     from ..input import Input
+
 
 class WeightedSum(ManyToOneNode):
     """Weighted sum of all the inputs together"""
@@ -20,7 +21,7 @@ class WeightedSum(ManyToOneNode):
     _weight: "Input"
 
     def __init__(self, *args, **kwargs) -> None:
-        super().__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs, allowed_inputs=("weight",))
         self._weight = self._add_input("weight", positional=False)
         self._functions.update(
             {"number": self._fcn_number, "iterable": self._fcn_iterable}

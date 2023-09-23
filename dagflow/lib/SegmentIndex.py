@@ -1,4 +1,4 @@
-from typing import TYPE_CHECKING, Literal, Optional
+from typing import Literal, TYPE_CHECKING
 
 from ..exception import InitializationError
 from ..nodes import FunctionNode
@@ -41,7 +41,7 @@ class SegmentIndex(FunctionNode):
         mode: Literal["left", "right"] = "right",
         **kwargs,
     ) -> None:
-        super().__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs, allowed_inputs=("coarse", "fine"))
         if mode not in {"left", "right"}:
             raise InitializationError(
                 f"Argument `mode` must be 'left' or 'right', but given '{mode}'!",

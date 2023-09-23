@@ -46,7 +46,12 @@ class NormalizeCorrelatedVars(FunctionNode):
 
         self._mode = mode
 
-        super().__init__(*args, missing_input_handler=MissingInputAddPair(), **kwargs)
+        super().__init__(
+            *args,
+            missing_input_handler=MissingInputAddPair(),
+            **kwargs,
+            allowed_inputs=("matrix", "central"),
+        )
         self._labels.setdefault("mark", mark)
 
         self._matrix = self._add_input("matrix", positional=False)

@@ -1,7 +1,6 @@
 from typing import TYPE_CHECKING
 
 from numpy import matmul, multiply
-from numpy.typing import NDArray
 
 from ..nodes import FunctionNode
 from ..typefunctions import (
@@ -29,7 +28,7 @@ class MatrixProductAB(FunctionNode):
     _out: "Output"
 
     def __init__(self, *args, **kwargs) -> None:
-        super().__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs, allowed_inputs=("left", "right"))
         self._left = self._add_input("left")
         self._right = self._add_input("right")
         self._out = self._add_output("result")
@@ -38,9 +37,9 @@ class MatrixProductAB(FunctionNode):
         self._functions.update(
             {
                 "diagonal_diagonal": self._fcn_diagonal_diagonal,
-                "diagonal_block":    self._fcn_diagonal_block,
-                "block_diagonal":    self._fcn_block_diagonal,
-                "block_block":       self._fcn_block_block,
+                "diagonal_block": self._fcn_diagonal_block,
+                "block_diagonal": self._fcn_block_diagonal,
+                "block_block": self._fcn_block_block,
             }
         )
 
@@ -60,7 +59,7 @@ class MatrixProductAB(FunctionNode):
         left = self._left.data
         right = self._right.data
         out = self._out.data
-        multiply(left[:,None], right, out=out)
+        multiply(left[:, None], right, out=out)
 
     def _fcn_diagonal_diagonal(self):
         left = self._left.data
@@ -75,20 +74,21 @@ class MatrixProductAB(FunctionNode):
 
         ndim = ndim_left, ndim_right
         ndim_out = 2
-        if ndim==(2,2):
+        if ndim == (2, 2):
             self.fcn = self._fcn_block_block
-        elif ndim==(2,1):
+        elif ndim == (2, 1):
             self.fcn = self._fcn_block_diagonal
-        elif ndim==(1,2):
+        elif ndim == (1, 2):
             self.fcn = self._fcn_diagonal_block
-        elif ndim==(1,1):
+        elif ndim == (1, 1):
             self.fcn = self._fcn_diagonal_diagonal
             ndim_out = 1
         else:
-            raise TypeFunctionError(f"One of the inputs' dimension >2: {ndim}", node=self)
+            raise TypeFunctionError(
+                f"One of the inputs' dimension >2: {ndim}", node=self
+            )
 
-        resshape, = check_inputs_multiplicable_mat(self, "left", "right")
+        (resshape,) = check_inputs_multiplicable_mat(self, "left", "right")
         eval_output_dtype(self, slice(None), "result")
 
         self._out.dd.shape = resshape[:ndim_out]
-

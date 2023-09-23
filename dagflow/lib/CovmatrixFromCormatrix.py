@@ -28,7 +28,7 @@ class CovmatrixFromCormatrix(FunctionNode):
     _covmatrix: "Output"
 
     def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs, allowed_inputs=("sigma", "cormatrix"))
         self._labels.setdefault("mark", "C→V")
 
         self._cormatrix, self._covmatrix = self._add_pair(

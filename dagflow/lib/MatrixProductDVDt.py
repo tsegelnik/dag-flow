@@ -33,15 +33,12 @@ class MatrixProductDVDt(FunctionNode):
     _buffer: NDArray
 
     def __init__(self, *args, **kwargs) -> None:
-        super().__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs, allowed_inputs=("left", "square"))
         self._left = self._add_input("left")
         self._square = self._add_input("square")
         self._out = self._add_output("result")
         self._functions.update(
-            {
-                "diagonal": self._fcn_diagonal,
-                "square": self._fcn_square
-            }
+            {"diagonal": self._fcn_diagonal, "square": self._fcn_square}
         )
         self._labels.setdefault("mark", "LDLᵀ")
 

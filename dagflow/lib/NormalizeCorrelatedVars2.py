@@ -59,7 +59,16 @@ class NormalizeCorrelatedVars2(FunctionNode):
     _normvaluedata: ndarray
 
     def __init__(self, *args, **kwargs) -> None:
-        super().__init__(*args, **kwargs)
+        super().__init__(
+            *args,
+            **kwargs,
+            allowed_inputs=(
+                "matrix",
+                "central",
+                "value",
+                "normvalue",
+            ),
+        )
         self._labels.setdefault("mark", "c↔u")
 
         self._matrix = self._add_input("matrix", positional=False)
