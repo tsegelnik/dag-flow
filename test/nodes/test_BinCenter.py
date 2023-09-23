@@ -48,5 +48,6 @@ def test_BinCenter_01(testname, debug_graph):
     plt.ylabel("y")
     plt.legend()
     plt.savefig(f"output/{testname}-plot.png")
+    plt.close()
 
     savegraph(graph, f"output/{testname}.png")

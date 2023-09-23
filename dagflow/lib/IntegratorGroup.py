@@ -43,6 +43,8 @@ class IntegratorGroup(MetaNode):
             kw_outputs=["x"],
             kw_outputs_optional=["y"],
             merge_inputs=["ordersX", "ordersY"],
+            missing_inputs=True,
+            also_missing_outputs=True,
         )
 
     def _add_integrator(

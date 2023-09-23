@@ -63,7 +63,7 @@ def test_InterpolatorGroup(debug_graph, testname):
         metaint.outputs[0].data,
         fcheck.outputs[0].data,
         rtol=0,
-        atol=finfo("d").resolution * 5,
+        atol=finfo("d").precision * 5,
     )
     assert metaint.outputs[0].dd.axes_meshes == (fine["array"],)
 
