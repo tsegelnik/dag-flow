@@ -50,7 +50,7 @@ class NormalizeCorrelatedVars(FunctionNode):
             *args,
             missing_input_handler=MissingInputAddPair(),
             **kwargs,
-            allowed_inputs=("matrix", "central"),
+            allowed_kw_inputs=("matrix", "central"),
         )
         self._labels.setdefault("mark", mark)
 

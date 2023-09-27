@@ -29,7 +29,7 @@ class VectorMatrixProduct(FunctionNode):
     _out: "Output"
 
     def __init__(self, *args, **kwargs) -> None:
-        super().__init__(*args, **kwargs, allowed_inputs=("vec", "mat"))
+        super().__init__(*args, **kwargs, allowed_kw_inputs=("vec", "mat"))
         self._vec = self._add_input("vector")
         self._mat = self._add_input("matrix")
         self._out = self._add_output("result")

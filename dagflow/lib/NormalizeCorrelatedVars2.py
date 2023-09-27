@@ -62,7 +62,7 @@ class NormalizeCorrelatedVars2(FunctionNode):
         super().__init__(
             *args,
             **kwargs,
-            allowed_inputs=(
+            allowed_kw_inputs=(
                 "matrix",
                 "central",
                 "value",

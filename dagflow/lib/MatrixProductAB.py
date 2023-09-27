@@ -28,7 +28,7 @@ class MatrixProductAB(FunctionNode):
     _out: "Output"
 
     def __init__(self, *args, **kwargs) -> None:
-        super().__init__(*args, **kwargs, allowed_inputs=("left", "right"))
+        super().__init__(*args, **kwargs, allowed_kw_inputs=("left", "right"))
         self._left = self._add_input("left")
         self._right = self._add_input("right")
         self._out = self._add_output("result")

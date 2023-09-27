@@ -108,7 +108,7 @@ class Integrator(FunctionNode):
     def __init__(self, *args, dropdim: bool = True, **kwargs):
         kwargs.setdefault("missing_input_handler", MissingInputAddPair())
         super().__init__(
-            *args, **kwargs, allowed_inputs=("ordersX", "ordersY", "weights")
+            *args, **kwargs, allowed_kw_inputs=("ordersX", "ordersY", "weights")
         )
         self._dropdim = dropdim
         self._weights = self._add_input("weights", positional=False)
