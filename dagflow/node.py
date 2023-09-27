@@ -2,6 +2,7 @@ from typing import (
     TYPE_CHECKING,
     Any,
     Callable,
+    List,
     Mapping,
     Optional,
     Sequence,
@@ -299,6 +300,9 @@ class Node(Limbs):
     def labels(self) -> Labels:
         return self._labels
 
+    def label(self) -> Optional[str]:
+        return self._labels.text
+
     #
     # Methods
     #
@@ -307,6 +311,7 @@ class Node(Limbs):
         Returns an existing input by `name`, else try to create new one.
         If `name` is given, creates an input by the default way,
         otherwise tries to use `missing_input_handler`.
+        If `name` is not given simply uses the input handler.
 
         .. note:: creation of a new input is restricted for a *closed* graph
         """
@@ -322,24 +327,15 @@ class Node(Limbs):
         inp = self.inputs.get(name, None)
         kwargs.setdefault("positional", False)
         if inp is None:
-            if self.closed:
-                raise ClosedGraphError(node=self)
-            if self.allowed_kw_inputs:
-                if name not in self.allowed_kw_inputs:
-                    raise CriticalError(
-                        f"Cannot create an input with {name=} due to the name is not in the "
-                        f"allowed_kw_inputs={self.allowed_kw_inputs}",
-                        node=self,
-                    )
-                return self._add_input(name, **kwargs)
-            inp = self._make_input(exception=False)
-            if inp is None:
-                inp = self._add_input(name, **kwargs)
-        elif inp.connected and (output := inp.parent_output):
+            inp = self.add_input(name, **kwargs)
+        elif isinstance(inp, Input) and inp.connected and (output := inp.parent_output):
             raise ReconnectionError(input=inp, node=self, output=output)
         return inp
 
     def _make_input(self, *args, exception=True, **kwargs) -> Optional[Input]:
+        """
+        Creates a single input via an input handler
+        """
         handler = self._missing_input_handler
         if handler is None:
             if exception:
@@ -349,26 +345,39 @@ class Node(Limbs):
             return None
         return handler(*args, **kwargs)
 
-    def label(self) -> Optional[str]:
-        return self._labels.text
+    def add_input(self, name: str, **kwargs) -> Input:
+        """
+        Creates a single input with name, if the graph is not closed.
 
-    def add_input(
-        self, name: Union[str, Sequence[str]], **kwargs
-    ) -> Union[Input, Tuple[Input]]:
+        If the node has `allowed_kw_inputs` checks whether the name in the `allowed_kw_inputs`
+        and then directly creates a new input.
+        Else the node has no `allowed_kw_inputs` firstly tries to use an input handler.
+        If there is no input handler the method creates a new input directly.
+        """
         if self.closed:
             raise ClosedGraphError(node=self)
-        if self.allowed_kw_inputs and name not in self.allowed_kw_inputs:
-            raise CriticalError(
-                f"Cannot create an input with {name=} due to the name is not in the "
-                f"allowed_kw_inputs={self.allowed_kw_inputs}",
-                node=self,
-            )
-        if isinstance(name, str):
+        if self.allowed_kw_inputs:
+            if name not in self.allowed_kw_inputs:
+                raise CriticalError(
+                    f"Cannot create an input with {name=} due to the name is not in the "
+                    f"allowed_kw_inputs={self.allowed_kw_inputs}",
+                    node=self,
+                )
             return self._add_input(name, **kwargs)
+        if (inp := self._make_input(exception=False)) is None:
+            inp = self._add_input(name, **kwargs)
+        return inp
+
+    def _add_inputs(self, name: Sequence[str], **kwargs) -> Tuple[Input, ...]:
+        """
+        Creates a sequence of inputs
+
+        .. note:: there is no check whether the graph is closed or not.
+        """
         if IsIterable(name):
             return tuple(self._add_input(n, **kwargs) for n in name)
         raise CriticalError(
-            f"'name' of the input must be `str` or `Sequence[str]`, but given {name}",
+            f"'name' of the input must be `Sequence[str]`, but given {name}",
             node=self,
         )
 
@@ -380,6 +389,11 @@ class Node(Limbs):
         keyword: bool = True,
         **kwargs,
     ) -> Input:
+        """
+        Creates a new single input if there is no input with `name`.
+
+        .. note:: there is no check whether the graph is closed or not.
+        """
         self.logger.debug(f"Node '{self.name}': Add input '{name}'")
         if name in self.inputs:
             raise ReconnectionError(input=name, node=self)
@@ -390,16 +404,28 @@ class Node(Limbs):
         return inp
 
     def add_output(
-        self, name: Union[str, Sequence[str]], **kwargs
-    ) -> Union[Output, Tuple[Output]]:
+        self,
+        name: str,
+        *,
+        keyword: bool = True,
+        positional: bool = True,
+        **kwargs,
+    ) -> Output:
+        """Creates a new single output if there is no output with `name` and the graph is not closed"""
         if self.closed:
             raise ClosedGraphError(node=self)
-        if isinstance(name, str):
-            return self._add_output(name, **kwargs)
+        return self._add_output(name, keyword=keyword, positional=positional, **kwargs)
+
+    def _add_outputs(self, name: Sequence[str], **kwargs) -> Tuple[Output, ...]:
+        """
+        Creates a sequence of outputs
+
+        .. note:: there is no check whether the graph is closed or not.
+        """
         if IsIterable(name):
             return tuple(self._add_output(n, **kwargs) for n in name)
         raise CriticalError(
-            f"'name' of the output must be `str` or `Sequence[str]`, but given {name=}",
+            f"'name' of the output must be `Sequence[str]`, but given {name=}",
             node=self,
         )
 
@@ -411,6 +437,11 @@ class Node(Limbs):
         positional: bool = True,
         **kwargs,
     ) -> Output:
+        """
+        Creates a new single output if there is no output with `name`.
+
+        .. note:: there is no check whether the graph is closed or not.
+        """
         self.logger.debug(f"Node '{self.name}': Add output '{name}'")
         if name in self.outputs:
             raise ReconnectionError(output=name, node=self)
@@ -423,9 +454,36 @@ class Node(Limbs):
     def add_pair(
         self, iname: str, oname: str, **kwargs
     ) -> Tuple[Union[Input, Tuple[Input]], Union[Output, Tuple[Output]]]:
+        """
+        Creates a pair of input and output
+        """
         if self.closed:
             raise ClosedGraphError(node=self)
         return self._add_pair(iname, oname, **kwargs)
+
+    def _add_pairs(
+        self,
+        inames: Sequence[str],
+        onames: Sequence[str],
+        input_kws: Optional[dict] = None,
+        output_kws: Optional[dict] = None,
+    ) -> Tuple[List[Input], List[Output]]:
+        """
+        Creates sequence of pairs of input and output
+
+        .. note:: the inputs and outputs count must be the same
+        """
+        if len(inames) != len(onames):
+            raise CriticalError(
+                f"Cannot add pairs of input/output due to different lenght of {inames=} and {onames=}",
+                node=self,
+            )
+        inputs, outputs = [], []
+        for iname, oname in zip(inames, onames):
+            input, output = self._add_pair(iname, oname, input_kws, output_kws)
+            inputs.append(input)
+            outputs.append(output)
+        return inputs, outputs
 
     def _add_pair(
         self,
@@ -434,11 +492,15 @@ class Node(Limbs):
         input_kws: Optional[dict] = None,
         output_kws: Optional[dict] = None,
     ) -> Tuple[Union[Input, Tuple[Input]], Union[Output, Tuple[Output]]]:
+        """
+        Creates a pair of input and output
+
+        .. note:: there is no check whether the graph is closed or not.
+        """
         input_kws = input_kws or {}
         output_kws = output_kws or {}
-        output = self.add_output(oname, **output_kws)
-        child_output = output if isinstance(output, Output) else None
-        input = self.add_input(iname, child_output=child_output, **input_kws)
+        output = self._add_output(oname, **output_kws)
+        input = self._add_input(iname, child_output=output, **input_kws)
         return input, output
 
     def touch(self, force=False):

@@ -21,12 +21,12 @@ def test_02():
     n1 = FunctionNode("node1")
     n2 = FunctionNode("node2")
 
-    n1.add_output("o1")
-    n1.add_output("o2")
+    n1._add_output("o1")
+    n1._add_output("o2")
 
-    n2.add_input("i1")
-    n2.add_input("i2")
-    n2.add_output("o1")
+    n2._add_input("i1")
+    n2._add_input("i2")
+    n2._add_output("o1")
 
     n1 >> n2
 
@@ -35,10 +35,10 @@ def test_03():
     n1 = FunctionNode("node1")
     n2 = FunctionNode("node2")
 
-    out = n1.add_output("o1")
+    out = n1._add_output("o1")
 
-    n2.add_input("i1")
-    n2.add_output("o1")
+    n2._add_input("i1")
+    n2._add_output("o1")
 
     out >> n2
 
@@ -47,9 +47,9 @@ def test_04():
     n1 = FunctionNode("node1")
     n2 = FunctionNode("node2")
 
-    out = n1.add_output("o1")
+    out = n1._add_output("o1")
 
-    n2.add_pair("i1", "o1")
+    n2._add_pair("i1", "o1")
 
     out >> n2
 
@@ -58,11 +58,11 @@ def test_05():
     n1 = Dummy("node1")
     n2 = Dummy("node2")
 
-    out1 = n1.add_output("o1", allocatable=False)
-    out2 = n1.add_output("o2", allocatable=False)
+    out1 = n1._add_output("o1", allocatable=False)
+    out2 = n1._add_output("o2", allocatable=False)
 
-    _, final = n2.add_pair("i1", "o1", output_kws={"allocatable": False})
-    n2.add_input("i2")
+    _, final = n2._add_pair("i1", "o1", output_kws={"allocatable": False})
+    n2._add_input("i2")
 
     (out1, out2) >> n2
 
