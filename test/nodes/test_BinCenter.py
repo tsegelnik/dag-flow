@@ -36,7 +36,7 @@ def test_BinCenter_01(testname, debug_graph):
 
     assert res2.dtype == "d"
     assert (res2 == bincenter(array2)).all()
-    assert allclose(res2, bincenter2(array2), atol=finfo("d").precision)
+    assert allclose(res2, bincenter2(array2), atol=finfo("d").resolution)
 
     plt.scatter(array1, zeros_like(array1), label="linspace edges")
     plt.scatter(res1, zeros_like(res1), marker="+", label="linspace centers")
