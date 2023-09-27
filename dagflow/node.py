@@ -54,12 +54,12 @@ class Node(Limbs):
         "_allocated",
         "_being_evaluated",
         "_debug",
-        "_allowed_inputs",
+        "_allowed_kw_inputs",
     )
 
     _name: str
     _labels: Labels
-    _allowed_inputs: Tuple[str]
+    _allowed_kw_inputs: Tuple[str]
     _graph: Optional[GraphT]
     _exception: Optional[str]
 
@@ -94,7 +94,7 @@ class Node(Limbs):
         immediate: bool = False,
         auto_freeze: bool = False,
         frozen: bool = False,
-        allowed_inputs: Sequence[str] = (),
+        allowed_kw_inputs: Sequence[str] = (),
         **kwargs,
     ):
         super().__init__(missing_input_handler=missing_input_handler)
@@ -115,7 +115,7 @@ class Node(Limbs):
         self._immediate = False
 
         self._name = name
-        self._allowed_inputs = tuple(allowed_inputs)
+        self._allowed_kw_inputs = tuple(allowed_kw_inputs)
 
         if graph is None:
             from .graph import Graph  # fmt:skip
@@ -186,8 +186,8 @@ class Node(Limbs):
         self._name = name
 
     @property
-    def allowed_inputs(self) -> Tuple[str]:
-        return self._allowed_inputs
+    def allowed_kw_inputs(self) -> Tuple[str]:
+        return self._allowed_kw_inputs
 
     @property
     def exception(self):
@@ -324,11 +324,11 @@ class Node(Limbs):
         if inp is None:
             if self.closed:
                 raise ClosedGraphError(node=self)
-            if self.allowed_inputs:
-                if name not in self.allowed_inputs:
+            if self.allowed_kw_inputs:
+                if name not in self.allowed_kw_inputs:
                     raise CriticalError(
                         f"Cannot create an input with {name=} due to the name is not in the "
-                        f"allowed_inputs={self.allowed_inputs}",
+                        f"allowed_kw_inputs={self.allowed_kw_inputs}",
                         node=self,
                     )
                 return self._add_input(name, **kwargs)
@@ -357,10 +357,10 @@ class Node(Limbs):
     ) -> Union[Input, Tuple[Input]]:
         if self.closed:
             raise ClosedGraphError(node=self)
-        if self.allowed_inputs and name not in self.allowed_inputs:
+        if self.allowed_kw_inputs and name not in self.allowed_kw_inputs:
             raise CriticalError(
                 f"Cannot create an input with {name=} due to the name is not in the "
-                f"allowed_inputs={self.allowed_inputs}",
+                f"allowed_kw_inputs={self.allowed_kw_inputs}",
                 node=self,
             )
         if isinstance(name, str):
