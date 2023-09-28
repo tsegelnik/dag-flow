@@ -1,4 +1,9 @@
-from typing import Optional, Union
+from typing import Optional, Union, TYPE_CHECKING
+
+from .exception import InitializationError
+
+if TYPE_CHECKING:
+    from .node import Node
 
 
 class SimpleFormatter:
@@ -29,9 +34,9 @@ class MissingInputHandler:
     is connected to the missing input with >>/<<
     """
 
-    _node = None
+    _node: "Node"
 
-    def __init__(self, node=None):
+    def __init__(self, node: "Node"):
         self.node = node
 
     @property
@@ -54,25 +59,27 @@ class MissingInputFail(MissingInputHandler):
 
     def __call__(self, idx=None, scope=None):
         raise RuntimeError(
-            "Unable to iterate inputs further. " "No additional inputs may be created"
+            "Unable to iterate inputs further. No additional inputs may be created"
         )
 
 
 class MissingInputAdd(MissingInputHandler):
     """Adds an input for each output in >> operator"""
 
-    input_fmt: Union[str, SimpleFormatter] = SimpleFormatter("input", "_{:02d}")
+    __slots__ = ("input_fmt", "input_kws", "output_fmt", "output_kws")
+
+    input_fmt: Union[SimpleFormatter, str]
     input_kws: dict
-    output_fmt: Union[str, SimpleFormatter] = SimpleFormatter("output", "_{:02d}")
+    output_fmt: Union[SimpleFormatter, str]
     output_kws: dict
 
     def __init__(
         self,
         node=None,
         *,
-        input_fmt: Optional[Union[str, SimpleFormatter]] = None,
+        input_fmt: Union[str, SimpleFormatter] = SimpleFormatter("input", "_{:02d}"),
         input_kws: Optional[dict] = None,
-        output_fmt: Optional[Union[str, SimpleFormatter]] = None,
+        output_fmt: Union[str, SimpleFormatter] = SimpleFormatter("output", "_{:02d}"),
         output_kws: Optional[dict] = None,
     ):
         if input_kws is None:
@@ -82,10 +89,24 @@ class MissingInputAdd(MissingInputHandler):
         super().__init__(node)
         self.input_kws = input_kws
         self.output_kws = output_kws
-        if input_fmt is not None:
+        # input_fmt setter
+        if isinstance(input_fmt, str):
             self.input_fmt = SimpleFormatter.from_string(input_fmt)
-        if output_fmt is not None:
+        elif isinstance(input_fmt, SimpleFormatter):
+            self.input_fmt = input_fmt
+        else:
+            raise InitializationError(
+                f"`input_fmt` is `str` or `SimpleFormatter`, but given {input_fmt}"
+            )
+        # output_fmt setter
+        if isinstance(output_fmt, str):
             self.output_fmt = SimpleFormatter.from_string(output_fmt)
+        elif isinstance(output_fmt, SimpleFormatter):
+            self.output_fmt = output_fmt
+        else:
+            raise InitializationError(
+                f"`output_fmt` is `str` or `SimpleFormatter`, but given {output_fmt}"
+            )
 
     def __call__(self, idx=None, scope=None, **kwargs):
         kwargs_combined = dict(self.input_kws, **kwargs)

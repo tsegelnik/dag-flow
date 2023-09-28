@@ -2,7 +2,7 @@
 from dagflow.graph import Graph
 from dagflow.graphviz import GraphDot
 from dagflow.printl import current_level, set_prefix_function
-from dagflow.lib import Dummy
+from dagflow.lib.Dummy import Dummy
 from dagflow.wrappers import toucher, printer
 
 set_prefix_function(lambda: "{:<2d} ".format(current_level()))
@@ -48,11 +48,8 @@ def test_graph_big_01():
     A2._add_output("o1", allocatable=False)
     P._add_output("o1", allocatable=False)
     A3._add_pair("i1", "o1", output_kws={"allocatable": False})
-    B._add_pair(
-        ("i1", "i2", "i3", "i4"),
-        ("o1", "o2"),
-        output_kws={"allocatable": False},
-    )
+    B._add_inputs(("i1", "i2", "i3", "i4"))
+    B._add_outputs(("o1", "o2"), allocatable=False)
     C1._add_output("o1", allocatable=False)
     C2._add_output("o1", allocatable=False)
     D._add_pair("i1", "o1", output_kws={"allocatable": False})

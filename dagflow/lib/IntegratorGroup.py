@@ -1,16 +1,15 @@
-from typing import TYPE_CHECKING, Mapping, Tuple, Union
+from typing import Mapping, TYPE_CHECKING, Tuple
 
 from ..meta_node import MetaNode
 from ..storage import NodeStorage
 from .Integrator import Integrator
 from .IntegratorSampler import IntegratorSampler, ModeType
-from ..meta_node import MetaNode
 
-from typing import Mapping, Tuple
 from multikeydict.typing import KeyLike
 
 if TYPE_CHECKING:
     from ..node import Node
+
 
 class IntegratorGroup(MetaNode):
     __slots__ = ("_sampler",)
@@ -44,6 +43,8 @@ class IntegratorGroup(MetaNode):
             kw_outputs=["x"],
             kw_outputs_optional=["y"],
             merge_inputs=["ordersX", "ordersY"],
+            missing_inputs=True,
+            also_missing_outputs=True,
         )
 
     def _add_integrator(
@@ -55,8 +56,6 @@ class IntegratorGroup(MetaNode):
         dropdim: bool,
     ) -> Integrator:
         integrator = Integrator(name, dropdim=dropdim, label=label)
-        if self._sampler.mode == "2d":
-            integrator("ordersY")
         self._sampler.outputs["weights"] >> integrator("weights")
 
         self._add_node(
@@ -80,34 +79,36 @@ class IntegratorGroup(MetaNode):
         name_integrator: str = "integrator",
         labels: Mapping = {},
         *,
-        name_x: str="mesh_x",
-        name_y: str="mesh_y",
-        replicate: Tuple[KeyLike,...]=((),),
-        dropdim: bool=True
+        name_x: str = "mesh_x",
+        name_y: str = "mesh_y",
+        replicate: Tuple[KeyLike, ...] = ((),),
+        dropdim: bool = True,
     ) -> Tuple["IntegratorGroup", "NodeStorage"]:
         storage = NodeStorage(default_containers=True)
-        nodes = storage('nodes')
-        inputs = storage('inputs')
-        outputs = storage('outputs')
+        nodes = storage("nodes")
+        inputs = storage("inputs")
+        outputs = storage("outputs")
 
         integrators = cls(mode, bare=True)
         key_integrator = (name_integrator,)
         key_sampler = (name_sampler,)
 
         integrators._init_sampler(mode, name_sampler, labels.get("sampler", {}))
-        outputs[key_sampler+(name_x,)] = integrators._sampler.outputs['x']
-        outputs[key_sampler+(name_y,)] = integrators._sampler.outputs['y']
+        outputs[key_sampler + (name_x,)] = integrators._sampler.outputs["x"]
+        outputs[key_sampler + (name_y,)] = integrators._sampler.outputs["y"]
 
         label_int = labels.get("integrator", {})
         for key in replicate:
             if isinstance(key, str):
-                key = key,
+                key = (key,)
             name = ".".join(key_integrator + key)
-            integrator = integrators._add_integrator(name, label_int, positionals=False, dropdim=dropdim)
+            integrator = integrators._add_integrator(
+                name, label_int, positionals=False, dropdim=dropdim
+            )
             integrator()
-            nodes[key_integrator+key] = integrator
-            inputs[key_integrator+key] = integrator.inputs[0]
-            outputs[key_integrator+key] = integrator.outputs[0]
+            nodes[key_integrator + key] = integrator
+            inputs[key_integrator + key] = integrator.inputs[0]
+            outputs[key_integrator + key] = integrator.outputs[0]
 
         NodeStorage.update_current(storage, strict=True)
 

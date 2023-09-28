@@ -3,7 +3,7 @@ from dagflow.graph import Graph
 from dagflow.graphviz import savegraph
 from dagflow.input_extra import MissingInputAddEach, MissingInputAddOne
 from dagflow.lib import Array
-from dagflow.lib import Dummy
+from dagflow.lib.Dummy import Dummy
 from dagflow.typefunctions import (
     AllPositionals,
     copy_from_input_to_output,
@@ -62,7 +62,13 @@ def test_copy_from_input_00(testname, debug_graph):
         node = Dummy("node")
     assert (
         copy_from_input_to_output(
-            node, slice(None), slice(None), dtype=False, shape=False, edges=False, meshes=False
+            node,
+            slice(None),
+            slice(None),
+            dtype=False,
+            shape=False,
+            edges=False,
+            meshes=False,
         )
         is None
     )

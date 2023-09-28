@@ -86,7 +86,9 @@ class Interpolator(FunctionNode):
         fillvalue: float = 0.0,
         **kwargs,
     ) -> None:
-        super().__init__(*args, **kwargs)
+        super().__init__(
+            *args, **kwargs, allowed_kw_inputs=("y", "coarse", "fine", "indices")
+        )
         self._methods = {
             "linear": _linear_interpolation,
             "log": _log_interpolation,
@@ -171,7 +173,7 @@ class Interpolator(FunctionNode):
                 assign_meshes=True,
                 ignore_assigned=False,
                 overwrite_assigned=True,
-                ignore_inconsistent_number_of_meshes=True
+                ignore_inconsistent_number_of_meshes=True,
             )
 
     def _fcn(self):

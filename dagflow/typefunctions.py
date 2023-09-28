@@ -60,16 +60,23 @@ def cpy_meshes(input, output):
 
 
 def check_has_inputs(
-    node: NodeT, inputkey: Union[str, int, slice, Sequence, None] = None
+    node: NodeT,
+    inputkey: Union[str, int, slice, Sequence, None] = None,
+    check_named: bool = False,
 ) -> None:
     """Checking if the node has inputs"""
     if inputkey is None or inputkey == AllPositionals:
         try:
             node.inputs[0]
         except Exception as exc:
-            raise TypeFunctionError(
-                "The node must have at lease one input!", node=node
-            ) from exc
+            if not check_named:
+                raise TypeFunctionError(
+                    "The node must have at least one positional input!", node=node
+                ) from exc
+            if node.inputs.len_kw() == 0:
+                raise TypeFunctionError(
+                    "The node must have at least one input!", node=node
+                ) from exc
     else:
         try:
             node.inputs[inputkey]

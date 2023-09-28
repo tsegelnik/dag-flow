@@ -107,7 +107,9 @@ class Integrator(FunctionNode):
 
     def __init__(self, *args, dropdim: bool = True, **kwargs):
         kwargs.setdefault("missing_input_handler", MissingInputAddPair())
-        super().__init__(*args, **kwargs)
+        super().__init__(
+            *args, **kwargs, allowed_kw_inputs=("ordersX", "ordersY", "weights")
+        )
         self._dropdim = dropdim
         self._weights = self._add_input("weights", positional=False)
         self._ordersX = self._add_input("ordersX", positional=False)
@@ -119,7 +121,7 @@ class Integrator(FunctionNode):
                 211: self._fcn_21d_y,
             }
         )
-        self.labels.setdefault('mark', '∫')
+        self.labels.setdefault("mark", "∫")
 
     @property
     def dropdim(self) -> bool:
@@ -134,6 +136,7 @@ class Integrator(FunctionNode):
         if len(self.inputs) == 0:
             return
         check_has_inputs(self, "weights")
+        print(self.inputs.all_edges, self.outputs.all_edges)
 
         input0 = self.inputs[0]
         self._ordersY = self.inputs.get("ordersY", None)

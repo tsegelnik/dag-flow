@@ -22,7 +22,7 @@ def test_PartialSums_01(testname, debug_graph, a):
         arra >> ps("array")
         ranges >> ps
 
-    atol = finfo("d").precision * 2
+    atol = finfo("d").resolution * 2
     assert ps.tainted is True
     assert all(
         allclose(output.data[0], res, rtol=0, atol=atol)

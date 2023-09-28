@@ -4,7 +4,7 @@ from dagflow.graph import Graph
 from dagflow.graphviz import savegraph
 from dagflow.input_extra import MissingInputAddOne
 from dagflow.lib import Array
-from dagflow.lib import Dummy
+from dagflow.lib.Dummy import Dummy
 from dagflow.typefunctions import (
     AllPositionals,
     check_input_dimension,
@@ -53,9 +53,7 @@ def test_check_input_common(testname, debug_graph, data, dim, shape, dtype):
     savegraph(graph, f"output/{testname}.png")
 
 
-@mark.parametrize(
-    "data", ([0, 1, 2], [1], [[1, 2], [1, 2, 3]], [[[], [], []]])
-)
+@mark.parametrize("data", ([0, 1, 2], [1], [[1, 2], [1, 2, 3]], [[[], [], []]]))
 def test_check_input_square_00(testname, debug_graph, data):
     with Graph(close=False, debug=debug_graph) as graph:
         arr1 = Array("arr1", array(data, dtype=object))
@@ -158,9 +156,7 @@ def test_check_subtype(testname, debug_graph, dtype):
         (linspace(0, 3, 3)[newaxis].T, linspace(0, 3, 3)[newaxis].T),
     ),
 )
-def test_check_inputs_multiplicable_mat_00(
-    testname, debug_graph, data1, data2
-):
+def test_check_inputs_multiplicable_mat_00(testname, debug_graph, data1, data2):
     with Graph(close=False, debug=debug_graph) as graph:
         arr1 = Array("arr1", array(data1))
         arr2 = Array("arr2", array(data2))
@@ -182,9 +178,7 @@ def test_check_inputs_multiplicable_mat_00(
         (linspace(0, 3, 3)[newaxis], linspace(0, 3, 3)[newaxis].T),
     ),
 )
-def test_check_inputs_multiplicable_mat_01(
-    testname, debug_graph, data1, data2
-):
+def test_check_inputs_multiplicable_mat_01(testname, debug_graph, data1, data2):
     with Graph(close=False, debug=debug_graph) as graph:
         arr1 = Array("arr1", array(data1))
         arr2 = Array("arr2", array(data2))
