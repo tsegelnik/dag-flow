@@ -60,13 +60,6 @@ class NormalizeMatrix(OneToOneNode):
 
         self.fcn = self._functions[self._mode]
 
-    # def _post_allocate(self) -> None:
-    #     out = self.outputs[0]
-    #     if self._mode == "columns":
-    #         self._buf = empty_like(out._data[0])
-    #     else:
-    #         self._buf = empty_like(out._data[:, 0])
-
 
 from numba import njit
 
@@ -75,28 +68,28 @@ from numba import njit
 def _norm_rows(matrix: NDArray, out: NDArray):
     ncols = matrix.shape[1]
     for row in range(matrix.shape[0]):
-        sum = 0.0
+        total_sum = 0.0
         for column in range(ncols):
-            sum += matrix[row, column]
-        if sum == 0.0:
+            total_sum += matrix[row, column]
+        if total_sum == 0.0:
             out[row, :] = 0.0
             continue
         for column in range(ncols):
-            out[row, column] += matrix[row, column] / sum
+            out[row, column] += matrix[row, column] / total_sum
 
 
 @njit(cache=True)
 def _norm_columns(matrix: NDArray, out: NDArray):
     nrows = matrix.shape[0]
     for column in range(matrix.shape[1]):
-        sum = 0.0
+        total_sum = 0.0
         for row in range(nrows):
-            sum += matrix[row, column]
-        if sum == 0.0:
+            total_sum += matrix[row, column]
+        if total_sum == 0.0:
             out[:, column] = 0.0
             continue
         for row in range(nrows):
-            out[row, column] += matrix[row, column] / sum
+            out[row, column] += matrix[row, column] / total_sum
 
 
 def _norm_rows_python(matrix: NDArray, out: NDArray, buffer: NDArray):

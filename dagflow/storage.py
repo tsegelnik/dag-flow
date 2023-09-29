@@ -24,14 +24,13 @@ from .output import Output
 if TYPE_CHECKING:
     from matplotlib.pyplot import Axes
 
-import pandas as pd
 from LaTeXDatax import datax
 from numpy import nan, ndarray
-from pandas import DataFrame
+from pandas import DataFrame, set_option as pandas_set_option
 from tabulate import tabulate
 
-pd.set_option("display.max_rows", None)
-pd.set_option("display.max_colwidth", 100)
+pandas_set_option("display.max_rows", None)
+pandas_set_option("display.max_colwidth", 100)
 
 from shutil import get_terminal_size
 

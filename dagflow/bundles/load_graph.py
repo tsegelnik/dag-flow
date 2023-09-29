@@ -13,8 +13,8 @@ from ..lib.Array import Array
 from ..storage import NodeStorage
 from ..tools.schema import (
     AllFileswithExt,
-    IsReadable,
     IsFilenameSeqOrFilename,
+    IsReadable,
     IsStrSeqOrStr,
     LoadFileWithExt,
     LoadYaml,
@@ -69,7 +69,9 @@ def get_filename(
             if IsReadable(filename):
                 return filename
 
-    raise RuntimeError(f"Unable to find readable filename for {key}. Checked: {checked_filenames}")
+    raise RuntimeError(
+        f"Unable to find readable filename for {key}. Checked: {checked_filenames}"
+    )
 
 
 def load_graph(acfg: Optional[Mapping] = None, **kwargs):

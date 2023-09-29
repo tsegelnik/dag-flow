@@ -154,7 +154,7 @@ class Array(FunctionNode):
             f"Array ndim is {ndim}. {type} of {value} are not consistent"
         )
 
-    def set_edges(self, edges: Union[Output, Sequence[Output], Node]):
+    def set_edges(self, edges: Union[Output, Node, Sequence[Union[Output, Node]]]):
         if not edges:
             return
 

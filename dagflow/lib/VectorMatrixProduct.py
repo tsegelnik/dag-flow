@@ -1,12 +1,9 @@
-from typing import TYPE_CHECKING, Any, Literal, Optional, Tuple, Union
+from typing import TYPE_CHECKING, Literal
 
 from numpy import matmul, multiply
 
-from multikeydict.typing import KeyLike
-
 from ..exception import TypeFunctionError
-from ..nodes import FunctionNode, Node
-from ..storage import NodeStorage
+from ..nodes import FunctionNode
 from ..typefunctions import (
     check_input_dimension,
     check_input_matrix_or_diag,
