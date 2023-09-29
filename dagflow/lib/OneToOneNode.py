@@ -50,6 +50,9 @@ class OneToOneNode(FunctionNode):
         inputs = storage('inputs')
         outputs = storage('outputs')
 
+        if not replicate:
+            raise RuntimeError("`replicate` tuple should have at least one item")
+
         for outkey in replicate:
             outname = (name,)+outkey
             instance = cls('.'.join(outname), **kwargs)

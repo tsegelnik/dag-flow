@@ -86,6 +86,8 @@ else:
             edgeattr.setdefault("labeldistance", 1.2)
 
             nodeattr = dict(nodeattr)
+            if any(s in self._show for s in ('data', 'data_part')):
+                nodeattr.setdefault("fontname", "Liberation Mono")
 
             self._node_id_map = {}
             self._nodes_map_dag = {}
@@ -213,8 +215,12 @@ else:
             depth-=1
             if not no_backward:
                 for input in node.inputs.iter_all():
+                    try:
+                        parent_node = input.parent_node
+                    except AttributeError:
+                        continue
                     self._add_nodes_backward_recursive(
-                        input.parent_node,
+                        parent_node,
                         including_self=True,
                         depth=depth,
                         mindepth=mindepth,
@@ -562,25 +568,19 @@ else:
 
             nout_pos = len(node.outputs)
             nout_nonpos = node.outputs.len_all()-nout_pos
-            if nout_nonpos==0:
-                if nout_pos>1:
-                    nout = f'→{nout_pos}'
-                else:
-                    nout = ''
-            else:
-                nout=f'→{nout_pos}+{nout_nonpos}'
+            nout = []
+            if nout_pos: nout.append(f'{nout_pos}p')
+            if nout_nonpos: nout.append(f'{nout_nonpos}k')
+            nout = '+'.join(nout) or '0'
 
             nin_pos = len(node.inputs)
             nin_nonpos = node.inputs.len_all() - nin_pos
-            if nin_nonpos==0:
-                if nin_pos>1:
-                    nin = f'{nin_pos}→'
-                else:
-                    nin = ''
-            else:
-                nin=f'{nin_pos}+{nin_nonpos}→'
+            nin = []
+            if nin_pos: nin.append(f'{nin_pos}p')
+            if nin_nonpos: nin.append(f'{nin_nonpos}k')
+            nin = '+'.join(nin) or '0'
 
-            nlimbs = f' {nin}{nout}'.replace('→→', '→')
+            nlimbs = f' {nin}→{nout}'
 
             left, right = [], []
             if hasedges:
@@ -627,7 +627,7 @@ else:
                     right.append('cought exception')
                     data = out0._data
 
-                if show_data_summary:
+                if show_data_summary and data is not None:
                     sm = data.sum()
                     sm2 = square(data).sum()
                     mn = data.min()
@@ -638,7 +638,11 @@ else:
                     right.append(block)
 
                 if show_data_part:
-                    with printoptions(threshold=17):
+                    with printoptions(
+                        threshold=17,
+                        precision=2,
+                        # formatter={'float': '{:.2g}'.format}
+                    ):
                         right.append(str(data).replace('\n', '\\l')+'\\l')
 
                 if show_data:

@@ -12,6 +12,8 @@ from typing import (
 from weakref import ReferenceType
 from weakref import ref as weakref
 
+from multikeydict.typing import KeyLike
+
 from .exception import (
     AllocationError,
     ClosedGraphError,
@@ -145,6 +147,9 @@ class Node(Limbs):
         if kwargs:
             raise InitializationError(f"Unparsed arguments: {kwargs}!")
 
+    def __str__(self):
+        return f"{{{self.name}}} {super().__str__()}"
+
     @classmethod
     def make_stored(
         cls, name: str, *args, label_from: Optional[Mapping] = None, **kwargs
@@ -172,8 +177,55 @@ class Node(Limbs):
 
         return node, storage
 
-    def __str__(self):
-        return f"{{{self.name}}} {super().__str__()}"
+    @classmethod
+    def replicate(
+        cls,
+        name: str,
+        replicate: Tuple[KeyLike, ...] = ((),),
+        **kwargs,
+    ) -> Tuple[Optional["Node"], "NodeStorage"]:
+        from .storage import NodeStorage
+
+        storage = NodeStorage(default_containers=True)
+        nodes = storage("nodes")
+        inputs = storage("inputs")
+        outputs = storage("outputs")
+
+        if not replicate:
+            raise RuntimeError("`replicate` tuple should have at least one item")
+
+        tuplename = (name,)
+        for key in replicate:
+            if isinstance(key, str):
+                key = (key,)
+            outname = tuplename + key
+            instance = cls(".".join(outname), **kwargs)
+            nodes[outname] = instance
+
+            ninputs = instance.inputs.len_all()
+            iter_inputs = instance.inputs.iter_all_items()
+            if ninputs > 1:
+                for iname, input in iter_inputs:
+                    inputs[tuplename + (iname,) + key] = input
+            else:
+                _, input = next(iter_inputs)
+                inputs[tuplename + key] = input
+
+            noutputs = instance.outputs.len_all()
+            iter_outputs = instance.outputs.iter_all_items()
+            if noutputs > 1:
+                for oname, output in instance.outputs.iter_all_items():
+                    outputs[tuplename + (oname,) + key] = output
+            else:
+                _, output = next(iter_outputs)
+                outputs[tuplename + key] = output
+
+        NodeStorage.update_current(storage, strict=True)
+
+        if len(replicate) == 1:
+            return instance, storage
+
+        return None, storage
 
     #
     # Properties
@@ -616,11 +668,13 @@ class Node(Limbs):
             self.logger.debug(
                 f"Node '{self.name}': Trigger recursive memory allocation..."
             )
-            if not all(
-                _input.parent_node.allocate(recursive)
-                for _input in self.inputs.iter_all()
-            ):
-                return False
+            for _input in self.inputs.iter_all():
+                try:
+                    parent_node = _input.parent_node
+                except AttributeError:
+                    raise ClosingError("Parent node is not initialized", input=_input)
+                if not parent_node.allocate(recursive):
+                    return False
         self.logger.debug(f"Node '{self.name}': Allocate memory on inputs")
         if not self.inputs.allocate():
             raise AllocationError("Cannot allocate memory for inputs!", node=self)
@@ -632,7 +686,12 @@ class Node(Limbs):
         self._allocated = True
         return True
 
-    def close(self, recursive: bool = True, together: Sequence["Node"] = []) -> bool:
+    def close(
+        self,
+        recursive: bool = True,
+        strict: bool = True,
+        together: Sequence["Node"] = [],
+    ) -> bool:
         # Caution: `together` list should not be written in!
 
         if self._closed:
@@ -641,9 +700,17 @@ class Node(Limbs):
             raise ClosingError("Cannot close an invalid node!", node=self)
         self.logger.debug(f"Node '{self.name}': Trigger recursive close")
         for node in [self] + together:
-            node.update_types(recursive=recursive)
+            try:
+                node.update_types(recursive=recursive)
+            except ClosingError:
+                if strict:
+                    raise
         for node in [self] + together:
-            node.allocate(recursive=recursive)
+            try:
+                node.allocate(recursive=recursive)
+            except ClosingError:
+                if strict:
+                    raise
         if recursive and not all(
             _input.parent_node.close(recursive) for _input in self.inputs.iter_all()
         ):
@@ -652,9 +719,11 @@ class Node(Limbs):
             if not node.close(recursive=recursive):
                 return False
         self._closed = self._allocated
-        if not self._closed:
+        if strict and not self._closed:
             raise ClosingError(node=self)
-        self.logger.debug(f"Node '{self.name}': Closed")
+        self.logger.debug(
+            f"Node '{self.name}': {self._closed and 'closed' or 'failed to close'}"
+        )
         return self._closed
 
     def open(self, force: bool = False) -> bool:

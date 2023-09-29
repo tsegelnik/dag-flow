@@ -35,7 +35,7 @@ class ManyToOneNode(FunctionNode):
     def _typefunc(self) -> None:
         """A output takes this function to determine the dtype and shape"""
         check_has_inputs(self) # at least one input
-        check_inputs_equivalence(self, broadcastable=self._broadcastable) # all the inputs are have same dd fields
+        check_inputs_equivalence(self, broadcastable=self._broadcastable) # all the inputs should have same dd fields
         copy_from_input_to_output(
             self,
             AllPositionals,
@@ -56,6 +56,9 @@ class ManyToOneNode(FunctionNode):
         storage = NodeStorage(default_containers=True)
         nodes = storage('nodes')
         outputs = storage('outputs')
+
+        if not replicate:
+            raise RuntimeError("`replicate` tuple should have at least one item")
 
         for outkey in replicate:
             if isinstance(outkey, str):

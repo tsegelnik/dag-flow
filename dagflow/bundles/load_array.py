@@ -1,7 +1,6 @@
 from pathlib import Path
-from typing import Mapping, Optional, Sequence, Tuple
+from typing import Mapping, Optional, Sequence
 
-from numpy import allclose
 from numpy.typing import NDArray
 from schema import And
 from schema import Optional as SchemaOptional
@@ -13,8 +12,8 @@ from ..lib.Array import Array
 from ..storage import NodeStorage
 from ..tools.schema import (
     AllFileswithExt,
-    IsFilenameSeqOrFilename,
     IsReadable,
+    IsFilenameSeqOrFilename,
     IsStrSeqOrStr,
     LoadFileWithExt,
     LoadYaml,
@@ -69,22 +68,17 @@ def get_filename(
             if IsReadable(filename):
                 return filename
 
-    raise RuntimeError(
-        f"Unable to find readable filename for {key}. Checked: {checked_filenames}"
-    )
+    raise RuntimeError(f"Unable to find readable filename for {key}. Checked: {checked_filenames}")
 
 
-def load_graph(acfg: Optional[Mapping] = None, **kwargs):
+def load_array(acfg: Optional[Mapping] = None, **kwargs):
     acfg = dict(acfg or {}, **kwargs)
     cfg = _validate_cfg(acfg)
 
-    name = cfg["name"]
+    name = (cfg["name"],)
     filenames = cfg["filenames"]
     keys = cfg["replicate"]
     objects = cfg["objects"]
-
-    xname = name, cfg["x"]
-    yname = name, cfg["y"]
 
     try:
         ext = next(ext for ext in _extensions if filenames[0].endswith(f".{ext}"))
@@ -96,50 +90,32 @@ def load_graph(acfg: Optional[Mapping] = None, **kwargs):
         raise RuntimeError(f"Unable to find loader for: {filenames[0]}")
     single_key = len(keys) == 1
 
-    meshes = []
     data = {}
     for key in keys:
         filename = get_filename(filenames, key, single_key=single_key)
 
         skey = ".".join(key)
         iname = objects.get(skey, skey)
-        x, y = loader(filename, iname)
-        data[key] = x, y
-        meshes.append(x)
-
-    if cfg["merge_x"]:
-        x0 = meshes[0]
-        for xi in meshes[1:]:
-            if not allclose(x0, xi, atol=0, rtol=0):
-                raise RuntimeError("load_graph: inconsistent x axes, unable to merge.")
-
-        commonmesh, _ = Array.make_stored(".".join(xname), x0)
-    else:
-        commonmesh = None
-
+        data[name + key] = loader(filename, iname)
     storage = NodeStorage(default_containers=True)
     with storage:
-        for key, (x, y) in data.items():
-            if commonmesh:
-                mesh = commonmesh
-            else:
-                xkey = ".".join(xname + key)
-                mesh, _ = Array.make_stored(xkey, x)
-            ykey = ".".join(yname + key)
-            Array.make_stored(ykey, y, meshes=mesh)
+        for key, array in data.items():
+            Array.make_stored(key, array)
 
     NodeStorage.update_current(storage, strict=True)
 
     return storage
 
 
-def _load_tsv(filename: str, name: str) -> NDArray:
+def _load_tsv(filename: str, _: str) -> NDArray:
     from numpy import loadtxt
 
-    return loadtxt(filename, unpack=True)
+    return loadtxt(filename)
 
 
-def _load_hdf5(filename: str, name: str) -> Tuple[NDArray, NDArray]:
+def _load_hdf5(filename: str, name: str) -> NDArray:
+    if not name:
+        raise RuntimeError(f"Need an object name to read from {filename}")
     from h5py import File
 
     file = File(filename, "r")
@@ -148,11 +124,12 @@ def _load_hdf5(filename: str, name: str) -> Tuple[NDArray, NDArray]:
     except KeyError as e:
         raise RuntimeError(f"Unable to read {name} from {filename}") from e
 
-    cols = data.dtype.names
-    return data[cols[0]], data[cols[1]]
+    return data[:]
 
 
-def _load_root(filename: str, name: str) -> Tuple[NDArray, NDArray]:
+def _load_root_uproot(filename: str, name: str) -> NDArray:
+    if not name:
+        raise RuntimeError(f"Need an object name to read from {filename}")
     from uproot import open
 
     file = open(filename)
@@ -161,9 +138,36 @@ def _load_root(filename: str, name: str) -> Tuple[NDArray, NDArray]:
     except KeyError as e:
         raise RuntimeError(f"Unable to read {name} from {filename}") from e
 
-    y, x = data.to_numpy()
+    return data.to_numpy()
 
-    return x[:-1], y
+
+def _load_root_ROOT(filename: str, name: str) -> NDArray:
+    if not name:
+        raise RuntimeError(f"Need an object name to read from {filename}")
+    from ROOT import TFile
+
+    file = TFile(filename)
+    if file.IsZombie():
+        raise RuntimeError(f"Can not open file {filename}")
+    data = file.Get(name)
+    if not data:
+        raise RuntimeError(f"Unable to read {name} from {filename}") from e
+
+    return _get_buffer(data)
+
+
+def _load_root(filename: str, *args, **kwargs) -> NDArray:
+    try:
+        return _load_root_uproot(filename, *args, **kwargs)
+    except AttributeError:
+        pass
+
+    try:
+        return _load_root_ROOT(filename, *args, **kwargs)
+    except ImportError:
+        raise RuntimeError(
+            f"Error reading file {filename}. `uproot` is unable, `ROOT` is not found."
+        )
 
 
 _loaders = {
@@ -172,3 +176,54 @@ _loaders = {
     "root": _load_root,
     "hdf5": _load_hdf5,
 }
+
+from numpy import dtype, frombuffer
+
+
+def _get_buffer_hist1(h, flows=False):
+    """Return TH1* histogram data buffer
+    if flows=False, exclude underflow and overflow
+    """
+    buf = h.GetArray()
+    buf = frombuffer(buf, dtype(buf.typecode), h.GetNbinsX() + 2)
+    if not flows:
+        buf = buf[1:-1]
+    return buf.copy()
+
+
+def _get_buffer_hist2(h, flows=False):
+    """Return histogram data buffer
+    if flows=False, exclude underflow and overflow
+    NOTE: buf[biny][binx] is the right access signature
+    """
+    nx, ny = h.GetNbinsX(), h.GetNbinsY()
+    buf = h.GetArray()
+    res = frombuffer(buf, dtype(buf.typecode), (nx + 2) * (ny + 2)).reshape(
+        (ny + 2, nx + 2)
+    )
+    if not flows:
+        res = res[1 : ny + 1, 1 : nx + 1]
+
+    return res.copy()
+
+
+def _get_buffer_matrix(m):
+    """Get TMatrix buffer"""
+    cbuf = m.GetMatrixArray()
+    res = frombuffer(cbuf, dtype(cbuf.typecode), m.GetNoElements()).reshape(
+        m.GetNrows(), m.GetNcols()
+    )
+    return res.copy()
+
+
+def _get_buffer(obj):
+    import ROOT
+
+    if isinstance(obj, ROOT.TH1) and obj.GetDimension() == 1:
+        return _get_buffer_hist1(obj)
+    if isinstance(obj, ROOT.TH2) and obj.GetDimension() == 2:
+        return _get_buffer_hist2(obj)
+    if isinstance(obj, (ROOT.TMatrixD, ROOT.TMatrixF)):
+        return _get_buffer_matrix(obj)
+
+    raise Exception()

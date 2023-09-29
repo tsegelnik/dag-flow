@@ -92,11 +92,9 @@ class InterpolatorGroup(MetaNode):
             interpolator = interpolators._add_interpolator(
                 name, method, label=label_int, positionals=False, **kwargs
             )
-            nodes.child(name_interpolator)[key] = interpolator
-            inputs.child(name_interpolator)[("ycoarse",) + key] = interpolator.inputs[
-                "y"
-            ]
-            outputs.child(name_interpolator)[key] = interpolator.outputs[0]
+            nodes[name] = interpolator
+            inputs.child(name_interpolator)[("ycoarse",) + key] = interpolator.inputs['y']
+            outputs[name] = interpolator.outputs[0]
 
         inputs.child(name_interpolator)["xcoarse"] = interpolators.inputs["coarse"]
         inputs.child(name_interpolator)["xfine"] = interpolators.inputs["fine"]

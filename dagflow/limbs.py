@@ -124,7 +124,7 @@ class Limbs:
         elif isinstance(other, Sequence):
             self.__rshift_sequence(other)
         elif isinstance(other, (Mapping, NestedMKDict)):
-            for name, output in self.outputs.iter_kw():
+            for name, output in self.outputs.iter_kw_items():
                 try:
                     input = other[name]
                 except KeyError as e:

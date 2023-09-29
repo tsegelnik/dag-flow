@@ -9,12 +9,11 @@ from schema import Or, Schema, Use
 
 from multikeydict.typing import TupleKey
 
-from ..lib.Array import Array
 from ..storage import NodeStorage
 from ..tools.schema import (
     AllFileswithExt,
-    IsFilenameSeqOrFilename,
     IsReadable,
+    IsFilenameSeqOrFilename,
     IsStrSeqOrStr,
     LoadFileWithExt,
     LoadYaml,
@@ -69,12 +68,10 @@ def get_filename(
             if IsReadable(filename):
                 return filename
 
-    raise RuntimeError(
-        f"Unable to find readable filename for {key}. Checked: {checked_filenames}"
-    )
+    raise RuntimeError(f"Unable to find readable filename for {key}. Checked: {checked_filenames}")
 
 
-def load_graph(acfg: Optional[Mapping] = None, **kwargs):
+def load_graph_data(acfg: Optional[Mapping] = None, **kwargs):
     acfg = dict(acfg or {}, **kwargs)
     cfg = _validate_cfg(acfg)
 
@@ -107,26 +104,26 @@ def load_graph(acfg: Optional[Mapping] = None, **kwargs):
         data[key] = x, y
         meshes.append(x)
 
+    storage = NodeStorage(default_containers=True)
+    data_storage = storage('data')
+
     if cfg["merge_x"]:
         x0 = meshes[0]
         for xi in meshes[1:]:
             if not allclose(x0, xi, atol=0, rtol=0):
                 raise RuntimeError("load_graph: inconsistent x axes, unable to merge.")
 
-        commonmesh, _ = Array.make_stored(".".join(xname), x0)
+        commonmesh = x0
+        data_storage[xname] = commonmesh
     else:
         commonmesh = None
 
-    storage = NodeStorage(default_containers=True)
     with storage:
         for key, (x, y) in data.items():
-            if commonmesh:
-                mesh = commonmesh
-            else:
-                xkey = ".".join(xname + key)
-                mesh, _ = Array.make_stored(xkey, x)
-            ykey = ".".join(yname + key)
-            Array.make_stored(ykey, y, meshes=mesh)
+            if commonmesh is None:
+                data_storage[xname+key] = x
+
+            data_storage[yname+key] = y
 
     NodeStorage.update_current(storage, strict=True)
 

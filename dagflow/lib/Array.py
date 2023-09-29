@@ -1,14 +1,18 @@
-from typing import Optional, Sequence, Union
 from numbers import Number
+from typing import Optional, Sequence, Union
 
 from numpy import array, full
-from numpy.typing import ArrayLike, NDArray, DTypeLike
+from numpy.typing import ArrayLike, DTypeLike, NDArray
+
+from multikeydict.nestedmkdict import NestedMKDict
 
 from ..exception import InitializationError
-from ..nodes import FunctionNode
 from ..node import Node
+from ..nodes import FunctionNode
 from ..output import Output
 from ..typefunctions import check_array_edges_consistency, check_edges_type
+from ..tools.iter import iter_sequence_not_string
+
 
 class Array(FunctionNode):
     """Creates a node with a single data output with predefined array"""
@@ -57,8 +61,10 @@ class Array(FunctionNode):
         )
         self.fcn = self._functions[self._mode]
 
-        self._init_edges(edges)
-        self._init_meshes(meshes)
+        if edges:
+            self.set_edges(edges)
+        if meshes:
+            self.set_mesh(meshes)
 
         if mode == "store":
             self.close()
@@ -92,6 +98,40 @@ class Array(FunctionNode):
         array = full(shape, value, dtype=dtype)
         return cls.make_stored(name, array, edges=edges, **kwargs)
 
+    @classmethod
+    def from_storage(
+        cls,
+        path: str,
+        storage: NestedMKDict,
+        *,
+        edgesname: Union[str, Sequence[str]] = [],
+        meshname: Union[str, Sequence[str]] = [],
+        remove_used_arrays: bool = False,
+        **kwargs,
+    ):
+        localstorage = storage(path)
+        tmpstorage = NestedMKDict(sep='.')
+        used_array_keys = set()
+        for key, data in localstorage.walkitems():
+            skey = ".".join((path,) + key)
+            _, istorage = cls.make_stored(skey, data, **kwargs)
+            tmpstorage|=istorage
+            used_array_keys.add(key)
+
+        edges = list(tmpstorage[f"nodes.{path}.{name}"] for name in iter_sequence_not_string(edgesname))
+        mesh = list(tmpstorage[f"nodes.{path}.{name}"] for name in iter_sequence_not_string(meshname))
+        if edges or mesh:
+            for node in tmpstorage('nodes').walkvalues():
+                if node in edges or node in mesh:
+                    continue
+                node.set_mesh(mesh)
+                node.set_edges(edges)
+
+        if remove_used_arrays:
+            for key in used_array_keys:
+                localstorage.delete_with_parents(key)
+
+
     def _typefunc(self) -> None:
         check_edges_type(self, slice(None), "array")  # checks List[Output]
         check_array_edges_consistency(self, "array")  # checks dim and N+1 size
@@ -105,29 +145,16 @@ class Array(FunctionNode):
     def set(self, data: ArrayLike, check_taint: bool = False) -> bool:
         return self._output.set(data, check_taint)
 
-    @classmethod
-    def from_value(
-        cls,
-        name,
-        value: Number,
-        *,
-        edges: Union[Output, Sequence[Output], Node],
-        dtype: DTypeLike=None,
-        **kwargs
-    ):
-        if isinstance(edges, Output):
-            shape=(edges.dd.shape[0]-1,)
-        elif isinstance(edges, Node):
-            output = edges.outputs[0]
-            shape=(output.dd.shape[0]-1,)
-        elif isinstance(edges, Sequence):
-            shape = tuple(output.dd.shape[0]-1 for output in edges)
-        else:
-            raise RuntimeError("Invalid edges specification")
-        array = full(shape, value, dtype=dtype)
-        return cls.make_stored(name, array, edges=edges, **kwargs)
+    def _check_ndim(self, value: int, type: str):
+        ndim = self._output.dd.dim
+        if ndim == value:
+            return
 
-    def _init_edges(self, edges: Union[Output, Sequence[Output], Node]):
+        raise InitializationError(
+            f"Array ndim is {ndim}. {type} of {value} are not consistent"
+        )
+
+    def set_edges(self, edges: Union[Output, Node, Sequence[Union[Output, Node]]]):
         if not edges:
             return
 
@@ -135,34 +162,49 @@ class Array(FunctionNode):
             edges = (edges,)
 
         dd = self._output.dd
+        if dd.axes_edges:
+            raise InitializationError(
+                "Edges already set", node=self, output=self._output
+            )
+
+        self._check_ndim(len(edges), "Edges")
+
         dd.edges_inherited = False
         for edgesi in edges:
             if isinstance(edgesi, Output):
-                dd.axes_edges+=(edgesi,)
+                dd.axes_edges += (edgesi,)
             elif isinstance(edgesi, Node):
-                dd.axes_edges+=(edgesi.outputs[0],)
+                dd.axes_edges += (edgesi.outputs[0],)
             else:
                 raise InitializationError(
                     "Array: edges must be `Output/Node` or `Sequence[Output/Node]`, "
-                    f"but given {edges=}, {type(edges)=}"
+                    f"got {edges=}, {type(edges)=}"
                 )
 
-    def _init_meshes(self, meshes: Union[Output, Sequence[Output], Node]):
+    def set_mesh(self, meshes: Union[Output, Node, Sequence[Output]]):
         if not meshes:
             return
 
         if not isinstance(meshes, Sequence):
             meshes = (meshes,)
 
+        self._check_ndim(len(meshes), "Meshes")
+
         dd = self._output.dd
+        if dd.axes_meshes:
+            raise InitializationError(
+                "Meshes already set", node=self, output=self._output
+            )
+
         dd.meshes_inherited = False
         for meshesi in meshes:
             if isinstance(meshesi, Output):
-                dd.axes_meshes+=(meshesi,)
+                dd.axes_meshes += (meshesi,)
             elif isinstance(meshesi, Node):
-                dd.axes_meshes+=(meshesi.outputs[0],)
+                dd.axes_meshes += (meshesi.outputs[0],)
             else:
                 raise InitializationError(
                     "Array: meshes must be `Output/Node` or `Sequence[Output/Node]`, "
-                    f"but given {meshes=}, {type(meshes)=}"
+                    f"got {meshes=}, {type(meshes)=}",
+                    node=self,
                 )
