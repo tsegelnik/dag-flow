@@ -136,7 +136,6 @@ class Integrator(FunctionNode):
         if len(self.inputs) == 0:
             return
         check_has_inputs(self, "weights")
-        print(self.inputs.all_edges, self.outputs.all_edges)
 
         input0 = self.inputs[0]
         self._ordersY = self.inputs.get("ordersY", None)
