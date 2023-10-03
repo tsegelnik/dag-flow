@@ -3,12 +3,17 @@ from __future__ import annotations
 from timeit import timeit, repeat
 from functools import cached_property
 import collections
-from typing import List, Set
-import numpy as np
+from typing import List
 
+import numpy as np
+import pandas as pd
+import tabulate
 
 from ..nodes import FunctionNode
 
+
+# depricated
+# TODO: remove this class
 class EstimateRecord:
 
     _node: FunctionNode
@@ -55,84 +60,112 @@ class EstimateRecord:
     
     def __str__(self) -> str:
         return f"name={self.node_name}, runs={self._n_runs}, avg={self.avg_time}"
+    
+
+class ProfilingBase:
+    _target_nodes: List[FunctionNode]
+    _estimations_table: pd.DataFrame
+
+    def __init__(self, target_nodes):
+        self._target_nodes = target_nodes
 
 
-class Profiling:
+class IndividualProfiling(ProfilingBase):
     _n_runs: int
-    _results: List[EstimateRecord]
-    __slots__ = ("_n_runs", "_results")
+    _estimations_table: pd.DataFrame
 
-    def __init__(self, n_runs: int=100):
+    DEFAULT_RUNS = 10000
+    _TABLE_COLUMNS = ["node",
+                      "type",
+                      "name",
+                      "time"]
+    
+    def __init__(self,
+                 target_nodes: List[FunctionNode],
+                 n_runs: int=DEFAULT_RUNS):
+        super().__init__(target_nodes)
         self._n_runs = n_runs
-        self._results = []
 
-    def estimate_node(self, node: FunctionNode, n_runs: int=None):
-        if not n_runs:
-            n_runs = self._n_runs
-
-        # compute and cache all inputs to prevent 
-        # calculations during time measurment
+    @classmethod
+    def estimate_node(cls, node: FunctionNode, n_runs: int=DEFAULT_RUNS):
         for input in node.inputs.iter_all():
             input.touch()
-
+        
         testing_function = lambda : node.fcn(node, node.inputs, node.outputs)
-        testing_function() # ignore the first calculation
-        # estimations = timeit(stmt=testing_function, number=n_runs)
-        estimations = repeat(stmt=testing_function, repeat=100, number=10000)
-        # print(estimations)
-        print(node.name, min(estimations), max(estimations))
+        return timeit(stmt=testing_function, number=n_runs)
 
-        result = EstimateRecord(node, n_runs, min(estimations))
-
-        self._results.append(result)
-        return result
-    
-    def estimate_graph(self, graph):
-        for node in graph._nodes:
-            self.estimate_node(node, n_runs=self._n_runs)
-
+    def estimate_target_nodes(self) -> IndividualProfiling:
+        records = {col: [] for col in self._TABLE_COLUMNS}
+        for node in self._target_nodes:
+            estimations = self.estimate_node(node, self._n_runs)
+            records["node"].append(node)
+            records["type"].append(type(node).__name__)
+            records["name"].append(node.name)
+            records["time"].append(estimations)
+        self._estimations_table = pd.DataFrame(records)
         return self
     
-    def make_report(self, top_n=10):
-        self._results.sort(reverse=True)
-        print(f"\nTop {min(top_n, len(self._results))} operations")
-        print('=' * 93)
-        line_format = "%-3s %-25s %-25s %-25s %11s" 
-        print(line_format % ('#',
-                             'Operation type',
-                             'Name', 
-                             'Average time',
-                             'Exec. runs'))
-        print('-' * 93)
-        for i, record in enumerate(self._results):
-            print(line_format % (i + 1,
-                                 record.type,
-                                 record.node_name,
-                                 record.avg_time,
-                                 record.n_runs))
+    def _print_report(self, data_frame, rows):
+        print(f"\nFirst {rows} rows of profiling report,",
+              f"where n_runs={self._n_runs} for each node:")
+        ## print using `pandas.option_context``:
+        # with pd.option_context("display.max_rows", None,
+        #                        "display.max_columns", None,
+        #                        "display.precision", 6):
+        #     print(data_frame.head(rows)) 
         
+        # print with tabulte
+        print(tabulate.tabulate(data_frame.head(rows), 
+                                headers='keys', 
+                                tablefmt='psql'))
+
+    def _aggregate_df(self, grouped_df) -> pd.DataFrame:
+        df = grouped_df.agg({'time': 
+                             ['count', 'mean', 'median', 
+                              'std', 'min', 'max']})
+        # remove column multiindex and add prefix `t_` - time notation
+        new_columns = ['type', 'count']
+        new_columns += ['t_' + c[1] for c in df.columns[2:]]
+        df.columns = new_columns
+        return df
+    
+    def make_report(self, 
+                    top_n=10,
+                    group_by: str | None="type"):
+        if hasattr(self, "_estimations_table"):
+            if group_by == None:
+                report = self._estimations_table.sort_values("time",
+                                                             ascending=False)
+            elif group_by in self._TABLE_COLUMNS:
+                grouped = self._estimations_table.groupby(group_by, 
+                                                          as_index=False)
+                report = self._aggregate_df(grouped)
+                report.sort_values("t_mean", ascending=False, inplace=True)
+            else:
+                raise ValueError(f"Invalid `group_by` name \"{group_by}\"."
+                                 f"You must use one of these: {self._TABLE_COLUMNS}")
+            self._print_report(report, top_n)
+        else:
+            # TODO: check dagflow errors
+            raise ValueError("No estimations found!\n"
+                             "Hint: use `estimate_target_nodes`"
+                             "to individually estimate group of nodes")
+        
+    
 class GroupProfiling:
 
     _estimations: List[EstimateRecord]
-    _excluded_nodes: List[FunctionNode]
+    # _excluded_nodes: List[FunctionNode]
+    _target_nodes: List[FunctionNode]
     _removed_fcns: collections.deque[FunctionNode]
     _n_runs: int
 
-    # slots
-
-    # список узлов, которые нас интересуют
-
-    # del node.fcn
-
-    # _stash_ _unwrap_
-
-    # make base class   
-
     def __init__(self, 
-                 excluded_nodes: List[FunctionNode] = [],
+                 targen_nodes: List[FunctionNode] = [],
                  n_runs = 1) -> None:
         self._estimations = list()
-        self._excluded_nodes = excluded_nodes
+        # self._excluded_nodes = excluded_nodes
+        self._target_nodes = targen_nodes
         self._n_runs = n_runs
         self._removed_fcns = collections.deque()
 
@@ -141,7 +174,7 @@ class GroupProfiling:
             for input in node.inputs.iter_all():
                     self.taint_parents(input.parent_node)
 
-            node.taint()    
+            node.taint()
 
     # using only `node` argument for further compatibility
     @staticmethod
@@ -157,23 +190,31 @@ class GroupProfiling:
         # return None
         
 
-    def make_fcns_empty(self, node: FunctionNode): 
-        if node not in self._excluded_nodes:
-            for input in node.inputs.iter_all():
-                self.make_fcns_empty(input.parent_node)
+    def _make_fcns_empty(self, node: FunctionNode):
+        for node in self._target_nodes:
+            node._stash_fcn()
+            node.fcn = self.fcn_no_computation()
 
-            self._removed_fcns.append(node.fcn)
-            node.fcn = self.fcn_no_computation
+        # if node not in self._excluded_nodes:
+        #     for input in node.inputs.iter_all():
+        #         self._make_fcns_empty(input.parent_node)
 
-    def restore_fcns(self, node: FunctionNode):
-        if node not in self._excluded_nodes:
-            for input in node.inputs.iter_all():
-                self.restore_fcns(input.parent_node)
+        #     self._removed_fcns.append(node.fcn)
+        #     node.fcn = self.fcn_no_computation
 
-            node.fcn = self._removed_fcns.popleft()
+    def _restore_fcns(self, node: FunctionNode):
+        for node in self._target_nodes:
+            node._unwrap_fcn()
+
+        # if node not in self._excluded_nodes:
+        #     for input in node.inputs.iter_all():
+        #         self._restore_fcns(input.parent_node)
+
+        #     node.fcn = self._removed_fcns.popleft()
 
     def estimate_group_with_empty_fcn(self, head_node: FunctionNode):
-        self.make_fcns_empty(head_node)
+        raise NotImplementedError("this class doesn't work at all yet")
+        self._make_fcns_empty(head_node)
         setup = lambda: self.taint_parents(head_node)
 
         results = np.array(repeat(stmt=head_node.eval, setup=setup, repeat=500, number=1))
@@ -182,33 +223,6 @@ class GroupProfiling:
         print("\tStd:", results.std())
         print("\tMin:", results.min())
 
-        self.restore_fcns(head_node)
-
-
-    # def estimate_group_with_normal_fcn(self, head_node: FunctionNode):
-    #     self.taint_parents(head_node)
-        
-
-
-
-    # def estimate_group(self,    
-    #                    head_node: FunctionNode, 
-    #                    excluded_nodes: List[FunctionNode]):
-    #     tree_stack = collections.deque()
-    #     tree_stack.append(head_node)
-    #     cur_node = head_node
-    #     while tree_stack.count():
-    #         for input in cur_node.inputs.iter_all():
-    #         for head_node.inputs.iter_all()
-    #         cur_node = head_node
-    #         for input in head_node.inputs.iter_all():
-        
-        # полный обход дерева
-        # вычисление fcn для каждого 
-        # вычисление 1 раз? exept
-        # вычисление времени когда все родительские taint, посчитать разницу
-        # подумать как хранить данные
-        
-
+        self._restore_fcns(head_node)
 
 
