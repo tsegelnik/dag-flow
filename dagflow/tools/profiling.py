@@ -135,12 +135,14 @@ class IndividualProfiling(ProfilingBase):
         if hasattr(self, "_estimations_table"):
             if group_by == None:
                 report = self._estimations_table.sort_values("time",
-                                                             ascending=False)
+                                                             ascending=False,
+                                                             ignore_index=True)
             elif group_by in self._TABLE_COLUMNS:
                 grouped = self._estimations_table.groupby(group_by, 
                                                           as_index=False)
                 report = self._aggregate_df(grouped)
-                report.sort_values("t_mean", ascending=False, inplace=True)
+                report.sort_values("t_mean", ascending=False, ignore_index=True,
+                                   inplace=True)
             else:
                 raise ValueError(f"Invalid `group_by` name \"{group_by}\"."
                                  f"You must use one of these: {self._TABLE_COLUMNS}")
@@ -157,17 +159,16 @@ class GroupProfiling:
     _estimations: List[EstimateRecord]
     # _excluded_nodes: List[FunctionNode]
     _target_nodes: List[FunctionNode]
-    _removed_fcns: collections.deque[FunctionNode]
+    _attached_nodes: List[FunctionNode]
     _n_runs: int
 
     def __init__(self, 
-                 targen_nodes: List[FunctionNode] = [],
+                 target_nodes: List[FunctionNode] = [],
                  n_runs = 1) -> None:
         self._estimations = list()
         # self._excluded_nodes = excluded_nodes
-        self._target_nodes = targen_nodes
+        self._target_nodes = target_nodes
         self._n_runs = n_runs
-        self._removed_fcns = collections.deque()
 
     def taint_parents(self, node): 
         if node not in self._excluded_nodes:
@@ -181,14 +182,6 @@ class GroupProfiling:
     def fcn_no_computation(node: FunctionNode, inputs, outputs):
         for input in node.inputs.iter_all():
             input.touch()
-
-        # print(node.name)
-        
-        # Note: may work much slower than previos fcn() for nodes 
-        # where return is just a number and etc
-        # return list(node.outputs.iter_data())
-        # return None
-        
 
     def _make_fcns_empty(self, node: FunctionNode):
         for node in self._target_nodes:
@@ -224,5 +217,4 @@ class GroupProfiling:
         print("\tMin:", results.min())
 
         self._restore_fcns(head_node)
-
 
