@@ -3,13 +3,15 @@ from __future__ import annotations
 from timeit import timeit, repeat
 from functools import cached_property
 import collections
-from typing import List
+from collections.abc import Generator
+from typing import List, Set
 
 import numpy as np
 import pandas as pd
 import tabulate
 
 from ..nodes import FunctionNode
+from ..output import Output
 
 
 # depricated
@@ -123,7 +125,7 @@ class IndividualProfiling(ProfilingBase):
         df = grouped_df.agg({'time': 
                              ['count', 'mean', 'median', 
                               'std', 'min', 'max']})
-        # remove column multiindex and add prefix `t_` - time notation
+        # get rid of multiindex and add prefix `t_` - time notation
         new_columns = ['type', 'count']
         new_columns += ['t_' + c[1] for c in df.columns[2:]]
         df.columns = new_columns
@@ -159,24 +161,58 @@ class GroupProfiling:
     _estimations: List[EstimateRecord]
     # _excluded_nodes: List[FunctionNode]
     _target_nodes: List[FunctionNode]
-    _attached_nodes: List[FunctionNode]
+    _source: List[FunctionNode]
+    _sink: List[FunctionNode]
     _n_runs: int
 
     def __init__(self, 
-                 target_nodes: List[FunctionNode] = [],
+                 source: List[FunctionNode]=[],
+                 sink: List[FunctionNode]=[],
                  n_runs = 1) -> None:
         self._estimations = list()
         # self._excluded_nodes = excluded_nodes
-        self._target_nodes = target_nodes
+        self._source = source
+        self._sink = sink
         self._n_runs = n_runs
+        self._target_nodes = list(self._gather_related_nodes())
+
+    def __child_nodes_gen(self, node: FunctionNode) -> Generator[FunctionNode, None, None]:
+        for output in node.outputs.iter_all():
+            for child_input in output.child_inputs:
+                yield child_input.node
+
+    def _gather_related_nodes(self) -> Set[FunctionNode]:
+        nodes_stack = collections.deque()
+        iters_stack = collections.deque()
+        related_nodes = set(self._source)
+        for start_node in self._source:
+            current_iterator = self.__child_nodes_gen(start_node)
+            while True:
+                try:
+                    node = next(current_iterator)
+                    # print('-' * len(nodes_stack), node.name)
+                    nodes_stack.append(node)
+                    iters_stack.append(current_iterator)
+                    if node in self._sink:
+                        related_nodes.update(nodes_stack)
+                        nodes_stack.pop()
+                        current_iterator = iters_stack.pop()
+                    else:
+                        current_iterator = self.__child_nodes_gen(node)
+                except StopIteration:
+                    if len(nodes_stack) == 0:
+                        break
+                    nodes_stack.pop()
+                    current_iterator = iters_stack.pop()
+        return related_nodes
 
     def taint_parents(self, node): 
         if node not in self._excluded_nodes:
             for input in node.inputs.iter_all():
                     self.taint_parents(input.parent_node)
-
             node.taint()
-
+        
+    
     # using only `node` argument for further compatibility
     @staticmethod
     def fcn_no_computation(node: FunctionNode, inputs, outputs):
@@ -206,7 +242,9 @@ class GroupProfiling:
         #     node.fcn = self._removed_fcns.popleft()
 
     def estimate_group_with_empty_fcn(self, head_node: FunctionNode):
-        raise NotImplementedError("this class doesn't work at all yet")
+        if 1:
+            raise NotImplementedError("this class doesn't work at all yet")
+        self._gather_related_nodes(roots, heads)
         self._make_fcns_empty(head_node)
         setup = lambda: self.taint_parents(head_node)
 
@@ -217,4 +255,5 @@ class GroupProfiling:
         print("\tMin:", results.min())
 
         self._restore_fcns(head_node)
+
 
