@@ -190,7 +190,6 @@ class GroupProfiling:
             while True:
                 try:
                     node = next(current_iterator)
-                    # print('-' * len(nodes_stack), node.name)
                     nodes_stack.append(node)
                     iters_stack.append(current_iterator)
                     if node in self._sink:
