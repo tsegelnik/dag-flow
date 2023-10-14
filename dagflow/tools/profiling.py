@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 from timeit import timeit, repeat
-from functools import cached_property
 import collections
 from collections.abc import Generator
 from typing import List, Set
@@ -12,56 +11,6 @@ import tabulate
 
 from ..nodes import FunctionNode
 
-
-# depricated
-# TODO: remove this class
-class EstimateRecord:
-
-    _node: FunctionNode
-    _n_runs: int
-    _total_time: float
-
-    # It is weird to use __slots__ with __dict__,  
-    # but it works slightly faster than without it. 
-    # __dict__ is required for @functools.cached_property 
-    __slots__ = ("_node", "_n_runs", "_total_time", "__dict__")
-
-    def __init__(self, 
-                 node: FunctionNode, 
-                 n_runs: int, 
-                 estimated_time: float):
-        self._node = node
-        self._n_runs = n_runs
-        self._total_time = estimated_time
-
-    @property
-    def node_name(self):
-        return self._node.name
-    
-    @property
-    def type(self):
-        return type(self._node).__name__
-    
-    @property
-    def n_runs(self):
-        return self._n_runs
-    
-    @property
-    def time(self):
-        return self._total_time
-    
-    @cached_property
-    def avg_time(self):
-        if self._n_runs > 0:
-            return self._total_time / self._n_runs
-        return 0
-    
-    def __lt__(self, other):
-        return self.avg_time < other.avg_time
-    
-    def __str__(self) -> str:
-        return f"name={self.node_name}, runs={self._n_runs}, avg={self.avg_time}"
-    
 
 class ProfilingBase:
     _target_nodes: List[FunctionNode]
