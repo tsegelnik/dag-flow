@@ -11,7 +11,6 @@ import pandas as pd
 import tabulate
 
 from ..nodes import FunctionNode
-from ..output import Output
 
 
 # depricated
@@ -158,7 +157,7 @@ class IndividualProfiling(ProfilingBase):
     
 class GroupProfiling:
 
-    _estimations: List[EstimateRecord]
+    # _estimations: List[EstimateRecord]
     # _excluded_nodes: List[FunctionNode]
     _target_nodes: List[FunctionNode]
     _source: List[FunctionNode]
@@ -169,7 +168,7 @@ class GroupProfiling:
                  source: List[FunctionNode]=[],
                  sink: List[FunctionNode]=[],
                  n_runs = 1) -> None:
-        self._estimations = list()
+        # self._estimations = list()
         # self._excluded_nodes = excluded_nodes
         self._source = source
         self._sink = sink
@@ -180,6 +179,11 @@ class GroupProfiling:
         for output in node.outputs.iter_all():
             for child_input in output.child_inputs:
                 yield child_input.node
+
+    def __check_reachable(self, nodes_gathered):
+        if not all(s in nodes_gathered for s in self._sink):
+            raise ValueError("Some of the `sink` nodes are unreachable "
+                             "(no paths from source)")
 
     def _gather_related_nodes(self) -> Set[FunctionNode]:
         nodes_stack = collections.deque()
@@ -203,56 +207,44 @@ class GroupProfiling:
                         break
                     nodes_stack.pop()
                     current_iterator = iters_stack.pop()
+        self.__check_reachable(related_nodes)
         return related_nodes
 
-    def taint_parents(self, node): 
-        if node not in self._excluded_nodes:
-            for input in node.inputs.iter_all():
-                    self.taint_parents(input.parent_node)
+    def taint_nodes(self):
+        for node in self._target_nodes:
             node.taint()
-        
-    
+
     # using only `node` argument for further compatibility
     @staticmethod
     def fcn_no_computation(node: FunctionNode, inputs, outputs):
         for input in node.inputs.iter_all():
             input.touch()
 
-    def _make_fcns_empty(self, node: FunctionNode):
+    def _make_fcns_empty(self):
         for node in self._target_nodes:
             node._stash_fcn()
-            node.fcn = self.fcn_no_computation()
+            node.fcn = self.fcn_no_computation
 
-        # if node not in self._excluded_nodes:
-        #     for input in node.inputs.iter_all():
-        #         self._make_fcns_empty(input.parent_node)
-
-        #     self._removed_fcns.append(node.fcn)
-        #     node.fcn = self.fcn_no_computation
-
-    def _restore_fcns(self, node: FunctionNode):
+    def _restore_fcns(self):
         for node in self._target_nodes:
             node._unwrap_fcn()
 
-        # if node not in self._excluded_nodes:
-        #     for input in node.inputs.iter_all():
-        #         self._restore_fcns(input.parent_node)
 
-        #     node.fcn = self._removed_fcns.popleft()
+    def estimate_framefork_time(self):
+        self._make_fcns_empty()
+        setup = lambda: self.taint_nodes()
+        def repeat_stmt():
+            for sink_node in self._sink:
+                sink_node.eval()
+        
+        results = repeat(stmt=repeat_stmt, setup=setup, repeat=self._n_runs, number=1)
+        results = np.array(results)
 
-    def estimate_group_with_empty_fcn(self, head_node: FunctionNode):
-        if 1:
-            raise NotImplementedError("this class doesn't work at all yet")
-        self._gather_related_nodes(roots, heads)
-        self._make_fcns_empty(head_node)
-        setup = lambda: self.taint_parents(head_node)
-
-        results = np.array(repeat(stmt=head_node.eval, setup=setup, repeat=500, number=1))
-
+        # TODO: appropriate report
         print("\tMean:", results.mean())
         print("\tStd:", results.std())
         print("\tMin:", results.min())
 
-        self._restore_fcns(head_node)
+        self._restore_fcns()
 
 
