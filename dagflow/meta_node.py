@@ -3,17 +3,19 @@ from .limbs import Limbs
 
 from typing import Sequence, List, Optional, Union, Tuple, Callable, Dict
 
-TStrOrPair = Union[str,Tuple[str,str]]
+TStrOrPair = Union[str, Tuple[str, str]]
 TPairsOrDict = Union[Sequence[TStrOrPair], Dict]
+
 
 class MetaNode(Limbs):
     """A node containing multiple nodes and exposing part of their inputs and outputs"""
+
     __slots__ = (
-        '_nodes',
-        '_node_inputs_pos',
-        '_node_outputs_pos',
-        '_missing_input_handler',
-        '__weakref__' # needed for weakref
+        "_nodes",
+        "_node_inputs_pos",
+        "_node_outputs_pos",
+        "_missing_input_handler",
+        "__weakref__",  # needed for weakref
     )
 
     _nodes: List[Node]
@@ -29,19 +31,22 @@ class MetaNode(Limbs):
         self._node_outputs_pos = None
         self._missing_input_handler = lambda *_, **__: None
 
+    def __call__(self, *args, **kwargs):
+        return tuple(node(*args, **kwargs) for node in self._nodes)
+
     def _add_node(
         self,
         node: Node,
         *,
-        inputs_pos: bool=False,
-        outputs_pos: bool=False,
-        kw_inputs: TPairsOrDict=[],
-        kw_inputs_optional: TPairsOrDict=[],
-        kw_outputs: TPairsOrDict=[],
-        kw_outputs_optional: TPairsOrDict=[],
-        merge_inputs: Sequence[str]=[],
-        missing_inputs: bool=False,
-        also_missing_outputs: bool=False,
+        inputs_pos: bool = False,
+        outputs_pos: bool = False,
+        kw_inputs: TPairsOrDict = [],
+        kw_inputs_optional: TPairsOrDict = [],
+        kw_outputs: TPairsOrDict = [],
+        kw_outputs_optional: TPairsOrDict = [],
+        merge_inputs: Sequence[str] = [],
+        missing_inputs: bool = False,
+        also_missing_outputs: bool = False,
     ) -> None:
         if node in self._nodes:
             raise RuntimeError("Node already added")
@@ -49,28 +54,34 @@ class MetaNode(Limbs):
         self._nodes.append(node)
         node.meta_node = self
 
-        if inputs_pos: self._import_pos_inputs(node)
-        if outputs_pos: self._import_pos_outputs(node)
+        if inputs_pos:
+            self._import_pos_inputs(node)
+        if outputs_pos:
+            self._import_pos_outputs(node)
         self._import_kw_inputs(node, kw_inputs, merge=merge_inputs)
         if kw_inputs_optional:
-            self._import_kw_inputs(node, kw_inputs_optional, merge=merge_inputs, optional=True)
+            self._import_kw_inputs(
+                node, kw_inputs_optional, merge=merge_inputs, optional=True
+            )
         self._import_kw_outputs(node, kw_outputs)
         if kw_outputs_optional:
             self._import_kw_outputs(node, kw_outputs_optional, optional=True)
 
         if missing_inputs:
-            self._missing_input_handler = MissingInputInherit(node, self, inherit_outputs=also_missing_outputs)
+            self._missing_input_handler = MissingInputInherit(
+                node, self, inherit_outputs=also_missing_outputs
+            )
         if not missing_inputs and also_missing_outputs:
-            raise RuntimeError('also_missiong_outputs=True option makes no sense')
+            raise RuntimeError("also_missiong_outputs=True option makes no sense")
 
-    def _import_pos_inputs(self, node: Node, *, keyword: bool=True) -> None:
+    def _import_pos_inputs(self, node: Node, *, keyword: bool = True) -> None:
         if self._node_inputs_pos is not None:
             raise RuntimeError("Positional inputs already inherited")
         self._node_inputs_pos = node
         for input in node.inputs:
             self.inputs.add(input, positional=True, keyword=keyword)
 
-    def _import_pos_outputs(self, node: Node, *, keyword: bool=True) -> None:
+    def _import_pos_outputs(self, node: Node, *, keyword: bool = True) -> None:
         if self._node_outputs_pos is not None:
             raise RuntimeError("Positional outputs already inherited")
         self._node_outputs_pos = node
@@ -80,9 +91,9 @@ class MetaNode(Limbs):
     def _import_kw_inputs(
         self,
         node: Node,
-        kw_inputs: TPairsOrDict=[],
-        merge: Sequence[str]=[],
-        optional: bool = False
+        kw_inputs: TPairsOrDict = [],
+        merge: Sequence[str] = [],
+        optional: bool = False,
     ) -> None:
         if isinstance(kw_inputs, dict):
             iterable = kw_inputs.items()
@@ -95,17 +106,14 @@ class MetaNode(Limbs):
             try:
                 newinput = node.inputs.get_kw(iname)
             except KeyError as e:
-                if optional: continue
+                if optional:
+                    continue
                 raise RuntimeError(f"Input {iname} not found") from e
             mergethis = tname in merge
             self.inputs.add(newinput, name=tname, merge=mergethis, positional=False)
 
     def _import_kw_outputs(
-        self,
-        node: Node,
-        kw_outputs: TPairsOrDict=[],
-        *,
-        optional: bool = True
+        self, node: Node, kw_outputs: TPairsOrDict = [], *, optional: bool = True
     ) -> None:
         if isinstance(kw_outputs, dict):
             iterable = kw_outputs.items()
@@ -119,24 +127,26 @@ class MetaNode(Limbs):
             try:
                 output = node.outputs.get_kw(oname)
             except KeyError as e:
-                if optional: continue
+                if optional:
+                    continue
                 raise RuntimeError(f"Output {oname} not found") from e
             self.outputs.add(output, name=tname, positional=False)
 
-    def print(self, recursive: bool=False):
+    def print(self, recursive: bool = False):
         print(f"MetaNode: →[{len(self.inputs)}],[{len(self.outputs)}]→")
+
         def getstr(prefix_disconnected, prefix_connected, name, obj):
             if isinstance(obj, Tuple):
                 nconnected = sum(1 for limb in obj if limb.connected())
                 nlimbs = len(obj)
-                ndisconnected = nlimbs-nconnected
-                if nconnected==0:
-                    return f'{name}: {prefix_disconnected}{ndisconnected}'
-                elif ndisconnected>0:
-                    return f'{name}: {prefix_disconnected}{ndisconnected} + {prefix_connected}{nconnected}'
+                ndisconnected = nlimbs - nconnected
+                if nconnected == 0:
+                    return f"{name}: {prefix_disconnected}{ndisconnected}"
+                elif ndisconnected > 0:
+                    return f"{name}: {prefix_disconnected}{ndisconnected} + {prefix_connected}{nconnected}"
                 else:
-                    return f'{name}: {prefix_connected}{nlimbs}'
-            return f'{name}: {obj!s}'
+                    return f"{name}: {prefix_connected}{nlimbs}"
+            return f"{name}: {obj!s}"
 
         for i, (name, input) in enumerate(self.inputs.pos_edges.items()):
             print(f"     {i} {getstr('→○', '→●', name, input)}")
@@ -149,22 +159,19 @@ class MetaNode(Limbs):
 
         if recursive:
             for i, node in enumerate(self._nodes):
-                print(f'subnode {i}: ', end='')
+                print(f"subnode {i}: ", end="")
                 node.print()
 
+
 class MissingInputInherit:
-    __slots__ = ('_source_node', '_target_node', '_source_handler', '_inherit_outputs')
+    __slots__ = ("_source_node", "_target_node", "_source_handler", "_inherit_outputs")
     _source_node: Node
     _target_node: MetaNode
     _source_handler: Callable
     _inherit_outputs: bool
 
     def __init__(
-        self,
-        source_node: Node,
-        target_node: MetaNode,
-        *,
-        inherit_outputs: bool=False
+        self, source_node: Node, target_node: MetaNode, *, inherit_outputs: bool = False
     ):
         self._source_node = source_node
         self._target_node = target_node

@@ -1,4 +1,4 @@
-from typing import Mapping, TYPE_CHECKING, Optional, Tuple
+from typing import Mapping, TYPE_CHECKING, Tuple
 
 from ..meta_node import MetaNode
 from ..storage import NodeStorage
@@ -30,7 +30,7 @@ class IntegratorGroup(MetaNode):
 
         self._init_sampler(mode, "sampler", labels.get("sampler", {}))
         self._add_integrator(
-            "integrator", labels.get("integrator", {}), dropdim=dropdim, mode=mode
+            "integrator", labels.get("integrator", {}), dropdim=dropdim
         )
 
     def _init_sampler(self, mode: ModeType, name: str = "sampler", label: Mapping = {}):
@@ -51,16 +51,11 @@ class IntegratorGroup(MetaNode):
         self,
         name: str = "integrator",
         label: Mapping = {},
-        mode: Optional[ModeType] = None,
         *,
         positionals: bool = True,
         dropdim: bool,
     ) -> Integrator:
         integrator = Integrator(name, dropdim=dropdim, label=label)
-        if mode == "2d":
-            # make an input directly if 2d mode;
-            # this is an important for several replicates and broadcasting
-            integrator("ordersY")
         self._sampler.outputs["weights"] >> integrator("weights")
 
         self._add_node(
@@ -108,7 +103,7 @@ class IntegratorGroup(MetaNode):
                 key = (key,)
             name = ".".join(key_integrator + key)
             integrator = integrators._add_integrator(
-                name, label_int, positionals=False, dropdim=dropdim, mode=mode
+                name, label_int, positionals=False, dropdim=dropdim
             )
             integrator()
             nodes[key_integrator + key] = integrator
