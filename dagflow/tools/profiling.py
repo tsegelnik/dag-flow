@@ -12,13 +12,65 @@ import tabulate
 from ..nodes import FunctionNode
 
 
-class ProfilingBase:
+class Profiling:
     _target_nodes: List[FunctionNode]
+    _source: List[FunctionNode]
+    _sink: List[FunctionNode]
+    _n_runs: int
     _estimations_table: pd.DataFrame
-    _ALLOWED_GROUPBY: list
+    _ALLOWED_GROUPBY: List[str]
 
-    def __init__(self, target_nodes):
-        self._target_nodes = target_nodes
+    def __init__(self,
+                 target_nodes: List[FunctionNode]=[],
+                 source: List[FunctionNode]=[], 
+                 sink: List[FunctionNode]=[], 
+                 n_runs: int=100):
+        self._source = source
+        self._sink = sink
+        self._n_runs = n_runs
+        if target_nodes:
+            self._target_nodes = target_nodes
+        elif source and sink:
+            self._target_nodes = list(self._gather_related_nodes())
+        else:
+            raise ValueError("You shoud provide profiler with `target_nodes` "
+                             "or use `source` and `sink` to find "
+                             "target nodes automaticly")
+
+    def __child_nodes_gen(self, node: FunctionNode) -> Generator[FunctionNode, None, None]:
+        for output in node.outputs.iter_all():
+            for child_input in output.child_inputs:
+                yield child_input.node
+
+    def __check_reachable(self, nodes_gathered):
+        if not all(s in nodes_gathered for s in self._sink):
+            raise ValueError("Some of the `sink` nodes are unreachable "
+                             "(no paths from source)")
+
+    def _gather_related_nodes(self) -> Set[FunctionNode]:
+        nodes_stack = collections.deque()
+        iters_stack = collections.deque()
+        related_nodes = set(self._source)
+        for start_node in self._source:
+            current_iterator = self.__child_nodes_gen(start_node)
+            while True:
+                try:
+                    node = next(current_iterator)
+                    nodes_stack.append(node)
+                    iters_stack.append(current_iterator)
+                    if node in self._sink:
+                        related_nodes.update(nodes_stack)
+                        nodes_stack.pop()
+                        current_iterator = iters_stack.pop()
+                    else:
+                        current_iterator = self.__child_nodes_gen(node)
+                except StopIteration:
+                    if len(nodes_stack) == 0:
+                        break
+                    nodes_stack.pop()
+                    current_iterator = iters_stack.pop()
+        self.__check_reachable(related_nodes)
+        return related_nodes
 
     def check_report_capability(self, group_by):
         if not hasattr(self, "_estimations_table"):
@@ -39,7 +91,8 @@ class ProfilingBase:
         self._print_report(self._estimations_table, top_n)
         raise NotImplementedError
 
-class IndividualProfiling(ProfilingBase):
+
+class IndividualProfiling(Profiling):
     _n_runs: int
     _estimations_table: pd.DataFrame
 
@@ -51,10 +104,12 @@ class IndividualProfiling(ProfilingBase):
     _ALLOWED_GROUPBY = ["node", "type", "name"]
     
     def __init__(self,
-                 target_nodes: List[FunctionNode],
+                 target_nodes: List[FunctionNode]=[],
+                 *,
+                 source: List[FunctionNode]=[],
+                 sink: List[FunctionNode]=[],
                  n_runs: int=DEFAULT_RUNS):
-        super().__init__(target_nodes)
-        self._n_runs = n_runs
+        super().__init__(target_nodes, source, sink, n_runs)
 
     @classmethod
     def estimate_node(cls, node: FunctionNode, n_runs: int=DEFAULT_RUNS):
@@ -106,66 +161,21 @@ class IndividualProfiling(ProfilingBase):
                                 inplace=True)
         self._print_report(report, top_n)
     
-class GroupProfiling(ProfilingBase):
 
-    # _estimations: List[EstimateRecord]
-    # _excluded_nodes: List[FunctionNode]
-    _target_nodes: List[FunctionNode]
-    _source: List[FunctionNode]
-    _sink: List[FunctionNode]
-    _n_runs: int
-
-    _ALLOWED_GROUPBY = [["source nodes", "sink nodes"],  # groupby=[a, b] - groub  
-                       "source nodes",                  #  by two columns a and b
+class FrameworkProfiling(Profiling):
+    _ALLOWED_GROUPBY = [["source nodes", "sink nodes"],  # [a, b] - group by two
+                       "source nodes",                   #  columns a and b
                        "sink nodes"]
     # TODO: align with the parent class
     DEFAULT_AGG_FUNCS = ['count', 'mean', 'median', 'std', 'min', 'max']
 
-    def __init__(self, 
+    def __init__(self,
+                 target_nodes: List[FunctionNode]=[],
+                 *,
                  source: List[FunctionNode]=[],
                  sink: List[FunctionNode]=[],
                  n_runs = 100) -> None:
-        # self._estimations = list()
-        # self._excluded_nodes = excluded_nodes
-        self._source = source
-        self._sink = sink
-        self._n_runs = n_runs
-        self._target_nodes = list(self._gather_related_nodes())
-
-    def __child_nodes_gen(self, node: FunctionNode) -> Generator[FunctionNode, None, None]:
-        for output in node.outputs.iter_all():
-            for child_input in output.child_inputs:
-                yield child_input.node
-
-    def __check_reachable(self, nodes_gathered):
-        if not all(s in nodes_gathered for s in self._sink):
-            raise ValueError("Some of the `sink` nodes are unreachable "
-                             "(no paths from source)")
-
-    def _gather_related_nodes(self) -> Set[FunctionNode]:
-        nodes_stack = collections.deque()
-        iters_stack = collections.deque()
-        related_nodes = set(self._source)
-        for start_node in self._source:
-            current_iterator = self.__child_nodes_gen(start_node)
-            while True:
-                try:
-                    node = next(current_iterator)
-                    nodes_stack.append(node)
-                    iters_stack.append(current_iterator)
-                    if node in self._sink:
-                        related_nodes.update(nodes_stack)
-                        nodes_stack.pop()
-                        current_iterator = iters_stack.pop()
-                    else:
-                        current_iterator = self.__child_nodes_gen(node)
-                except StopIteration:
-                    if len(nodes_stack) == 0:
-                        break
-                    nodes_stack.pop()
-                    current_iterator = iters_stack.pop()
-        self.__check_reachable(related_nodes)
-        return related_nodes
+        super().__init__(target_nodes, source, sink, n_runs)
 
     def _taint_nodes(self):
         for node in self._target_nodes:
@@ -197,7 +207,8 @@ class GroupProfiling(ProfilingBase):
         self._restore_fcns()
         return results
 
-    def estimate_framework_time(self, append_results: bool=False):
+    def estimate_framework_time(self, 
+                                append_results: bool=False) -> FrameworkProfiling:
         results = self._estimate_framework_time()
         df = pd.DataFrame(results, columns=["time"])
         df.insert(0, "sink nodes", str([n.name for n in self._sink]))
@@ -206,6 +217,7 @@ class GroupProfiling(ProfilingBase):
             self._estimations_table = pd.concat([self._estimations_table, df])
         else:
             self._estimations_table = df
+        return self
 
     def _aggregate_df(self, grouped_df, grouped_by) -> pd.DataFrame:
         df = grouped_df.agg({'time': self.DEFAULT_AGG_FUNCS})
