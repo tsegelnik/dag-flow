@@ -5,7 +5,7 @@ from collections import Counter
 import numpy as np
 import pytest
 
-from dagflow.tools.profiling import IndividualProfiling, GroupProfiling
+from dagflow.tools.profiling import IndividualProfiling, FrameworkProfiling
 
 from dagflow.nodes import FunctionNode
 from dagflow.graph import Graph
@@ -52,14 +52,14 @@ class TestIndividual:
     def test_estimate_target_nodes(self):
         g = self.obtain_graph()
         target_nodes = g._nodes
-        profiling = IndividualProfiling(target_nodes, self.n_runs)
+        profiling = IndividualProfiling(target_nodes, n_runs=self.n_runs)
         profiling.estimate_target_nodes()
         assert hasattr(profiling, "_estimations_table")
 
     def test_make_report(self):
         g = self.obtain_graph()
         target_nodes = g._nodes
-        profiling = IndividualProfiling(target_nodes, self.n_runs)
+        profiling = IndividualProfiling(target_nodes, n_runs=self.n_runs)
         profiling.estimate_target_nodes().make_report()
         profiling.make_report(group_by=None)
         profiling.make_report(group_by="name")
@@ -89,33 +89,33 @@ def test_group_pfoginling_01():
 
     source = array_nodes[0:2]
     sink = [prod1]
-    profiling = GroupProfiling(source, sink)
+    profiling = FrameworkProfiling(source=source, sink=sink)
     connected_nodes = [array_nodes[0], array_nodes[1], sum1, prod1]
     assert Counter(profiling._target_nodes) == Counter(connected_nodes)
 
     source = [sum1]
     sink = [prod2]
-    profiling = GroupProfiling(source, sink)
+    profiling = FrameworkProfiling(source=source, sink=sink)
     connected_nodes = [sum1, prod1, prod2]
     assert Counter(profiling._target_nodes) == Counter(connected_nodes)
 
     source = [array_nodes[2]]
     sink = [prod2]
-    profiling = GroupProfiling(source, sink)
+    profiling = FrameworkProfiling(source=source, sink=sink)
     result = profiling._target_nodes
     expected = [array_nodes[2], sum1, sum2, prod1, prod2]
     assert Counter(result) == Counter(expected)
 
     source = [array_nodes[4], array_nodes[0], array_nodes[1]]
     sink = [prod2]
-    profiling = GroupProfiling(source, sink)
+    profiling = FrameworkProfiling(source=source, sink=sink)
     result = profiling._target_nodes
     expected = source + [sum1, prod1, prod2]
     assert Counter(result) == Counter(expected)
 
     source = [array_nodes[4], array_nodes[0], array_nodes[1]]
     sink = [prod1]
-    profiling = GroupProfiling(source, sink)
+    profiling = FrameworkProfiling(source=source, sink=sink)
     result = profiling._target_nodes
     expected = source + [sum1, prod1]
     assert Counter(result) == Counter(expected)
@@ -123,11 +123,11 @@ def test_group_pfoginling_01():
     source = [array_nodes[0], array_nodes[1]]
     sink = [prod1, array_nodes[4]]
     with pytest.raises(ValueError):
-        GroupProfiling(source, sink)
+        FrameworkProfiling(source=source, sink=sink)
 
     source = [array_nodes[0], array_nodes[1]]
     sink = [prod2]
-    profiling = GroupProfiling(source, sink, 500)
+    profiling = FrameworkProfiling(source=source, sink=sink, n_runs=500)
     result = profiling._target_nodes
     expected = source + [sum1, prod1] + sink
     assert Counter(result) == Counter(expected)
