@@ -2,28 +2,30 @@ from __future__ import annotations
 
 from timeit import timeit, repeat
 import collections
-from collections.abc import Generator
-from typing import List, Set
+from collections.abc import Generator, Sequence
+from abc import ABCMeta, abstractmethod
 
-import numpy as np
 import pandas as pd
 import tabulate
 
 from ..nodes import FunctionNode
 
-
-class Profiling:
-    _target_nodes: List[FunctionNode]
-    _source: List[FunctionNode]
-    _sink: List[FunctionNode]
+# abc - Abstract Base Class
+class Profiling(metaclass=ABCMeta):
+    _target_nodes: Sequence[FunctionNode]
+    _source: Sequence[FunctionNode]
+    _sink: Sequence[FunctionNode]
     _n_runs: int
     _estimations_table: pd.DataFrame
-    _ALLOWED_GROUPBY: List[str]
+    _ALLOWED_GROUPBY: tuple[str]
+    _ALLOWED_AGG_FUNCS: tuple[str] = ("count", "mean", "median",
+                                      "std", "min", "max")
+    DEFAULT_AGG_FUNCS: tuple[str] = ("count", "min", "mean")
 
     def __init__(self,
-                 target_nodes: List[FunctionNode]=[],
-                 source: List[FunctionNode]=[], 
-                 sink: List[FunctionNode]=[], 
+                 target_nodes: Sequence[FunctionNode]=[],
+                 source: Sequence[FunctionNode]=[], 
+                 sink: Sequence[FunctionNode]=[], 
                  n_runs: int=100):
         self._source = source
         self._sink = sink
@@ -47,7 +49,7 @@ class Profiling:
             raise ValueError("Some of the `sink` nodes are unreachable "
                              "(no paths from source)")
 
-    def _gather_related_nodes(self) -> Set[FunctionNode]:
+    def _gather_related_nodes(self) -> set[FunctionNode]:
         nodes_stack = collections.deque()
         iters_stack = collections.deque()
         related_nodes = set(self._source)
@@ -71,24 +73,58 @@ class Profiling:
                     current_iterator = iters_stack.pop()
         self.__check_reachable(related_nodes)
         return related_nodes
-
-    def check_report_capability(self, group_by):
+    
+    def _aggregate_df(self, grouped_df, grouped_by, agg_funcs) -> pd.DataFrame:
+        df = grouped_df.agg({'time': agg_funcs})
+        # grouped_by can be ["col1", "col2", ...] or "col"
+        new_columns = grouped_by if type(grouped_by)==list else [grouped_by]
+        # get rid of multiindex and add prefix `t_` - time notation
+        new_columns += ['t_' + c if c != 'count' else 'count' for c in agg_funcs]
+        df.columns = new_columns
+        return df
+    
+    def _check_report_capability(self, group_by, agg_funcs):
         if not hasattr(self, "_estimations_table"):
-            raise ValueError("No estimations found!\n"
-                             "Note: first esimate your nodes "
-                             "with methods like `estimate_*`")
+            raise AttributeError("No estimations found!\n"
+                                 "Note: first esimate your nodes "
+                                 "with methods like `estimate_*`")
         if group_by != None and group_by not in self._ALLOWED_GROUPBY:
             raise ValueError(f"Invalid `group_by` name \"{group_by}\"."
                              f"You must use one of these: {self._ALLOWED_GROUPBY}")
+        if not all(a in self._ALLOWED_AGG_FUNCS for a in agg_funcs):
+            raise ValueError("Invalid aggregate function"
+                             "You should use one of these:"
+                             f"{self._ALLOWED_AGG_FUNCS}")
         
-    def _print_report(self, data_frame, rows):
-        print(tabulate.tabulate(data_frame.head(rows), 
+    @abstractmethod
+    def make_report(self, group_by, agg_funcs, sort_by) -> pd.DataFrame:
+        if agg_funcs == None:
+            agg_funcs = self.DEFAULT_AGG_FUNCS
+        if sort_by not in agg_funcs:
+             # using list comprehension in case of type(agg_funcs) == tuple
+            agg_funcs = [sort_by] + [a for a in agg_funcs]
+        self._check_report_capability(group_by, agg_funcs)
+        if group_by == None:
+            report = self._estimations_table.sort_values("time",
+                                                         ascending=False,
+                                                         ignore_index=True)
+        else:
+            grouped = self._estimations_table.groupby(group_by, as_index=False)
+            report = self._aggregate_df(grouped, group_by, agg_funcs)
+            sort_by = sort_by if sort_by == 'count' else "t_" + sort_by
+            report.sort_values("t_" + sort_by, ascending=False, ignore_index=True,
+                                inplace=True)
+        return report
+    
+    def _print_table(self, dataframe, rows):
+        print(tabulate.tabulate(dataframe.head(rows), 
                                 headers='keys', 
                                 tablefmt='psql'))
-        
-    def make_report(self, top_n=10, group_by=None):
-        self.check_report_capability(group_by)
-        self._print_report(self._estimations_table, top_n)
+    
+    @abstractmethod
+    def print_report(self, rows, *args, **kwargs):
+        report = self.make_report(rows, *args, **kwargs)
+        self._print_table(report)
         raise NotImplementedError
 
 
@@ -97,17 +133,14 @@ class IndividualProfiling(Profiling):
     _estimations_table: pd.DataFrame
 
     DEFAULT_RUNS = 10000
-    _TABLE_COLUMNS = ["node",
-                      "type",
-                      "name",
-                      "time"]
-    _ALLOWED_GROUPBY = ["node", "type", "name"]
+    _TABLE_COLUMNS = ("node", "type", "name", "time")
+    _ALLOWED_GROUPBY = ("node", "type", "name")
     
     def __init__(self,
-                 target_nodes: List[FunctionNode]=[],
+                 target_nodes: Sequence[FunctionNode]=[],
                  *,
-                 source: List[FunctionNode]=[],
-                 sink: List[FunctionNode]=[],
+                 source: Sequence[FunctionNode]=[],
+                 sink: Sequence[FunctionNode]=[],
                  n_runs: int=DEFAULT_RUNS):
         super().__init__(target_nodes, source, sink, n_runs)
 
@@ -129,51 +162,30 @@ class IndividualProfiling(Profiling):
             records["time"].append(estimations)
         self._estimations_table = pd.DataFrame(records)
         return self
-    
-    def _print_report(self, data_frame, rows):
+
+    def make_report(self, 
+                    group_by: str | None="type",
+                    agg_funcs: Sequence[str] | None=None):
+        return super().make_report(group_by, agg_funcs)
+
+    def print_report(self, rows, group_by):
+        report = self.make_report(group_by)
         print(f"\nIndividual Profilng {hex(id(self))}, "
               f"n_runs for each node: {self._n_runs}, "
               f"max rows displayed: {rows}")
-        return super()._print_report(data_frame, rows)
-
-    def _aggregate_df(self, grouped_df) -> pd.DataFrame:
-        df = grouped_df.agg({'time': 
-                             ['count', 'mean', 'median', 
-                              'std', 'min', 'max']})
-        # get rid of multiindex and add prefix `t_` - time notation
-        new_columns = ['type', 'count']
-        new_columns += ['t_' + c[1] for c in df.columns[2:]]
-        df.columns = new_columns
-        return df
-    
-    def make_report(self, 
-                    top_n: int | None=10,
-                    group_by: str | None="type"):
-        super().check_report_capability(group_by)
-        if group_by == None:
-            report = self._estimations_table.sort_values("time",
-                                                         ascending=False,
-                                                         ignore_index=True)
-        else:
-            grouped = self._estimations_table.groupby(group_by, as_index=False)
-            report = self._aggregate_df(grouped)
-            report.sort_values("t_mean", ascending=False, ignore_index=True,
-                                inplace=True)
-        self._print_report(report, top_n)
+        return super()._print_table(report, rows)
     
 
 class FrameworkProfiling(Profiling):
     _ALLOWED_GROUPBY = [["source nodes", "sink nodes"],  # [a, b] - group by two
                        "source nodes",                   #  columns a and b
                        "sink nodes"]
-    # TODO: align with the parent class
-    DEFAULT_AGG_FUNCS = ['count', 'mean', 'median', 'std', 'min', 'max']
 
     def __init__(self,
-                 target_nodes: List[FunctionNode]=[],
+                 target_nodes: Sequence[FunctionNode]=[],
                  *,
-                 source: List[FunctionNode]=[],
-                 sink: List[FunctionNode]=[],
+                 source: Sequence[FunctionNode]=[],
+                 sink: Sequence[FunctionNode]=[],
                  n_runs = 100) -> None:
         super().__init__(target_nodes, source, sink, n_runs)
 
@@ -219,35 +231,18 @@ class FrameworkProfiling(Profiling):
             self._estimations_table = df
         return self
 
-    def _aggregate_df(self, grouped_df, grouped_by) -> pd.DataFrame:
-        df = grouped_df.agg({'time': self.DEFAULT_AGG_FUNCS})
-        # grouped_by can be ["col1", "col2", ...] or "col"
-        new_columns = grouped_by if type(grouped_by)==list else [grouped_by]
-        # get rid of multiindex and add prefix `t_` - time notation
-        new_columns += ['count']
-        new_columns += ['t_' + c for c in self.DEFAULT_AGG_FUNCS[1:]]
-        df.columns = new_columns
-        return df
-    
-    def _print_report(self, data_frame, rows):
-        print(f"\nGroup Profling {hex(id(self))}, "
+    def make_report(self,
+                    group_by=["source nodes", "sink nodes"],
+                    agg_funcs: Sequence[str] | None=None):
+        return super().make_report(group_by, agg_funcs)
+
+    def print_report(self, 
+                     rows: int | None=10, 
+                     group_by=["source nodes", "sink nodes"],
+                     agg_funcs: Sequence[str] | None=None):
+        report = self.make_report(group_by, agg_funcs)
+        print(f"\nFramework Profling {hex(id(self))}, "
               f"n_runs for each estimation: {self._n_runs}, "
               f"nodes in group: {len(self._target_nodes)}, "
               f"max rows displayed: {rows}")
-        return super()._print_report(data_frame, rows)
-
-
-    def make_report(self,
-                    top_n: int | None=10,
-                    group_by=["source nodes", "sink nodes"]):
-        super().check_report_capability(group_by)
-        if group_by == None:
-            report = self._estimations_table.sort_values("time",
-                                                         ascending=False,
-                                                         ignore_index=True)
-        else:
-            grouped = self._estimations_table.groupby(group_by, as_index=False)
-            report = self._aggregate_df(grouped, group_by)
-            report.sort_values("t_mean", ascending=False, ignore_index=True,
-                                inplace=True)
-        self._print_report(report, top_n)
+        return super()._print_table(report, rows)
