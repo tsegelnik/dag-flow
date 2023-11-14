@@ -395,7 +395,9 @@ class Output:
             ret["value"] = "…"
             return ret
 
-        ret["value"] = float(data)
+        if data.size>0:
+            ret["value"]=float(data.ravel()[0])
+
         return ret
 
 

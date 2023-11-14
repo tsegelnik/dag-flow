@@ -39,6 +39,16 @@ def trunc(text: str, width: int) -> str:
     return "\n".join(line[:width] for line in text.split("\n"))
 
 
+def _fillna(df: DataFrame, columnname: str, replacement: str):
+    column = df[columnname]
+    if not column.isnull().values.any():
+        return
+
+    if column.dtype!='O':
+        column.astype('O', copy=False)
+
+    column.fillna("-", inplace=True)
+
 class NodeStorage(NestedMKDict):
     __slots__ = ("_remove_connected_inputs",)
     _remove_connected_inputs: bool
@@ -226,12 +236,12 @@ class NodeStorage(NestedMKDict):
             if df[key].isna().all():
                 del df[key]
             else:
-                df[key].fillna("-", inplace=True)
+                _fillna(df, key, "-")
 
-        df["value"].fillna("-", inplace=True)
-        df["flags"].fillna("", inplace=True)
-        df["label"].fillna("", inplace=True)
-        df["shape"].fillna("", inplace=True)
+        _fillna(df, "value", "-")
+        _fillna(df, "flags", "")
+        _fillna(df, "label", "")
+        _fillna(df, "shape", "")
 
         if (df["flags"] == "").all():
             del df["flags"]
