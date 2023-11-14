@@ -1,6 +1,6 @@
 from typing import List, Optional, Literal
 from numpy.typing import DTypeLike, NDArray
-from numpy import product
+from numpy import prod
 
 from .types import EdgesLike, ShapeLike, MeshesLike
 from .labels import repr_pretty
@@ -53,7 +53,7 @@ class DataDescriptor:
     @property
     def size(self) -> int:
         """ Return the size of the data """
-        return product(self.shape)
+        return prod(self.shape)
 
     @property
     def edges_arrays(self) -> Optional[List[NDArray]]:
