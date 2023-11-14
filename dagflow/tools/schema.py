@@ -88,9 +88,11 @@ def LoadFileWithExt(
 
 
 from yaml import Loader, load
+from pathlib import Path
 
 
-def LoadYaml(fname: str):
+def LoadYaml(fname: Union[Path,str]):
+    fname = str(fname)
     logger.log(SUBINFO, f"Read: {fname}")
     with open(fname, "r") as file:
         return load(file, Loader)
