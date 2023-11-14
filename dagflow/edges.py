@@ -138,6 +138,13 @@ class EdgeContainer:
         return self._pos_edges_list[idx]
     iat = get_pos
 
+    def key(self, arg):
+        for key, value in self._kw_edges.items():
+            if value is arg:
+                return key
+
+        raise ValueError()
+
     def index(self, arg):
         return self._pos_edges_list.index(arg)
 
