@@ -222,7 +222,7 @@ class Input:
         self._node.taint_type(*args, **kwargs)
 
     def connected(self) -> bool:
-        return bool(self._parent_output)
+        return self._parent_output is not None
 
     def deep_iter_inputs(self, disconnected_only=False):
         if disconnected_only and self.connected():
