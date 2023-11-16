@@ -17,10 +17,11 @@ class Profiling(metaclass=ABCMeta):
     _sink: Sequence[FunctionNode]
     _n_runs: int
     _estimations_table: pd.DataFrame
+    # TODO: check for _ALLOWED_GROUPBY existence
     _ALLOWED_GROUPBY: tuple[str]
     _ALLOWED_AGG_FUNCS: tuple[str] = ("count", "mean", "median",
                                       "std", "min", "max")
-    DEFAULT_AGG_FUNCS: tuple[str] = ("count", "min", "mean")
+    _DEFAULT_AGG_FUNCS: tuple[str] = ("min", "mean", "count")
 
     def __init__(self,
                  target_nodes: Sequence[FunctionNode]=[],
@@ -98,22 +99,21 @@ class Profiling(metaclass=ABCMeta):
         
     @abstractmethod
     def make_report(self, group_by, agg_funcs, sort_by) -> pd.DataFrame:
-        if agg_funcs == None:
-            agg_funcs = self.DEFAULT_AGG_FUNCS
-        if sort_by not in agg_funcs:
-             # using list comprehension in case of type(agg_funcs) == tuple
-            agg_funcs = [sort_by] + [a for a in agg_funcs]
+        if agg_funcs == None or agg_funcs == []:
+            agg_funcs = self._DEFAULT_AGG_FUNCS
+        if sort_by != 'count' and sort_by in self._ALLOWED_AGG_FUNCS:
+            sort_by = "t_" + sort_by
         self._check_report_capability(group_by, agg_funcs)
         if group_by == None:
-            report = self._estimations_table.sort_values("time",
+            report = self._estimations_table.sort_values(sort_by or 'time',
                                                          ascending=False,
                                                          ignore_index=True)
         else:
             grouped = self._estimations_table.groupby(group_by, as_index=False)
             report = self._aggregate_df(grouped, group_by, agg_funcs)
-            sort_by = sort_by if sort_by == 'count' else "t_" + sort_by
-            report.sort_values("t_" + sort_by, ascending=False, ignore_index=True,
-                                inplace=True)
+            # TODO: add check for agg_funcs[0] == 'count'
+            report.sort_values(sort_by or 't_' + agg_funcs[0], ascending=False, ignore_index=True,
+                               inplace=True)
         return report
     
     def _print_table(self, dataframe, rows):
@@ -165,11 +165,16 @@ class IndividualProfiling(Profiling):
 
     def make_report(self, 
                     group_by: str | None="type",
-                    agg_funcs: Sequence[str] | None=None):
-        return super().make_report(group_by, agg_funcs)
+                    agg_funcs: Sequence[str] | None=None,
+                    sort_by: str | None=None):
+        return super().make_report(group_by, agg_funcs, sort_by)
 
-    def print_report(self, rows, group_by):
-        report = self.make_report(group_by)
+    def print_report(self, 
+                     rows: int | None=10, 
+                     group_by: str | None="type",
+                     agg_funcs: Sequence[str] | None=None,
+                     sort_by: str | None=None):
+        report = self.make_report(group_by, agg_funcs, sort_by)
         print(f"\nIndividual Profilng {hex(id(self))}, "
               f"n_runs for each node: {self._n_runs}, "
               f"max rows displayed: {rows}")
@@ -233,14 +238,16 @@ class FrameworkProfiling(Profiling):
 
     def make_report(self,
                     group_by=["source nodes", "sink nodes"],
-                    agg_funcs: Sequence[str] | None=None):
-        return super().make_report(group_by, agg_funcs)
+                    agg_funcs: Sequence[str] | None=None,
+                    sort_by: str | None=None):
+        return super().make_report(group_by, agg_funcs, sort_by)
 
     def print_report(self, 
                      rows: int | None=10, 
                      group_by=["source nodes", "sink nodes"],
-                     agg_funcs: Sequence[str] | None=None):
-        report = self.make_report(group_by, agg_funcs)
+                     agg_funcs: Sequence[str] | None=None,
+                     sort_by: str | None=None):
+        report = self.make_report(group_by, agg_funcs, sort_by)
         print(f"\nFramework Profling {hex(id(self))}, "
               f"n_runs for each estimation: {self._n_runs}, "
               f"nodes in group: {len(self._target_nodes)}, "
