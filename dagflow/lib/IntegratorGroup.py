@@ -86,7 +86,7 @@ class IntegratorGroup(MetaNode):
     ) -> Tuple["IntegratorGroup", "NodeStorage"]:
         storage = NodeStorage(default_containers=True)
         nodes = storage("nodes")
-        inputs = storage("inputs")
+        storage("inputs")
         outputs = storage("outputs")
 
         integrators = cls(mode, bare=True)
@@ -105,10 +105,9 @@ class IntegratorGroup(MetaNode):
             integrator = integrators._add_integrator(
                 name, label_int, positionals=False, dropdim=dropdim
             )
-            integrator()
             nodes[key_integrator + key] = integrator
-            inputs[key_integrator + key] = integrator.inputs[0]
-            outputs[key_integrator + key] = integrator.outputs[0]
+            # inputs[key_integrator + key] = integrator.inputs[0]
+            # outputs[key_integrator + key] = integrator.outputs[0]
 
         NodeStorage.update_current(storage, strict=True)
 

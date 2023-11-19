@@ -1,7 +1,10 @@
-from .node import Node
-from .limbs import Limbs
+from typing import Callable, Dict, List, Optional, Sequence, Tuple, Union, TYPE_CHECKING
 
-from typing import Sequence, List, Optional, Union, Tuple, Callable, Dict
+from .limbs import Limbs
+from .node import Node
+
+if TYPE_CHECKING:
+    from .input import Input
 
 TStrOrPair = Union[str, Tuple[str, str]]
 TPairsOrDict = Union[Sequence[TStrOrPair], Dict]
@@ -12,6 +15,7 @@ class MetaNode(Limbs):
 
     __slots__ = (
         "_nodes",
+        "_leading_node",
         "_node_inputs_pos",
         "_node_outputs_pos",
         "_missing_input_handler",
@@ -19,6 +23,7 @@ class MetaNode(Limbs):
     )
 
     _nodes: List[Node]
+    _leading_node: Optional[Node]
     _node_inputs_pos: Optional[Node]
     _node_outputs_pos: Optional[Node]
     _missing_input_handler: Callable
@@ -27,12 +32,36 @@ class MetaNode(Limbs):
         super().__init__()
 
         self._nodes = []
+        self._leading_node = None
         self._node_inputs_pos = None
         self._node_outputs_pos = None
         self._missing_input_handler = lambda *_, **__: None
 
-    def __call__(self, *args, **kwargs):
-        return tuple(node(*args, **kwargs) for node in self._nodes)
+    @property
+    def leading_node(self) -> Optional[Node]:
+        return self._leading_node
+
+    def _new_node(self, *args, **kwargs) -> Node:
+        """
+        Creates new node with positional input
+        """
+        node = Node(*args, **kwargs)
+        node()
+        self._add_node(node, *args, **kwargs)
+        return node
+
+    def __call__(
+        self, name: Optional[str] = None, *args, **kwargs
+    ) -> Union[Optional["Input"], Tuple[Optional["Input"], ...]]:
+        """
+        For positional inputs there are two strategies:
+            * append a new positional input into the leading node,
+            * append a new node with a positional input to self.
+        Else returns a tuple of calls of all the nodes.
+        """
+        if name is None and self.leading_node is not None:
+            return self.leading_node(*args, **kwargs)
+        return tuple(node(name, *args, **kwargs) for node in self._nodes)
 
     def _add_node(
         self,
