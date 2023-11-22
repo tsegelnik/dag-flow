@@ -3,7 +3,7 @@
 import contextlib
 
 from dagflow.input import Input, Inputs
-from dagflow.limbs import Limbs
+from dagflow.nodebase import NodeBase
 from dagflow.output import Output
 
 
@@ -14,8 +14,8 @@ def test_01():
     input2 = Input("i2", None)
     input3 = Input("i3", None)
 
-    inputs.add( (input1, input2) )
-    inputs.add( input3 )
+    inputs.add((input1, input2))
+    inputs.add(input3)
 
     print(inputs)
 
@@ -48,7 +48,7 @@ def test_02():
     output1 = Output("o1", None)
 
     try:
-        inputs.add( output1 )
+        inputs.add(output1)
     except Exception:
         pass
     else:
@@ -64,22 +64,21 @@ def test_03():
     output1 = Output("o1", None)
     output2 = Output("o2", None)
 
-    limbs = Limbs((input1, input2, input3), (output1, output2))
-    print(limbs)
-    limbs.print()
+    node = NodeBase((input1, input2, input3), (output1, output2))
+    print(node)
+    node.print()
     print()
 
-    limbs1 = limbs[None, "o1"]
-    print(limbs1)
-    # limbs1.print()
+    obj1 = node[None, "o1"]
+    print(obj1)
     print()
 
-    limbs2 = limbs[:, "o1"]
-    print(limbs2)
-    limbs2.print()
+    obj2 = node[:, "o1"]
+    print(obj2)
+    obj2.print()
     print()
 
-    limbs3 = limbs[("i1", "i3"), "o1"]
-    print(limbs3)
-    limbs3.print()
+    obj3 = node[("i1", "i3"), "o1"]
+    print(obj3)
+    obj3.print()
     print()

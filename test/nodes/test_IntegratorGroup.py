@@ -1,5 +1,5 @@
 from dagflow.graph import Graph
-from dagflow.meta_node import MetaNode
+from dagflow.metanode import MetaNode
 from dagflow.lib import Array, ManyToOneNode, OneToOneNode
 from dagflow.lib import IntegratorGroup
 from dagflow.lib import Cos, Sin

@@ -1,7 +1,7 @@
-from typing import Callable, Dict, List, Optional, Sequence, Tuple, Union, TYPE_CHECKING
+from typing import TYPE_CHECKING, Callable, Dict, List, Optional, Sequence, Tuple, Union
 
-from .limbs import Limbs
 from .node import Node
+from .nodebase import NodeBase
 
 if TYPE_CHECKING:
     from .input import Input
@@ -10,7 +10,7 @@ TStrOrPair = Union[str, Tuple[str, str]]
 TPairsOrDict = Union[Sequence[TStrOrPair], Dict]
 
 
-class MetaNode(Limbs):
+class MetaNode(NodeBase):
     """A node containing multiple nodes and exposing part of their inputs and outputs"""
 
     __slots__ = (
@@ -81,7 +81,7 @@ class MetaNode(Limbs):
             raise RuntimeError("Node already added")
 
         self._nodes.append(node)
-        node.meta_node = self
+        node.metanode = self
 
         if inputs_pos:
             self._import_pos_inputs(node)
@@ -166,15 +166,15 @@ class MetaNode(Limbs):
 
         def getstr(prefix_disconnected, prefix_connected, name, obj):
             if isinstance(obj, Tuple):
-                nconnected = sum(1 for limb in obj if limb.connected())
-                nlimbs = len(obj)
-                ndisconnected = nlimbs - nconnected
-                if nconnected == 0:
-                    return f"{name}: {prefix_disconnected}{ndisconnected}"
-                elif ndisconnected > 0:
-                    return f"{name}: {prefix_disconnected}{ndisconnected} + {prefix_connected}{nconnected}"
+                Nconnected = sum(1 for node in obj if node.connected())
+                Nnode = len(obj)
+                Ndisconnected = Nnode - Nconnected
+                if Nconnected == 0:
+                    return f"{name}: {prefix_disconnected}{Ndisconnected}"
+                elif Ndisconnected > 0:
+                    return f"{name}: {prefix_disconnected}{Ndisconnected} + {prefix_connected}{Nconnected}"
                 else:
-                    return f"{name}: {prefix_connected}{nlimbs}"
+                    return f"{name}: {prefix_connected}{Nnode}"
             return f"{name}: {obj!s}"
 
         for i, (name, input) in enumerate(self.inputs.pos_edges.items()):

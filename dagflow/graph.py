@@ -7,10 +7,10 @@ from .exception import (
     UnclosedGraphError,
 )
 from .logger import Logger, get_logger
-from .node_group import NodeGroup
+from .graphbase import GraphBase
 
 
-class Graph(NodeGroup):
+class Graph(GraphBase):
     """
     The graph class:
     holds nodes as a list, has name, label, logger and uses context
@@ -70,11 +70,9 @@ class Graph(NodeGroup):
 
     def _add_output(self, *args, **kwargs):
         """Dummy method"""
-        pass
 
     def _add_input(self, *args, **kwargs):
         """Dummy method"""
-        pass
 
     def label(self):
         """Returns formatted label"""

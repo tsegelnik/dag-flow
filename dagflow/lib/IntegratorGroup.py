@@ -1,6 +1,6 @@
 from typing import Mapping, TYPE_CHECKING, Tuple
 
-from ..meta_node import MetaNode
+from ..metanode import MetaNode
 from ..storage import NodeStorage
 from .Integrator import Integrator
 from .IntegratorSampler import IntegratorSampler, ModeType

@@ -1,7 +1,7 @@
 from typing import Literal, Mapping, Tuple
 from multikeydict.typing import KeyLike
 
-from ..meta_node import MetaNode
+from ..metanode import MetaNode
 from ..node import Node
 from ..storage import NodeStorage
 from .Interpolator import Interpolator
@@ -93,7 +93,9 @@ class InterpolatorGroup(MetaNode):
                 name, method, label=label_int, positionals=False, **kwargs
             )
             nodes[name] = interpolator
-            inputs.child(name_interpolator)[("ycoarse",) + key] = interpolator.inputs['y']
+            inputs.child(name_interpolator)[("ycoarse",) + key] = interpolator.inputs[
+                "y"
+            ]
             outputs[name] = interpolator.outputs[0]
 
         inputs.child(name_interpolator)["xcoarse"] = interpolators.inputs["coarse"]
