@@ -6,6 +6,7 @@ from matplotlib.pyplot import close as closefig
 from matplotlib.pyplot import cm
 from matplotlib.pyplot import colorbar as plot_colorbar
 from matplotlib.pyplot import (
+    errorbar,
     gca,
     gcf,
     imshow,
@@ -215,11 +216,32 @@ class plot_auto:
 
 
 def plot_array_1d(
-    array: NDArray, edges: Optional[NDArray], meshes: Optional[NDArray], *args, **kwargs
+    array: NDArray,
+    edges: Optional[NDArray] = None,
+    meshes: Optional[NDArray] = None,
+    yerr: Optional[Union[float, NDArray]] = None,
+    xerr: Optional[Union[float, NDArray]] = None,
+    *args,
+    **kwargs,
 ) -> Tuple[tuple, ...]:
     if edges is not None:
+        if yerr is not None or xerr is not None:
+            if xerr is None:
+                xerr = 0.5 * (edges[1:] - edges[:-1])
+            return plot_array_1d_errors(
+                0.5 * (edges[1:] + edges[:-1]),
+                array,
+                yerr=yerr,
+                xerr=xerr,
+                *args,
+                **kwargs,
+            )
         return plot_array_1d_hist(array, edges, *args, **kwargs)
     elif meshes is not None:
+        if yerr is not None or xerr is not None:
+            return plot_array_1d_errors(
+                meshes, array, yerr=yerr, xerr=xerr, *args, **kwargs
+            )
         return plot_array_1d_vs(array, meshes, *args, **kwargs)
     else:
         return plot_array_1d_array(array, *args, **kwargs)
@@ -227,7 +249,7 @@ def plot_array_1d(
 
 def plot_array_1d_hist(
     array: NDArray,
-    edges: Optional[NDArray],
+    edges: Optional[NDArray] = None,
     *args,
     plotter: Optional[plot_auto] = None,
     **kwargs,
@@ -235,9 +257,21 @@ def plot_array_1d_hist(
     return stairs(array, edges, *args, **kwargs)
 
 
+def plot_array_1d_errors(
+    x: NDArray,
+    y: NDArray,
+    yerr: Optional[Union[float, NDArray]] = None,
+    xerr: Optional[Union[float, NDArray]] = None,
+    *args,
+    plotter: Optional[plot_auto] = None,
+    **kwargs,
+) -> Tuple:
+    return errorbar(x, y, yerr=yerr, xerr=xerr, *args, **kwargs)
+
+
 def plot_array_1d_vs(
     array: NDArray,
-    meshes: Optional[NDArray],
+    meshes: Optional[NDArray] = None,
     *args,
     plotter: Optional[plot_auto] = None,
     **kwargs,
