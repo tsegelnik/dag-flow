@@ -1,5 +1,6 @@
 from typing import (
     TYPE_CHECKING,
+    Any,
     Dict,
     List,
     Mapping,
@@ -13,11 +14,11 @@ from typing import (
 from orderedset import OrderedSet
 
 from multikeydict.nestedmkdict import NestedMKDict
-from multikeydict.typing import Key, TupleKey
+from multikeydict.typing import Key, TupleKey, KeyLike
 from multikeydict.visitor import NestedMKDictVisitor
 
 from .input import Input
-from .logger import DEBUG, SUBINFO, logger
+from .logger import DEBUG, SUBINFO, SUBSUBINFO, logger
 from .node import Node
 from .output import Output
 
@@ -47,7 +48,7 @@ def _fillna(df: DataFrame, columnname: str, replacement: str):
     if column.dtype!='O':
         column.astype('O', copy=False)
 
-    column.fillna("-", inplace=True)
+    column.fillna(replacement, inplace=True)
 
 class NodeStorage(NestedMKDict):
     __slots__ = ("_remove_connected_inputs",)
@@ -73,6 +74,14 @@ class NodeStorage(NestedMKDict):
 
     def plot(self, *args, **kwargs) -> None:
         self.visit(PlotVisitor(*args, **kwargs))
+
+    def __setitem__(self, key: KeyLike, item: Any) -> None:
+        if isinstance(item, (Node, Output)) or type(item).__name__ in {"Parameter", "Parameters"}:
+            logger.log(SUBSUBINFO, f"Set {self.joinkey(key)}")
+        elif isinstance(item, Input):
+            logger.log(DEBUG, f"Set {self.joinkey(key)}")
+
+        super().__setitem__(key, item)
 
     #
     # Connectors
