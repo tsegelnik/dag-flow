@@ -10,6 +10,7 @@ from schema import Or, Schema, Use
 from multikeydict.typing import TupleKey
 
 from ..lib.Array import Array
+from ..logger import SUBINFO, logger
 from ..storage import NodeStorage
 from ..tools.schema import (
     AllFileswithExt,
@@ -20,7 +21,7 @@ from ..tools.schema import (
     LoadYaml,
 )
 
-_extensions = {"root", "hdf5", "tsv", "txt"}
+_extensions = {"root", "hdf5", "tsv", "txt", "npz"}
 _schema_cfg = Schema(
     {
         "name": str,
@@ -53,9 +54,13 @@ def _validate_cfg(cfg):
 
 
 def get_filename(
-    filenames: Sequence[str], key: TupleKey, *, single_key: bool = False
+    filenames: Sequence[str],
+    key: TupleKey,
+    *,
+    single_key: bool = False,
+    multiple_files: bool = False,
 ) -> str:
-    if single_key and len(filenames) == 1:
+    if (single_key or not multiple_files) and len(filenames) == 1:
         return filenames[0]
     checked_filenames = []
     for filename in filenames:
@@ -91,7 +96,7 @@ def load_graph(acfg: Optional[Mapping] = None, **kwargs):
     except StopIteration:
         raise RuntimeError(f"Unable to find extension for: {filenames[0]}")
 
-    loader = _loaders.get(ext)
+    loader, multiple_files = _loaders.get(ext)
     if loader is None:
         raise RuntimeError(f"Unable to find loader for: {filenames[0]}")
     single_key = len(keys) == 1
@@ -99,11 +104,14 @@ def load_graph(acfg: Optional[Mapping] = None, **kwargs):
     meshes = []
     data = {}
     for key in keys:
-        filename = get_filename(filenames, key, single_key=single_key)
+        filename = get_filename(
+            filenames, key, single_key=single_key, multiple_files=multiple_files
+        )
 
         skey = ".".join(key)
         iname = objects.get(skey, skey)
         x, y = loader(filename, iname)
+        logger.log(SUBINFO, f"Read: {filename}")
         data[key] = x, y
         meshes.append(x)
 
@@ -152,6 +160,19 @@ def _load_hdf5(filename: str, name: str) -> Tuple[NDArray, NDArray]:
     return data[cols[0]], data[cols[1]]
 
 
+def _load_npz(filename: str, name: str) -> Tuple[NDArray, NDArray]:
+    from numpy import load
+
+    file = load(filename)
+    try:
+        data = file[name]
+    except KeyError as e:
+        raise RuntimeError(f"Unable to read {name} from {filename}") from e
+
+    cols = data.dtype.names
+    return data[cols[0]], data[cols[1]]
+
+
 def _load_root(filename: str, name: str) -> Tuple[NDArray, NDArray]:
     from uproot import open
 
@@ -167,8 +188,9 @@ def _load_root(filename: str, name: str) -> Tuple[NDArray, NDArray]:
 
 
 _loaders = {
-    "txt": _load_tsv,
-    "tsv": _load_tsv,
-    "root": _load_root,
-    "hdf5": _load_hdf5,
+    "txt": (_load_tsv, True),
+    "tsv": (_load_tsv, False),
+    "root": (_load_root, False),
+    "npz": (_load_npz, False),
+    "hdf5": (_load_hdf5, False),
 }

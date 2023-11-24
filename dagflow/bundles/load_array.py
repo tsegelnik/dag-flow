@@ -8,6 +8,7 @@ from schema import Or, Schema, Use
 
 from multikeydict.typing import TupleKey
 
+from ..logger import SUBINFO, logger
 from ..lib.Array import Array
 from ..storage import NodeStorage
 from ..tools.schema import (
@@ -19,7 +20,7 @@ from ..tools.schema import (
     LoadYaml,
 )
 
-_extensions = {"root", "hdf5", "tsv", "txt"}
+_extensions = {"root", "hdf5", "tsv", "txt", "npz"}
 _schema_cfg = Schema(
     {
         "name": str,
@@ -97,6 +98,7 @@ def load_array(acfg: Optional[Mapping] = None, **kwargs):
         skey = ".".join(key)
         iname = objects.get(skey, skey)
         data[name + key] = loader(filename, iname)
+        logger.log(SUBINFO, f"Read: {filename}")
     storage = NodeStorage(default_containers=True)
     with storage:
         for key, array in data.items():
@@ -125,6 +127,20 @@ def _load_hdf5(filename: str, name: str) -> NDArray:
         raise RuntimeError(f"Unable to read {name} from {filename}") from e
 
     return data[:]
+
+
+def _load_npz(filename: str, name: str) -> NDArray:
+    if not name:
+        raise RuntimeError(f"Need an object name to read from {filename}")
+    from numpy import load
+
+    file = load(filename)
+    try:
+        data = file[name]
+    except KeyError as e:
+        raise RuntimeError(f"Unable to read {name} from {filename}") from e
+
+    return data
 
 
 def _load_root_uproot(filename: str, name: str) -> NDArray:
@@ -175,6 +191,7 @@ _loaders = {
     "tsv": _load_tsv,
     "root": _load_root,
     "hdf5": _load_hdf5,
+    "npz": _load_npz,
 }
 
 from numpy import dtype, frombuffer
