@@ -101,8 +101,6 @@ class Profiling(metaclass=ABCMeta):
     def make_report(self, group_by, agg_funcs, sort_by) -> pd.DataFrame:
         if agg_funcs == None or agg_funcs == []:
             agg_funcs = self._DEFAULT_AGG_FUNCS
-        if sort_by != 'count' and sort_by in self._ALLOWED_AGG_FUNCS:
-            sort_by = "t_" + sort_by
         self._check_report_capability(group_by, agg_funcs)
         if group_by == None:
             report = self._estimations_table.sort_values(sort_by or 'time',
@@ -111,9 +109,12 @@ class Profiling(metaclass=ABCMeta):
         else:
             grouped = self._estimations_table.groupby(group_by, as_index=False)
             report = self._aggregate_df(grouped, group_by, agg_funcs)
-            # TODO: add check for agg_funcs[0] == 'count'
-            report.sort_values(sort_by or 't_' + agg_funcs[0], ascending=False, ignore_index=True,
-                               inplace=True)
+            if sort_by == None:
+                sort_by = agg_funcs[0]
+            if sort_by != 'count' and sort_by in self._ALLOWED_AGG_FUNCS:
+                sort_by = "t_" + sort_by
+            report.sort_values(sort_by, ascending=False,
+                               ignore_index=True, inplace=True)
         return report
     
     def _print_table(self, dataframe, rows):
@@ -176,7 +177,8 @@ class IndividualProfiling(Profiling):
                      sort_by: str | None=None):
         report = self.make_report(group_by, agg_funcs, sort_by)
         print(f"\nIndividual Profilng {hex(id(self))}, "
-              f"n_runs for each node: {self._n_runs}, "
+              f"n_runs for each node: {self._n_runs}\n"
+              f"sort by: {sort_by or 'default sorting'}, "
               f"max rows displayed: {rows}")
         return super()._print_table(report, rows)
     
@@ -250,6 +252,7 @@ class FrameworkProfiling(Profiling):
         report = self.make_report(group_by, agg_funcs, sort_by)
         print(f"\nFramework Profling {hex(id(self))}, "
               f"n_runs for each estimation: {self._n_runs}, "
-              f"nodes in group: {len(self._target_nodes)}, "
+              f"nodes in group: {len(self._target_nodes)}\n"
+              f"sort by: `{sort_by or 'default sorting'}`, "
               f"max rows displayed: {rows}")
         return super()._print_table(report, rows)

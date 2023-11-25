@@ -207,16 +207,28 @@ class TestIndividual:
         profiling.estimate_target_nodes()
         
         profiling.make_report(agg_funcs=['min', 'std', 'count'])
-
-        # TODO: check for count
-        # profiling.make_report(agg_funcs=['count', 'min', 'std'])
+        profiling.make_report(agg_funcs=['count', 'min', 'std'])
 
         with pytest.raises(ValueError) as excinfo:
             profiling.make_report(agg_funcs=['bad_function'])
         assert 'Invalid aggregate function' in str(excinfo.value)
 
         profiling.make_report(agg_funcs=['count', 'mean', 'min'], sort_by='min')
-        profiling.make_report(agg_funcs=['count', 'mean', 'min'], sort_by='t_min')
+        profiling.make_report(agg_funcs=['mean', 'count', 'min'], sort_by='t_min')
+        profiling.make_report(agg_funcs=['mean', 'count', 'min'], sort_by='count')
+        profiling.make_report(agg_funcs=['min', 'count', 'mean'], sort_by=None)
+
+    def test_print_report_01(self):
+        g, _ = graph_1()
+        target_nodes = g._nodes
+        profiling = IndividualProfiling(target_nodes, n_runs=self.n_runs)
+        profiling.estimate_target_nodes()
+        
+        profiling.print_report(agg_funcs=['min', 'mean', 'count'], rows=500)
+        profiling.print_report(agg_funcs=['min'], rows=1)
+        profiling.print_report(group_by=None, rows=2)
+        profiling.print_report(group_by=None, rows=20)
+
 
 
 # def test_group_pfoginling_01():
