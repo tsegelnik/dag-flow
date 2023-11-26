@@ -1,7 +1,19 @@
-from typing import TYPE_CHECKING, Callable, Dict, List, Optional, Sequence, Tuple, Union
+from typing import (
+    TYPE_CHECKING,
+    Callable,
+    Dict,
+    List,
+    Literal,
+    Optional,
+    Sequence,
+    Tuple,
+    Type,
+    Union,
+)
 
 from .node import Node
 from .nodebase import NodeBase
+from .exception import CriticalError, InitializationError
 
 if TYPE_CHECKING:
     from .input import Input
@@ -9,46 +21,81 @@ if TYPE_CHECKING:
 TStrOrPair = Union[str, Tuple[str, str]]
 TPairsOrDict = Union[Sequence[TStrOrPair], Dict]
 
+MetaNodeStrategies = {"LeadingNode", "NewNode"}
+MetaNodeStrategiesType = Literal[MetaNodeStrategies]
+
 
 class MetaNode(NodeBase):
     """A node containing multiple nodes and exposing part of their inputs and outputs"""
 
     __slots__ = (
         "_nodes",
+        "_strategy",
         "_leading_node",
+        "_call_functions",
         "_node_inputs_pos",
         "_node_outputs_pos",
         "_missing_input_handler",
+        "_call_positional_input",
         "__weakref__",  # needed for weakref
     )
 
     _nodes: List[Node]
+    _strategy: MetaNodeStrategiesType
     _leading_node: Optional[Node]
+    _call_functions: Dict[str, Callable]
     _node_inputs_pos: Optional[Node]
     _node_outputs_pos: Optional[Node]
     _missing_input_handler: Callable
+    _call_positional_input: Callable
 
-    def __init__(self):
+    def __init__(self, strategy: MetaNodeStrategiesType = "LeadingNode"):
         super().__init__()
-
+        if strategy not in MetaNodeStrategies:
+            raise InitializationError(
+                f"strategy must be in {MetaNodeStrategies}, but given {strategy}",
+                node=self,
+            )
+        self._strategy = strategy
         self._nodes = []
         self._leading_node = None
         self._node_inputs_pos = None
         self._node_outputs_pos = None
         self._missing_input_handler = lambda *_, **__: None
+        self._call_functions = {
+            "LeadingNode": self._call_leading_node,
+            "NewNode": self._call_new_node,
+        }
+        self._call_positional_input = self._call_functions[strategy]
 
     @property
     def leading_node(self) -> Optional[Node]:
         return self._leading_node
 
-    def _new_node(self, *args, **kwargs) -> Node:
+    def _call_new_node(
+        self, *args, cls: Type[Node] = Node, **kwargs
+    ) -> Optional["Input"]:
         """
         Creates new node with positional input
         """
-        node = Node(*args, **kwargs)
-        node()
-        self._add_node(node, *args, **kwargs)
-        return node
+        # TODO: check what we should pass as the node/inputs *args and **kwargs
+        node = cls(*args, **kwargs)
+        inp = node()
+        self._add_node(node, inputs_pos=True, *args, **kwargs)
+        return inp
+
+    def _call_leading_node(self, *args, **kwargs) -> Optional["Input"]:
+        """
+        Creates new node with positional input
+        """
+        # TODO: what about outputs?
+        if self.leading_node is None:
+            raise CriticalError(
+                "Cannot create a new input: the leading node is unknown!", node=self
+            )
+        inp = self.leading_node(*args, **kwargs)
+        self.inputs.add(inp)
+        return inp
 
     def __call__(
         self, name: Optional[str] = None, *args, **kwargs
@@ -59,8 +106,8 @@ class MetaNode(NodeBase):
             * append a new node with a positional input to self.
         Else returns a tuple of calls of all the nodes.
         """
-        if name is None and self.leading_node is not None:
-            return self.leading_node(*args, **kwargs)
+        if name is None:
+            return self._call_positional_input(*args, **kwargs)
         return tuple(node(name, *args, **kwargs) for node in self._nodes)
 
     def _add_node(
@@ -124,10 +171,7 @@ class MetaNode(NodeBase):
         merge: Sequence[str] = [],
         optional: bool = False,
     ) -> None:
-        if isinstance(kw_inputs, dict):
-            iterable = kw_inputs.items()
-        else:
-            iterable = kw_inputs
+        iterable = kw_inputs.items() if isinstance(kw_inputs, dict) else kw_inputs
         for iname in iterable:
             tname = iname
             if not isinstance(iname, str):
@@ -144,11 +188,7 @@ class MetaNode(NodeBase):
     def _import_kw_outputs(
         self, node: Node, kw_outputs: TPairsOrDict = [], *, optional: bool = True
     ) -> None:
-        if isinstance(kw_outputs, dict):
-            iterable = kw_outputs.items()
-        else:
-            iterable = kw_outputs
-
+        iterable = kw_outputs.items() if isinstance(kw_outputs, dict) else kw_outputs
         for oname in iterable:
             tname = None
             if not isinstance(oname, str):
