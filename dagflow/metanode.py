@@ -32,6 +32,7 @@ class MetaNode(NodeBase):
         "_nodes",
         "_strategy",
         "_leading_node",
+        "_new_node_cls",
         "_call_functions",
         "_node_inputs_pos",
         "_node_outputs_pos",
@@ -43,13 +44,18 @@ class MetaNode(NodeBase):
     _nodes: List[Node]
     _strategy: MetaNodeStrategiesType
     _leading_node: Optional[Node]
+    _new_node_cls: Type[Node]
     _call_functions: Dict[str, Callable]
     _node_inputs_pos: Optional[Node]
     _node_outputs_pos: Optional[Node]
     _missing_input_handler: Callable
     _call_positional_input: Callable
 
-    def __init__(self, strategy: MetaNodeStrategiesType = "LeadingNode"):
+    def __init__(
+        self,
+        strategy: MetaNodeStrategiesType = "LeadingNode",
+        new_node_cls: Type[Node] = Node,
+    ):
         super().__init__()
         if strategy not in MetaNodeStrategies:
             raise InitializationError(
@@ -67,34 +73,57 @@ class MetaNode(NodeBase):
             "NewNode": self._call_new_node,
         }
         self._call_positional_input = self._call_functions[strategy]
+        self._new_node_cls = new_node_cls
 
     @property
     def leading_node(self) -> Optional[Node]:
         return self._leading_node
 
+    @property
+    def new_node_cls(self) -> Type[Node]:
+        return self._new_node_cls
+
     def _call_new_node(
-        self, *args, cls: Type[Node] = Node, **kwargs
+        self,
+        node_args: Optional[dict] = None,
+        input_args: Optional[dict] = None,
+        metanode_args: Optional[dict] = None,
+        new_node_cls: Optional[Type[Node]] = None,
     ) -> Optional["Input"]:
         """
         Creates new node with positional input
         """
-        # TODO: check what we should pass as the node/inputs *args and **kwargs
-        node = cls(*args, **kwargs)
-        inp = node()
-        self._add_node(node, inputs_pos=True, *args, **kwargs)
+        if node_args is None:
+            node_args = {}
+        if input_args is None:
+            input_args = {}
+        if metanode_args is None:
+            metanode_args = {}
+        if new_node_cls is None:  # use default cls
+            new_node_cls = self.new_node_cls
+        node = new_node_cls(**node_args)
+        # NOTE: pass idx adn idx_out to avoid same naming of the inputs and outputs
+        inp = node(idx=len(self._nodes), idx_out=len(self._nodes), **input_args)
+        if inp:
+            self.inputs.add(inp)  # adding to metanode.inputs
+            if inp.child_output is not None:  # adding to metanode.outputs
+                self.outputs.add(inp.child_output)
+        self._add_node(node, **metanode_args)
         return inp
 
     def _call_leading_node(self, *args, **kwargs) -> Optional["Input"]:
         """
         Creates new node with positional input
         """
-        # TODO: what about outputs?
         if self.leading_node is None:
             raise CriticalError(
                 "Cannot create a new input: the leading node is unknown!", node=self
             )
         inp = self.leading_node(*args, **kwargs)
-        self.inputs.add(inp)
+        if inp:
+            self.inputs.add(inp)  # adding to metanode.inputs
+            if inp.child_output is not None:  # adding to metanode.outputs
+                self.outputs.add(inp.child_output)
         return inp
 
     def __call__(
@@ -129,6 +158,8 @@ class MetaNode(NodeBase):
 
         self._nodes.append(node)
         node.metanode = self
+        if self._strategy == "LeadingNode" and self.leading_node is None:
+            self._leading_node = node
 
         if inputs_pos:
             self._import_pos_inputs(node)

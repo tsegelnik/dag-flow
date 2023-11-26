@@ -125,8 +125,9 @@ class MissingInputAddPair(MissingInputAdd):
     def __init__(self, node=None, **kwargs):
         super().__init__(node, **kwargs)
 
-    def __call__(self, idx=None, scope=None):
-        idx_out = len(self.node.outputs)
+    def __call__(self, idx=None, scope=None, idx_out=None):
+        if idx_out is None:
+            idx_out = len(self.node.outputs)
         out = self.node._add_output(self.output_fmt.format(idx_out), **self.output_kws)
         return super().__call__(idx, child_output=out, scope=scope)
 
@@ -143,8 +144,12 @@ class MissingInputAddOne(MissingInputAdd):
         super().__init__(node, **kwargs)
         self.add_child_output = add_child_output
 
-    def __call__(self, idx=None, scope=None):
-        if (idx_out := len(self.node.outputs)) == 0:
+    def __call__(self, idx=None, scope=None, idx_out=None):
+        if idx_out is not None:
+            out = self.node._add_output(
+                self.output_fmt.format(idx_out), **self.output_kws
+            )
+        elif (idx_out := len(self.node.outputs)) == 0:
             out = self.node._add_output(
                 self.output_fmt.format(idx_out), **self.output_kws
             )
