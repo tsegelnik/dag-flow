@@ -45,6 +45,10 @@ class Profiling(metaclass=ABCMeta):
             for child_input in output.child_inputs:
                 yield child_input.node
 
+    def __parent_nodes_gen(self, node: FunctionNode) -> Generator[FunctionNode, None, None]:
+        for input in node.inputs.iter_all():
+            yield input.parent_node
+
     def __check_reachable(self, nodes_gathered):
         if not all(s in nodes_gathered for s in self._sink):
             raise ValueError("Some of the `sink` nodes are unreachable "
@@ -75,10 +79,30 @@ class Profiling(metaclass=ABCMeta):
         self.__check_reachable(related_nodes)
         return related_nodes
     
+    def _reveal_source_sink(self):
+        source = []
+        sink = []
+        for node in self._target_nodes:
+            have_parents = any(n in self._target_nodes 
+                            for n in self.__parent_nodes_gen(node))
+            have_childs = any(n in self._target_nodes 
+                           for n in self.__child_nodes_gen(node))
+            if have_parents and have_childs:
+                continue
+            elif have_parents:
+                sink.append(node)
+            elif have_childs:
+                source.append(node)
+            else:
+                raise ValueError(f"Node `{node}` unreachable "
+                                 "(has no connections to other given nodes)")
+        self._source = source
+        self._sink = sink
+
     def _aggregate_df(self, grouped_df, grouped_by, agg_funcs) -> pd.DataFrame:
         df = grouped_df.agg({'time': agg_funcs})
         # grouped_by can be ["col1", "col2", ...] or "col"
-        new_columns = grouped_by if type(grouped_by)==list else [grouped_by]
+        new_columns = grouped_by.copy() if type(grouped_by)==list else [grouped_by]
         # get rid of multiindex and add prefix `t_` - time notation
         new_columns += ['t_' + c if c != 'count' else 'count' for c in agg_funcs]
         df.columns = new_columns
@@ -164,14 +188,14 @@ class IndividualProfiling(Profiling):
         self._estimations_table = pd.DataFrame(records)
         return self
 
-    def make_report(self, 
+    def make_report(self,
                     group_by: str | None="type",
                     agg_funcs: Sequence[str] | None=None,
                     sort_by: str | None=None):
         return super().make_report(group_by, agg_funcs, sort_by)
 
     def print_report(self, 
-                     rows: int | None=10, 
+                     rows: int | None=10,
                      group_by: str | None="type",
                      agg_funcs: Sequence[str] | None=None,
                      sort_by: str | None=None):
@@ -195,6 +219,8 @@ class FrameworkProfiling(Profiling):
                  sink: Sequence[FunctionNode]=[],
                  n_runs = 100) -> None:
         super().__init__(target_nodes, source, sink, n_runs)
+        if not self._source or not self._sink:
+            self._reveal_source_sink()
 
     def _taint_nodes(self):
         for node in self._target_nodes:
@@ -245,7 +271,7 @@ class FrameworkProfiling(Profiling):
         return super().make_report(group_by, agg_funcs, sort_by)
 
     def print_report(self, 
-                     rows: int | None=10, 
+                     rows: int | None=10,
                      group_by=["source nodes", "sink nodes"],
                      agg_funcs: Sequence[str] | None=None,
                      sort_by: str | None=None):
