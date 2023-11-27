@@ -1,4 +1,5 @@
 from typing import List, Optional, Union, Sequence, Mapping, TYPE_CHECKING
+
 if TYPE_CHECKING:
     from .input import Input
     from .node import Node
@@ -15,7 +16,6 @@ from .exception import (
     CriticalError,
     InitializationError,
     AllocationError,
-    ConnectionError,
     UnclosedGraphError,
 )
 from .shift import rshift
@@ -24,6 +24,7 @@ from .types import EdgesLike, ShapeLike
 
 from .datadescriptor import DataDescriptor
 from .labels import repr_pretty, Labels
+
 
 class Output:
     _data: Optional[NDArray] = None
@@ -62,9 +63,7 @@ class Output:
         self._name = name
         self._node = node
         self._child_inputs = []
-        self._debug = (
-            debug if debug is not None else node.debug if node else False
-        )
+        self._debug = debug if debug is not None else node.debug if node else False
         self._forbid_reallocation = forbid_reallocation
 
         self._dd = DataDescriptor(dtype, shape, axes_edges, axes_meshes)
@@ -169,14 +168,10 @@ class Output:
         forbid_reallocation: Optional[bool] = None,
     ):
         if self.closed:
-            raise ClosedGraphError(
-                "Unable to set output data.", node=self._node, output=self
-            )
+            raise ClosedGraphError("Unable to set output data.", node=self._node, output=self)
         if self._data is not None and not override:
             # TODO: this will fail during reallocation
-            raise AllocationError(
-                "Output already has data.", node=self._node, output=self
-            )
+            raise AllocationError("Output already has data.", node=self._node, output=self)
         if owns_buffer:
             forbid_reallocation = True
         elif forbid_reallocation is None:
@@ -268,20 +263,24 @@ class Output:
     def deep_iter_child_outputs(self):
         raise StopNesting(self)
 
-    def __rshift__(self, other: Union[
-        "Input",
-        "Node",
-        Sequence["Input"],
-        Sequence["Node"],
-        Mapping[str, "Node"],
-        "NestedMKDict"
-    ]):
+    def __rshift__(
+        self,
+        other: Union[
+            "Input",
+            "Node",
+            Sequence["Input"],
+            Sequence["Node"],
+            Mapping[str, "Node"],
+            "NestedMKDict",
+        ],
+    ):
         """
         self >> other
         """
         from .input import Input
         from .node import Node
         from multikeydict.nestedmkdict import NestedMKDict
+
         if isinstance(other, Input):
             self.connect_to(other)
         elif isinstance(other, Node):
@@ -348,9 +347,7 @@ class Output:
             data = zeros(self.dd.shape, self.dd.dtype, **kwargs)
             self._set_data(data, owns_buffer=True)
         except Exception as exc:
-            raise AllocationError(
-                f"Output: {exc.args[0]}", node=self._node, output=self
-            ) from exc
+            raise AllocationError(f"Output: {exc.args[0]}", node=self._node, output=self) from exc
 
         return True
 
@@ -358,7 +355,7 @@ class Output:
         if self.node._frozen and not force:
             return False
 
-        tainted = self._data[udx]!=value if check_taint else True
+        tainted = self._data[idx] != value if check_taint else True
 
         if tainted:
             self._data[idx] = value
@@ -368,9 +365,7 @@ class Output:
 
         return tainted
 
-    def set(
-        self, data: ArrayLike, check_taint: bool = False, force: bool = False
-    ) -> bool:
+    def set(self, data: ArrayLike, check_taint: bool = False, force: bool = False) -> bool:
         if self.node._frozen and not force:
             return False
 
@@ -389,23 +384,20 @@ class Output:
             data = self.data
             shape = data.shape
         except DagflowError:
-            return {
-                    "label": self.labels[label_from],
-                    "shape": '?'
-                    }
-
+            return {"label": self.labels[label_from], "shape": "?"}
 
         ret = {
             "label": self.labels[label_from],
-            "shape": shape[0] if len(shape)==1 else shape
+            "shape": shape[0] if len(shape) == 1 else shape,
         }
 
         if data.size > 1:
-            ret["value"]='…'
+            ret["value"] = "…"
             return ret
 
-        ret["value"]=float(data)
+        ret["value"] = float(data)
         return ret
+
 
 class Outputs(EdgeContainer):
     def __init__(self, iterable=None) -> None:

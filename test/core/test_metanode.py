@@ -29,7 +29,7 @@ def test_metanode_strategy_leading_node(testname):
         )  # NOTE: creates a new input in Cos node, but not in the MetaNode itself
     assert len(metanode._nodes) == 1
     assert len(metanode.inputs) == 3
-    assert len(metanode.outputs) == 3  # TODO: it's failed now (1==3) - is it correct?
+    assert len(metanode.outputs) == 3
     res = metanode._leading_node.outputs
     assert len(res) == 3
     assert (res[0].data == np.cos(data1)).all()
@@ -60,7 +60,7 @@ def test_metanode_strategy_new_node(testname):
         )  # NOTE: creates a Sin node and connect with arr3
     assert len(metanode._nodes) == 3
     assert len(metanode.inputs) == 3
-    # assert len(metanode.outputs) == 3 # TODO: it's failed now (1==3) - is it correct?
+    assert len(metanode.outputs) == 3
     res = metanode._nodes
     assert len(res) == 3
     assert (res[0].outputs[0].data == np.cos(data1)).all()
