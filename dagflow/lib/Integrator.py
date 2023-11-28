@@ -5,7 +5,7 @@ from numpy import empty, floating, integer, multiply
 from numpy.typing import NDArray
 
 from ..exception import TypeFunctionError
-from ..input_extra import MissingInputAddPair
+from ..inputhandler import MissingInputAddPair
 from ..nodes import FunctionNode
 from ..typefunctions import (
     check_has_inputs,
@@ -107,9 +107,7 @@ class Integrator(FunctionNode):
 
     def __init__(self, *args, dropdim: bool = True, **kwargs):
         kwargs.setdefault("missing_input_handler", MissingInputAddPair())
-        super().__init__(
-            *args, **kwargs, allowed_kw_inputs=("ordersX", "ordersY", "weights")
-        )
+        super().__init__(*args, **kwargs, allowed_kw_inputs=("ordersX", "ordersY", "weights"))
         self._dropdim = dropdim
         self._weights = self._add_input("weights", positional=False)
         self._ordersX = self._add_input("ordersX", positional=False)
@@ -187,8 +185,10 @@ class Integrator(FunctionNode):
         orders = self.inputs[name]
         if (y := sum(orders.data)) != shape:
             raise TypeFunctionError(
-                f"Orders '{name}' must be consistent with self.inputs len={shape}, "
-                f"but given '{y}'!",
+                (
+                    f"Orders '{name}' must be consistent with self.inputs len={shape}, "
+                    f"but given '{y}'!"
+                ),
                 node=self,
                 input=orders,
             )

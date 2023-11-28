@@ -3,16 +3,14 @@
 from numpy import arange, array, copyto, result_type
 
 from dagflow.graph import Graph
-from dagflow.input_extra import MissingInputAddOne
+from dagflow.inputhandler import MissingInputAddOne
 from dagflow.lib import Array
 from dagflow.nodes import FunctionNode
 
 
 class SumIntProductFloatElseNothing(FunctionNode):
     def __init__(self, name, **kwargs):
-        kwargs.setdefault(
-            "missing_input_handler", MissingInputAddOne(output_fmt="result")
-        )
+        kwargs.setdefault("missing_input_handler", MissingInputAddOne(output_fmt="result"))
         super().__init__(name, **kwargs)
         self._functions.update({"int": self._fcn_int, "float": self._fcn_float})
 
@@ -41,9 +39,7 @@ class SumIntProductFloatElseNothing(FunctionNode):
         elif self.inputs[0].dd.dtype == "d":
             self.fcn = self._functions.get("float")
         self.outputs["result"].dd.shape = self.inputs[0].dd.shape
-        self.outputs["result"].dd.dtype = result_type(
-            *tuple(inp.dd.dtype for inp in self.inputs)
-        )
+        self.outputs["result"].dd.dtype = result_type(*tuple(inp.dd.dtype for inp in self.inputs))
         self.logger.debug(
             f"Node '{self.name}': dtype={self.outputs['result'].dd.dtype}, "
             f"shape={self.outputs['result'].dd.shape}, function={self.fcn.__name__}"

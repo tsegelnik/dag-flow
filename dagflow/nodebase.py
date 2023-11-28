@@ -2,7 +2,7 @@ from typing import TYPE_CHECKING, Mapping, Sequence, Union
 
 from multikeydict.nestedmkdict import NestedMKDict
 
-from . import input_extra
+from . import inputhandler
 from .exception import ConnectionError
 from .input import Input, Inputs
 from .iter import StopNesting
@@ -33,7 +33,7 @@ class NodeBase:
     def _missing_input_handler(self, handler):
         if handler:
             if isinstance(handler, str):
-                sethandler = getattr(input_extra, handler)(self)
+                sethandler = getattr(inputhandler, handler)(self)
             elif isinstance(handler, type):
                 sethandler = handler(self)
             else:
@@ -42,7 +42,7 @@ class NodeBase:
         elif hasattr(self, "missing_input_handler"):
             sethandler = self.missing_input_handler
         else:
-            sethandler = input_extra.MissingInputFail(self)
+            sethandler = inputhandler.MissingInputFail(self)
         self.__missing_input_handler = sethandler
 
     def __getitem__(self, key):
@@ -111,9 +111,7 @@ class NodeBase:
 
     def __rshift__(
         self,
-        other: Union[
-            Input, "Node", Sequence[Input], Mapping[str, "Output"], "NestedMKDict"
-        ],
+        other: Union[Input, "Node", Sequence[Input], Mapping[str, "Output"], "NestedMKDict"],
     ):
         """
         self >> other
@@ -134,9 +132,7 @@ class NodeBase:
                 try:
                     input = other[name]
                 except KeyError as e:
-                    raise ConnectionError(
-                        f"Unable to find input {name}", node=self
-                    ) from e
+                    raise ConnectionError(f"Unable to find input {name}", node=self) from e
                 else:
                     output >> input
         elif isinstance(other, Node):
@@ -167,13 +163,9 @@ class NodeBase:
             if output is None:
                 continue
             elif not isinstance(output, Output):
-                output = getattr(
-                    output, "output", None
-                )  # TODO: ugly, try something else
+                output = getattr(output, "output", None)  # TODO: ugly, try something else
                 if not isinstance(output, Output):
-                    raise ConnectionError(
-                        '[<<] invalid "output"', input=inputs, output=output
-                    )
+                    raise ConnectionError('[<<] invalid "output"', input=inputs, output=output)
 
             if not isinstance(inputs, Sequence):
                 inputs = (inputs,)

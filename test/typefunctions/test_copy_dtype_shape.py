@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 from dagflow.graph import Graph
 from dagflow.graphviz import savegraph
-from dagflow.input_extra import MissingInputAddEach, MissingInputAddOne
+from dagflow.inputhandler import MissingInputAddEach, MissingInputAddOne
 from dagflow.lib import Array
 from dagflow.lib.Dummy import Dummy
 from dagflow.typefunctions import (
@@ -83,12 +83,8 @@ def test_copy_from_input_01(testname, debug_graph, dtype):
         edges2 = Array("edges2", [0, 1, 2, 3]).outputs["array"]
         # nodes1 = Array("nodes1", [0.5, 1.5, 2.5, 3.5])
         # nodes2 = Array("nodes2", [0.5, 1.5, 2.5])
-        arr1 = Array(
-            "arr1", array([1, 2, 3, 4], dtype="i"), edges=edges1
-        )  # , nodes=nodes1)
-        arr2 = Array(
-            "arr2", array([3, 2, 1], dtype=dtype), edges=edges2
-        )  # , nodes=nodes2)
+        arr1 = Array("arr1", array([1, 2, 3, 4], dtype="i"), edges=edges1)  # , nodes=nodes1)
+        arr2 = Array("arr2", array([3, 2, 1], dtype=dtype), edges=edges2)  # , nodes=nodes2)
         node = Dummy(
             "node",
             missing_input_handler=MissingInputAddEach(),

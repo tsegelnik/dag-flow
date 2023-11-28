@@ -1,7 +1,7 @@
 from numpy.typing import NDArray
 
 from numba import njit
-from ..input_extra import MissingInputAddOne
+from ..inputhandler import MissingInputAddOne
 from ..nodes import FunctionNode
 from ..typefunctions import (
     check_has_inputs,
@@ -23,9 +23,7 @@ class ElSumSq(FunctionNode):
     """Sum of the squared of all the inputs"""
 
     def __init__(self, *args, **kwargs):
-        kwargs.setdefault(
-            "missing_input_handler", MissingInputAddOne(output_fmt="result")
-        )
+        kwargs.setdefault("missing_input_handler", MissingInputAddOne(output_fmt="result"))
         super().__init__(*args, **kwargs)
         self._labels.setdefault("mark", "Σ()²")
 

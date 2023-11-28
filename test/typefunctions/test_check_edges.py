@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 from dagflow.graph import Graph
 from dagflow.graphviz import savegraph
-from dagflow.input_extra import MissingInputAddOne
+from dagflow.inputhandler import MissingInputAddOne
 from dagflow.lib import Array
 from dagflow.lib.Dummy import Dummy
 from dagflow.typefunctions import (

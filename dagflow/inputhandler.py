@@ -58,9 +58,7 @@ class MissingInputFail(MissingInputHandler):
         super().__init__(node)
 
     def __call__(self, idx=None, scope=None):
-        raise RuntimeError(
-            "Unable to iterate inputs further. No additional inputs may be created"
-        )
+        raise RuntimeError("Unable to iterate inputs further. No additional inputs may be created")
 
 
 class MissingInputAdd(MissingInputHandler):
@@ -146,13 +144,9 @@ class MissingInputAddOne(MissingInputAdd):
 
     def __call__(self, idx=None, scope=None, idx_out=None):
         if idx_out is not None:
-            out = self.node._add_output(
-                self.output_fmt.format(idx_out), **self.output_kws
-            )
+            out = self.node._add_output(self.output_fmt.format(idx_out), **self.output_kws)
         elif (idx_out := len(self.node.outputs)) == 0:
-            out = self.node._add_output(
-                self.output_fmt.format(idx_out), **self.output_kws
-            )
+            out = self.node._add_output(self.output_fmt.format(idx_out), **self.output_kws)
         else:
             out = self.node.outputs[-1]
         if self.add_child_output:

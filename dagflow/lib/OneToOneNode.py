@@ -1,4 +1,4 @@
-from ..input_extra import MissingInputAddPair
+from ..inputhandler import MissingInputAddPair
 from ..nodes import FunctionNode
 from ..node import Node
 from ..storage import NodeStorage
@@ -26,36 +26,26 @@ class OneToOneNode(FunctionNode):
         )
 
         check_has_inputs(self)
-        copy_from_input_to_output(
-            self, slice(None), slice(None), edges=True, meshes=True
-        )
+        copy_from_input_to_output(self, slice(None), slice(None), edges=True, meshes=True)
         assign_outputs_axes_from_inputs(
-            self,
-            slice(None),
-            slice(None),
-            assign_meshes=True,
-            ignore_assigned=True,
-            ignore_Nd=True
+            self, slice(None), slice(None), assign_meshes=True, ignore_assigned=True, ignore_Nd=True
         )
 
     @classmethod
     def replicate(
-        cls,
-        name: str,
-        replicate: Tuple[KeyLike,...]=((),),
-        **kwargs
+        cls, name: str, replicate: Tuple[KeyLike, ...] = ((),), **kwargs
     ) -> Tuple[Optional[Node], NodeStorage]:
         storage = NodeStorage(default_containers=True)
-        nodes = storage('nodes')
-        inputs = storage('inputs')
-        outputs = storage('outputs')
+        nodes = storage("nodes")
+        inputs = storage("inputs")
+        outputs = storage("outputs")
 
         if not replicate:
             raise RuntimeError("`replicate` tuple should have at least one item")
 
         for outkey in replicate:
-            outname = (name,)+outkey
-            instance = cls('.'.join(outname), **kwargs)
+            outname = (name,) + outkey
+            instance = cls(".".join(outname), **kwargs)
             nodes[outname] = instance
             instance()
             inputs[outname] = instance.inputs[0]
@@ -63,7 +53,7 @@ class OneToOneNode(FunctionNode):
 
         NodeStorage.update_current(storage, strict=True)
 
-        if len(replicate)==1:
+        if len(replicate) == 1:
             return instance, storage
 
         return None, storage

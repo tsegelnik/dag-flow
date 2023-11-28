@@ -2,7 +2,7 @@ from numba import njit
 from numpy import add, copyto
 from numpy.typing import NDArray
 
-from ..input_extra import MissingInputAddOne
+from ..inputhandler import MissingInputAddOne
 from ..nodes import FunctionNode
 from ..typefunctions import (
     AllPositionals,
@@ -11,7 +11,6 @@ from ..typefunctions import (
     copy_input_shape_to_outputs,
     check_inputs_same_dtype,
     check_inputs_consistent_square_or_diag,
-    eval_output_dtype,
 )
 
 
@@ -34,9 +33,7 @@ class SumMatOrDiag(FunctionNode):
     _ndim: int
 
     def __init__(self, *args, **kwargs):
-        kwargs.setdefault(
-            "missing_input_handler", MissingInputAddOne(output_fmt="result")
-        )
+        kwargs.setdefault("missing_input_handler", MissingInputAddOne(output_fmt="result"))
         super().__init__(*args, **kwargs)
         self._functions.update({2: self._fcn2d, 1: self._fcn1d})
 
