@@ -76,12 +76,26 @@ class MetaNode(NodeBase):
         self._new_node_cls = new_node_cls
 
     @property
+    def nodes(self) -> Dict[str, Node]:
+        return {node.name: node for node in self._nodes}
+
+    @property
     def leading_node(self) -> Optional[Node]:
         return self._leading_node
 
     @property
     def new_node_cls(self) -> Type[Node]:
         return self._new_node_cls
+
+    def _add_input_to_node(
+        self, node: Node, name: Optional[str] = None, *args, **kwargs
+    ) -> Optional["Input"]:
+        inp = node(name, *args, **kwargs)
+        if inp and inp.name not in self.inputs:
+            self.inputs.add(inp)  # adding to metanode.inputs
+            if inp.child_output is not None:  # adding to metanode.outputs
+                self.outputs.add(inp.child_output)
+        return inp
 
     def _call_new_node(
         self,
@@ -102,14 +116,11 @@ class MetaNode(NodeBase):
         if new_node_cls is None:  # use default cls
             new_node_cls = self.new_node_cls
         node = new_node_cls(**node_args)
-        # NOTE: pass idx adn idx_out to avoid same naming of the inputs and outputs
-        inp = node(idx=len(self._nodes), idx_out=len(self._nodes), **input_args)
-        if inp:
-            self.inputs.add(inp)  # adding to metanode.inputs
-            if inp.child_output is not None:  # adding to metanode.outputs
-                self.outputs.add(inp.child_output)
         self._add_node(node, **metanode_args)
-        return inp
+        # NOTE: pass idx adn idx_out to avoid same naming of the inputs and outputs
+        return self._add_input_to_node(
+            node, idx=len(self._nodes), idx_out=len(self._nodes), **input_args
+        )
 
     def _call_leading_node(self, *args, **kwargs) -> Optional["Input"]:
         """
@@ -119,15 +130,14 @@ class MetaNode(NodeBase):
             raise CriticalError(
                 "Cannot create a new input: the leading node is unknown!", node=self
             )
-        inp = self.leading_node(*args, **kwargs)
-        if inp:
-            self.inputs.add(inp)  # adding to metanode.inputs
-            if inp.child_output is not None:  # adding to metanode.outputs
-                self.outputs.add(inp.child_output)
-        return inp
+        return self._add_input_to_node(self.leading_node, *args, **kwargs)
 
     def __call__(
-        self, name: Optional[str] = None, *args, **kwargs
+        self,
+        name: Optional[Union[str, Sequence[str]]] = None,
+        nodename: Optional[str] = None,
+        *args,
+        **kwargs,
     ) -> Union[Optional["Input"], Tuple[Optional["Input"], ...]]:
         """
         For positional inputs there are two strategies:
@@ -137,7 +147,23 @@ class MetaNode(NodeBase):
         """
         if name is None:
             return self._call_positional_input(*args, **kwargs)
-        return tuple(node(name, *args, **kwargs) for node in self._nodes)
+        if nodename is not None:
+            node = self.nodes.get(nodename)
+            if node is None:
+                raise CriticalError(
+                    f"Cannot create an input due to the metanode has no node with name={nodename}",
+                    node=node,
+                )
+            if isinstance(name, str):
+                return self._add_input_to_node(node, name=name, *args, **kwargs)
+            return tuple(
+                self._add_input_to_node(node, name=_name, *args, **kwargs) for _name in name
+            )
+        names = [name] * len(self._nodes) if isinstance(name, str) else name
+        return tuple(
+            self._add_input_to_node(node, name=_name, *args, **kwargs)
+            for _name, node in zip(names, self._nodes)
+        )
 
     def _add_node(
         self,
@@ -167,9 +193,7 @@ class MetaNode(NodeBase):
             self._import_pos_outputs(node)
         self._import_kw_inputs(node, kw_inputs, merge=merge_inputs)
         if kw_inputs_optional:
-            self._import_kw_inputs(
-                node, kw_inputs_optional, merge=merge_inputs, optional=True
-            )
+            self._import_kw_inputs(node, kw_inputs_optional, merge=merge_inputs, optional=True)
         self._import_kw_outputs(node, kw_outputs)
         if kw_outputs_optional:
             self._import_kw_outputs(node, kw_outputs_optional, optional=True)
@@ -243,7 +267,10 @@ class MetaNode(NodeBase):
                 if Nconnected == 0:
                     return f"{name}: {prefix_disconnected}{Ndisconnected}"
                 elif Ndisconnected > 0:
-                    return f"{name}: {prefix_disconnected}{Ndisconnected} + {prefix_connected}{Nconnected}"
+                    return (
+                        f"{name}: {prefix_disconnected}{Ndisconnected} +"
+                        f" {prefix_connected}{Nconnected}"
+                    )
                 else:
                     return f"{name}: {prefix_connected}{Nnode}"
             return f"{name}: {obj!s}"
@@ -270,17 +297,15 @@ class MissingInputInherit:
     _source_handler: Callable
     _inherit_outputs: bool
 
-    def __init__(
-        self, source_node: Node, target_node: MetaNode, *, inherit_outputs: bool = False
-    ):
+    def __init__(self, source_node: Node, target_node: MetaNode, *, inherit_outputs: bool = False):
         self._source_node = source_node
         self._target_node = target_node
         self._inherit_outputs = inherit_outputs
 
         try:
             self._source_handler = source_node._missing_input_handler
-        except AttributeError:
-            raise RuntimeError(f"Node {source_node!s} has no missing input handler")
+        except AttributeError as exc:
+            raise RuntimeError(f"Node {source_node!s} has no missing input handler") from exc
 
     def __call__(self, *args, **kwargs):
         newinput = self._source_handler(*args, **kwargs)

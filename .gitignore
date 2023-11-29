@@ -12,6 +12,7 @@ config_local
 .fish_functions
 matplotlibrc
 .coverage
+coverage.xml
 cov.*
 
 # Transient files (vim, etc)
