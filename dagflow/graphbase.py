@@ -1,7 +1,8 @@
 from .shift import rshift
 
-class NodeGroup:
-    __slots__ = ('_nodes',)
+
+class GraphBase:
+    __slots__ = ("_nodes",)
     _nodes: list
 
     def __init__(self, *args):
@@ -19,7 +20,7 @@ class NodeGroup:
             node._unwrap_fcn()
 
     def print(self):
-        print(f"Group of {len(self._nodes)} nodes:")
+        print(f"Graph consists of {len(self._nodes)} nodes:")
         for node in self._nodes:
             node.print()
 

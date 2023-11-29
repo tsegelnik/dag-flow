@@ -1,14 +1,11 @@
 from typing import Literal
 
+from numba import njit
 from numpy import divide, sum
 from numpy.typing import NDArray
 
-from ..input_extra import MissingInputAddPair
-from ..typefunctions import (
-    AllPositionals,
-    check_input_dimension,
-    check_inputs_equivalence,
-)
+from ..inputhandler import MissingInputAddPair
+from ..typefunctions import AllPositionals, check_input_dimension, check_inputs_equivalence
 from .OneToOneNode import OneToOneNode
 
 
@@ -17,14 +14,10 @@ class NormalizeMatrix(OneToOneNode):
 
     _mode: str
 
-    def __init__(
-        self, *args, mode: Literal["columns", "rows"] = "columns", **kwargs
-    ) -> None:
+    def __init__(self, *args, mode: Literal["columns", "rows"] = "columns", **kwargs) -> None:
         super().__init__(
             *args,
-            missing_input_handler=MissingInputAddPair(
-                input_fmt="matrix", output_fmt="result"
-            ),
+            missing_input_handler=MissingInputAddPair(input_fmt="matrix", output_fmt="result"),
             **kwargs,
         )
         self._mode = mode
@@ -54,14 +47,9 @@ class NormalizeMatrix(OneToOneNode):
     def _typefunc(self) -> None:
         super()._typefunc()
         check_input_dimension(self, AllPositionals, ndim=2)
-        check_inputs_equivalence(
-            self, AllPositionals, check_dtype=True, check_shape=True
-        )
+        check_inputs_equivalence(self, AllPositionals, check_dtype=True, check_shape=True)
 
         self.fcn = self._functions[self._mode]
-
-
-from numba import njit
 
 
 @njit(cache=True)

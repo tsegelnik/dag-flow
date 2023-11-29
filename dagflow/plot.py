@@ -23,8 +23,8 @@ from numpy import asanyarray, meshgrid, zeros_like
 from numpy.ma import array as masked_array
 from numpy.typing import ArrayLike, NDArray
 
-from .limbs import Limbs
 from .logger import SUBINFO, logger
+from .nodebase import NodeBase
 from .output import Output
 from .types import EdgesLike, MeshesLike
 
@@ -43,7 +43,7 @@ class plot_auto:
         "_ylabel",
         "_zlabel",
     )
-    _object: Union[Limbs, Output, ArrayLike]
+    _object: Union[NodeBase, Output, ArrayLike]
     _output: Optional[Output]
     _array: NDArray
     _edges: EdgesLike
@@ -58,7 +58,7 @@ class plot_auto:
 
     def __init__(
         self,
-        object: Union[Limbs, Output, ArrayLike],
+        object: Union[NodeBase, Output, ArrayLike],
         *args,
         filter_kw: dict = {},
         show_path: bool = True,
@@ -87,7 +87,7 @@ class plot_auto:
             )
         elif ndim == 2:
             colorbar = kwargs.pop("colorbar", {})
-            if colorbar:
+            if colorbar is True:
                 colorbar = {}
             if self._output and isinstance(colorbar, Mapping):
                 colorbar.setdefault("label", self._output.labels.axis)
@@ -133,7 +133,7 @@ class plot_auto:
     def _get_data(self, *args, **kwargs):
         if isinstance(self._object, Output):
             self._output = self._object
-        elif isinstance(self._object, Limbs):
+        elif isinstance(self._object, NodeBase):
             self._output = self._object.outputs[0]
         else:
             self._get_array_data(*args, **kwargs)
@@ -546,7 +546,7 @@ def _patch_with_colorbar(fcn, mode3d=False):
         ):
             ax = gca()
             actual_fcn = getattr(ax, fcn)
-            kwargs["cmap"] = cmap and "viridis" or cmap
+            kwargs["cmap"] = cmap is True and "viridis" or cmap
             res = actual_fcn(*args, **kwargs)
             return returner(res, colorbar)
 
@@ -558,7 +558,7 @@ def _patch_with_colorbar(fcn, mode3d=False):
             colorbar: Optional[bool] = None,
             **kwargs,
         ):
-            kwargs["cmap"] = cmap and "viridis" or cmap
+            kwargs["cmap"] = cmap is True and "viridis" or cmap
             res = fcn(*args, **kwargs)
             return returner(res, colorbar)
 

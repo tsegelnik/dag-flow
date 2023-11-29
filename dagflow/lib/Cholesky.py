@@ -1,4 +1,4 @@
-from ..input_extra import MissingInputAddPair
+from ..inputhandler import MissingInputAddPair
 from ..nodes import FunctionNode
 from ..typefunctions import (
     check_has_inputs,
@@ -21,9 +21,7 @@ class Cholesky(FunctionNode):
         super().__init__(*args, **kwargs)
         self._labels.setdefault("mark", "V→L")
 
-        self._functions.update(
-            {"square": self._fcn_square, "diagonal": self._fcn_diagonal}
-        )
+        self._functions.update({"square": self._fcn_square, "diagonal": self._fcn_diagonal})
 
     def _fcn_square(self):
         """Compute Cholesky decomposition using `scipy.linalg.cholesky`

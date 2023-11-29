@@ -7,7 +7,7 @@ from dagflow.graphviz import savegraph
 from dagflow.lib import Array
 from dagflow.lib import InterpolatorGroup
 from dagflow.lib import OneToOneNode
-from dagflow.meta_node import MetaNode
+from dagflow.metanode import MetaNode
 from dagflow.plot import plot_auto
 
 

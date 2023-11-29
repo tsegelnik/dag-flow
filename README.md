@@ -20,7 +20,7 @@ Here is an animation, showing the process of the graph evaluation
 ![Image](example/graph_evaluation.gif)
 
 # Minimal example
-An example of small, graph calculating the formula (n1 + n2 + n3) * n4 may be 
+An example of small, graph calculating the formula (n1 + n2 + n3) * n4 may be
 found in the [example](example/example.py):
 ```python
 #!/usr/bin/env python
@@ -28,7 +28,7 @@ found in the [example](example/example.py):
 from dagflow.node_deco import NodeClass
 from dagflow.graph import Graph
 from dagflow.graphviz import savegraph
-from dagflow.input_extra import MissingInputAddOne
+from dagflow.inputhandler import MissingInputAddOne
 import numpy as N
 
 # Node functions

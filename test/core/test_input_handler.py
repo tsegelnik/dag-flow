@@ -5,7 +5,7 @@ from contextlib import suppress
 
 from dagflow.graph import Graph
 from dagflow.graphviz import savegraph
-from dagflow.input_extra import (
+from dagflow.inputhandler import (
     MissingInputAdd,
     MissingInputAddEach,
     MissingInputAddOne,
@@ -47,9 +47,7 @@ def test_01():
 
             s = Dummy(
                 "add",
-                missing_input_handler=MissingInputAdd(
-                    output_kws={"allocatable": False}
-                ),
+                missing_input_handler=MissingInputAdd(output_kws={"allocatable": False}),
             )
 
     (in1, in2, in3) >> s
@@ -78,9 +76,7 @@ def test_02():
 
             s = Dummy(
                 "add",
-                missing_input_handler=MissingInputAddPair(
-                    output_kws={"allocatable": False}
-                ),
+                missing_input_handler=MissingInputAddPair(output_kws={"allocatable": False}),
             )
 
     (in1, in2, in3) >> s
@@ -116,9 +112,7 @@ def test_03():
 
             s = Dummy(
                 "add",
-                missing_input_handler=MissingInputAddOne(
-                    output_kws={"allocatable": False}
-                ),
+                missing_input_handler=MissingInputAddOne(output_kws={"allocatable": False}),
             )
 
     (in1, in2, in3) >> s

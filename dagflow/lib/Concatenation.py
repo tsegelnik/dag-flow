@@ -1,4 +1,4 @@
-from ..input_extra import MissingInputAddOne
+from ..inputhandler import MissingInputAddOne
 from ..nodes import FunctionNode
 from ..typefunctions import (
     check_has_inputs,
@@ -16,9 +16,7 @@ class Concatenation(FunctionNode):
     __slots__ = ("_offsets",)
 
     def __init__(self, name, **kwargs):
-        kwargs.setdefault(
-            "missing_input_handler", MissingInputAddOne(output_fmt="result")
-        )
+        kwargs.setdefault("missing_input_handler", MissingInputAddOne(output_fmt="result"))
         super().__init__(name, **kwargs)
         self._offsets = []
 

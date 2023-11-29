@@ -1,22 +1,25 @@
-from . import input_extra
-from .input import Inputs, Input
-from .output import Outputs, Output
-from .shift import rshift
-from .iter import StopNesting
-from .exception import ConnectionError
-from .logger import logger
-from .labels import repr_pretty
+from typing import TYPE_CHECKING, Mapping, Sequence, Union
 
 from multikeydict.nestedmkdict import NestedMKDict
 
-from typing import Mapping, Sequence, Union, TYPE_CHECKING
+from . import inputhandler
+from .exception import ConnectionError
+from .input import Input, Inputs
+from .iter import StopNesting
+from .labels import repr_pretty
+from .logger import logger
+from .output import Output, Outputs
+from .shift import rshift
+
 if TYPE_CHECKING:
     from .node import Node
 
-class Limbs:
-    __slots__ = ('inputs', 'outputs', '__missing_input_handler')
+
+class NodeBase:
+    __slots__ = ("inputs", "outputs", "__missing_input_handler")
     inputs: Inputs
     outputs: Outputs
+
     def __init__(self, inputs=None, outputs=None, missing_input_handler=None):
         self._missing_input_handler = missing_input_handler
         self.inputs = Inputs(inputs)
@@ -30,30 +33,30 @@ class Limbs:
     def _missing_input_handler(self, handler):
         if handler:
             if isinstance(handler, str):
-                sethandler = getattr(input_extra, handler)(self)
+                sethandler = getattr(inputhandler, handler)(self)
             elif isinstance(handler, type):
                 sethandler = handler(self)
             else:
                 sethandler = handler
                 sethandler.node = self
-        elif hasattr(self, 'missing_input_handler'):
+        elif hasattr(self, "missing_input_handler"):
             sethandler = self.missing_input_handler
         else:
-            sethandler = input_extra.MissingInputFail(self)
+            sethandler = inputhandler.MissingInputFail(self)
         self.__missing_input_handler = sethandler
 
     def __getitem__(self, key):
         if isinstance(key, (int, slice, str)):
             return self.outputs[key]
         if (y := len(key)) != 2:
-            raise ValueError(f"Limbs key should be of length 2, but given {y}!")
+            raise ValueError(f"NodeBase key should be of length 2, but given {y}!")
         ikey, okey = key
         if ikey and okey:
             if isinstance(ikey, (int, str)):
                 ikey = (ikey,)
             if isinstance(okey, (int, str)):
                 okey = (okey,)
-            return Limbs(
+            return NodeBase(
                 self.inputs[ikey],
                 self.outputs[okey],
                 missing_input_handler=self.__missing_input_handler,
@@ -64,7 +67,7 @@ class Limbs:
             return self.outputs[okey]
         raise ValueError("Empty keys specified")
 
-    def get(self, key, default = None):
+    def get(self, key, default=None):
         try:
             return self.__getitem__(key)
         except Exception:
@@ -92,34 +95,35 @@ class Limbs:
 
     def __rshift_sequence(self, other: Sequence[Input]):
         # TODO: should choose only one possible option
-        if len(self.outputs)==1:
-            # raise ConnectionError("Limbs>>Tuple only supported when Limbs has only 1 positional output", node=self)
+        if len(self.outputs) == 1:
+            # raise ConnectionError("NodeBase>>Tuple only supported when NodeBase has only 1 positional output", node=self)
             output = self.outputs[0]
             for input in other:
                 output >> input
-        elif len(self.outputs)==len(other):
+        elif len(self.outputs) == len(other):
             for output, input in zip(self.outputs, other):
                 output >> input
         else:
             raise ConnectionError(
                 f"Inconsistent outputs/inputs: {len(self.outputs), len(other)}",
-                node=self
+                node=self,
             )
 
-    def __rshift__(self, other: Union[
-        Input,
-        "Node",
-        Sequence[Input],
-        Mapping[str, "Output"],
-        "NestedMKDict"
-    ]):
+    def __rshift__(
+        self,
+        other: Union[Input, "Node", Sequence[Input], Mapping[str, "Output"], "NestedMKDict"],
+    ):
         """
         self >> other
         """
         from .node import Node
+
         if isinstance(other, Input):
-            if len(self.outputs)!=1:
-                raise ConnectionError("Limbs>>Input only supported when Limbs has only 1 positional output", node=self)
+            if len(self.outputs) != 1:
+                raise ConnectionError(
+                    "NodeBase>>Input only supported when NodeBase has only 1 positional output",
+                    node=self,
+                )
             self.outputs[0] >> other
         elif isinstance(other, Sequence):
             self.__rshift_sequence(other)
@@ -133,15 +137,12 @@ class Limbs:
                     output >> input
         elif isinstance(other, Node):
             return rshift(self, other)
-        elif isinstance(other, Limbs):
+        elif isinstance(other, NodeBase):
             self.__rshift_sequence(tuple(iter(other)))
         else:
             raise ConnectionError(f"Unsupported >>RHS type: {type(other)}", node=self)
 
-    def __rrshift__(self, other: Union[
-        Output,
-        Sequence[Output]
-    ]):
+    def __rrshift__(self, other: Union[Output, Sequence[Output]]):
         """
         other >> self
         """
@@ -162,7 +163,7 @@ class Limbs:
             if output is None:
                 continue
             elif not isinstance(output, Output):
-                output = getattr(output, 'output', None) # TODO: ugly, try something else
+                output = getattr(output, "output", None)  # TODO: ugly, try something else
                 if not isinstance(output, Output):
                     raise ConnectionError('[<<] invalid "output"', input=inputs, output=output)
 
@@ -171,7 +172,7 @@ class Limbs:
 
             for input in inputs:
                 if not input.connected():
-                    logger.debug(f'[<<] connect {name}')
+                    logger.debug(f"[<<] connect {name}")
                     output >> input
 
     #
@@ -185,4 +186,3 @@ class Limbs:
 
     def to_dict(self, **kwargs) -> dict:
         return self.outputs[0].to_dict(**kwargs)
-

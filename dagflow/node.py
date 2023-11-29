@@ -28,24 +28,24 @@ from .exception import (
 from .input import Input
 from .iter import IsIterable
 from .labels import Labels
-from .limbs import Limbs
+from .nodebase import NodeBase
 from .logger import Logger, get_logger
 from .output import Output
 from .types import GraphT
 
 if TYPE_CHECKING:
-    from .meta_node import MetaNode
+    from .metanode import MetaNode
     from .storage import NodeStorage
 
 
-class Node(Limbs):
+class Node(NodeBase):
     __slots__ = (
         "_name",
         "_labels",
         "_graph",
         "_logger",
         "_exception",
-        "_meta_node",
+        "_metanode",
         "_tainted",
         "_frozen",
         "_frozen_tainted",
@@ -66,7 +66,7 @@ class Node(Limbs):
     _graph: Optional[GraphT]
     _exception: Optional[str]
 
-    _meta_node: Optional[ReferenceType]
+    _metanode: Optional[ReferenceType]
 
     # Taintflag and status
     _tainted: bool
@@ -104,7 +104,7 @@ class Node(Limbs):
         self._graph = None
         self._logger = None
         self._exception = None
-        self._meta_node = None
+        self._metanode = None
 
         self._tainted = True
         self._frozen = False
@@ -247,14 +247,14 @@ class Node(Limbs):
         return self._exception
 
     @property
-    def meta_node(self) -> "MetaNode":
-        return self._meta_node and self._meta_node()
+    def metanode(self) -> "MetaNode":
+        return self._metanode and self._metanode()
 
-    @meta_node.setter
-    def meta_node(self, value: "MetaNode"):
-        if self._meta_node is not None:
+    @metanode.setter
+    def metanode(self, value: "MetaNode"):
+        if self._metanode is not None:
             raise RuntimeError("MetaNode may be set only once")
-        self._meta_node = weakref(value)
+        self._metanode = weakref(value)
 
     @property
     def logger(self) -> Logger:

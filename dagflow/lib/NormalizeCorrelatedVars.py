@@ -4,7 +4,7 @@ from numpy import add, divide, matmul, multiply, subtract
 from scipy.linalg import solve_triangular
 
 from ..exception import InitializationError
-from ..input_extra import MissingInputAddPair
+from ..inputhandler import MissingInputAddPair
 from ..nodes import FunctionNode
 from ..typefunctions import (
     check_has_inputs,
@@ -72,9 +72,7 @@ class NormalizeCorrelatedVars(FunctionNode):
         central = self._central.data
         for _input, _output in zip(self.inputs.iter_data(), self.outputs.iter_data()):
             subtract(_input, central, out=_output)
-            solve_triangular(
-                L, _output, lower=True, overwrite_b=True, check_finite=False
-            )
+            solve_triangular(L, _output, lower=True, overwrite_b=True, check_finite=False)
 
     def _fcn_backward_2d(self):
         self.inputs.touch()
