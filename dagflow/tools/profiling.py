@@ -4,11 +4,12 @@ from timeit import timeit, repeat
 import collections
 from collections.abc import Generator, Sequence
 from abc import ABCMeta, abstractmethod
+import types
 
 import pandas as pd
 import tabulate
 
-from ..nodes import FunctionNode
+from dagflow.nodes import FunctionNode
 
 # abc - Abstract Base Class
 class Profiling(metaclass=ABCMeta):
@@ -174,8 +175,8 @@ class IndividualProfiling(Profiling):
         for input in node.inputs.iter_all():
             input.touch()
         
-        testing_function = lambda : node.fcn(node, node.inputs, node.outputs)
-        return timeit(stmt=testing_function, number=n_runs)
+        # testing_function = lambda : node.fcn(node)
+        return timeit(stmt=node.fcn, number=n_runs)
 
     def estimate_target_nodes(self) -> IndividualProfiling:
         records = {col: [] for col in self._TABLE_COLUMNS}
@@ -205,7 +206,7 @@ class IndividualProfiling(Profiling):
               f"sort by: {sort_by or 'default sorting'}, "
               f"max rows displayed: {rows}")
         return super()._print_table(report, rows)
-    
+
 
 class FrameworkProfiling(Profiling):
     _ALLOWED_GROUPBY = [["source nodes", "sink nodes"],  # [a, b] - group by two
@@ -226,16 +227,15 @@ class FrameworkProfiling(Profiling):
         for node in self._target_nodes:
             node.taint()
 
-    # using only `node` argument for further compatibility
     @staticmethod
-    def fcn_no_computation(node: FunctionNode, inputs, outputs):
+    def fcn_no_computation(node: FunctionNode):
         for input in node.inputs.iter_all():
             input.touch()
 
     def _make_fcns_empty(self):
         for node in self._target_nodes:
             node._stash_fcn()
-            node.fcn = self.fcn_no_computation
+            node.fcn = types.MethodType(self.fcn_no_computation, node)
 
     def _restore_fcns(self):
         for node in self._target_nodes:

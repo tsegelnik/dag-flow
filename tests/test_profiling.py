@@ -4,6 +4,7 @@ from collections import Counter
 
 import numpy as np
 import pytest
+import types
 
 from dagflow.tools.profiling import Profiling, IndividualProfiling, FrameworkProfiling
 
@@ -265,13 +266,31 @@ class TestFrameworkProfiling:
             FrameworkProfiling(target_nodes)
         assert 'no connections to other given nodes' in str(excinfo.value)  
 
+    def test__taint_nodes_g0(self):
+        _, nodes = graph_0()
+
+        profiling = FrameworkProfiling(nodes)
+        profiling._taint_nodes()
+
+        assert all(n.tainted for n in nodes)
+
     def test_make_fcns_empty_g0(self):
         _, nodes = graph_0()
+        a0, a1, a2, a3, p0, p1, s0, s1, s2, s3, l_matrix, mdvdt = nodes
         
         profiling = FrameworkProfiling(nodes)
         profiling._make_fcns_empty()
-        assert all(n.fcn == FrameworkProfiling.fcn_no_computation for n in nodes)
-    
+        assert all(n.fcn == types.MethodType(FrameworkProfiling.fcn_no_computation, n) for n in nodes)
+
+        profiling._taint_nodes()
+        assert(a2.tainted == a1.tainted == p1.tainted == s2.tainted == True)
+        s2.touch()
+        assert(a2.tainted == a1.tainted == False)
+        assert(p1.tainted == False)
+        assert(s2.tainted == False)
+
+        assert(s3.tainted == True)
+        
     def test_underscore_estimate_framework_time_g0(self):
         _, nodes = graph_0()
 
