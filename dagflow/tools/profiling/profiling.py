@@ -21,7 +21,8 @@ class Profiling(metaclass=ABCMeta):
     # TODO: check for _ALLOWED_GROUPBY existence
     _ALLOWED_GROUPBY: tuple[str]
     _ALLOWED_AGG_FUNCS: tuple[str] = ("count", "mean", "median",
-                                      "std", "min", "max")
+                                      "std", "min", "max",
+                                      "sum", "average", "var", "percentage")
     _DEFAULT_AGG_FUNCS: tuple[str] = ("min", "mean", "count")
 
     def __init__(self,
@@ -100,13 +101,31 @@ class Profiling(metaclass=ABCMeta):
         self._source = source
         self._sink = sink
 
-    def _aggregate_df(self, grouped_df, grouped_by, agg_funcs) -> pd.DataFrame:
+    def _pd_funcs_agg_df(self, grouped_df, grouped_by, agg_funcs) -> pd.DataFrame:
         df = grouped_df.agg({'time': agg_funcs})
         # grouped_by can be ["col1", "col2", ...] or "col"
         new_columns = grouped_by.copy() if type(grouped_by)==list else [grouped_by]
         # get rid of multiindex and add prefix `t_` - time notation
         new_columns += ['t_' + c if c != 'count' else 'count' for c in agg_funcs]
         df.columns = new_columns
+        return df
+    
+    def _aggregate_df(self, grouped_df, grouped_by, agg_funcs) -> pd.DataFrame:
+        if 'percentage' in agg_funcs:
+            tmp_aggs = list(agg_funcs)
+            p_index = tmp_aggs.index('percentage')
+            tmp_aggs.pop(p_index)
+            drop_sum = False
+            if 'sum' not in tmp_aggs:
+                tmp_aggs = tmp_aggs + ['sum']
+                drop_sum = True
+            df = self._pd_funcs_agg_df(grouped_df, grouped_by, tmp_aggs)
+            total_time = df['t_sum'].sum()
+            df.insert(p_index + 1, 't_%', df['t_sum'] * 100 / total_time)
+            if drop_sum:
+                df.drop('t_sum', inplace=True, axis=1)
+        else:
+            df = self._pd_funcs_agg_df(grouped_df, grouped_by, agg_funcs)
         return df
     
     def _check_report_capability(self, group_by, agg_funcs):
@@ -123,16 +142,18 @@ class Profiling(metaclass=ABCMeta):
                              f"{self._ALLOWED_AGG_FUNCS}")
         
     @abstractmethod
-    def make_report(self, group_by, agg_funcs, sort_by) -> pd.DataFrame:
+    def make_report(self, group_by, agg_funcs, sort_by, normilize=True) -> pd.DataFrame:
         if agg_funcs == None or agg_funcs == []:
             agg_funcs = self._DEFAULT_AGG_FUNCS
         self._check_report_capability(group_by, agg_funcs)
+        report = self._estimations_table.copy()
+        if normilize:
+            report['time'] /= self._n_runs
         if group_by == None:
-            report = self._estimations_table.sort_values(sort_by or 'time',
-                                                         ascending=False,
-                                                         ignore_index=True)
+            report.sort_values(sort_by or 'time', ascending=False,
+                               ignore_index=True, inplace=True)
         else:
-            grouped = self._estimations_table.groupby(group_by, as_index=False)
+            grouped = report.groupby(group_by, as_index=False)
             report = self._aggregate_df(grouped, group_by, agg_funcs)
             if sort_by == None:
                 sort_by = agg_funcs[0]
@@ -149,8 +170,8 @@ class Profiling(metaclass=ABCMeta):
     
     @abstractmethod
     def print_report(self, rows, *args, **kwargs):
-        report = self.make_report(rows, *args, **kwargs)
-        self._print_table(report)
+        report = self.make_report(*args, **kwargs)
+        self._print_table(report, rows)
         raise NotImplementedError
 
 
