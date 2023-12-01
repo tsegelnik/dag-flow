@@ -15,66 +15,11 @@ Main goals:
 *  Plotting with graphviz
 *  Flexibility. The goal of DAGFlow is not to be efficient, but rather flexible.
 
-Here is an animation, showing the process of the graph evaluation
+The framework is intented to be used for the statistical analysis of the data of JUNO and Daya Bay neutrino oscillation experiments.
+The modules, located in the [project](https://git.jinr.ru/dag-computing) include:
+- Supplementary python modules:
+    * [dagflow-reactornueosc](https://git.jinr.ru/dag-computing/dagflow-reactorenueosc) — nodes related to reactor neutrino oscillations
+    * [dagflow-detector](https://git.jinr.ru/dag-computing/dagflow-detector) — nodes for the detector responce modelling
+    * [dagflow-statistics](https://git.jinr.ru/dag-computing/dagflow-statistics) — statistical analysis and MC
+- [Daya Bay model](https://git.jinr.ru/dag-computing/dayabay-model) — test implementation of the Daya Bay oscillation analysis
 
-![Image](example/graph_evaluation.gif)
-
-# Minimal example
-An example of small, graph calculating the formula (n1 + n2 + n3) * n4 may be
-found in the [example](example/example.py):
-```python
-#!/usr/bin/env python
-
-from dagflow.node_deco import NodeClass
-from dagflow.graph import Graph
-from dagflow.graphviz import savegraph
-from dagflow.inputhandler import MissingInputAddOne
-import numpy as N
-
-# Node functions
-@NodeClass(output='array')
-def Array(node, inputs, output):
-    """Creates a note with single data output with predefined array"""
-    outputs[0].data = N.arange(5, dtype='d')
-
-@NodeClass(missing_input_handler=MissingInputAddOne(output_fmt='result'))
-def Adder(node, inputs, output):
-    """Adds all the inputs together"""
-    out = None
-    for input in inputs:
-        if out is None:
-            out=outputs[0].data = input.data.copy()
-        else:
-            out+=input.data
-
-@NodeClass(missing_input_handler=MissingInputAddOne(output_fmt='result'))
-def Multiplier(node, inputs, output):
-    """Multiplies all the inputs together"""
-    out = None
-    for input in inputs:
-        if out is None:
-            out = outputs[0].data = input.data.copy()
-        else:
-            out*=input.data
-
-# The actual code
-with Graph() as graph:
-    (in1, in2, in3, in4) = [Array(name) for name in ['n1', 'n2', 'n3', 'n4']]
-    s = Adder('add')
-    m = Multiplier('mul')
-
-(in1, in2, in3) >> s
-(in4, s) >> m
-
-print('Result is:', m.outputs["result"].data)
-savegraph(graph, 'output/dagflow_example.png')
-```
-
-The code produces the following graph:
-
-![Image](example/dagflow_example.png)
-
-For `n=[1, 2, 3, 4]` the output is:
-```
-Result is: [ 0.  3. 12. 27. 48.]
-```
