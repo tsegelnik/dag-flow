@@ -6,7 +6,8 @@ import numpy as np
 import pytest
 import types
 
-from dagflow.tools.profiling import Profiling, IndividualProfiling, FrameworkProfiling
+from dagflow.tools.profiling.profiling import Profiling
+from dagflow.tools.profiling import IndividualProfiling, FrameworkProfiling
 
 from dagflow.nodes import FunctionNode
 from dagflow.graph import Graph
@@ -209,6 +210,11 @@ class TestIndividual:
         
         profiling.make_report(agg_funcs=['min', 'std', 'count'])
         profiling.make_report(agg_funcs=['count', 'min', 'std'])
+        
+        report = profiling.make_report(agg_funcs=['count', 'min', 'percentage'])
+        assert 't_sum' not in report.columns
+        report = profiling.make_report(agg_funcs=['sum', 'percentage'])
+        assert 't_sum' in report.columns
 
         with pytest.raises(ValueError) as excinfo:
             profiling.make_report(agg_funcs=['bad_function'])
@@ -219,7 +225,7 @@ class TestIndividual:
         profiling.make_report(agg_funcs=['mean', 'count', 'min'], sort_by='count')
         profiling.make_report(agg_funcs=['min', 'count', 'mean'], sort_by=None)
 
-    def test_print_report_g1(self):
+    def test_print_report_g1_1(self):
         g, _ = graph_1()
         target_nodes = g._nodes
         profiling = IndividualProfiling(target_nodes, n_runs=self.n_runs)
@@ -229,6 +235,20 @@ class TestIndividual:
         profiling.print_report(agg_funcs=['min'], rows=1)
         profiling.print_report(group_by=None, rows=2)
         profiling.print_report(group_by=None, rows=20)
+        profiling.print_report(agg_funcs=['mean', 'count', 'sum', 'percentage'],
+                               sort_by='mean')
+        
+    def test_print_report_g1_1(self):
+        g, _ = graph_1()
+        target_nodes = g._nodes
+
+        for i in range(2, 5):
+            n_runs = 10 ** i
+            profiling = IndividualProfiling(target_nodes, n_runs=n_runs)
+            profiling.estimate_target_nodes()
+            profiling.print_report(agg_funcs=['mean', 'count', 
+                                                       'sum', 'percentage'])
+
 
 class TestFrameworkProfiling:
     def test_init_g0(self):
