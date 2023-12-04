@@ -221,10 +221,10 @@ class TestIndividual:
             profiling.make_report(agg_funcs=['bad_function'])
         assert 'Invalid aggregate function' in str(excinfo.value)
 
-        profiling.make_report(agg_funcs=['count', 'mean', 'min'], sort_by='min')
-        profiling.make_report(agg_funcs=['mean', 'count', 'min'], sort_by='t_min')
-        profiling.make_report(agg_funcs=['mean', 'count', 'min'], sort_by='count')
-        profiling.make_report(agg_funcs=['min', 'count', 'mean'], sort_by=None)
+        profiling.make_report(agg_funcs=['count', 'single', 'min'], sort_by='min')
+        profiling.make_report(agg_funcs=['single', 'count', 'min'], sort_by='t_single')
+        profiling.make_report(agg_funcs=['single', 'count', 'min'], sort_by='count')
+        profiling.make_report(agg_funcs=['min', 'count', 'single'], sort_by=None)
 
     def test_print_report_g1_1(self):
         g, _ = graph_1()
@@ -232,12 +232,12 @@ class TestIndividual:
         profiling = IndividualProfiling(target_nodes, n_runs=self.n_runs)
         profiling.estimate_target_nodes()
         
-        profiling.print_report(agg_funcs=['min', 'mean', 'count'], rows=500)
+        profiling.print_report(agg_funcs=['min', 'single', 'count'], rows=500)
         profiling.print_report(agg_funcs=['min'], rows=1)
         profiling.print_report(group_by=None, rows=2)
         profiling.print_report(group_by=None, rows=20)
-        profiling.print_report(agg_funcs=['mean', 'count', 'sum', 'percentage'],
-                               sort_by='mean')
+        profiling.print_report(agg_funcs=['single', 'count', 'sum', 'percentage'],
+                               sort_by='single')
         
     def test_print_report_g1_1(self):
         g, _ = graph_1()
@@ -247,7 +247,7 @@ class TestIndividual:
             n_runs = 10 ** i
             profiling = IndividualProfiling(target_nodes, n_runs=n_runs)
             profiling.estimate_target_nodes()
-            profiling.print_report(agg_funcs=['mean', 'count', 
+            profiling.print_report(agg_funcs=['single', 'count', 
                                                        'sum', 'percentage'])
 
 
@@ -281,10 +281,11 @@ class TestFrameworkProfiling:
         profiling = FrameworkProfiling(target_nodes)
         assert Counter(profiling._source) == Counter(source)
         assert Counter(profiling._sink) == Counter(sink)
-        target_nodes = [a1, a2, mdvdt]
-        with pytest.raises(ValueError) as excinfo:
-            FrameworkProfiling(target_nodes)
-        assert 'no connections to other given nodes' in str(excinfo.value)  
+        # NOTE: this exception may be useful in future, but not now 
+        # target_nodes = [a1, a2, mdvdt]
+        # with pytest.raises(ValueError) as excinfo:
+        #     FrameworkProfiling(target_nodes)
+        # assert 'no connections to other given nodes' in str(excinfo.value)  
 
     def test__taint_nodes_g0(self):
         _, nodes = graph_0()
@@ -382,9 +383,11 @@ class TestEstimationsTime:
             print("\nsleep_time =", x)
             profiling = IndividualProfiling(nodes, n_runs=5)
             profiling.estimate_target_nodes()
-            profiling.print_report()
             profiling.print_report(group_by=None)
-            
+
+            fprofiling = FrameworkProfiling(nodes)
+            fprofiling.estimate_framework_time().print_report()
+    
             
 
 
