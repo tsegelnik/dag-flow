@@ -110,22 +110,40 @@ class Profiling(metaclass=ABCMeta):
         df.columns = new_columns
         return df
     
+    def _get_index_and_pop(self, array: list, value):
+        try:
+            idx = array.index(value)
+            array.pop(idx)
+            return idx
+        except ValueError:
+            return -1
+        
+    def _normilize(self, df: pd.DataFrame) -> pd.DataFrame:
+        for c in df.columns:
+            if c.startswith('t_') or c == 'time':
+                df[c] /= self._n_runs
+        return df
+    
     def _aggregate_df(self, grouped_df, grouped_by, agg_funcs) -> pd.DataFrame:
-        if 'percentage' in agg_funcs:
-            tmp_aggs = list(agg_funcs)
-            p_index = tmp_aggs.index('percentage')
-            tmp_aggs.pop(p_index)
-            drop_sum = False
-            if 'sum' not in tmp_aggs:
-                tmp_aggs = tmp_aggs + ['sum']
-                drop_sum = True
-            df = self._pd_funcs_agg_df(grouped_df, grouped_by, tmp_aggs)
+        tmp_aggs = list(agg_funcs)
+        p_index = self._get_index_and_pop(tmp_aggs, 'percentage')
+        m_index = self._get_index_and_pop(tmp_aggs, 'mean')
+        sum_flag = False
+        if m_index != -1 and 'count' not in tmp_aggs:
+            tmp_aggs = tmp_aggs + ['count']
+        if (p_index != -1 or m_index != -1) and 'sum' not in tmp_aggs:
+            sum_flag = True
+            tmp_aggs = tmp_aggs + ['sum']
+        df = self._pd_funcs_agg_df(grouped_df, grouped_by, tmp_aggs)
+        if m_index != -1:
+            df.insert(m_index + 1, 't_mean', df['t_sum'] / df['count'])
+        if p_index != -1:
             total_time = df['t_sum'].sum()
-            df.insert(p_index + 1, 't_%', df['t_sum'] * 100 / total_time)
-            if drop_sum:
-                df.drop('t_sum', inplace=True, axis=1)
-        else:
-            df = self._pd_funcs_agg_df(grouped_df, grouped_by, agg_funcs)
+            df.insert(p_index + 1, '%_of_total', df['t_sum'] * 100 / total_time)
+        if 'count' not in agg_funcs and m_index != -1:
+            df.drop('count', inplace=True, axis=1)
+        if 'sum' not in agg_funcs and sum_flag:
+            df.drop('t_sum', inplace=True, axis=1)
         return df
     
     def _check_report_capability(self, group_by, agg_funcs):
@@ -147,8 +165,6 @@ class Profiling(metaclass=ABCMeta):
             agg_funcs = self._DEFAULT_AGG_FUNCS
         self._check_report_capability(group_by, agg_funcs)
         report = self._estimations_table.copy()
-        if normilize:
-            report['time'] /= self._n_runs
         if group_by == None:
             report.sort_values(sort_by or 'time', ascending=False,
                                ignore_index=True, inplace=True)
@@ -161,6 +177,8 @@ class Profiling(metaclass=ABCMeta):
                 sort_by = "t_" + sort_by
             report.sort_values(sort_by, ascending=False,
                                ignore_index=True, inplace=True)
+        if normilize:
+            return self._normilize(report)
         return report
     
     def _print_table(self, dataframe, rows):
