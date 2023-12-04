@@ -8,6 +8,7 @@ import types
 
 from dagflow.tools.profiling.profiling import Profiling
 from dagflow.tools.profiling import IndividualProfiling, FrameworkProfiling
+from dagflow.tools.profiling import SleepyNode
 
 from dagflow.nodes import FunctionNode
 from dagflow.graph import Graph
@@ -280,7 +281,6 @@ class TestFrameworkProfiling:
         profiling = FrameworkProfiling(target_nodes)
         assert Counter(profiling._source) == Counter(source)
         assert Counter(profiling._sink) == Counter(sink)
-
         target_nodes = [a1, a2, mdvdt]
         with pytest.raises(ValueError) as excinfo:
             FrameworkProfiling(target_nodes)
@@ -351,4 +351,42 @@ class TestFrameworkProfiling:
         profiling.estimate_framework_time()
         profiling.estimate_framework_time(append_results=True)
         profiling.print_report(agg_funcs=['min', 'max', 'count'])
+
+
+@pytest.mark.skip(reason="to slow to test every time")
+class TestEstimationsTime:
+    "Hint: use `pytest -s` to see estimations results"
+    def test_one_sleepy_node(self):
+        with Graph(close=True) as graph:
+            sl = SleepyNode("SL0", sleep_time=0.25)
+        sl['result'].data
+
+        profiling = IndividualProfiling(graph._nodes, n_runs=4)
+        res = profiling.estimate_node(sl, n_runs=4)
+        print("SL0 (must be ≈ 1):", res)
+        profiling.estimate_target_nodes()
+        profiling.print_report()
+
+    def _gen_graph(self, sleep_time: float):
+        with Graph(close=True) as graph:
+            sl0 = SleepyNode("SL0", sleep_time=sleep_time)
+            sl1 = SleepyNode("SL1", sleep_time=sleep_time)
+            sl2 = SleepyNode("SL2", sleep_time=sleep_time)
+            (sl0, sl1) >> sl2
+        sl2['result'].data
+        return graph, [sl0, sl1, sl2]
+
+    def test_three_sleepy_nodes(self):
+        for x in (0.001, 0.1, 0.25, 0.5, 1):
+            g, nodes = self._gen_graph(sleep_time=x)
+            print("\nsleep_time =", x)
+            profiling = IndividualProfiling(nodes, n_runs=5)
+            profiling.estimate_target_nodes()
+            profiling.print_report()
+            profiling.print_report(group_by=None)
+            
+            
+
+
+
         
