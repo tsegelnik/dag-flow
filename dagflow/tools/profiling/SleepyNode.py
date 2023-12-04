@@ -16,6 +16,8 @@ class SleepyNode(FunctionNode):
         kwargs.setdefault("missing_input_handler", MissingInputAdd())
         super().__init__(*args, **kwargs)
         self._out = self._add_output("result")
+        self._out.dd.dtype = int
+        self._out.dd.shape = ()
 
     def _fcn(self):
         for inp in self.inputs.iter_all():
@@ -27,6 +29,4 @@ class SleepyNode(FunctionNode):
         if t_sleep_time != int and t_sleep_time != float:
             raise TypeError("Invalid sleep_time type "
                             "(Note: use float)")
-        
-        return super()._typefunc()
         
