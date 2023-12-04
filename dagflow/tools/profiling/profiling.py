@@ -4,6 +4,7 @@ from timeit import timeit, repeat
 import collections
 from collections.abc import Generator, Sequence
 from abc import ABCMeta, abstractmethod
+from textwrap import shorten
 import types
 
 import pandas as pd
@@ -13,12 +14,16 @@ from dagflow.nodes import FunctionNode
 
 # TODO: split this file by profiling classes
 
+
+SOURCE_COL_WIDTH = 32
+SINK_COL_WIDTH = 32
+
 # abc - Abstract Base Class
 class Profiling(metaclass=ABCMeta):
     _target_nodes: Sequence[FunctionNode]
     _source: Sequence[FunctionNode]
     _sink: Sequence[FunctionNode]
-    _n_runs: int
+    _n_runs: int    
     _estimations_table: pd.DataFrame
     _ALLOWED_GROUPBY: tuple[str]
                                     # 'single' == 'mean' 
@@ -307,8 +312,10 @@ class FrameworkProfiling(Profiling):
                                 append_results: bool=False) -> FrameworkProfiling:
         results = self._estimate_framework_time()
         df = pd.DataFrame(results, columns=["time"])
-        df.insert(0, "sink nodes", str([n.name for n in self._sink]))
-        df.insert(0, "source nodes", str([n.name for n in self._source]))
+        sink_names = str([n.name for n in self._sink])
+        source_names = str([n.name for n in self._source])
+        df.insert(0, "sink nodes", shorten(sink_names, width=SINK_COL_WIDTH))
+        df.insert(0, "source nodes", shorten(source_names, width=SOURCE_COL_WIDTH))
         if append_results and hasattr(self, "_estimations_table"):
             self._estimations_table = pd.concat([self._estimations_table, df])
         else:
