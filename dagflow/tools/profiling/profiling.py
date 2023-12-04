@@ -339,4 +339,5 @@ class FrameworkProfiling(Profiling):
               f"nodes in subgraph: {len(self._target_nodes)}\n"
               f"sort by: `{sort_by or 'default sorting'}`, "
               f"max rows displayed: {rows}")
-        return super()._print_table(report, rows)
+        super()._print_table(report, rows)
+        self._print_total_time()
