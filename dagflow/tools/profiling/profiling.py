@@ -11,6 +11,8 @@ import tabulate
 
 from dagflow.nodes import FunctionNode
 
+# TODO: split this file by profiling classes
+
 # abc - Abstract Base Class
 class Profiling(metaclass=ABCMeta):
     _target_nodes: Sequence[FunctionNode]
@@ -18,12 +20,12 @@ class Profiling(metaclass=ABCMeta):
     _sink: Sequence[FunctionNode]
     _n_runs: int
     _estimations_table: pd.DataFrame
-    # TODO: check for _ALLOWED_GROUPBY existence
     _ALLOWED_GROUPBY: tuple[str]
-    _ALLOWED_AGG_FUNCS: tuple[str] = ("count", "mean", "median",
+                                    # 'single' == 'mean' 
+    _ALLOWED_AGG_FUNCS: tuple[str] = ("count", "single", "median",
                                       "std", "min", "max",
                                       "sum", "average", "var", "percentage")
-    _DEFAULT_AGG_FUNCS: tuple[str] = ("min", "mean", "count")
+    _DEFAULT_AGG_FUNCS: tuple[str] = ("count", "single", "sum", "percentage")
 
     def __init__(self,
                  target_nodes: Sequence[FunctionNode]=[],
@@ -96,8 +98,10 @@ class Profiling(metaclass=ABCMeta):
             elif have_childs:
                 source.append(node)
             else:
-                raise ValueError(f"Node `{node}` unreachable "
-                                 "(has no connections to other given nodes)")
+                # TODO: remove this exception
+                # raise ValueError(f"Node `{node}` unreachable "
+                #                  "(has no connections to other given nodes)")
+                source.append(node)
         self._source = source
         self._sink = sink
 
@@ -127,7 +131,7 @@ class Profiling(metaclass=ABCMeta):
     def _aggregate_df(self, grouped_df, grouped_by, agg_funcs) -> pd.DataFrame:
         tmp_aggs = list(agg_funcs)
         p_index = self._get_index_and_pop(tmp_aggs, 'percentage')
-        m_index = self._get_index_and_pop(tmp_aggs, 'mean')
+        m_index = self._get_index_and_pop(tmp_aggs, 'single')
         sum_flag = False
         if m_index != -1 and 'count' not in tmp_aggs:
             tmp_aggs = tmp_aggs + ['count']
@@ -136,7 +140,7 @@ class Profiling(metaclass=ABCMeta):
             tmp_aggs = tmp_aggs + ['sum']
         df = self._pd_funcs_agg_df(grouped_df, grouped_by, tmp_aggs)
         if m_index != -1:
-            df.insert(m_index + 1, 't_mean', df['t_sum'] / df['count'])
+            df.insert(m_index + 1, 't_single', df['t_sum'] / df['count'])
         if p_index != -1:
             total_time = df['t_sum'].sum()
             df.insert(p_index + 1, '%_of_total', df['t_sum'] * 100 / total_time)
@@ -151,7 +155,8 @@ class Profiling(metaclass=ABCMeta):
             raise AttributeError("No estimations found!\n"
                                  "Note: first esimate your nodes "
                                  "with methods like `estimate_*`")
-        if group_by != None and group_by not in self._ALLOWED_GROUPBY:
+        if group_by != None and (hasattr(self, "_ALLOWED_GROUPBY") and 
+                                 group_by not in self._ALLOWED_GROUPBY):
             raise ValueError(f"Invalid `group_by` name \"{group_by}\"."
                              f"You must use one of these: {self._ALLOWED_GROUPBY}")
         if not all(a in self._ALLOWED_AGG_FUNCS for a in agg_funcs):
@@ -181,10 +186,16 @@ class Profiling(metaclass=ABCMeta):
             return self._normilize(report)
         return report
     
-    def _print_table(self, dataframe, rows):
-        print(tabulate.tabulate(dataframe.head(rows), 
+    def _print_table(self, df: pd.DataFrame, rows):
+        print(tabulate.tabulate(df.head(rows), 
                                 headers='keys', 
                                 tablefmt='psql'))
+        
+    def _print_total_time(self):
+        total = self._estimations_table['time'].sum()
+        print("total estimations time"
+              " / n_runs: %.9f sec." % (total / self._n_runs))
+        print("total estimations time: %.6f sec." % total)
     
     @abstractmethod
     def print_report(self, rows, *args, **kwargs):
@@ -214,7 +225,6 @@ class IndividualProfiling(Profiling):
         for input in node.inputs.iter_all():
             input.touch()
         
-        # testing_function = lambda : node.fcn(node)
         return timeit(stmt=node.fcn, number=n_runs)
 
     def estimate_target_nodes(self) -> IndividualProfiling:
@@ -244,7 +254,9 @@ class IndividualProfiling(Profiling):
               f"n_runs for each node: {self._n_runs}\n"
               f"sort by: {sort_by or 'default sorting'}, "
               f"max rows displayed: {rows}")
-        return super()._print_table(report, rows)
+        super()._print_table(report, rows)
+        self._print_total_time()
+        
 
 
 class FrameworkProfiling(Profiling):
@@ -316,8 +328,8 @@ class FrameworkProfiling(Profiling):
                      sort_by: str | None=None):
         report = self.make_report(group_by, agg_funcs, sort_by)
         print(f"\nFramework Profling {hex(id(self))}, "
-              f"n_runs for each estimation: {self._n_runs}, "
-              f"nodes in group: {len(self._target_nodes)}\n"
+              f"n_runs for given subgraph: {self._n_runs}, "
+              f"nodes in subgraph: {len(self._target_nodes)}\n"
               f"sort by: `{sort_by or 'default sorting'}`, "
               f"max rows displayed: {rows}")
         return super()._print_table(report, rows)
