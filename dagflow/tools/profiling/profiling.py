@@ -170,7 +170,7 @@ class Profiling(metaclass=ABCMeta):
                              f"{self._ALLOWED_AGG_FUNCS}")
         
     @abstractmethod
-    def make_report(self, group_by, agg_funcs, sort_by, normilize=True) -> pd.DataFrame:
+    def make_report(self, group_by, agg_funcs, sort_by) -> pd.DataFrame:
         if agg_funcs == None or agg_funcs == []:
             agg_funcs = self._DEFAULT_AGG_FUNCS
         self._check_report_capability(group_by, agg_funcs)
@@ -187,8 +187,6 @@ class Profiling(metaclass=ABCMeta):
                 sort_by = "t_" + sort_by
             report.sort_values(sort_by, ascending=False,
                                ignore_index=True, inplace=True)
-        if normilize:
-            return self._normilize(report)
         return report
     
     def _print_table(self, df: pd.DataFrame, rows):
@@ -246,8 +244,12 @@ class IndividualProfiling(Profiling):
     def make_report(self,
                     group_by: str | None="type",
                     agg_funcs: Sequence[str] | None=None,
-                    sort_by: str | None=None):
-        return super().make_report(group_by, agg_funcs, sort_by)
+                    sort_by: str | None=None,
+                    normilize=True):
+        report = super().make_report(group_by, agg_funcs, sort_by)
+        if normilize:
+            return self._normilize(report)
+        return report
 
     def print_report(self, 
                      rows: int | None=10,
