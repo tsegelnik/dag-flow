@@ -210,6 +210,9 @@ class TestIndividual:
         profiling.estimate_target_nodes()
         
         profiling.make_report(agg_funcs=['min', 'std', 'count'])
+        profiling.make_report(agg_funcs=['t_min', 't_std', 't_count'])
+        profiling.make_report(agg_funcs=['t_mean', 't_percentage', 't_count'])
+        profiling.make_report(agg_funcs=['median', '%_of_total'])
         profiling.make_report(agg_funcs=['count', 'min', 'std'])
         
         report = profiling.make_report(agg_funcs=['count', 'min', 'percentage'])
@@ -350,8 +353,7 @@ class TestFrameworkProfiling:
 
         profiling = FrameworkProfiling(nodes, n_runs=1000)
         profiling.estimate_framework_time()
-        profiling.estimate_framework_time(append_results=True)
-        profiling.print_report(agg_funcs=['min', 'max', 'count'])
+        profiling.print_report(agg_funcs=['single', 'sum', 'count'])
 
 
 @pytest.mark.skip(reason="to slow to test every time")
