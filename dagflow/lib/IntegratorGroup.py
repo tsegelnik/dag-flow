@@ -29,9 +29,7 @@ class IntegratorGroup(MetaNode):
             return
 
         self._init_sampler(mode, "sampler", labels.get("sampler", {}))
-        self._add_integrator(
-            "integrator", labels.get("integrator", {}), dropdim=dropdim
-        )
+        self._add_integrator("integrator", labels.get("integrator", {}), dropdim=dropdim)
 
     def _init_sampler(self, mode: ModeType, name: str = "sampler", label: Mapping = {}):
         self._sampler = IntegratorSampler(name, mode=mode, label=label)
@@ -86,7 +84,7 @@ class IntegratorGroup(MetaNode):
     ) -> Tuple["IntegratorGroup", "NodeStorage"]:
         storage = NodeStorage(default_containers=True)
         nodes = storage("nodes")
-        storage("inputs")
+        inputs = storage("inputs")
         outputs = storage("outputs")
 
         integrators = cls(mode, bare=True)
@@ -106,8 +104,10 @@ class IntegratorGroup(MetaNode):
                 name, label_int, positionals=False, dropdim=dropdim
             )
             nodes[key_integrator + key] = integrator
-            # inputs[key_integrator + key] = integrator.inputs[0]
-            # outputs[key_integrator + key] = integrator.outputs[0]
+            # NOTE: it is need to create an input and add to the storage
+            integrator()
+            inputs[key_integrator + key] = integrator.inputs[0]
+            outputs[key_integrator + key] = integrator.outputs[0]
 
         NodeStorage.update_current(storage, strict=True)
 
