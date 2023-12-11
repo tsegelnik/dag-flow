@@ -360,7 +360,7 @@ class PlotVisitor(NestedMKDictVisitor):
         show_all: bool = False,
         folder: Optional[str] = None,
         format: str = "pdf",
-        overlay_priority: Optional[Sequence[Sequence[str]]] = None,
+        overlay_priority: Sequence[Sequence[str]] = ((),),
         **kwargs,
     ):
         self._show_all = show_all
