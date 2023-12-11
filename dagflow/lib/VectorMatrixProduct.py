@@ -8,6 +8,7 @@ from ..typefunctions import (
     check_input_dimension,
     check_input_matrix_or_diag,
     check_inputs_multiplicable_mat,
+    copy_from_input_to_output,
     eval_output_dtype,
 )
 
@@ -28,9 +29,7 @@ class VectorMatrixProduct(FunctionNode):
     _out: "Output"
     _matrix_column: bool
 
-    def __init__(
-        self, *args, mode: Literal["column", "row"] = "column", **kwargs
-    ) -> None:
+    def __init__(self, *args, mode: Literal["column", "row"] = "column", **kwargs) -> None:
         super().__init__(*args, **kwargs, allowed_kw_inputs=("vec", "mat"))
         self._vec = self._add_input("vector")
         self._mat = self._add_input("matrix")
@@ -86,13 +85,16 @@ class VectorMatrixProduct(FunctionNode):
 
         if self._matrix_column:
             (resshape,) = check_inputs_multiplicable_mat(self, "matrix", "vector")
-            self.fcn = (
-                ndim_mat == 2 and self._fcn_block_column or self._fcn_diagonal_column
-            )
+            self.fcn = ndim_mat == 2 and self._fcn_block_column or self._fcn_diagonal_column
             self._out.dd.shape = (resshape[0],)
         else:
             (resshape,) = check_inputs_multiplicable_mat(self, "vector", "matrix")
             self.fcn = ndim_mat == 2 and self._fcn_row_block or self._fcn_row_diagonal
             self._out.dd.shape = (resshape[-1],)
+
+        # TODO: process matrix' edges
+        mat_shape = self.inputs["matrix"].dd.shape
+        if ndim_mat == 1 or mat_shape[0] == mat_shape[1]:
+            copy_from_input_to_output(self, 0, 0, dtype=False, shape=False, edges=True, meshes=True)
 
         eval_output_dtype(self, slice(None), "result")
