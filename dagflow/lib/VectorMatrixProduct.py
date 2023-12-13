@@ -2,19 +2,20 @@ from typing import TYPE_CHECKING, Literal
 
 from numpy import matmul, multiply
 
+from dagflow.inputhandler import MissingInputAddPair
+
 from ..exception import TypeFunctionError
 from ..nodes import FunctionNode
 from ..typefunctions import (
+    AllPositionals,
     check_input_dimension,
     check_input_matrix_or_diag,
     check_inputs_multiplicable_mat,
-    copy_from_input_to_output,
     eval_output_dtype,
 )
 
 if TYPE_CHECKING:
     from ..input import Input
-    from ..output import Output
 
 
 class VectorMatrixProduct(FunctionNode):
@@ -22,18 +23,15 @@ class VectorMatrixProduct(FunctionNode):
     Compute matrix product `C=row(v)@M` or `C=M@column(v)`
     """
 
-    __slots__ = ("_vec", "_mat", "_out", "_matrix_column")
+    __slots__ = ("_mat", "_matrix_column")
 
-    _vec: "Input"
     _mat: "Input"
-    _out: "Output"
     _matrix_column: bool
 
     def __init__(self, *args, mode: Literal["column", "row"] = "column", **kwargs) -> None:
-        super().__init__(*args, **kwargs, allowed_kw_inputs=("vec", "mat"))
-        self._vec = self._add_input("vector")
-        self._mat = self._add_input("matrix")
-        self._out = self._add_output("result")
+        kwargs.setdefault("missing_input_handler", MissingInputAddPair())
+        super().__init__(*args, **kwargs, allowed_kw_inputs=("matrix",))
+        self._mat = self._add_input("matrix", positional=False)
 
         if mode == "column":
             self._matrix_column = True
@@ -54,47 +52,47 @@ class VectorMatrixProduct(FunctionNode):
         )
 
     def _fcn_row_block(self):
-        row = self._vec.data
         mat = self._mat.data
-        out = self._out.data
-        matmul(row, mat, out=out)
+        for row, out in zip(self.inputs.iter_data(), self.outputs.iter_data()):
+            matmul(row, mat, out=out)
 
     def _fcn_block_column(self):
-        column = self._vec.data
         mat = self._mat.data
-        out = self._out.data
-        matmul(mat, column, out=out)
+        for column, out in zip(self.inputs.iter_data(), self.outputs.iter_data()):
+            matmul(mat, column, out=out)
 
     def _fcn_row_diagonal(self):
-        row = self._vec.data
-        diag = self._mat.data
-        out = self._out.data
-        multiply(row, diag, out=out)
+        mat = self._mat.data
+        for diag, out in zip(self.inputs.iter_data(), self.outputs.iter_data()):
+            multiply(mat, diag, out=out)
 
     def _fcn_diagonal_column(self):
-        col = self._vec.data
         diag = self._mat.data
-        out = self._out.data
-        multiply(diag, col, out=out)
+        for col, out in zip(self.inputs.iter_data(), self.outputs.iter_data()):
+            multiply(diag, col, out=out)
 
     def _typefunc(self) -> None:
-        check_input_dimension(self, "vector", ndim=1)
+        check_input_dimension(self, AllPositionals, ndim=1)
         ndim_mat = check_input_matrix_or_diag(self, "matrix")
         if ndim_mat not in (1, 2):
             raise TypeFunctionError(f"Matrix dimension >2: {ndim_mat}", node=self)
 
         if self._matrix_column:
-            (resshape,) = check_inputs_multiplicable_mat(self, "matrix", "vector")
+            for i, out in enumerate(self.outputs):
+                (resshape,) = check_inputs_multiplicable_mat(self, "matrix", i)
+                out.dd.shape = (resshape[0],)
             self.fcn = ndim_mat == 2 and self._fcn_block_column or self._fcn_diagonal_column
-            self._out.dd.shape = (resshape[0],)
         else:
-            (resshape,) = check_inputs_multiplicable_mat(self, "vector", "matrix")
+            for i, out in enumerate(self.outputs):
+                (resshape,) = check_inputs_multiplicable_mat(self, i, "matrix")
+                out.dd.shape = (resshape[-1],)
             self.fcn = ndim_mat == 2 and self._fcn_row_block or self._fcn_row_diagonal
-            self._out.dd.shape = (resshape[-1],)
 
-        # TODO: process matrix' edges
-        mat_shape = self.inputs["matrix"].dd.shape
-        if ndim_mat == 1 or mat_shape[0] == mat_shape[1]:
-            copy_from_input_to_output(self, 0, 0, dtype=False, shape=False, edges=True, meshes=True)
-
-        eval_output_dtype(self, slice(None), "result")
+        # column: [MxN] x [Nx1] -> [Mx1]
+        # row: [1xM] x [MxN] -> [1xN]
+        mat_edges = self.inputs["matrix"].dd.axes_edges
+        if mat_edges:
+            edges = [mat_edges[not self._matrix_column]] if ndim_mat == 2 else [mat_edges[0]]
+            for inp in self.inputs:
+                inp.dd.axes_edges = edges
+        eval_output_dtype(self, AllPositionals, AllPositionals)
