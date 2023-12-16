@@ -92,7 +92,7 @@ class VectorMatrixProduct(FunctionNode):
         # row: [1xM] x [MxN] -> [1xN]
         mat_edges = self.inputs["matrix"].dd.axes_edges
         if mat_edges:
-            edges = [mat_edges[not self._matrix_column]] if ndim_mat == 2 else [mat_edges[0]]
-            for inp in self.inputs:
-                inp.dd.axes_edges = edges
+            edges = (mat_edges[not self._matrix_column],) if ndim_mat == 2 else (mat_edges[0],)
+            for out in self.outputs:
+                out.dd.axes_edges = edges
         eval_output_dtype(self, AllPositionals, AllPositionals)

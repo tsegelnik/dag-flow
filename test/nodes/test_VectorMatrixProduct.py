@@ -37,9 +37,9 @@ def test_VectorMatrixProduct(dtype: str, diag_matrix: bool, mode: str):
         array_edgesX = Array("edgesX", edgesX)
         array_edgesY = Array("edgesY", edgesY)
         edges = (
-            [array_edgesX.outputs["array"], array_edgesY.outputs["array"]]
+            (array_edgesX.outputs["array"], array_edgesY.outputs["array"])
             if matrix.ndim == 2
-            else [array_edgesX.outputs["array"]]
+            else (array_edgesX.outputs["array"],)
         )
         array_matrix = Array("Matrix", matrix, edges=edges)
 
@@ -50,6 +50,9 @@ def test_VectorMatrixProduct(dtype: str, diag_matrix: bool, mode: str):
     actual = prod.get_data()
     assert allclose(desired, actual, atol=0, rtol=0)
     assert len(actual.shape) == 1
+
+    right_edges = edges[0] if matrix.ndim == 1 or is_column else edges[1]
+    assert prod.outputs[0].dd.axes_edges[0] == right_edges
 
     smatrix = diag_matrix and "diag" or "block"
     ograph = f"output/test_VectorMatrixProduct_{dtype}_{smatrix}_{mode}.png"
