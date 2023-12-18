@@ -203,6 +203,12 @@ class Node(NodeBase):
             nodes[outname] = instance
 
             ninputs = instance.inputs.len_all()
+            noutputs = instance.outputs.len_all()
+            if noutputs==0:
+                instance()
+                ninputs = instance.inputs.len_all()
+                noutputs = instance.outputs.len_all()
+
             iter_inputs = instance.inputs.iter_all_items()
             if ninputs > 1:
                 for iname, input in iter_inputs:
@@ -211,7 +217,6 @@ class Node(NodeBase):
                 _, input = next(iter_inputs)
                 inputs[tuplename + key] = input
 
-            noutputs = instance.outputs.len_all()
             iter_outputs = instance.outputs.iter_all_items()
             if noutputs > 1:
                 for oname, output in instance.outputs.iter_all_items():
