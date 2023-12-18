@@ -29,7 +29,7 @@ class VectorMatrixProduct(FunctionNode):
     _matrix_column: bool
 
     def __init__(self, *args, mode: Literal["column", "row"] = "column", **kwargs) -> None:
-        kwargs.setdefault("missing_input_handler", MissingInputAddPair())
+        kwargs.setdefault("missing_input_handler", MissingInputAddPair(input_fmt="vector", output_fmt="result"))
         super().__init__(*args, **kwargs, allowed_kw_inputs=("matrix",))
         self._mat = self._add_input("matrix", positional=False)
 
