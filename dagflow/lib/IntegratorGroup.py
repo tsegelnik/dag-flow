@@ -106,8 +106,8 @@ class IntegratorGroup(MetaNode):
             nodes[key_integrator + key] = integrator
             # NOTE: it is need to create an input and add to the storage
             integrator()
-            inputs[key_integrator + key] = integrator.inputs[0]
-            outputs[key_integrator + key] = integrator.outputs[0]
+            inputs[key_integrator + key] = integrator.inputs[-1]
+            outputs[key_integrator + key] = integrator.outputs[-1]
 
         NodeStorage.update_current(storage, strict=True)
 
