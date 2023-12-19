@@ -154,9 +154,10 @@ class Output:
             return self._data
         except Exception as exc:
             raise CriticalError(
-                "An exception occured during touching of the parent node!",
+                "An exception occured while the node was touched!",
                 node=self._node,
                 output=self,
+                args=exc.args
             ) from exc
 
     def _set_data(
