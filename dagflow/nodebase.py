@@ -74,7 +74,7 @@ class NodeBase:
             return default
 
     def __str__(self) -> str:
-        return f"→[{len(self.inputs)}],[{len(self.outputs)}]→"
+        return f"→[{len(self.inputs)}]{type(self).__name__}[{len(self.outputs)}]→"
 
     _repr_pretty_ = repr_pretty
 
