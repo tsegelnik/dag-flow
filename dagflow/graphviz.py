@@ -422,7 +422,6 @@ else:
             if not connected:
                 try:
                     idx2 = container.key(leg)
-                    print("here", idx2)
                 except ValueError:
                     pass
                 else:
