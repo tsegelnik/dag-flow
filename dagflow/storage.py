@@ -62,7 +62,7 @@ class NodeStorage(NestedMKDict):
         **kwargs,
     ):
         kwargs.setdefault("sep", ".")
-        kwargs.setdefault("recursive_to_others", True)
+        kwargs.setdefault("recursive_to_others", False)
         super().__init__(*args, **kwargs)
 
         self._remove_connected_inputs = remove_connected_inputs
