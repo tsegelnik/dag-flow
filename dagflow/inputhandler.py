@@ -1,4 +1,4 @@
-from typing import Optional, Union, TYPE_CHECKING
+from typing import TYPE_CHECKING, Optional, Sequence, Union
 
 from .exception import InitializationError
 
@@ -7,6 +7,7 @@ if TYPE_CHECKING:
 
 
 class SimpleFormatter:
+    __slots__ = ("_base", "_numfmt")
     _base: str
     _numfmt: str
 
@@ -34,6 +35,8 @@ class MissingInputHandler:
     is connected to the missing input with >>/<<
     """
 
+    __slots__ = ("_node",)
+
     _node: "Node"
 
     def __init__(self, node: "Node"):
@@ -53,6 +56,8 @@ class MissingInputHandler:
 
 class MissingInputFail(MissingInputHandler):
     """Default missing input handler: issues and exception"""
+
+    __slots__ = ()
 
     def __init__(self, node=None):
         super().__init__(node)
@@ -106,10 +111,12 @@ class MissingInputAdd(MissingInputHandler):
                 f"`output_fmt` is `str` or `SimpleFormatter`, but given {output_fmt}"
             )
 
-    def __call__(self, idx=None, scope=None, **kwargs):
+    def __call__(self, idx=None, scope=None, *, fmt: Optional[str] = None, **kwargs):
         kwargs_combined = dict(self.input_kws, **kwargs)
+        if fmt is None:
+            fmt = self.input_fmt
         return self.node._add_input(
-            self.input_fmt.format(idx if idx is not None else len(self.node.inputs)),
+            fmt.format(idx if idx is not None else len(self.node.inputs)),
             **kwargs_combined,
         )
 
@@ -119,6 +126,8 @@ class MissingInputAddPair(MissingInputAdd):
     Adds an input for each output in >> operator.
     Adds an output for each new input
     """
+
+    __slots__ = ()
 
     def __init__(self, node=None, **kwargs):
         super().__init__(node, **kwargs)
@@ -136,7 +145,9 @@ class MissingInputAddOne(MissingInputAdd):
     Adds only one output if needed
     """
 
-    add_child_output = False
+    __slots__ = ("add_child_output",)
+
+    add_child_output: bool
 
     def __init__(self, node=None, *, add_child_output: bool = False, **kwargs):
         super().__init__(node, **kwargs)
@@ -159,12 +170,15 @@ class MissingInputAddEach(MissingInputAdd):
     Adds an output for each block (for each >> operation)
     """
 
-    add_child_output = False
-    scope = 0
+    __slots__ = ("add_child_output", "scope")
+
+    add_child_output: bool
+    scope: int
 
     def __init__(self, node=None, *, add_child_output=False, **kwargs):
         super().__init__(node, **kwargs)
         self.add_child_output = add_child_output
+        self.scope = 0
 
     def __call__(self, idx=None, scope=None):
         if scope == self.scope != 0:
@@ -185,13 +199,24 @@ class MissingInputAddEachN(MissingInputAdd):
     Adds an output for each N inputs
     """
 
-    add_child_output: bool = False
-    scope: int = 0
+    __slots__ = ("add_child_output", "scope", "n", "input_fmts")
+
+    add_child_output: bool
+    scope: int
     n: int
 
-    def __init__(self, n: int, node=None, *, add_child_output=False, **kwargs):
+    def __init__(
+        self,
+        n: int,
+        node=None,
+        *,
+        init_with_no_inputs: bool = False,
+        add_child_output=False,
+        **kwargs,
+    ):
         super().__init__(node, **kwargs)
         self.n = n
+        self.scope = 1 if init_with_no_inputs else 0
         self.add_child_output = add_child_output
 
     def __call__(self, idx=None, scope=None):
