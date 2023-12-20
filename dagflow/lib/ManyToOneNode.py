@@ -1,5 +1,12 @@
+from typing import Any, Optional, Tuple, Union
+
+from multikeydict.nestedmkdict import walkitems
+from multikeydict.typing import KeyLike
+
 from ..inputhandler import MissingInputAdd
+from ..node import Node
 from ..nodes import FunctionNode
+from ..storage import NodeStorage
 from ..typefunctions import (
     AllPositionals,
     check_has_inputs,
@@ -7,13 +14,6 @@ from ..typefunctions import (
     copy_from_input_to_output,
     eval_output_dtype,
 )
-
-from ..node import Node
-from ..storage import NodeStorage
-from multikeydict.nestedmkdict import walkitems
-
-from typing import Tuple, Union, Optional, Any
-from multikeydict.typing import KeyLike
 
 
 class ManyToOneNode(FunctionNode):
