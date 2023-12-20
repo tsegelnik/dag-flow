@@ -1,4 +1,4 @@
-from typing import TYPE_CHECKING, Optional, Sequence, Union
+from typing import TYPE_CHECKING, Optional, Sequence, Tuple, Union
 
 from .exception import InitializationError
 
@@ -6,7 +6,39 @@ if TYPE_CHECKING:
     from .node import Node
 
 
-class SimpleFormatter:
+class Formatter:
+    __slots__ = ()
+
+    def format(self, num: int) -> str:
+        raise Exception("Virtual method called")
+
+    @staticmethod
+    def from_string(string: str):
+        if "{" in string:
+            return string
+
+        return SimpleFormatter(string)  # pyright: ignore [reportUndefinedVariable]
+
+    @staticmethod
+    def from_sequence(seq: Sequence[str]):
+        return SequentialFormatter(seq)  # pyright: ignore [reportUndefinedVariable]
+
+    @staticmethod
+    def from_value(value: Union[str, Sequence[str], "Formatter"]):
+        if isinstance(value, Formatter):
+             return value
+        elif isinstance(value, str):
+            return Formatter.from_string(value)
+        elif isinstance(value, Sequence):
+            return Formatter.from_sequence(value)
+
+        raise InitializationError(f"Expect str, Tuple[str] or Formatter, got {type(value).__name__}")
+
+
+Formattable = Union[Formatter, str]
+
+
+class SimpleFormatter(Formatter):
     __slots__ = ("_base", "_numfmt")
     _base: str
     _numfmt: str
@@ -15,18 +47,36 @@ class SimpleFormatter:
         self._base = base
         self._numfmt = numfmt
 
-    @staticmethod
-    def from_string(string: str):
-        if "{" in string:
-            return string
-
-        return SimpleFormatter(string)
-
     def format(self, num: int) -> str:
         if num > 0:
             return self._base + self._numfmt.format(num)
 
         return self._base
+
+
+class SequentialFormatter(Formatter):
+    __slots__ = ("_base", "_numfmt", "_startidx")
+
+    _base: Tuple[str, ...]
+    _numfmt: str
+    _startidx: int
+
+    def __init__(self, base: Sequence[str], numfmt: str = "_{:02d}", startidx: int = 0):
+        self._base = tuple(base)
+        self._numfmt = numfmt
+        self._startidx = startidx
+
+    def format(self, num: int) -> str:
+        num = num - self._startidx
+        idx = num % len(self._base)
+        groupnum = num // len(self._base)
+        base = self._base[idx]
+        if groupnum > 0:
+            return base + self._numfmt.format(groupnum)
+        elif num < 0:
+            raise ValueError(f"SequentialFormatter got num={num}<0")
+
+        return base
 
 
 class MissingInputHandler:
@@ -37,9 +87,9 @@ class MissingInputHandler:
 
     __slots__ = ("_node",)
 
-    _node: "Node"
+    _node: Optional["Node"]
 
-    def __init__(self, node: "Node"):
+    def __init__(self, node: Optional["Node"] = None):
         self.node = node
 
     @property
@@ -71,18 +121,18 @@ class MissingInputAdd(MissingInputHandler):
 
     __slots__ = ("input_fmt", "input_kws", "output_fmt", "output_kws")
 
-    input_fmt: Union[SimpleFormatter, str]
+    input_fmt: Formattable
     input_kws: dict
-    output_fmt: Union[SimpleFormatter, str]
+    output_fmt: Formattable
     output_kws: dict
 
     def __init__(
         self,
-        node=None,
+        node: Optional["Node"] = None,
         *,
-        input_fmt: Union[str, SimpleFormatter] = SimpleFormatter("input", "_{:02d}"),
+        input_fmt: Formattable = SimpleFormatter("input", "_{:02d}"),
         input_kws: Optional[dict] = None,
-        output_fmt: Union[str, SimpleFormatter] = SimpleFormatter("output", "_{:02d}"),
+        output_fmt: Formattable = SimpleFormatter("output", "_{:02d}"),
         output_kws: Optional[dict] = None,
     ):
         if input_kws is None:
@@ -92,26 +142,10 @@ class MissingInputAdd(MissingInputHandler):
         super().__init__(node)
         self.input_kws = input_kws
         self.output_kws = output_kws
-        # input_fmt setter
-        if isinstance(input_fmt, str):
-            self.input_fmt = SimpleFormatter.from_string(input_fmt)
-        elif isinstance(input_fmt, SimpleFormatter):
-            self.input_fmt = input_fmt
-        else:
-            raise InitializationError(
-                f"`input_fmt` is `str` or `SimpleFormatter`, but given {input_fmt}"
-            )
-        # output_fmt setter
-        if isinstance(output_fmt, str):
-            self.output_fmt = SimpleFormatter.from_string(output_fmt)
-        elif isinstance(output_fmt, SimpleFormatter):
-            self.output_fmt = output_fmt
-        else:
-            raise InitializationError(
-                f"`output_fmt` is `str` or `SimpleFormatter`, but given {output_fmt}"
-            )
+        self.input_fmt = Formatter.from_value(input_fmt)
+        self.output_fmt = Formatter.from_value(output_fmt)
 
-    def __call__(self, idx=None, scope=None, *, fmt: Optional[str] = None, **kwargs):
+    def __call__(self, idx=None, scope=None, *, fmt: Optional[Formattable] = None, **kwargs):
         kwargs_combined = dict(self.input_kws, **kwargs)
         if fmt is None:
             fmt = self.input_fmt
