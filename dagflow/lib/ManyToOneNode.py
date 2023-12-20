@@ -25,10 +25,10 @@ class ManyToOneNode(FunctionNode):
     __slots__ = ("_broadcastable",)
     _broadcastable: bool
 
-    def __init__(self, *args, broadcastable: bool = False, **kwargs):
+    def __init__(self, *args, broadcastable: bool = False, output_name: str = "result", **kwargs):
         kwargs.setdefault("missing_input_handler", MissingInputAdd())
         super().__init__(*args, **kwargs)
-        self._add_output("result")
+        self._add_output(output_name)
         self._broadcastable = broadcastable
 
     def _typefunc(self) -> None:
