@@ -1,5 +1,12 @@
+from typing import Any, Optional, Tuple, Union
+
+from multikeydict.nestedmkdict import walkitems
+from multikeydict.typing import KeyLike
+
 from ..inputhandler import MissingInputAdd
+from ..node import Node
 from ..nodes import FunctionNode
+from ..storage import NodeStorage
 from ..typefunctions import (
     AllPositionals,
     check_has_inputs,
@@ -7,13 +14,6 @@ from ..typefunctions import (
     copy_from_input_to_output,
     eval_output_dtype,
 )
-
-from ..node import Node
-from ..storage import NodeStorage
-from multikeydict.nestedmkdict import walkitems
-
-from typing import Tuple, Union, Optional, Any
-from multikeydict.typing import KeyLike
 
 
 class ManyToOneNode(FunctionNode):
@@ -25,10 +25,10 @@ class ManyToOneNode(FunctionNode):
     __slots__ = ("_broadcastable",)
     _broadcastable: bool
 
-    def __init__(self, *args, broadcastable: bool = False, **kwargs):
+    def __init__(self, *args, broadcastable: bool = False, output_name: str = "result", **kwargs):
         kwargs.setdefault("missing_input_handler", MissingInputAdd())
         super().__init__(*args, **kwargs)
-        self._add_output("result")
+        self._add_output(output_name)
         self._broadcastable = broadcastable
 
     def _typefunc(self) -> None:
