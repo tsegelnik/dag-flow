@@ -1,5 +1,6 @@
 from typing import (
     TYPE_CHECKING,
+    Any,
     Dict,
     List,
     Mapping,
@@ -13,11 +14,11 @@ from typing import (
 from orderedset import OrderedSet
 
 from multikeydict.nestedmkdict import NestedMKDict
-from multikeydict.typing import Key, TupleKey
+from multikeydict.typing import Key, TupleKey, KeyLike
 from multikeydict.visitor import NestedMKDictVisitor
 
 from .input import Input
-from .logger import DEBUG, SUBINFO, logger
+from .logger import DEBUG, SUBINFO, SUBSUBINFO, logger
 from .node import Node
 from .output import Output
 
@@ -39,6 +40,16 @@ def trunc(text: str, width: int) -> str:
     return "\n".join(line[:width] for line in text.split("\n"))
 
 
+def _fillna(df: DataFrame, columnname: str, replacement: str):
+    column = df[columnname]
+    if not column.isnull().values.any():
+        return
+
+    if column.dtype!='O':
+        column.astype('O', copy=False)
+
+    column.fillna(replacement, inplace=True)
+
 class NodeStorage(NestedMKDict):
     __slots__ = ("_remove_connected_inputs",)
     _remove_connected_inputs: bool
@@ -51,7 +62,7 @@ class NodeStorage(NestedMKDict):
         **kwargs,
     ):
         kwargs.setdefault("sep", ".")
-        kwargs.setdefault("recursive_to_others", True)
+        kwargs.setdefault("recursive_to_others", False)
         super().__init__(*args, **kwargs)
 
         self._remove_connected_inputs = remove_connected_inputs
@@ -63,6 +74,14 @@ class NodeStorage(NestedMKDict):
 
     def plot(self, *args, **kwargs) -> None:
         self.visit(PlotVisitor(*args, **kwargs))
+
+    def __setitem__(self, key: KeyLike, item: Any) -> None:
+        if isinstance(item, (Node, Output)) or type(item).__name__ in {"Parameter", "Parameters"}:
+            logger.log(SUBSUBINFO, f"Set {self.joinkey(key)}")
+        elif isinstance(item, Input):
+            logger.log(DEBUG, f"Set {self.joinkey(key)}")
+
+        super().__setitem__(key, item)
 
     #
     # Connectors
@@ -226,12 +245,12 @@ class NodeStorage(NestedMKDict):
             if df[key].isna().all():
                 del df[key]
             else:
-                df[key].fillna("-", inplace=True)
+                _fillna(df, key, "-")
 
-        df["value"].fillna("-", inplace=True)
-        df["flags"].fillna("", inplace=True)
-        df["label"].fillna("", inplace=True)
-        df["shape"].fillna("", inplace=True)
+        _fillna(df, "value", "-")
+        _fillna(df, "flags", "")
+        _fillna(df, "label", "")
+        _fillna(df, "shape", "")
 
         if (df["flags"] == "").all():
             del df["flags"]
@@ -341,7 +360,7 @@ class PlotVisitor(NestedMKDictVisitor):
         show_all: bool = False,
         folder: Optional[str] = None,
         format: str = "pdf",
-        overlay_priority: Optional[Sequence[Sequence[str]]] = None,
+        overlay_priority: Sequence[Sequence[str]] = ((),),
         **kwargs,
     ):
         self._show_all = show_all

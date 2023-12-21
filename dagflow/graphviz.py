@@ -324,6 +324,8 @@ else:
             source = self.get_id(input, "_in")
             target = self.get_id(nodedag)
 
+            self._get_index(input, styledict, 'headlabel')
+
             self._graph.add_node(source, label="", shape="none", **styledict)
             self._graph.add_edge(source, target, **styledict)
 
@@ -401,16 +403,34 @@ else:
         def _get_index(self, leg, styledict: dict, target: str):
             if isinstance(leg, Input):
                 container = leg.node.inputs
+                connected = leg.connected()
             else:
                 container = leg.node.outputs
-            if container.len_all()<2:
+                connected = True
+
+            if container.len_all()<2 and connected:
                 return
 
+            idx = ""
             try:
                 idx = container.index(leg)
             except ValueError:
                 pass
             else:
+                idx = str(idx)
+
+            if not connected:
+                try:
+                    idx2 = container.key(leg)
+                except ValueError:
+                    pass
+                else:
+                    if idx:
+                        idx = f"{idx}: {idx2}"
+                    else:
+                        idx = idx2
+
+            if idx:
                 styledict[target] = str(idx)
 
         def _add_edge(self, nodedag, output, input, *, vsource: Optional[str]=None, vtarget: Optional[str]=None, style: Optional[dict]=None) -> None:

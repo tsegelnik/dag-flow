@@ -21,7 +21,7 @@ if TYPE_CHECKING:
 TStrOrPair = Union[str, Tuple[str, str]]
 TPairsOrDict = Union[Sequence[TStrOrPair], Dict]
 
-MetaNodeStrategies = {"LeadingNode", "NewNode"}
+MetaNodeStrategies = {"LeadingNode", "NewNode", "Disable"}
 MetaNodeStrategiesType = Literal[MetaNodeStrategies]
 
 
@@ -71,6 +71,7 @@ class MetaNode(NodeBase):
         self._call_functions = {
             "LeadingNode": self._call_leading_node,
             "NewNode": self._call_new_node,
+            "Disable": self._call_disabled,
         }
         self._call_positional_input = self._call_functions[strategy]
         self._new_node_cls = new_node_cls
@@ -131,6 +132,14 @@ class MetaNode(NodeBase):
                 "Cannot create a new input: the leading node is unknown!", node=self
             )
         return self._add_input_to_node(self.leading_node, *args, **kwargs)
+
+    def _call_disabled(self, *args, **kwargs) -> Optional["Input"]:
+        """
+        Prevents creation of new nodes
+        """
+        raise CriticalError(
+            "Cannot create a new input: the node is not scalable!", node=self
+        )
 
     def __call__(
         self,
@@ -206,16 +215,22 @@ class MetaNode(NodeBase):
             raise RuntimeError("also_missiong_outputs=True option makes no sense")
 
     def _import_pos_inputs(self, node: Node, *, keyword: bool = True) -> None:
-        if self._node_inputs_pos is not None:
+        if self._strategy == "LeadingNode" and self.leading_node is not None:
+            keyword = False
+        elif self._node_inputs_pos is not None:
             raise RuntimeError("Positional inputs already inherited")
-        self._node_inputs_pos = node
+        else:
+            self._node_inputs_pos = node
         for input in node.inputs:
             self.inputs.add(input, positional=True, keyword=keyword)
 
     def _import_pos_outputs(self, node: Node, *, keyword: bool = True) -> None:
-        if self._node_outputs_pos is not None:
+        if self._strategy == "LeadingNode" and self.leading_node is not None:
+            keyword = False
+        elif self._node_outputs_pos is not None:
             raise RuntimeError("Positional outputs already inherited")
-        self._node_outputs_pos = node
+        else:
+            self._node_outputs_pos = node
         for output in node.outputs:
             self.outputs.add(output, positional=True, keyword=keyword)
 

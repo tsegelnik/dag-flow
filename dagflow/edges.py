@@ -28,6 +28,13 @@ class EdgeContainer:
         if iterable:
             self.add(iterable)
 
+    def __str__(self):
+        if self._dtype:
+            type = self._dtype.__name__
+        else:
+            type = 'Edge'
+        return f"{type}: {tuple(self._all_edges)}"
+
     def add(
         self,
         value: Any,
@@ -46,11 +53,14 @@ class EdgeContainer:
             for v in value:
                 self.add(v, positional=positional, keyword=keyword)
             return self
-        if self._dtype and not isinstance(value, self._dtype):
-            raise RuntimeError(
-                f"The type {type(value)} of the data doesn't correpond "
-                f"to {self._dtype}!"
-            )
+        if self._dtype:
+            if not isinstance(value, self._dtype):
+                raise RuntimeError(
+                    f"The type {type(value)} of the data doesn't correpond "
+                    f"to {self._dtype}!"
+                )
+        else:
+            self._dtype = type(value)
         name = name or value.name
         if not name:
             raise RuntimeError("May not add objects with undefined name")
@@ -137,6 +147,13 @@ class EdgeContainer:
         """Get positional leg"""
         return self._pos_edges_list[idx]
     iat = get_pos
+
+    def key(self, arg):
+        for key, value in self._kw_edges.items():
+            if value is arg:
+                return key
+
+        raise ValueError()
 
     def index(self, arg):
         return self._pos_edges_list.index(arg)

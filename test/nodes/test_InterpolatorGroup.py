@@ -51,7 +51,7 @@ def test_InterpolatorGroup(debug_graph, testname):
             labels={"interpolator": {"plottitle": "Interpolator", "axis": "y"}},
         )
         coarse >> metaint.inputs["coarse"]
-        yc >> metaint.inputs["y"]
+        yc >> metaint.inputs[0]
         fine >> metaint.inputs["fine"]
 
         fcheck = LinearF("k*x+b", k=k, b=b)

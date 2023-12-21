@@ -9,17 +9,18 @@ from schema import Or, Schema, Use
 
 from multikeydict.typing import TupleKey
 
+from ..logger import SUBINFO, logger
 from ..storage import NodeStorage
 from ..tools.schema import (
     AllFileswithExt,
-    IsReadable,
     IsFilenameSeqOrFilename,
+    IsReadable,
     IsStrSeqOrStr,
     LoadFileWithExt,
     LoadYaml,
 )
 
-_extensions = {"root", "hdf5", "tsv", "txt"}
+_extensions = {"root", "hdf5", "tsv", "txt", "npz"}
 _schema_cfg = Schema(
     {
         "name": str,
@@ -68,7 +69,9 @@ def get_filename(
             if IsReadable(filename):
                 return filename
 
-    raise RuntimeError(f"Unable to find readable filename for {key}. Checked: {checked_filenames}")
+    raise RuntimeError(
+        f"Unable to find readable filename for {key}. Checked: {checked_filenames}"
+    )
 
 
 def load_graph_data(acfg: Optional[Mapping] = None, **kwargs):
@@ -101,11 +104,12 @@ def load_graph_data(acfg: Optional[Mapping] = None, **kwargs):
         skey = ".".join(key)
         iname = objects.get(skey, skey)
         x, y = loader(filename, iname)
+        logger.log(SUBINFO, f"Read: {filename}")
         data[key] = x, y
         meshes.append(x)
 
     storage = NodeStorage(default_containers=True)
-    data_storage = storage('data')
+    data_storage = storage("data")
 
     if cfg["merge_x"]:
         x0 = meshes[0]
@@ -121,9 +125,9 @@ def load_graph_data(acfg: Optional[Mapping] = None, **kwargs):
     with storage:
         for key, (x, y) in data.items():
             if commonmesh is None:
-                data_storage[xname+key] = x
+                data_storage[xname + key] = x
 
-            data_storage[yname+key] = y
+            data_storage[yname + key] = y
 
     NodeStorage.update_current(storage, strict=True)
 
@@ -140,6 +144,19 @@ def _load_hdf5(filename: str, name: str) -> Tuple[NDArray, NDArray]:
     from h5py import File
 
     file = File(filename, "r")
+    try:
+        data = file[name]
+    except KeyError as e:
+        raise RuntimeError(f"Unable to read {name} from {filename}") from e
+
+    cols = data.dtype.names
+    return data[cols[0]], data[cols[1]]
+
+
+def _load_npz(filename: str, name: str) -> Tuple[NDArray, NDArray]:
+    from numpy import load
+
+    file = load(filename)
     try:
         data = file[name]
     except KeyError as e:
@@ -168,4 +185,5 @@ _loaders = {
     "tsv": _load_tsv,
     "root": _load_root,
     "hdf5": _load_hdf5,
+    "npz": _load_npz,
 }

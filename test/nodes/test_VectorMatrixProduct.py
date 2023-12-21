@@ -1,12 +1,11 @@
 #!/usr/bin/env python
 
-from dagflow.graph import Graph
-from dagflow.lib import Array
-from dagflow.lib import VectorMatrixProduct
-from dagflow.graphviz import savegraph
-
-from numpy import arange, diag, allclose
+from numpy import allclose, arange, diag
 from pytest import mark
+
+from dagflow.graph import Graph
+from dagflow.graphviz import savegraph
+from dagflow.lib import Array, VectorMatrixProduct
 
 
 @mark.parametrize("dtype", ("d", "f"))
@@ -16,11 +15,9 @@ def test_VectorMatrixProduct(dtype: str, diag_matrix: bool, mode: str):
     size = 4
     is_column = mode == "column"
 
-    matrix = (
-        in_matrix := arange(1, size * (size + 1) + 1, dtype=dtype).reshape(
-            size, size + 1
-        )
-    )
+    matrix = (in_matrix := arange(1, size * (size + 1) + 1, dtype=dtype).reshape(size, size + 1))
+    edgesX = arange(0, size + 1)
+    edgesY = arange(0, size + 2)
 
     if diag_matrix:
         matrix = diag(in_matrix[:size, :size])
@@ -37,15 +34,25 @@ def test_VectorMatrixProduct(dtype: str, diag_matrix: bool, mode: str):
 
     with Graph(close=True) as graph:
         array_vector = Array("Vector", vector)
-        array_matrix = Array("Matrix", matrix)
+        array_edgesX = Array("edgesX", edgesX)
+        array_edgesY = Array("edgesY", edgesY)
+        edges = (
+            (array_edgesX.outputs["array"], array_edgesY.outputs["array"])
+            if matrix.ndim == 2
+            else (array_edgesX.outputs["array"],)
+        )
+        array_matrix = Array("Matrix", matrix, edges=edges)
 
         prod = VectorMatrixProduct("VectorMatrixProduct", mode=mode)
-        array_vector >> prod.inputs["vector"]
         array_matrix >> prod.inputs["matrix"]
+        array_vector >> prod
 
     actual = prod.get_data()
     assert allclose(desired, actual, atol=0, rtol=0)
     assert len(actual.shape) == 1
+
+    right_edges = edges[0] if matrix.ndim == 1 or is_column else edges[1]
+    assert prod.outputs[0].dd.axes_edges[0] == right_edges
 
     smatrix = diag_matrix and "diag" or "block"
     ograph = f"output/test_VectorMatrixProduct_{dtype}_{smatrix}_{mode}.png"
