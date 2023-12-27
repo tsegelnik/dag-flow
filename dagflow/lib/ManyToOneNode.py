@@ -1,7 +1,7 @@
 from typing import Any, Optional, Tuple, Union
 
-from multikeydict.nestedmkdict import walkitems
-from multikeydict.typing import KeyLike
+from multikeydict.nestedmkdict import walkkeys
+from multikeydict.typing import KeyLike, TupleKey
 
 from ..inputhandler import MissingInputAdd
 from ..node import Node
@@ -61,37 +61,40 @@ class ManyToOneNode(FunctionNode):
         if not replicate:
             raise RuntimeError("`replicate` tuple should have at least one item")
 
-        for outkey in replicate:
-            if isinstance(outkey, str):
-                outkey = (outkey,)
+        instance = None
+        outname = ""
+
+        def fcn_outer_before(outkey: TupleKey):
+            nonlocal outname, instance, nodes
             outname = (name,) + outkey
             instance = cls(".".join(outname), **kwargs)
             nodes[outname] = instance
 
-            outkeyset = frozenset(outkey)
-            for arg in args:
-                for inkey, output in walkitems(arg):
-                    inkeyset = frozenset(inkey)
-                    if inkey and not outkeyset.issubset(inkeyset):
-                        if inkeyset.intersection(outkeyset):
-                            raise ConnectionError(
-                                f"Unsupported LHS key {inkey}. RHS key is {outkey}"
-                            )
-                        continue
+        def fcn(i: int, inkey: TupleKey, outkey: TupleKey):
+            nonlocal args, instance
+            container = args[i]
+            output = container[inkey] if inkey else container
+            try:
+                output >> instance  # pyright: ignore [reportUnusedExpression]
+            except TypeError as e:
+                raise ConnectionError(
+                    f"Invalid >> types for {inkey}/{outkey}: {type(output)}/{type(instance)}"
+                ) from e
 
-                    try:
-                        output >> instance  # pyright: ignore [reportUnusedExpression]
-                    except TypeError as e:
-                        raise ConnectionError(
-                            f"Invalid >> types for {inkey}/{outkey}:"
-                            f" {type(output)}/{type(instance)}"
-                        ) from e
-
+        def fcn_outer_after(outkey: TupleKey):
+            nonlocal outputs, outname, instance
             outputs[outname] = instance.outputs[0]
+
+        from multikeydict.match import match_keys
+
+        keys_left = tuple(tuple(walkkeys(arg)) for arg in args)
+        match_keys(
+            keys_left, replicate, fcn, fcn_outer_before=fcn_outer_before, fcn_outer_after=fcn_outer_after
+        )
 
         NodeStorage.update_current(storage, strict=True)
 
         if len(replicate) == 1:
-            return instance, storage # pyright: ignore [reportUnboundVariable]
+            return instance, storage  # pyright: ignore [reportUnboundVariable]
 
         return None, storage
