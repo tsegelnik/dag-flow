@@ -80,7 +80,7 @@ class ManyToOneNode(FunctionNode):
                         continue
 
                     try:
-                        output >> instance
+                        output >> instance  # pyright: ignore [reportUnusedExpression]
                     except TypeError as e:
                         raise ConnectionError(
                             f"Invalid >> types for {inkey}/{outkey}:"
@@ -92,6 +92,6 @@ class ManyToOneNode(FunctionNode):
         NodeStorage.update_current(storage, strict=True)
 
         if len(replicate) == 1:
-            return instance, storage
+            return instance, storage # pyright: ignore [reportUnboundVariable]
 
         return None, storage
