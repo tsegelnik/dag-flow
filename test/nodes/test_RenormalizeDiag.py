@@ -33,7 +33,18 @@ def test_RenormalizeDiag(testname, ndiag, dtype, mode):
     atol = finfo(dtype).resolution
     # check that sum of every row equals 1
     assert allclose(tuple(actual[i].sum() for i in range(size)), [1] * size, atol=atol, rtol=0)
-    # TODO: check that we scaled correct diagonals
+
+    # check that we scaled correct diagonals
+    for irow in range(size):
+        colmax = min(irow + ndiag, size)
+        colmin = max(irow - ndiag + 1, 0)
+        assert len(set(actual[irow, colmin:colmax])) == 1
+        offlist = []
+        if colmax < size:
+            offlist.extend(actual[irow, colmax:])
+        if colmin > 0:
+            offlist.extend(actual[irow, :colmin])
+        assert len(set(offlist)) in {0, 1}
 
     ograph = f"output/{testname}.png"
     print(f"Write graph: {ograph}")
