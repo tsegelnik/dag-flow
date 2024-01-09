@@ -29,12 +29,11 @@ def test_RenormalizeDiag(testname, ndiag, dtype, mode):
     # NOTE: uncomment to print input and result
     print(f"matrix:\n{matrix}")
     print(f"result:\n{actual}")
-    assert allclose(
-        tuple(actual[i].sum() for i in range(actual.shape[0])),
-        [1] * size,
-        atol=finfo(dtype).resolution,
-        rtol=0,
-    )
+
+    atol = finfo(dtype).resolution
+    # check that sum of every row equals 1
+    assert allclose(tuple(actual[i].sum() for i in range(size)), [1] * size, atol=atol, rtol=0)
+    # TODO: check that we scaled correct diagonals
 
     ograph = f"output/{testname}.png"
     print(f"Write graph: {ograph}")

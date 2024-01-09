@@ -84,7 +84,7 @@ def _renorm_diag_python(matrix: NDArray, out: NDArray, scale: float, ndiag: floa
             i += 1
         idiag += 1
     # norming
-    out[:, :] = [out[irow, :] / zero_to_one(out[:, irow].sum()) for irow in range(n)]
+    out[:, :] = tuple(out[irow, :] / zero_to_one(out[:, irow].sum()) for irow in range(n))
 
 
 def _renorm_offdiag_python(matrix: NDArray, out: NDArray, scale: float, ndiag: float) -> None:
@@ -103,7 +103,7 @@ def _renorm_offdiag_python(matrix: NDArray, out: NDArray, scale: float, ndiag: f
             i += 1
         idiag += 1
     # norming
-    out[:, :] = [out[irow, :] / zero_to_one(out[:, irow].sum()) for irow in range(n)]
+    out[:, :] = tuple(out[irow, :] / zero_to_one(out[:, irow].sum()) for irow in range(n))
 
 
 # NOTE: to implement numba-methods solve the problem with comprehensions
