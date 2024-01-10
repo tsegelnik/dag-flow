@@ -63,7 +63,7 @@ class BlockToOneNode(FunctionNode):
         name: str,
         *args: Union[NodeStorage, Any],
         replicate: Sequence[KeyLike] = ((),),
-        replicate_inputs: Union[Sequence[KeyLike], None] = None,
+        replicate_inputs: Optional[Sequence[KeyLike]] = None,
         **kwargs,
     ) -> Tuple[Optional[Node], NodeStorage]:
         if args and replicate_inputs is not None:
@@ -71,7 +71,7 @@ class BlockToOneNode(FunctionNode):
                 "ManyToOneNode.replicate can use either `args` or `replicate_inputs`"
             )
 
-        if replicate_inputs:
+        if replicate_inputs is not None:
             return cls.replicate_from_indices(
                 name, replicate=replicate, replicate_inputs=replicate_inputs, **kwargs
             )
@@ -118,7 +118,7 @@ class BlockToOneNode(FunctionNode):
 
         def fcn_outer_after(_):
             nonlocal outname, instance
-            outputs[outname] = instance.outputs[0]
+            outputs[outname] = instance.outputs[-1]
 
         from multikeydict.match import match_keys
 
@@ -144,7 +144,7 @@ class BlockToOneNode(FunctionNode):
         fullname: str,
         *,
         replicate: Sequence[KeyLike] = ((),),
-        replicate_inputs: Sequence[KeyLike] = ((),),
+        replicate_inputs: Optional[Sequence[KeyLike]] = None,
         **kwargs,
     ) -> Tuple[Optional[Node], NodeStorage]:
         storage = NodeStorage(default_containers=True)
@@ -154,6 +154,10 @@ class BlockToOneNode(FunctionNode):
 
         if not replicate:
             raise RuntimeError("`replicate` tuple should have at least one item")
+        if replicate_inputs is None:
+            replicate_inputs = replicate
+        elif not replicate_inputs:
+            raise RuntimeError("`replicate_inputs` tuple should have at least one item")
 
         instance = None
         outname = "",
@@ -177,7 +181,7 @@ class BlockToOneNode(FunctionNode):
 
         def fcn_outer_after(outkey: TupleKey):
             nonlocal outname, instance
-            outputs[outname] = instance.outputs[0]
+            outputs[outname] = instance.outputs[-1]
 
         from multikeydict.match import match_keys
 
