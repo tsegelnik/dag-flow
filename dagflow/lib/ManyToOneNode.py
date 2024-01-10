@@ -1,4 +1,4 @@
-from typing import Any, Optional, Sequence, Tuple
+from typing import Any, Optional, Sequence, Tuple, Union
 
 from multikeydict.nestedmkdict import walkkeys
 from multikeydict.typing import KeyLike, TupleKey, properkey
@@ -55,9 +55,9 @@ class ManyToOneNode(FunctionNode):
     def replicate(
         cls,
         name: str,
-        *args: NodeStorage | Any,
+        *args: Union[NodeStorage, Any],
         replicate: Sequence[KeyLike] = ((),),
-        replicate_inputs: Sequence[KeyLike] | None = None,
+        replicate_inputs: Union[Sequence[KeyLike], None] = None,
         **kwargs,
     ) -> Tuple[Optional[Node], NodeStorage]:
         if args and replicate_inputs is not None:
@@ -76,7 +76,7 @@ class ManyToOneNode(FunctionNode):
     def replicate_from_args(
         cls,
         fullname: str,
-        *args: NodeStorage | Any,
+        *args: Union[NodeStorage, Any],
         replicate: Sequence[KeyLike] = ((),),
         **kwargs,
     ) -> Tuple[Optional[Node], NodeStorage]:

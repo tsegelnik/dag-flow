@@ -1,7 +1,7 @@
 from pathlib import Path
 from typing import Generator, Mapping
 from typing import Optional as OptionalType
-from typing import Sequence, Tuple
+from typing import Sequence, Tuple, Union
 
 from schema import And, Optional, Or, Schema, SchemaError, Use
 
@@ -258,7 +258,7 @@ def check_correlations_consistent(cfg: NestedMKDict) -> None:
 def load_parameters(
     acfg: OptionalType[Mapping] = None,
     *,
-    nuisance_location: str | Sequence[str] | None = "statistic.nuisance.parts",
+    nuisance_location: Union[str, Sequence[str], None] = "statistic.nuisance.parts",
     **kwargs,
 ):
     acfg = dict(acfg or {}, **kwargs)

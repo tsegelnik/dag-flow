@@ -24,7 +24,7 @@ class Formatter:
         return SequentialFormatter(seq)  # pyright: ignore [reportUndefinedVariable]
 
     @staticmethod
-    def from_value(value: str | Sequence[str] | "Formatter"):
+    def from_value(value: Union[str, Sequence[str], "Formatter"]):
         if isinstance(value, Formatter):
              return value
         elif isinstance(value, str):
@@ -130,9 +130,9 @@ class MissingInputAdd(MissingInputHandler):
         self,
         node: Optional["Node"] = None,
         *,
-        input_fmt: str | Sequence[str] | Formatter = SimpleFormatter("input", "_{:02d}"),
+        input_fmt: Union[str, Sequence[str], Formatter] = SimpleFormatter("input", "_{:02d}"),
         input_kws: Optional[dict] = None,
-        output_fmt: str | Sequence[str] | Formatter = SimpleFormatter("output", "_{:02d}"),
+        output_fmt: Union[str, Sequence[str], Formatter] = SimpleFormatter("output", "_{:02d}"),
         output_kws: Optional[dict] = None,
     ):
         if input_kws is None:
