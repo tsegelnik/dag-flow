@@ -3,7 +3,7 @@ from typing import Any, Optional, Sequence, Tuple
 from multikeydict.nestedmkdict import walkkeys
 from multikeydict.typing import KeyLike, TupleKey, properkey
 
-from ..inputhandler import MissingInputAdd
+from ..inputhandler import MissingInputAddOne
 from ..node import Node
 from ..nodes import FunctionNode
 from ..storage import NodeStorage
@@ -27,14 +27,14 @@ class ManyToOneNode(FunctionNode):
     _broadcastable: bool
 
     def __init__(self, *args, broadcastable: bool = False, output_name: str = "result", **kwargs):
-        kwargs.setdefault("missing_input_handler", MissingInputAdd(input_fmt=self._input_names()))
+        kwargs.setdefault("missing_input_handler", MissingInputAddOne(input_fmt=self._input_names()))
         super().__init__(*args, **kwargs)
         self._add_output(output_name)
         self._broadcastable = broadcastable
 
     @staticmethod
     def _input_names() -> Tuple[str, ...]:
-        return ("result",)
+        return ("input",)
 
     def _typefunc(self) -> None:
         """A output takes this function to determine the dtype and shape"""
@@ -75,7 +75,7 @@ class ManyToOneNode(FunctionNode):
     @classmethod
     def replicate_from_args(
         cls,
-        name: str,
+        fullname: str,
         *args: NodeStorage | Any,
         replicate: Sequence[KeyLike] = ((),),
         **kwargs,
@@ -90,9 +90,12 @@ class ManyToOneNode(FunctionNode):
         instance = None
         outname = ""
 
+        fullname = properkey(fullname, sep=".")
+        path, name = fullname[:], fullname[-1]
+
         def fcn_outer_before(outkey: TupleKey):
             nonlocal outname, instance, nodes
-            outname = (name,) + outkey
+            outname = fullname + outkey
             instance = cls(".".join(outname), **kwargs)
             nodes[outname] = instance
 
@@ -108,7 +111,7 @@ class ManyToOneNode(FunctionNode):
                 ) from e
 
         def fcn_outer_after(_):
-            nonlocal outputs, outname, instance
+            nonlocal outname, instance
             outputs[outname] = instance.outputs[0]
 
         from multikeydict.match import match_keys
@@ -152,10 +155,7 @@ class ManyToOneNode(FunctionNode):
         input_names = cls._input_names()
 
         fullname = properkey(fullname, sep=".")
-        if len(input_names)==1:
-            path, name = fullname[:-1], fullname[-1]
-        else:
-            path, name = fullname, fullname[-1]
+        path, name = fullname[:], fullname[-1]
 
         def fcn_outer_before(outkey: TupleKey):
             nonlocal outname, instance, nodes
