@@ -1,0 +1,197 @@
+from typing import Any, Optional, Sequence, Tuple
+
+from multikeydict.nestedmkdict import walkkeys
+from multikeydict.typing import KeyLike, TupleKey, properkey
+
+from ..inputhandler import MissingInputAddEach
+from ..node import Node
+from ..nodes import FunctionNode
+from ..storage import NodeStorage
+from ..typefunctions import (
+    AllPositionals,
+    check_has_inputs,
+    check_inputs_equivalence,
+    copy_from_input_to_output,
+    eval_output_dtype,
+)
+
+
+class BlockToOneNode(FunctionNode):
+    """
+    The abstract node with only one output per block of N inputs
+    """
+
+    __slots__ = ("_broadcastable",)
+
+    _broadcastable: bool
+
+    def __init__(self, *args, broadcastable: bool = False, output_name: str = "result", **kwargs):
+        kwargs.setdefault(
+            "missing_input_handler",
+            MissingInputAddEach(input_fmt=self._input_names(), output_fmt=output_name),
+        )
+        super().__init__(*args, **kwargs)
+        self._broadcastable = broadcastable
+
+    @staticmethod
+    def _input_names() -> Tuple[str, ...]:
+        return ("input",)
+
+    @classmethod
+    def _inputs_block_size(cls) -> int:
+        return len(cls._input_names())
+
+    def _typefunc(self) -> None:
+        """A output takes this function to determine the dtype and shape"""
+        check_has_inputs(self)  # at least one input
+        check_inputs_equivalence(
+            self, broadcastable=self._broadcastable
+        )  # all the inputs should have same dd fields
+        n = self._inputs_block_size()
+        copy_from_input_to_output(
+            self,
+            slice(0, None, n),
+            AllPositionals,
+            prefer_largest_input=self._broadcastable,
+            prefer_input_with_edges=True,
+        )  # copy shape to results
+        eval_output_dtype(self, AllPositionals, AllPositionals)  # eval dtype of results
+
+    @classmethod
+    def replicate(
+        cls,
+        name: str,
+        *args: NodeStorage | Any,
+        replicate: Sequence[KeyLike] = ((),),
+        replicate_inputs: Sequence[KeyLike] | None = None,
+        **kwargs,
+    ) -> Tuple[Optional[Node], NodeStorage]:
+        if args and replicate_inputs is not None:
+            raise RuntimeError(
+                "ManyToOneNode.replicate can use either `args` or `replicate_inputs`"
+            )
+
+        if replicate_inputs:
+            return cls.replicate_from_indices(
+                name, replicate=replicate, replicate_inputs=replicate_inputs, **kwargs
+            )
+
+        return cls.replicate_from_args(name, *args, replicate=replicate, **kwargs)
+
+    @classmethod
+    def replicate_from_args(
+        cls,
+        fullname: str,
+        *args: NodeStorage | Any,
+        replicate: Sequence[KeyLike] = ((),),
+        **kwargs,
+    ) -> Tuple[Optional[Node], NodeStorage]:
+        storage = NodeStorage(default_containers=True)
+        nodes = storage("nodes")
+        outputs = storage("outputs")
+
+        if not replicate:
+            raise RuntimeError("`replicate` tuple should have at least one item")
+
+        instance = None
+        outname = ""
+
+        fullname = properkey(fullname, sep=".")
+        path, name = fullname[:], fullname[-1]
+
+        def fcn_outer_before(outkey: TupleKey):
+            nonlocal outname, instance, nodes
+            outname = fullname + outkey
+            instance = cls(".".join(outname), **kwargs)
+            nodes[outname] = instance
+
+        def fcn(i: int, inkey: TupleKey, outkey: TupleKey):
+            nonlocal args, instance
+            container = args[i]
+            output = container[inkey] if inkey else container
+            try:
+                output >> instance  # pyright: ignore [reportUnusedExpression]
+            except TypeError as e:
+                raise ConnectionError(
+                    f"Invalid >> types for {inkey}/{outkey}: {type(output)}/{type(instance)}"
+                ) from e
+
+        def fcn_outer_after(_):
+            nonlocal outname, instance
+            outputs[outname] = instance.outputs[0]
+
+        from multikeydict.match import match_keys
+
+        keys_left = tuple(tuple(walkkeys(arg)) for arg in args)
+        match_keys(
+            keys_left,
+            replicate,
+            fcn,
+            fcn_outer_before=fcn_outer_before,
+            fcn_outer_after=fcn_outer_after,
+        )
+
+        NodeStorage.update_current(storage, strict=True)
+
+        if len(replicate) == 1:
+            return instance, storage  # pyright: ignore [reportUnboundVariable]
+
+        return None, storage
+
+    @classmethod
+    def replicate_from_indices(
+        cls,
+        fullname: str,
+        *,
+        replicate: Sequence[KeyLike] = ((),),
+        replicate_inputs: Sequence[KeyLike] = ((),),
+        **kwargs,
+    ) -> Tuple[Optional[Node], NodeStorage]:
+        storage = NodeStorage(default_containers=True)
+        nodes = storage("nodes")
+        outputs = storage("outputs")
+        inputs = storage("inputs")
+
+        if not replicate:
+            raise RuntimeError("`replicate` tuple should have at least one item")
+
+        instance = None
+        outname = "",
+
+        input_names = cls._input_names()
+
+        fullname = properkey(fullname, sep=".")
+        path, name = fullname[:], fullname[-1]
+
+        def fcn_outer_before(outkey: TupleKey):
+            nonlocal outname, instance, nodes
+            outname = fullname + outkey
+            instance = cls(".".join(outname), **kwargs)
+            nodes[outname] = instance
+
+        def fcn(iarg: int, inkey: TupleKey, outkey: TupleKey):
+            nonlocal inputs, instance, input_names
+            for iname in input_names:
+                input = instance()
+                inputs[path + (iname,) + inkey] = input
+
+        def fcn_outer_after(outkey: TupleKey):
+            nonlocal outname, instance
+            outputs[outname] = instance.outputs[0]
+
+        from multikeydict.match import match_keys
+
+        match_keys(
+            (replicate_inputs,),
+            replicate,
+            fcn,
+            fcn_outer_before=fcn_outer_before,
+            fcn_outer_after=fcn_outer_after,
+        )
+
+        NodeStorage.update_current(storage, strict=True)
+
+        if len(replicate) == 1:
+            return instance, storage  # pyright: ignore [reportUnboundVariable]
+
+        return None, storage
