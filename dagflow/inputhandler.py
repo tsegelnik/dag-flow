@@ -10,7 +10,7 @@ class Formatter:
     __slots__ = ()
 
     def format(self, num: int) -> str:
-        raise Exception("Virtual method called")
+        raise RuntimeError("Virtual method called")
 
     @staticmethod
     def from_string(string: str):

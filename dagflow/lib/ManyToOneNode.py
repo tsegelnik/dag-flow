@@ -27,7 +27,9 @@ class ManyToOneNode(FunctionNode):
     _broadcastable: bool
 
     def __init__(self, *args, broadcastable: bool = False, output_name: str = "result", **kwargs):
-        kwargs.setdefault("missing_input_handler", MissingInputAddOne(input_fmt=self._input_names()))
+        kwargs.setdefault(
+            "missing_input_handler", MissingInputAddOne(input_fmt=self._input_names())
+        )
         super().__init__(*args, **kwargs)
         self._add_output(output_name)
         self._broadcastable = broadcastable
@@ -90,12 +92,11 @@ class ManyToOneNode(FunctionNode):
         instance = None
         outname = ""
 
-        fullname = properkey(fullname, sep=".")
-        path, name = fullname[:], fullname[-1]
+        path = properkey(fullname, sep=".")
 
         def fcn_outer_before(outkey: TupleKey):
             nonlocal outname, instance, nodes
-            outname = fullname + outkey
+            outname = path + outkey
             instance = cls(".".join(outname), **kwargs)
             nodes[outname] = instance
 
@@ -154,12 +155,11 @@ class ManyToOneNode(FunctionNode):
 
         input_names = cls._input_names()
 
-        fullname = properkey(fullname, sep=".")
-        path, name = fullname[:], fullname[-1]
+        path = properkey(fullname, sep=".")
 
         def fcn_outer_before(outkey: TupleKey):
             nonlocal outname, instance, nodes
-            outname = fullname + outkey
+            outname = path + outkey
             instance = cls(".".join(outname), **kwargs)
             nodes[outname] = instance
 

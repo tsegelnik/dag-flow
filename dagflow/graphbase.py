@@ -2,10 +2,7 @@ from .shift import rshift
 
 
 class GraphBase:
-    __slots__ = (
-        "_nodes",
-        "_nodes_set",
-    )
+    __slots__ = ("_nodes", "_nodes_set")
     _nodes: list
     _nodes_set: set
 
@@ -13,7 +10,7 @@ class GraphBase:
         self._nodes = list(args)
         self._nodes_set = set(args)
 
-        if len(self._nodes_set)!=len(self._nodes):
+        if len(self._nodes_set) != len(self._nodes):
             raise RuntimeError("There are duplicated nodes")
 
     def register_node(self, node):

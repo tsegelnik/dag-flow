@@ -96,12 +96,11 @@ class BlockToOneNode(FunctionNode):
         instance = None
         outname = ""
 
-        fullname = properkey(fullname, sep=".")
-        path, name = fullname[:], fullname[-1]
+        path = properkey(fullname, sep=".")
 
         def fcn_outer_before(outkey: TupleKey):
             nonlocal outname, instance, nodes
-            outname = fullname + outkey
+            outname = path + outkey
             instance = cls(".".join(outname), **kwargs)
             nodes[outname] = instance
 
@@ -160,16 +159,15 @@ class BlockToOneNode(FunctionNode):
             raise RuntimeError("`replicate_inputs` tuple should have at least one item")
 
         instance = None
-        outname = "",
+        outname = ("",)
 
         input_names = cls._input_names()
 
-        fullname = properkey(fullname, sep=".")
-        path, name = fullname[:], fullname[-1]
+        path = properkey(fullname, sep=".")
 
         def fcn_outer_before(outkey: TupleKey):
             nonlocal outname, instance, nodes
-            outname = fullname + outkey
+            outname = path + outkey
             instance = cls(".".join(outname), **kwargs)
             nodes[outname] = instance
 
