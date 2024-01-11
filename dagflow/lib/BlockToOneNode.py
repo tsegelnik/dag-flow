@@ -3,7 +3,7 @@ from typing import Any, Optional, Sequence, Tuple, Union
 from multikeydict.nestedmkdict import walkkeys
 from multikeydict.typing import KeyLike, TupleKey, properkey
 
-from ..inputhandler import MissingInputAddOne
+from ..inputhandler import MissingInputAddEach
 from ..node import Node
 from ..nodes import FunctionNode
 from ..storage import NodeStorage
@@ -16,10 +16,9 @@ from ..typefunctions import (
 )
 
 
-class ManyToOneNode(FunctionNode):
+class BlockToOneNode(FunctionNode):
     """
-    The abstract node with only one output `result`,
-    which is the result of some function of all the positional inputs
+    The abstract node with only one output per block of N inputs
     """
 
     __slots__ = ("_broadcastable",)
@@ -28,15 +27,19 @@ class ManyToOneNode(FunctionNode):
 
     def __init__(self, *args, broadcastable: bool = False, output_name: str = "result", **kwargs):
         kwargs.setdefault(
-            "missing_input_handler", MissingInputAddOne(input_fmt=self._input_names())
+            "missing_input_handler",
+            MissingInputAddEach(input_fmt=self._input_names(), output_fmt=output_name),
         )
         super().__init__(*args, **kwargs)
-        self._add_output(output_name)
         self._broadcastable = broadcastable
 
     @staticmethod
     def _input_names() -> Tuple[str, ...]:
         return ("input",)
+
+    @classmethod
+    def _inputs_block_size(cls) -> int:
+        return len(cls._input_names())
 
     def _typefunc(self) -> None:
         """A output takes this function to determine the dtype and shape"""
@@ -44,14 +47,15 @@ class ManyToOneNode(FunctionNode):
         check_inputs_equivalence(
             self, broadcastable=self._broadcastable
         )  # all the inputs should have same dd fields
+        n = self._inputs_block_size()
         copy_from_input_to_output(
             self,
+            slice(0, None, n),
             AllPositionals,
-            "result",
             prefer_largest_input=self._broadcastable,
             prefer_input_with_edges=True,
-        )  # copy shape to result
-        eval_output_dtype(self, AllPositionals, "result")  # eval dtype of result
+        )  # copy shape to results
+        eval_output_dtype(self, AllPositionals, AllPositionals)  # eval dtype of results
 
     @classmethod
     def replicate(
@@ -59,7 +63,7 @@ class ManyToOneNode(FunctionNode):
         name: str,
         *args: Union[NodeStorage, Any],
         replicate: Sequence[KeyLike] = ((),),
-        replicate_inputs: Union[Sequence[KeyLike], None] = None,
+        replicate_inputs: Optional[Sequence[KeyLike]] = None,
         **kwargs,
     ) -> Tuple[Optional[Node], NodeStorage]:
         if args and replicate_inputs is not None:
@@ -67,7 +71,7 @@ class ManyToOneNode(FunctionNode):
                 "ManyToOneNode.replicate can use either `args` or `replicate_inputs`"
             )
 
-        if replicate_inputs:
+        if replicate_inputs is not None:
             return cls.replicate_from_indices(
                 name, replicate=replicate, replicate_inputs=replicate_inputs, **kwargs
             )
@@ -113,7 +117,7 @@ class ManyToOneNode(FunctionNode):
 
         def fcn_outer_after(_):
             nonlocal outname, instance
-            outputs[outname] = instance.outputs[0]
+            outputs[outname] = instance.outputs[-1]
 
         from multikeydict.match import match_keys
 
@@ -139,7 +143,7 @@ class ManyToOneNode(FunctionNode):
         fullname: str,
         *,
         replicate: Sequence[KeyLike] = ((),),
-        replicate_inputs: Sequence[KeyLike] = ((),),
+        replicate_inputs: Optional[Sequence[KeyLike]] = None,
         **kwargs,
     ) -> Tuple[Optional[Node], NodeStorage]:
         storage = NodeStorage(default_containers=True)
@@ -149,9 +153,13 @@ class ManyToOneNode(FunctionNode):
 
         if not replicate:
             raise RuntimeError("`replicate` tuple should have at least one item")
+        if replicate_inputs is None:
+            replicate_inputs = replicate
+        elif not replicate_inputs:
+            raise RuntimeError("`replicate_inputs` tuple should have at least one item")
 
         instance = None
-        outname = ""
+        outname = ("",)
 
         input_names = cls._input_names()
 
@@ -169,9 +177,9 @@ class ManyToOneNode(FunctionNode):
                 input = instance()
                 inputs[path + (iname,) + inkey] = input
 
-        def fcn_outer_after(_):
-            nonlocal outputs, outname, instance
-            outputs[outname] = instance.outputs[0]
+        def fcn_outer_after(outkey: TupleKey):
+            nonlocal outname, instance
+            outputs[outname] = instance.outputs[-1]
 
         from multikeydict.match import match_keys
 

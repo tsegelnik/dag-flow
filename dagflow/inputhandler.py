@@ -10,7 +10,7 @@ class Formatter:
     __slots__ = ()
 
     def format(self, num: int) -> str:
-        raise Exception("Virtual method called")
+        raise RuntimeError("Virtual method called")
 
     @staticmethod
     def from_string(string: str):
@@ -130,9 +130,9 @@ class MissingInputAdd(MissingInputHandler):
         self,
         node: Optional["Node"] = None,
         *,
-        input_fmt: Formattable = SimpleFormatter("input", "_{:02d}"),
+        input_fmt: Union[str, Sequence[str], Formatter] = SimpleFormatter("input", "_{:02d}"),
         input_kws: Optional[dict] = None,
-        output_fmt: Formattable = SimpleFormatter("output", "_{:02d}"),
+        output_fmt: Union[str, Sequence[str], Formatter] = SimpleFormatter("output", "_{:02d}"),
         output_kws: Optional[dict] = None,
     ):
         if input_kws is None:

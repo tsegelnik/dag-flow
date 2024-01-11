@@ -1,7 +1,7 @@
-from .arithmetic import Sum, Product, Division
-from .trigonometry import Cos, Sin, Tan, ArcCos, ArcSin, ArcTan
+from .arithmetic import Division, Product, Sum
 from .Array import Array
-from .WeightedSum import WeightedSum
+from .BinCenter import BinCenter
+from .BlockToOneNode import BlockToOneNode
 from .Cholesky import Cholesky
 from .Concatenation import Concatenation
 from .CovmatrixFromCormatrix import CovmatrixFromCormatrix
@@ -21,26 +21,24 @@ from .PartialSums import PartialSums
 from .SegmentIndex import SegmentIndex
 from .SumMatOrDiag import SumMatOrDiag
 from .SumSq import SumSq
+from .trigonometry import ArcCos, ArcSin, ArcTan, Cos, Sin, Tan
 from .VectorMatrixProduct import VectorMatrixProduct
 from .View import View
 from .ViewConcat import ViewConcat
-from .BinCenter import BinCenter
+from .WeightedSum import WeightedSum
 
 __all__ = [
-    "Sum",
-    "Product",
-    "Division",
-    "Cos",
-    "Sin",
-    "Tan",
     "ArcCos",
     "ArcSin",
     "ArcTan",
     "Array",
-    "WeightedSum",
+    "BinCenter",
+    "BlockToOneNode",
     "Cholesky",
     "Concatenation",
+    "Cos",
     "CovmatrixFromCormatrix",
+    "Division",
     "ElSumSq",
     "Integrator",
     "IntegratorGroup",
@@ -54,11 +52,15 @@ __all__ = [
     "NormalizeCorrelatedVars2",
     "OneToOneNode",
     "PartialSums",
+    "Product",
     "SegmentIndex",
+    "Sin",
+    "Sum",
     "SumMatOrDiag",
     "SumSq",
+    "Tan",
     "VectorMatrixProduct",
     "View",
     "ViewConcat",
-    "BinCenter",
+    "WeightedSum",
 ]
