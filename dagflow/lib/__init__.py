@@ -25,6 +25,7 @@ from .VectorMatrixProduct import VectorMatrixProduct
 from .View import View
 from .ViewConcat import ViewConcat
 from .BinCenter import BinCenter
+from .RenormalizeDiag import RenormalizeDiag
 
 __all__ = [
     "Sum",
@@ -61,4 +62,5 @@ __all__ = [
     "View",
     "ViewConcat",
     "BinCenter",
+    "RenormalizeDiag",
 ]
