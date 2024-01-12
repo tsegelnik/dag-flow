@@ -1,4 +1,4 @@
-from typing import TYPE_CHECKING, Literal
+from typing import TYPE_CHECKING, Callable, Literal
 
 from numba import njit
 from numpy.typing import NDArray
@@ -48,12 +48,12 @@ class RenormalizeDiag(OneToOneNode):
     def _fcn_diag(self) -> None:
         scale = self._scale.data[0]
         for input, output in zip(self.inputs, self.outputs):
-            _renorm_diag_python(input.data, output._data, scale, self._ndiag)
+            _renorm_diag_numba(input.data, output._data, scale, self._ndiag)
 
     def _fcn_offdiag(self) -> None:
         scale = self._scale.data[0]
         for input, output in zip(self.inputs, self.outputs):
-            _renorm_offdiag_python(input.data, output._data, scale, self._ndiag)
+            _renorm_offdiag_numba(input.data, output._data, scale, self._ndiag)
 
     def _typefunc(self) -> None:
         super()._typefunc()
@@ -66,6 +66,12 @@ class RenormalizeDiag(OneToOneNode):
 @njit(cache=True)
 def zero_to_one(x: float) -> float:
     return x if x != 0.0 else 1.0
+
+
+@njit(cache=True)
+def _norming(matrix: NDArray) -> None:
+    for icol in range(matrix.shape[-1]):
+        matrix[:, icol] /= zero_to_one(matrix[:, icol].sum())
 
 
 def _renorm_diag_python(matrix: NDArray, out: NDArray, scale: float, ndiag: float) -> None:
@@ -83,8 +89,7 @@ def _renorm_diag_python(matrix: NDArray, out: NDArray, scale: float, ndiag: floa
             out[i, i + idiag] *= scale
             i += 1
         idiag += 1
-    # norming
-    out[:, :] = tuple(out[irow, :] / zero_to_one(out[:, irow].sum()) for irow in range(n))
+    _norming(out)
 
 
 def _renorm_offdiag_python(matrix: NDArray, out: NDArray, scale: float, ndiag: float) -> None:
@@ -103,13 +108,12 @@ def _renorm_offdiag_python(matrix: NDArray, out: NDArray, scale: float, ndiag: f
             i += 1
         idiag += 1
     # norming
-    out[:, :] = tuple(out[irow, :] / zero_to_one(out[:, irow].sum()) for irow in range(n))
+    _norming(out)
 
 
-# NOTE: to implement numba-methods solve the problem with comprehensions
-# _renorm_diag_numba: Callable[[NDArray, NDArray, float, float], None] = njit(cache=True)(
-#    _renorm_diag_python
-# )
-# _renorm_offdiag_numba: Callable[[NDArray, NDArray, float, float], None] = njit(cache=True)(
-#    _renorm_offdiag_python
-# )
+_renorm_diag_numba: Callable[[NDArray, NDArray, float, float], None] = njit(cache=True)(
+    _renorm_diag_python
+)
+_renorm_offdiag_numba: Callable[[NDArray, NDArray, float, float], None] = njit(cache=True)(
+    _renorm_offdiag_python
+)
