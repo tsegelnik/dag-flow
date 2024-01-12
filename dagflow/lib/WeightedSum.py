@@ -3,11 +3,7 @@ from typing import TYPE_CHECKING
 from numpy import copyto
 
 from ..exception import TypeFunctionError
-from ..typefunctions import (
-    check_has_inputs,
-    eval_output_dtype,
-    copy_input_shape_to_outputs,
-)
+from ..typefunctions import check_has_inputs, copy_input_shape_to_outputs, eval_output_dtype
 from .ManyToOneNode import ManyToOneNode
 
 if TYPE_CHECKING:
@@ -23,9 +19,7 @@ class WeightedSum(ManyToOneNode):
     def __init__(self, *args, **kwargs) -> None:
         super().__init__(*args, **kwargs, allowed_kw_inputs=("weight",))
         self._weight = self._add_input("weight", positional=False)
-        self._functions.update(
-            {"number": self._fcn_number, "iterable": self._fcn_iterable}
-        )
+        self._functions.update({"number": self._fcn_number, "iterable": self._fcn_iterable})
 
     def _typefunc(self) -> None:
         """A output takes this function to determine the dtype and shape"""

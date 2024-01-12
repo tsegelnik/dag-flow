@@ -527,8 +527,7 @@ class ParametersVisitor(NestedMKDictVisitor):
         self._localdata = []
 
     def enterdict(self, k, v):
-        if self._localdata:
-            self.exitdict(self._path, None)
+        self._store()
         self._path = k
         self._paths.append(self._path)
         self._localdata = []
@@ -554,20 +553,26 @@ class ParametersVisitor(NestedMKDictVisitor):
         self._data_dict[key] = dct
 
     def exitdict(self, k, v):
-        if self._localdata:
-            self._data_list.append(
-                {
-                    "path": f"group: {'.'.join(self._path)} [{len(self._localdata)}]",
-                    "shape": len(self._localdata),
-                    "label": "group",
-                }
-            )
-            self._data_list.extend(self._localdata)
-            self._localdata = []
+        self._store()
+
         if self._paths:
             del self._paths[-1]
 
             self._path = self._paths[-1] if self._paths else ()
+
+    def _store(self):
+        if not self._localdata:
+            return
+
+        self._data_list.append(
+            {
+                "path": f"group: {'.'.join(self._path)} [{len(self._localdata)}]",
+                "shape": len(self._localdata),
+                "label": "group",
+            }
+        )
+        self._data_list.extend(self._localdata)
+        self._localdata = []
 
     def stop(self, dct):
         pass
