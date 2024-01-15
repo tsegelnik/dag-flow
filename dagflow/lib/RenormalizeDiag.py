@@ -91,7 +91,7 @@ def _renorm_diag_python(matrix: NDArray, out: NDArray, scale: float, ndiag: int)
 
 def _renorm_offdiag_python(matrix: NDArray, out: NDArray, scale: float, ndiag: int) -> None:
     out[:, :] = matrix[:, :]
-    out[:, :] *= scale
+    out *= scale
     n = out.shape[0]
     # main diagonal
     for i in range(n):
