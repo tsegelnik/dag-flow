@@ -16,7 +16,7 @@ class IndividualProfiling(Profiling):
     DEFAULT_RUNS = 10000
     _TABLE_COLUMNS = ("node", "type", "name", "time")
     _ALLOWED_GROUPBY = ("node", "type", "name")
-    
+
     def __init__(self,
                  target_nodes: Sequence[FunctionNode]=[],
                  *,
@@ -29,7 +29,7 @@ class IndividualProfiling(Profiling):
     def estimate_node(cls, node: FunctionNode, n_runs: int=DEFAULT_RUNS):
         for input in node.inputs.iter_all():
             input.touch()
-        
+
         return timeit(stmt=node.fcn, number=n_runs)
 
     def estimate_target_nodes(self) -> IndividualProfiling:
@@ -50,10 +50,16 @@ class IndividualProfiling(Profiling):
                     normilize=True):
         report = super().make_report(group_by, agg_funcs, sort_by)
         if normilize:
-            return self._normilize(report)
+            return self._normalize(report)
         return report
 
-    def print_report(self, 
+    def _print_total_time(self):
+        total = self._estimations_table['time'].sum()
+        print("total estimations time"
+              " / n_runs: %.9f sec." % (total / self._n_runs))
+        print("total estimations time: %.6f sec." % total)
+
+    def print_report(self,
                      rows: int | None=10,
                      group_by: str | None="type",
                      agg_funcs: Sequence[str] | None=None,
@@ -65,4 +71,3 @@ class IndividualProfiling(Profiling):
               f"max rows displayed: {rows}")
         super()._print_table(report, rows)
         self._print_total_time()
-        
