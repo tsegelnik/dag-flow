@@ -64,14 +64,11 @@ class RenormalizeDiag(OneToOneNode):
 
 
 @njit(cache=True)
-def zero_to_one(x: float) -> float:
-    return x if x != 0.0 else 1.0
-
-
-@njit(cache=True)
 def _norming(matrix: NDArray) -> None:
     for icol in range(matrix.shape[-1]):
-        matrix[:, icol] /= zero_to_one(matrix[:, icol].sum())
+        colsum = matrix[:, icol].sum()
+        if colsum != 0.0:
+            matrix[:, icol] /= colsum
 
 
 def _renorm_diag_python(matrix: NDArray, out: NDArray, scale: float, ndiag: float) -> None:
@@ -93,7 +90,8 @@ def _renorm_diag_python(matrix: NDArray, out: NDArray, scale: float, ndiag: floa
 
 
 def _renorm_offdiag_python(matrix: NDArray, out: NDArray, scale: float, ndiag: float) -> None:
-    out[:, :] = matrix[:, :] * scale
+    out[:, :] = matrix[:, :]
+    out[:, :] *= scale
     n = out.shape[0]
     # main diag
     for i in range(n):
@@ -107,7 +105,6 @@ def _renorm_offdiag_python(matrix: NDArray, out: NDArray, scale: float, ndiag: f
             out[i, i + idiag] = matrix[i, i + idiag]
             i += 1
         idiag += 1
-    # norming
     _norming(out)
 
 
