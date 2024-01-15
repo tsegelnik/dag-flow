@@ -38,8 +38,10 @@ class RenormalizeDiag(OneToOneNode):
             raise RuntimeError(f"Invalid RenormalizeDiag mode {mode}")
         self._mode = mode
 
-        if ndiag < 1:
-            raise RuntimeError(f"Invalid RenormalizeDiag ndiag={ndiag} (<1)")
+        if ndiag < 1 or not isinstance(ndiag, int):
+            raise RuntimeError(
+                f"Invalid RenormalizeDiag {ndiag=}, {type(ndiag)=} (must be int >1)!"
+            )
         self._ndiag = ndiag
 
         self._scale = self._add_input("scale", positional=False)
@@ -71,40 +73,36 @@ def _norming(matrix: NDArray) -> None:
             matrix[:, icol] /= colsum
 
 
-def _renorm_diag_python(matrix: NDArray, out: NDArray, scale: float, ndiag: float) -> None:
+def _renorm_diag_python(matrix: NDArray, out: NDArray, scale: float, ndiag: int) -> None:
     out[:, :] = matrix[:, :]
     n = out.shape[0]
-    # main diag
+    # main diagonal
     for i in range(n):
         out[i, i] *= scale
     # other diagonals
-    idiag = 1
-    while idiag < ndiag:
+    for idiag in range(1, ndiag):
         i = 0
         while i + idiag < n:
             out[i + idiag, i] *= scale
             out[i, i + idiag] *= scale
             i += 1
-        idiag += 1
     _norming(out)
 
 
-def _renorm_offdiag_python(matrix: NDArray, out: NDArray, scale: float, ndiag: float) -> None:
+def _renorm_offdiag_python(matrix: NDArray, out: NDArray, scale: float, ndiag: int) -> None:
     out[:, :] = matrix[:, :]
     out[:, :] *= scale
     n = out.shape[0]
-    # main diag
+    # main diagonal
     for i in range(n):
         out[i, i] = matrix[i, i]
     # other diagonals
-    idiag = 1
-    while idiag < ndiag:
+    for idiag in range(1, ndiag):
         i = 0
         while i + idiag < n:
             out[i + idiag, i] = matrix[i + idiag, i]
             out[i, i + idiag] = matrix[i, i + idiag]
             i += 1
-        idiag += 1
     _norming(out)
 
 
