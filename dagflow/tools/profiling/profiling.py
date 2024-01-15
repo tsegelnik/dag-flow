@@ -13,7 +13,7 @@ from dagflow.iter import IsIterable
 
 # prefix `t_` - time notation
 _COLUMN_ALIASES: dict[str, str] = {
-    "mean": "t_single", 
+    "mean": "t_single",
     "single": "t_single",
     "t_mean": "t_single",
     "median": "t_median",
@@ -26,7 +26,7 @@ _COLUMN_ALIASES: dict[str, str] = {
     "percentage": "%_of_total",
 }
 _AGG_ALIASES: dict[str: str] = {
-    "single": "mean", 
+    "single": "mean",
     "t_single": "mean",
     "t_mean": "mean",
     "t_median": "median",
@@ -47,15 +47,14 @@ class Profiling(metaclass=ABCMeta):
     _n_runs: int
     _estimations_table: pd.DataFrame
     _ALLOWED_GROUPBY: tuple[str]
-    _ALLOWED_AGG_FUNCS: tuple[str] = ("count", "mean", "median",
-                                      "std",   "min",  "max",
-                                      "sum",   "var",  "%_of_total")
-    _DEFAULT_AGG_FUNCS: tuple[str] = ("count", "single", "sum", "%_of_total")
+    _ALLOWED_AGG_FUNCS = ("count", "mean", "median", "std", "min", "max",
+                          "sum", "var", "%_of_total")
+    _DEFAULT_AGG_FUNCS = ("count", "single", "sum", "%_of_total")
 
     def __init__(self,
                  target_nodes: Sequence[FunctionNode]=[],
-                 source: Sequence[FunctionNode]=[], 
-                 sink: Sequence[FunctionNode]=[], 
+                 source: Sequence[FunctionNode]=[],
+                 sink: Sequence[FunctionNode]=[],
                  n_runs: int=100):
         self._source = source
         self._sink = sink
@@ -66,8 +65,8 @@ class Profiling(metaclass=ABCMeta):
             self._target_nodes = list(self._gather_related_nodes())
         else:
             raise ValueError("You shoud provide profiler with `target_nodes` "
-                             "or use `source` and `sink` to find "
-                             "target nodes automaticly")
+                             "or provide `source` and `sink` arguments"
+                             "to automatically find the target nodes")
 
     def __child_nodes_gen(self, node: FunctionNode) -> Generator[FunctionNode, None, None]:
         for output in node.outputs.iter_all():
@@ -84,6 +83,9 @@ class Profiling(metaclass=ABCMeta):
                              "(no paths from source)")
 
     def _gather_related_nodes(self) -> set[FunctionNode]:
+        """Find all nodes that lie on all possible paths
+        between `self.source` and `self.sink`
+        """
         nodes_stack = collections.deque()
         iters_stack = collections.deque()
         related_nodes = set(self._source)
@@ -107,14 +109,14 @@ class Profiling(metaclass=ABCMeta):
                     current_iterator = iters_stack.pop()
         self.__check_reachable(related_nodes)
         return related_nodes
-    
+
     def _reveal_source_sink(self):
         source = []
         sink = []
         for node in self._target_nodes:
-            have_parents = any(n in self._target_nodes 
+            have_parents = any(n in self._target_nodes
                             for n in self.__parent_nodes_gen(node))
-            have_childs = any(n in self._target_nodes 
+            have_childs = any(n in self._target_nodes
                            for n in self.__child_nodes_gen(node))
             if have_parents and have_childs:
                 continue
@@ -125,25 +127,27 @@ class Profiling(metaclass=ABCMeta):
         self._source = source
         self._sink = sink
 
-    def __anything_from_alias(self, alias_es, alias_table: dict):
+    def __anything_from_alias(self, alias, alias_table: dict):
         def get_orig(val):
             try:
                 return alias_table.get(val, val)
             except TypeError:   # protect from unhashable types like `list`
-                return val 
-        if IsIterable(alias_es):
-            return [get_orig(a) for a in alias_es]
-        return get_orig(alias_es)
+                return val
+        if IsIterable(alias):
+            return [get_orig(a) for a in alias]
+        return get_orig(alias)
 
-    def _cols_from_alias(self, alias_es: list | str | None):
-        """Returns the column name(s) if an alias(es) exists, 
-        otherwise returns the same object - `alias_es`"""
-        return self.__anything_from_alias(alias_es, _COLUMN_ALIASES)
-    
-    def _aggs_from_alias(self, alias_es: str | None) -> str | None:
-        """Returns aggregate function name(s) if an alias(es) exists, 
-        otherwise returns the same object - `alias_es`"""
-        return self.__anything_from_alias(alias_es, _AGG_ALIASES)
+    def _cols_from_alias(self, alias: list | str | None):
+        """Return the column name(s) if an alias(es) exists,
+        otherwise return the same object - `alias`
+        """
+        return self.__anything_from_alias(alias, _COLUMN_ALIASES)
+
+    def _aggs_from_alias(self, alias: str | None) -> str | None:
+        """Return aggregate function name(s) if an alias(es) exists,
+        otherwise return the same object - `alias`
+        """
+        return self.__anything_from_alias(alias, _AGG_ALIASES)
 
     def _pd_funcs_agg_df(self, grouped_df, grouped_by, agg_funcs) -> pd.DataFrame:
         df = grouped_df.agg({'time': agg_funcs})
@@ -153,7 +157,7 @@ class Profiling(metaclass=ABCMeta):
         new_columns += [self._cols_from_alias(c) for c in agg_funcs]
         df.columns = new_columns
         return df
-    
+
     def __get_index_and_pop(self, array: list, value):
         try:
             idx = array.index(value)
@@ -161,7 +165,7 @@ class Profiling(metaclass=ABCMeta):
             return idx
         except ValueError:
             return -1
-    
+
     def _aggregate_df(self, grouped_df, grouped_by, agg_funcs) -> pd.DataFrame:
         tmp_aggs = self._aggs_from_alias(agg_funcs)
         p_index = self.__get_index_and_pop(tmp_aggs, '%_of_total')
@@ -170,19 +174,19 @@ class Profiling(metaclass=ABCMeta):
         df = self._pd_funcs_agg_df(grouped_df, grouped_by, tmp_aggs)
         if p_index != -1:
             total_time = df['t_sum'].sum()
-            df.insert(len(df.columns) - len(agg_funcs) + p_index, 
+            df.insert(len(df.columns) - len(agg_funcs) + p_index,
                       '%_of_total', df['t_sum'] * 100 / total_time)
         if p_index != -1 and 'sum' not in agg_funcs:
             df.drop('t_sum', inplace=True, axis=1)
         df.columns = self._cols_from_alias(df.columns)
         return df
-    
+
     def _check_report_capability(self, group_by, agg_funcs):
         if not hasattr(self, "_estimations_table"):
             raise AttributeError("No estimations found!\n"
                                  "Note: first esimate your nodes "
                                  "with methods like `estimate_*`")
-        if group_by != None and (hasattr(self, "_ALLOWED_GROUPBY") and 
+        if group_by != None and (hasattr(self, "_ALLOWED_GROUPBY") and
                                  group_by not in self._ALLOWED_GROUPBY):
             raise ValueError(f"Invalid `group_by` name \"{group_by}\"."
                              f"You must use one of these: {self._ALLOWED_GROUPBY}")
@@ -191,7 +195,7 @@ class Profiling(metaclass=ABCMeta):
             raise ValueError("Invalid aggregate function"
                              "You should use one of these:"
                              f"{self._ALLOWED_AGG_FUNCS}")
-            
+
     @abstractmethod
     def make_report(self, group_by, agg_funcs, sort_by) -> pd.DataFrame:
         if agg_funcs == None or agg_funcs == []:
@@ -210,24 +214,18 @@ class Profiling(metaclass=ABCMeta):
             report.sort_values(sort_by, ascending=False,
                                ignore_index=True, inplace=True)
         return report
-    
-    def _normilize(self, df: pd.DataFrame) -> pd.DataFrame:
+
+    def _normalize(self, df: pd.DataFrame) -> pd.DataFrame:
         for c in df.columns:
             if c.startswith('t_') or c == 'time':
                 df[c] /= self._n_runs
         return df
-    
+
     def _print_table(self, df: pd.DataFrame, rows):
-        print(tabulate.tabulate(df.head(rows), 
-                                headers='keys', 
+        print(tabulate.tabulate(df.head(rows),
+                                headers='keys',
                                 tablefmt='psql'))
-        
-    def _print_total_time(self):
-        total = self._estimations_table['time'].sum()
-        print("total estimations time"
-              " / n_runs: %.9f sec." % (total / self._n_runs))
-        print("total estimations time: %.6f sec." % total)
-    
+
     @abstractmethod
     def print_report(self, rows, *args, **kwargs):
         report = self.make_report(*args, **kwargs)

@@ -10,7 +10,6 @@ import pandas as pd
 from .profiling import Profiling
 from dagflow.nodes import FunctionNode
 
-# TODO: make it adjustable like variables in print_report
 SOURCE_COL_WIDTH = 32
 SINK_COL_WIDTH = 32
 
@@ -58,7 +57,7 @@ class FrameworkProfiling(Profiling):
         self._restore_fcns()
         return results
 
-    def estimate_framework_time(self, 
+    def estimate_framework_time(self,
                                 append_results: bool=False) -> FrameworkProfiling:
         results = self._estimate_framework_time()
         df = pd.DataFrame(results, columns=["time"])
@@ -78,7 +77,7 @@ class FrameworkProfiling(Profiling):
                     sort_by: str | None=None):
         return super().make_report(group_by, agg_funcs, sort_by)
 
-    def print_report(self, 
+    def print_report(self,
                      rows: int | None=10,
                      group_by=["source nodes", "sink nodes"],
                      agg_funcs: Sequence[str] | None=None,
@@ -90,4 +89,3 @@ class FrameworkProfiling(Profiling):
               f"sort by: `{sort_by or 'default sorting'}`, "
               f"max rows displayed: {rows}")
         super()._print_table(report, rows)
-        # self._print_total_time()
