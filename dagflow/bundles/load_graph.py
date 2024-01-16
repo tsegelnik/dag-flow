@@ -189,7 +189,7 @@ def _load_root(filename: str, name: str) -> Tuple[NDArray, NDArray]:
 
 _loaders = {
     "txt": (_load_tsv, True),
-    "tsv": (_load_tsv, False),
+    "tsv": (_load_tsv, True),
     "root": (_load_root, False),
     "npz": (_load_npz, False),
     "hdf5": (_load_hdf5, False),
