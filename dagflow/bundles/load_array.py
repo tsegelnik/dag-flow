@@ -8,13 +8,13 @@ from schema import Or, Schema, Use
 
 from multikeydict.typing import TupleKey
 
-from ..logger import SUBINFO, logger
 from ..lib.Array import Array
+from ..logger import SUBINFO, logger
 from ..storage import NodeStorage
 from ..tools.schema import (
     AllFileswithExt,
-    IsReadable,
     IsFilenameSeqOrFilename,
+    IsReadable,
     IsStrSeqOrStr,
     LoadFileWithExt,
     LoadYaml,
@@ -25,13 +25,8 @@ _schema_cfg = Schema(
     {
         "name": str,
         "filenames": And(IsFilenameSeqOrFilename, AllFileswithExt(*_extensions)),
-        SchemaOptional("merge_x", default=False): bool,
-        SchemaOptional("x", default="x"): str,
-        SchemaOptional("y", default="y"): str,
-        SchemaOptional("replicate", default=((),)): Or(
-            (IsStrSeqOrStr,), [IsStrSeqOrStr]
-        ),
-        SchemaOptional("objects", default={}): {str: str},
+        SchemaOptional("replicate", default=((),)): Or((IsStrSeqOrStr,), [IsStrSeqOrStr]),
+        SchemaOptional("objects", default={}): Or({str: str}, And(str, Use(lambda s: {(): s}))),
     }
 )
 
@@ -52,9 +47,7 @@ def _validate_cfg(cfg):
         return _schema_cfg.validate(cfg)
 
 
-def get_filename(
-    filenames: Sequence[str], key: TupleKey, *, single_key: bool = False
-) -> str:
+def get_filename(filenames: Sequence[str], key: TupleKey, *, single_key: bool = False) -> str:
     if single_key and len(filenames) == 1:
         return filenames[0]
     checked_filenames = []
@@ -215,9 +208,7 @@ def _get_buffer_hist2(h, flows=False):
     """
     nx, ny = h.GetNbinsX(), h.GetNbinsY()
     buf = h.GetArray()
-    res = frombuffer(buf, dtype(buf.typecode), (nx + 2) * (ny + 2)).reshape(
-        (ny + 2, nx + 2)
-    )
+    res = frombuffer(buf, dtype(buf.typecode), (nx + 2) * (ny + 2)).reshape((ny + 2, nx + 2))
     if not flows:
         res = res[1 : ny + 1, 1 : nx + 1]
 
