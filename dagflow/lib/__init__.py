@@ -18,6 +18,7 @@ from .NormalizeCorrelatedVars import NormalizeCorrelatedVars
 from .NormalizeCorrelatedVars2 import NormalizeCorrelatedVars2
 from .OneToOneNode import OneToOneNode
 from .PartialSums import PartialSums
+from .RenormalizeDiag import RenormalizeDiag
 from .SegmentIndex import SegmentIndex
 from .SumMatOrDiag import SumMatOrDiag
 from .SumSq import SumSq
@@ -53,6 +54,7 @@ __all__ = [
     "OneToOneNode",
     "PartialSums",
     "Product",
+    "RenormalizeDiag",
     "SegmentIndex",
     "Sin",
     "Sum",
