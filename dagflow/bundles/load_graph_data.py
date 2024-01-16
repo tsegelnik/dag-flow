@@ -1,3 +1,4 @@
+from os.path import basename
 from pathlib import Path
 from typing import Mapping, Optional, Sequence, Tuple
 
@@ -28,9 +29,7 @@ _schema_cfg = Schema(
         SchemaOptional("merge_x", default=False): bool,
         SchemaOptional("x", default="x"): str,
         SchemaOptional("y", default="y"): str,
-        SchemaOptional("replicate", default=((),)): Or(
-            (IsStrSeqOrStr,), [IsStrSeqOrStr]
-        ),
+        SchemaOptional("replicate", default=((),)): Or((IsStrSeqOrStr,), [IsStrSeqOrStr]),
         SchemaOptional("objects", default={}): {str: str},
     }
 )
@@ -52,15 +51,22 @@ def _validate_cfg(cfg):
         return _schema_cfg.validate(cfg)
 
 
-def get_filename(
-    filenames: Sequence[str], key: TupleKey, *, single_key: bool = False
-) -> str:
+def get_filename(filenames: Sequence[str], key: TupleKey, *, single_key: bool = False) -> str:
     if single_key and len(filenames) == 1:
         return filenames[0]
     checked_filenames = []
+    skey = "_".join(key)
     for filename in filenames:
-        if "{key}" in filename:
-            ifilename = filename.format(key="_".join(key))
+        if Path(filename).is_dir():
+            if filename.endswith(".tsv"):
+                ext = filename[-3:]
+                bname = basename(filename[:-4])
+                ifilename = f"{filename}/{bname}_{skey}.{ext}"
+                checked_filenames.append(ifilename)
+                if IsReadable(ifilename):
+                    return ifilename
+        elif "{key}" in filename:
+            ifilename = filename.format(key=skey)
             checked_filenames.append(ifilename)
             if IsReadable(ifilename):
                 return ifilename
@@ -69,9 +75,7 @@ def get_filename(
             if IsReadable(filename):
                 return filename
 
-    raise RuntimeError(
-        f"Unable to find readable filename for {key}. Checked: {checked_filenames}"
-    )
+    raise RuntimeError(f"Unable to find readable filename for {key}. Checked: {checked_filenames}")
 
 
 def load_graph_data(acfg: Optional[Mapping] = None, **kwargs):
