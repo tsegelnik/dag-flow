@@ -1,8 +1,8 @@
-from typing import List, Optional, Sequence, TYPE_CHECKING
+from typing import TYPE_CHECKING, List, Optional, Sequence, Union
 
 from ..exception import InitializationError, TypeFunctionError
 from ..nodes import FunctionNode
-from ..parameters import Parameter
+from ..parameters import Parameter, Parameters
 
 if TYPE_CHECKING:
     from ..input import Input
@@ -16,17 +16,23 @@ class ParArrayInput(FunctionNode):
     _parameters_list: List[Parameter]
     _values: "Input"
 
-    def __init__(self, name, parameters: Optional[List[Parameter]] = None, **kwargs) -> None:
+    def __init__(
+        self, name, parameters: Optional[Union[Sequence[Parameter], Parameters]] = None, **kwargs
+    ) -> None:
         super().__init__(name, **kwargs)
         self._parameters_list = []  # pyright: ignore
         if parameters:
-            if not isinstance(parameters, Sequence):
+            if isinstance(parameters, Parameters):
+                for par in parameters._pars:
+                    self.append_par(par)
+            elif isinstance(parameters, Sequence):
+                for par in parameters:
+                    self.append_par(par)
+            else:
                 raise InitializationError(
                     f"parameters must be a sequence of Parameters, but given {parameters=},"
                     f" {type(parameters)=}!"
                 )
-            for par in parameters:
-                self.append_par(par)
         self._values = self._add_input("values")
 
     def append_par(self, par: Parameter) -> None:
