@@ -1,7 +1,8 @@
+from os.path import basename
 from pathlib import Path
-from typing import Mapping, Optional, Sequence, Tuple
+from typing import Mapping, Optional, Sequence, Tuple, TYPE_CHECKING
 
-from numpy import allclose
+from numpy import allclose, dtype, frombuffer, linspace, double
 from numpy.typing import NDArray
 from schema import And
 from schema import Optional as SchemaOptional
@@ -21,6 +22,9 @@ from ..tools.schema import (
     LoadYaml,
 )
 
+if TYPE_CHECKING:
+    import ROOT
+
 _extensions = {"root", "hdf5", "tsv", "txt", "npz"}
 _schema_cfg = Schema(
     {
@@ -29,9 +33,7 @@ _schema_cfg = Schema(
         SchemaOptional("merge_x", default=False): bool,
         SchemaOptional("x", default="x"): str,
         SchemaOptional("y", default="y"): str,
-        SchemaOptional("replicate", default=((),)): Or(
-            (IsStrSeqOrStr,), [IsStrSeqOrStr]
-        ),
+        SchemaOptional("replicate", default=((),)): Or((IsStrSeqOrStr,), [IsStrSeqOrStr]),
         SchemaOptional("objects", default={}): {str: str},
     }
 )
@@ -63,9 +65,18 @@ def get_filename(
     if (single_key or not multiple_files) and len(filenames) == 1:
         return filenames[0]
     checked_filenames = []
+    skey = "_".join(key)
     for filename in filenames:
-        if "{key}" in filename:
-            ifilename = filename.format(key="_".join(key))
+        if Path(filename).is_dir():
+            if filename.endswith(".tsv"):
+                ext = filename[-3:]
+                bname = basename(filename[:-4])
+                ifilename = f"{filename}/{bname}_{skey}.{ext}"
+                checked_filenames.append(ifilename)
+                if IsReadable(ifilename):
+                    return ifilename
+        elif "{key}" in filename:
+            ifilename = filename.format(key=skey)
             checked_filenames.append(ifilename)
             if IsReadable(ifilename):
                 return ifilename
@@ -74,9 +85,7 @@ def get_filename(
             if IsReadable(filename):
                 return filename
 
-    raise RuntimeError(
-        f"Unable to find readable filename for {key}. Checked: {checked_filenames}"
-    )
+    raise RuntimeError(f"Unable to find readable filename for {key}. Checked: {checked_filenames}")
 
 
 def load_graph(acfg: Optional[Mapping] = None, **kwargs):
@@ -173,7 +182,9 @@ def _load_npz(filename: str, name: str) -> Tuple[NDArray, NDArray]:
     return data[cols[0]], data[cols[1]]
 
 
-def _load_root(filename: str, name: str) -> Tuple[NDArray, NDArray]:
+def _load_root_uproot(filename: str, name: str) -> NDArray:
+    if not name:
+        raise RuntimeError(f"Need an object name to read from {filename}")
     from uproot import open
 
     file = open(filename)
@@ -187,6 +198,35 @@ def _load_root(filename: str, name: str) -> Tuple[NDArray, NDArray]:
     return x[:-1], y
 
 
+def _load_root_ROOT(filename: str, name: str) -> NDArray:
+    if not name:
+        raise RuntimeError(f"Need an object name to read from {filename}")
+    from ROOT import TFile
+
+    file = TFile(filename)
+    if file.IsZombie():
+        raise RuntimeError(f"Can not open file {filename}")
+    data = file.Get(name)
+    if not data:
+        raise RuntimeError(f"Unable to read {name} from {filename}") from e
+
+    return _get_buffers(data)
+
+
+def _load_root(filename: str, *args, **kwargs) -> NDArray:
+    try:
+        return _load_root_uproot(filename, *args, **kwargs)
+    except AttributeError:
+        pass
+
+    try:
+        return _load_root_ROOT(filename, *args, **kwargs)
+    except ImportError:
+        raise RuntimeError(
+            f"Error reading file {filename}. `uproot` is unable, `ROOT` is not found."
+        )
+
+
 _loaders = {
     "txt": (_load_tsv, True),
     "tsv": (_load_tsv, True),
@@ -194,3 +234,53 @@ _loaders = {
     "npz": (_load_npz, False),
     "hdf5": (_load_hdf5, False),
 }
+
+
+def _get_buffer_hist1(h: "ROOT.TH1", flows=False) -> Tuple[NDArray, NDArray]:
+    """Return TH1* histogram data buffer
+    if flows=False, exclude underflow and overflow
+    """
+    buf = h.GetArray()
+    buf = frombuffer(buf, dtype(buf.typecode), h.GetNbinsX() + 2)
+    if not flows:
+        buf = buf[1:-1]
+
+    return buf.copy()
+
+
+def _get_bin_left_edges(ax: "ROOT.TAxis") -> NDArray:
+    """Get the array with bin centers"""
+    xbins = ax.GetXbins()
+    n = xbins.GetSize()
+    if n>0:
+        lims = frombuffer(xbins.GetArray(), double, n)
+        return lims[:-1].copy()
+    return linspace(ax.GetXmin(), ax.GetXmax(), ax.GetNbins()+1)[:-1]
+
+
+def _get_buffers_hist1(h: "ROOT.TH1") -> Tuple[NDArray, NDArray]:
+    """Get X(left edges)/Y buffers of 1D histogram"""
+    return _get_bin_left_edges(h.GetXaxis()), _get_buffer_hist1(h, flows=False)
+
+
+def _get_buffers_graph(g: "ROOT.TGraph") -> Tuple[NDArray, NDArray]:
+    """Get TGraph x and y buffers"""
+    npoints = g.GetN()
+    if npoints==0:
+        raise RuntimeError("Got graph with 0 points")
+
+    return (
+        frombuffer(g.GetX(), dtype=double, count=npoints).copy(),
+        frombuffer(g.GetY(), dtype=double, count=npoints).copy(),
+    )
+
+
+def _get_buffers(obj):
+    import ROOT
+
+    if isinstance(obj, ROOT.TH1) and obj.GetDimension() == 1:
+        return _get_buffers_hist1(obj)
+    if isinstance(obj, ROOT.TGraph):
+        return _get_buffers_graph(obj)
+
+    raise RuntimeERror(f"Do not know how to get buffers from {obj}")
