@@ -10,6 +10,7 @@ from dagflow.nodes import FunctionNode
 
 
 class IndividualProfiling(Profiling):
+    """Profiling class for estimating the time of individual nodes"""
     _n_runs: int
     _estimations_table: pd.DataFrame
 
@@ -29,7 +30,6 @@ class IndividualProfiling(Profiling):
     def estimate_node(cls, node: FunctionNode, n_runs: int=DEFAULT_RUNS):
         for input in node.inputs.iter_all():
             input.touch()
-
         return timeit(stmt=node.fcn, number=n_runs)
 
     def estimate_target_nodes(self) -> IndividualProfiling:

@@ -58,10 +58,10 @@ def graph_1() -> tuple[Graph, list[FunctionNode]]:
                        for i in range(5)]
         s1 = Sum("S1")
         array_nodes[:3] >> s1
-        
+
         s2 = Sum("S2")
         (array_nodes[2: 4]) >> s2 # array_3, array_4 >> sum_2
-        
+
         p1 = Product("p1")
         (array_nodes[4], s1) >> p1
 
@@ -86,17 +86,17 @@ class TestBaseProfiling:
         monkeypatch.setattr(Profiling, "__abstractmethods__", set())
         graph, nodes = graph_0()
         a0, a1, a2, a3, p0, p1, s0, s1, s2, s3, l_matrix, mdvdt = nodes
-        
+
         target_nodes = [p1, s1, s2]
         profiling = Profiling(target_nodes, n_runs=10000)
-        assert profiling._target_nodes == target_nodes 
+        assert profiling._target_nodes == target_nodes
         assert profiling._n_runs == 10000
         assert profiling._source == profiling._sink == []
 
         source, sink = [a2, a3], [s3]
         target_nodes = [a2, a3, s0, p1, s1, s2, s3]
         profiling = Profiling(source=source, sink=sink)
-        
+
         assert Counter(profiling._target_nodes) == Counter(target_nodes)
         assert profiling._source == source
         assert profiling._sink == sink
@@ -123,11 +123,11 @@ class TestBaseProfiling:
         source, sink = [a4, s1], [p2]
         target_nodes = [a4, s1, p1, p2]
         profiling = Profiling(source=source, sink=sink)
-        
+
         assert Counter(profiling._target_nodes) == Counter(target_nodes)
         assert profiling._source == source
         assert profiling._sink == sink
-        
+
         source, sink = [a0, a1, a2, a3, a4], [p2]
         target_nodes = nodes
         profiling = Profiling(source=source, sink=sink)
@@ -153,14 +153,14 @@ class TestIndividual:
         target_nodes=[a0, a1, s3, s2]
         profiling = IndividualProfiling(target_nodes)
         assert Counter(profiling._target_nodes) == Counter(target_nodes)
-        
+
         source, sink = [a1, a2], [s2]
         target_nodes = [a1, a2, p1, s2]
         profiling = IndividualProfiling(target_nodes, source=source, sink=sink)
 
     def check_inputs_taint(self, node: FunctionNode):
         return any(inp.tainted for inp in node.inputs)
-    
+
     def test_estimate_node_g0(self):
         _, nodes = graph_0()
         print(f"(graph 0) IndividualProfiling.estimate_node (n_runs={self.n_runs}):")
@@ -190,15 +190,15 @@ class TestIndividual:
         profiling = IndividualProfiling(target_nodes, n_runs=self.n_runs)
 
         profiling.estimate_target_nodes().make_report()
-        
+
         profiling.make_report(group_by=None)
-        
+
         profiling.make_report(group_by="name")
-        
+
         with pytest.raises(ValueError) as excinfo:
             profiling.make_report(group_by="something wrong")
-        assert 'Invalid `group_by` name' in str(excinfo.value) 
-        
+        assert 'Invalid `group_by` name' in str(excinfo.value)
+
         with pytest.raises(AttributeError) as excinfo:
             IndividualProfiling(target_nodes).make_report()
         assert 'No estimations found' in str(excinfo.value)
@@ -208,13 +208,13 @@ class TestIndividual:
         target_nodes = g._nodes
         profiling = IndividualProfiling(target_nodes, n_runs=self.n_runs)
         profiling.estimate_target_nodes()
-        
+
         profiling.make_report(agg_funcs=['min', 'std', 'count'])
         profiling.make_report(agg_funcs=['t_min', 't_std', 't_count'])
         profiling.make_report(agg_funcs=['t_mean', 't_percentage', 't_count'])
         profiling.make_report(agg_funcs=['median', '%_of_total'])
         profiling.make_report(agg_funcs=['count', 'min', 'std'])
-        
+
         report = profiling.make_report(agg_funcs=['count', 'min', 'percentage'])
         assert 't_sum' not in report.columns
         report = profiling.make_report(agg_funcs=['sum', 'percentage'])
@@ -234,14 +234,14 @@ class TestIndividual:
         target_nodes = g._nodes
         profiling = IndividualProfiling(target_nodes, n_runs=self.n_runs)
         profiling.estimate_target_nodes()
-        
+
         profiling.print_report(agg_funcs=['min', 'single', 'count'], rows=500)
         profiling.print_report(agg_funcs=['min'], rows=1)
         profiling.print_report(group_by=None, rows=2)
         profiling.print_report(group_by=None, rows=20)
         profiling.print_report(agg_funcs=['single', 'count', 'sum', 'percentage'],
                                sort_by='single')
-        
+
     def test_print_report_g1_1(self):
         g, _ = graph_1()
         target_nodes = g._nodes
@@ -250,7 +250,7 @@ class TestIndividual:
             n_runs = 10 ** i
             profiling = IndividualProfiling(target_nodes, n_runs=n_runs)
             profiling.estimate_target_nodes()
-            profiling.print_report(agg_funcs=['single', 'count', 
+            profiling.print_report(agg_funcs=['single', 'count',
                                                        'sum', 'percentage'])
 
 
@@ -258,7 +258,7 @@ class TestFrameworkProfiling:
     def test_init_g0(self):
         g, nodes = graph_0()
         a0, a1, a2, a3, p0, p1, s0, s1, s2, s3, l_matrix, mdvdt = nodes
-        
+
         target_nodes = [a1, a2, s0, p1, p0, s1, s2, s3]
         profiling = FrameworkProfiling(target_nodes, n_runs=123)
         assert Counter(profiling._target_nodes) == Counter(target_nodes)
@@ -284,11 +284,11 @@ class TestFrameworkProfiling:
         profiling = FrameworkProfiling(target_nodes)
         assert Counter(profiling._source) == Counter(source)
         assert Counter(profiling._sink) == Counter(sink)
-        # NOTE: this exception may be useful in future, but not now 
+        # NOTE: this exception may be useful in future, but not now
         # target_nodes = [a1, a2, mdvdt]
         # with pytest.raises(ValueError) as excinfo:
         #     FrameworkProfiling(target_nodes)
-        # assert 'no connections to other given nodes' in str(excinfo.value)  
+        # assert 'no connections to other given nodes' in str(excinfo.value)
 
     def test__taint_nodes_g0(self):
         _, nodes = graph_0()
@@ -301,7 +301,7 @@ class TestFrameworkProfiling:
     def test_make_fcns_empty_g0(self):
         _, nodes = graph_0()
         a0, a1, a2, a3, p0, p1, s0, s1, s2, s3, l_matrix, mdvdt = nodes
-        
+
         profiling = FrameworkProfiling(nodes)
         profiling._make_fcns_empty()
         assert all(n.fcn == types.MethodType(FrameworkProfiling.fcn_no_computation, n) for n in nodes)
@@ -314,7 +314,7 @@ class TestFrameworkProfiling:
         assert(s2.tainted == False)
 
         assert(s3.tainted == True)
-        
+
     def test_underscore_estimate_framework_time_g0(self):
         _, nodes = graph_0()
 
@@ -323,7 +323,7 @@ class TestFrameworkProfiling:
 
         results = profiling._estimate_framework_time()
         assert len(results) == profiling._n_runs
-        
+
         final_fcns = [n.fcn for n in profiling._target_nodes]
         assert final_fcns == original_fcns
 
@@ -331,12 +331,12 @@ class TestFrameworkProfiling:
         _, nodes = graph_0()
 
         FrameworkProfiling(nodes).estimate_framework_time()
-        
+
         profiling = FrameworkProfiling(nodes)
         profiling.estimate_framework_time(append_results=True)
         profiling.estimate_framework_time(append_results=True)
         profiling.estimate_framework_time()
-        
+
     def test_print_report_g0(self):
         _, nodes = graph_0()
 
@@ -344,7 +344,7 @@ class TestFrameworkProfiling:
         profiling.estimate_framework_time().print_report()
         profiling.estimate_framework_time(append_results=True)
         profiling.print_report()
-        
+
         profiling.print_report(group_by=None)
         profiling.print_report(agg_funcs=['min', 'max', 'count'])
 
@@ -356,7 +356,7 @@ class TestFrameworkProfiling:
         profiling.print_report(agg_funcs=['single', 'sum', 'count'])
 
 
-@pytest.mark.skip(reason="to slow to test every time")
+@pytest.mark.skip(reason="too slow to test every time")
 class TestEstimationsTime:
     "Hint: use `pytest -s` to see estimations results"
     def test_one_sleepy_node(self):
@@ -389,9 +389,9 @@ class TestEstimationsTime:
 
             fprofiling = FrameworkProfiling(nodes)
             fprofiling.estimate_framework_time().print_report()
-    
-            
 
 
 
-        
+
+
+

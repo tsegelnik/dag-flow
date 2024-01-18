@@ -25,7 +25,7 @@ _COLUMN_ALIASES: dict[str, str] = {
     "t_percentage": "%_of_total",
     "percentage": "%_of_total",
 }
-_AGG_ALIASES: dict[str: str] = {
+_AGG_ALIASES: dict[str, str] = {
     "single": "mean",
     "t_single": "mean",
     "t_mean": "mean",
@@ -39,14 +39,13 @@ _AGG_ALIASES: dict[str: str] = {
     "percentage": "%_of_total"
 }
 
-# abc - Abstract Base Class
 class Profiling(metaclass=ABCMeta):
     _target_nodes: Sequence[FunctionNode]
     _source: Sequence[FunctionNode]
     _sink: Sequence[FunctionNode]
     _n_runs: int
     _estimations_table: pd.DataFrame
-    _ALLOWED_GROUPBY: tuple[str]
+    _ALLOWED_GROUPBY: tuple
     _ALLOWED_AGG_FUNCS = ("count", "mean", "median", "std", "min", "max",
                           "sum", "var", "%_of_total")
     _DEFAULT_AGG_FUNCS = ("count", "single", "sum", "%_of_total")
@@ -127,7 +126,7 @@ class Profiling(metaclass=ABCMeta):
         self._source = source
         self._sink = sink
 
-    def __anything_from_alias(self, alias, alias_table: dict):
+    def __anything_from_alias(self, alias, alias_table: dict) -> str | list[str]:
         def get_orig(val):
             try:
                 return alias_table.get(val, val)
@@ -137,15 +136,15 @@ class Profiling(metaclass=ABCMeta):
             return [get_orig(a) for a in alias]
         return get_orig(alias)
 
-    def _cols_from_alias(self, alias: list | str | None):
+    def _cols_from_alias(self, alias: list | str | None) -> str | list[str]:
         """Return the column name(s) if an alias(es) exists,
-        otherwise return the same object - `alias`
+        otherwise return the same string(s)
         """
         return self.__anything_from_alias(alias, _COLUMN_ALIASES)
 
-    def _aggs_from_alias(self, alias: str | None) -> str | None:
+    def _aggs_from_alias(self, alias: str | None) -> str | list[str]:
         """Return aggregate function name(s) if an alias(es) exists,
-        otherwise return the same object - `alias`
+        otherwise return the same string(s)
         """
         return self.__anything_from_alias(alias, _AGG_ALIASES)
 
@@ -181,7 +180,7 @@ class Profiling(metaclass=ABCMeta):
         df.columns = self._cols_from_alias(df.columns)
         return df
 
-    def _check_report_capability(self, group_by, agg_funcs):
+    def _check_report_consistency(self, group_by, agg_funcs):
         if not hasattr(self, "_estimations_table"):
             raise AttributeError("No estimations found!\n"
                                  "Note: first esimate your nodes "
@@ -200,7 +199,7 @@ class Profiling(metaclass=ABCMeta):
     def make_report(self, group_by, agg_funcs, sort_by) -> pd.DataFrame:
         if agg_funcs == None or agg_funcs == []:
             agg_funcs = self._DEFAULT_AGG_FUNCS
-        self._check_report_capability(group_by, agg_funcs)
+        self._check_report_consistency(group_by, agg_funcs)
         sort_by = self._cols_from_alias(sort_by)
         report = self._estimations_table.copy()
         if group_by == None:

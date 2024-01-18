@@ -14,9 +14,12 @@ SOURCE_COL_WIDTH = 32
 SINK_COL_WIDTH = 32
 
 class FrameworkProfiling(Profiling):
-    _ALLOWED_GROUPBY = [["source nodes", "sink nodes"],  # [a, b] - group by two
-                       "source nodes",                   #  columns a and b
-                       "sink nodes"]
+    """Profiling class that used to estimate
+    the interaction time between nodes (framework time)"""
+    # it is possible to group by two columns
+    _ALLOWED_GROUPBY = (["source nodes", "sink nodes"],
+                       "source nodes",
+                       "sink nodes")
 
     def __init__(self,
                  target_nodes: Sequence[FunctionNode]=[],
