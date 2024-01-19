@@ -26,6 +26,7 @@ def test_ParArrayInput(dtype, parameters_mode, testname):
         )
         arr >> parinp
 
+    parinp.touch()
     res = tuple(par.value for par in pars._pars)
     assert allclose(res, values_new, atol=0, rtol=0)
 

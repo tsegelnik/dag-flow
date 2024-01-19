@@ -55,6 +55,6 @@ class ParArrayInput(FunctionNode):
                 node=self,
             )
 
-    def _post_allocate(self) -> None:
+    def _fcn(self) -> None:
         for par, val in zip(self._parameters_list, self._values.data):
             par.value = val
