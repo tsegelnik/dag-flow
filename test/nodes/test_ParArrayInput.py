@@ -30,4 +30,10 @@ def test_ParArrayInput(dtype, parameters_mode, testname):
     res = tuple(par.value for par in pars._pars)
     assert allclose(res, values_new, atol=0, rtol=0)
 
+    out = parinp._values.parent_output
+    out.set(values_initial)
+    parinp.touch()
+    res = tuple(par.value for par in pars._pars)
+    assert allclose(res, values_initial, atol=0, rtol=0)
+
     savegraph(graph, f"output/{testname}.png")
