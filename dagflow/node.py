@@ -341,19 +341,6 @@ class Node(NodeBase):
         if inp is None:
             inp = self.add_input(name, **kwargs)
         elif isinstance(inp, Input) and inp.connected and (output := inp.parent_output):
-            #        self.logger.debug(
-            #            f"Node '{self.name}': Try to get or create the input '{name}'"
-            #        )
-            #        kwargs.setdefault("positional", False)
-            #        inp = self.inputs.get(name, None)  # get may return Sequence
-            #        output = None  # to avoid possible unbound in the second condition
-            #        if inp is None:
-            #            if self.closed:
-            #                raise ClosedGraphError(node=self)
-            #            return self._add_input(name, **kwargs)
-            #        elif not isinstance(inp, Input) or (
-            #            inp.connected and (output := inp.parent_output)
-            #        ):
             raise ReconnectionError(input=inp, node=self, output=output)
         return inp
 
