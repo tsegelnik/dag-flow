@@ -1,11 +1,11 @@
 from time import sleep
 
 from dagflow.nodes import FunctionNode
-from dagflow.input_extra import MissingInputAdd
+from dagflow.inputhandler import MissingInputAdd
 
 class SleepyNode(FunctionNode):
     """
-    A node that sleeps for a certain time. 
+    A node that sleeps for a certain time.
     Used for profiling debugging and testing.
 
     use `sleep_time` argument to set execution time in seconds
@@ -24,9 +24,8 @@ class SleepyNode(FunctionNode):
             inp.touch()
         sleep(self._sleep_time)
 
-    def _typefunc(self) -> bool:
+    def _typefunc(self):
         t_sleep_time = type(self._sleep_time)
         if t_sleep_time != int and t_sleep_time != float:
             raise TypeError("Invalid sleep_time type "
                             "(Note: use float)")
-        
