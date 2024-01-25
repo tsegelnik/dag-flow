@@ -157,7 +157,7 @@ class Output:
                 "An exception occured while the node was touched!",
                 node=self._node,
                 output=self,
-                args=exc.args
+                args=exc.args,
             ) from exc
 
     def _set_data(
@@ -353,32 +353,30 @@ class Output:
         return True
 
     def seti(self, idx: int, value: float, check_taint: bool = False, force: bool = False) -> bool:
-        if self.node._frozen and not force:
+        if self.node.frozen and not force:
             return False
 
         tainted = self._data[idx] != value if check_taint else True
-
         if tainted:
             self._data[idx] = value
-            self.taint_children()
-            self.node.invalidate_parents()
-            self.node._tainted = False
-
+            self.__taint_children()
         return tainted
 
     def set(self, data: ArrayLike, check_taint: bool = False, force: bool = False) -> bool:
-        if self.node._frozen and not force:
+        if self.node.frozen and not force:
             return False
 
         tainted = (self._data != data).any() if check_taint else True
-
         if tainted:
             self._data[:] = data
-            self.taint_children()
-            self.node.invalidate_parents()
-            self.node._tainted = False
-
+            self.__taint_children()
         return tainted
+
+    # TODO: maybe move it into `self.taint_children()`?
+    def __taint_children(self):
+        self.taint_children()
+        self.node.invalidate_parents()
+        self.node.fd.tainted = False
 
     def to_dict(self, *, label_from: str = "text") -> dict:
         try:
@@ -396,8 +394,8 @@ class Output:
             ret["value"] = "…"
             return ret
 
-        if data.size>0:
-            ret["value"]=float(data.ravel()[0])
+        if data.size > 0:
+            ret["value"] = float(data.ravel()[0])
 
         return ret
 
