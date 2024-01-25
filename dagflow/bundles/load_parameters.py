@@ -1,7 +1,8 @@
+from collections.abc import Sequence
 from pathlib import Path
 from typing import Generator, Mapping
 from typing import Optional as OptionalType
-from typing import Sequence, Tuple, Union
+from typing import Tuple, Union
 
 from schema import And, Optional, Or, Schema, SchemaError, Use
 
@@ -276,6 +277,7 @@ def load_parameters(
     ret = NestedMKDict(
         {
             "parameter": {
+                "all": {},
                 "constant": {},
                 "free": {},
                 "constrained": {},
@@ -286,7 +288,12 @@ def load_parameters(
                 "nuisance_parts": {},
                 "nuisance": {},
             },
-            "parameter_node": {"constant": {}, "free": {}, "constrained": {}},
+            "parameter_node": {
+                "all": {},
+                "constant": {},
+                "free": {},
+                "constrained": {}
+            },
         },
         sep=".",
     )
@@ -377,19 +384,22 @@ def load_parameters(
         pars[key] = par
 
     for key, par in pars.walkitems():
+        pathkey = path + key
         if par.is_constrained:
-            target = ("constrained",) + path
+            targetkey = ("constrained",) + pathkey
         elif par.is_fixed:
-            target = ("constant",) + path
+            targetkey = ("constant",) + pathkey
         else:
-            target = ("free",) + path
+            targetkey = ("free",) + pathkey
 
-        targetkey = target + key
         ret[("parameter_node",) + targetkey] = par
+        ret[("parameter_node", "all") + pathkey] = par
 
         ptarget = ("parameter",) + targetkey
+        atarget = ("parameter", "all") + pathkey
         for subname, subpar in par.iteritems():
             ret[ptarget + subname] = subpar
+            ret[atarget + subname] = subpar
 
         if constraint := par.constraint:
             normpars_i = normpars.setdefault(key[0], [])

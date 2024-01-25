@@ -1,6 +1,6 @@
-from typing import Any, Optional, Sequence, Tuple, Union
+from collections.abc import Sequence
+from typing import Any, Optional, Tuple, Union
 
-from multikeydict.nestedmkdict import walkkeys
 from multikeydict.typing import KeyLike, TupleKey, properkey
 
 from ..inputhandler import MissingInputAddEach
@@ -63,7 +63,7 @@ class BlockToOneNode(FunctionNode):
         name: str,
         *args: Union[NodeStorage, Any],
         replicate: Sequence[KeyLike] = ((),),
-        replicate_inputs: Optional[Sequence[KeyLike]] = None,
+        replicate_inputs: Union[Sequence[KeyLike], None] = None,
         **kwargs,
     ) -> Tuple[Optional[Node], NodeStorage]:
         if args and replicate_inputs is not None:
@@ -71,12 +71,18 @@ class BlockToOneNode(FunctionNode):
                 "ManyToOneNode.replicate can use either `args` or `replicate_inputs`"
             )
 
-        if replicate_inputs is not None:
+        if args:
+            return cls.replicate_from_args(name, *args, replicate=replicate, **kwargs)
+
+        if replicate_inputs:
             return cls.replicate_from_indices(
                 name, replicate=replicate, replicate_inputs=replicate_inputs, **kwargs
             )
 
-        return cls.replicate_from_args(name, *args, replicate=replicate, **kwargs)
+        return cls.replicate_from_indices(
+            name, replicate=replicate, **kwargs
+        )
+
 
     @classmethod
     def replicate_from_args(
@@ -84,6 +90,7 @@ class BlockToOneNode(FunctionNode):
         fullname: str,
         *args: Union[NodeStorage, Any],
         replicate: Sequence[KeyLike] = ((),),
+        allow_skip_inputs: bool = False,
         **kwargs,
     ) -> Tuple[Optional[Node], NodeStorage]:
         storage = NodeStorage(default_containers=True)
@@ -99,13 +106,12 @@ class BlockToOneNode(FunctionNode):
         path = properkey(fullname, sep=".")
 
         def fcn_outer_before(outkey: TupleKey):
-            nonlocal outname, instance, nodes
+            nonlocal outname, instance
             outname = path + outkey
             instance = cls(".".join(outname), **kwargs)
             nodes[outname] = instance
 
         def fcn(i: int, inkey: TupleKey, outkey: TupleKey):
-            nonlocal args, instance
             container = args[i]
             output = container[inkey] if inkey else container
             try:
@@ -116,10 +122,10 @@ class BlockToOneNode(FunctionNode):
                 ) from e
 
         def fcn_outer_after(_):
-            nonlocal outname, instance
             outputs[outname] = instance.outputs[-1]
 
         from multikeydict.match import match_keys
+        from multikeydict.nestedmkdict import walkkeys
 
         keys_left = tuple(tuple(walkkeys(arg)) for arg in args)
         match_keys(
@@ -128,6 +134,8 @@ class BlockToOneNode(FunctionNode):
             fcn,
             fcn_outer_before=fcn_outer_before,
             fcn_outer_after=fcn_outer_after,
+            require_all_left_keys_processed=not allow_skip_inputs,
+            require_all_right_keys_processed=False,
         )
 
         NodeStorage.update_current(storage, strict=True)

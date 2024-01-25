@@ -1,3 +1,8 @@
+from collections.abc import Sequence
+from numpy import zeros_like, array, ndarray
+from numpy.typing import DTypeLike, ArrayLike
+from typing import Optional, Dict, Tuple, List, Union, Generator
+
 from .node import Node, Output
 from .exception import InitializationError
 from .lib.NormalizeCorrelatedVars2 import NormalizeCorrelatedVars2
@@ -5,10 +10,6 @@ from .lib.Cholesky import Cholesky
 from .lib.Array import Array
 from .lib.CovmatrixFromCormatrix import CovmatrixFromCormatrix
 from .labels import inherit_labels
-
-from numpy import zeros_like, array, ndarray
-from numpy.typing import DTypeLike, ArrayLike
-from typing import Optional, Dict, Tuple, List, Union, Generator, Sequence
 
 
 class Parameter:

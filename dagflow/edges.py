@@ -1,7 +1,8 @@
+from collections.abc import Sequence
+from typing import Any, List, Dict, Union, Optional
+
 from .exception import CriticalError
 from .iter import IsIterable
-
-from typing import Any, List, Dict, Union, Optional, Sequence
 
 class EdgeContainer:
     __slots__ = (

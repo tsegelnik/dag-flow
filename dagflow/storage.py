@@ -23,7 +23,7 @@ from .node import Node
 from .output import Output
 
 if TYPE_CHECKING:
-    from matplotlib.pyplot import Axes
+    from matplotlib.axes import Axes
 
 from LaTeXDatax import datax
 from numpy import nan, ndarray
@@ -90,26 +90,33 @@ class NodeStorage(NestedMKDict):
         if not isinstance(other, NestedMKDict):
             raise RuntimeError("Operator >> RHS should be NestedMKDict")
 
+        from multikeydict.match import match_keys
+        from multikeydict.nestedmkdict import walkkeys
+
+        keys_left = list(walkkeys(self))
+        keys_right = walkkeys(other)
+
         nconnections = 0
         to_remove = []
-        for keyleft, valueleft in self.walkitems():
-            setleft = set(keyleft)
 
-            for keyright, valueright in other.walkitems():
-                setright = set(keyright)
-                if not setleft.issubset(setright):
-                    continue
+        def fcn(i: int, outkey: TupleKey, inkey: TupleKey):
+            nonlocal nconnections
+            output = self[outkey]
+            input = other[inkey]
 
-                try:
-                    valueleft >> valueright
-                except TypeError as e:
-                    raise ConnectionError(
-                        f"Invalid NodeStorage>> types for {keyleft}/{keyright}: {type(valueleft)}/{type(valueright)}"
-                    ) from e
+            try:
+                output >> input
+            except TypeError as e:
+                raise ConnectionError(
+                    f"Invalid NodeStorage>> types for {outkey}/{inkey}: {type(output)}/{type(input)}"
+                ) from e
 
-                if self._remove_connected_inputs and isinstance(keyright, Input):
-                    to_remove.append(keyright)
-                nconnections += 1
+            if self._remove_connected_inputs and isinstance(input, Input):
+                to_remove.append(inkey)
+
+            nconnections += 1
+
+        match_keys((keys_left,), keys_right, fcn, left_in_right=True, right_in_left=False)
 
         if nconnections == 0:
             raise ConnectionError("No connections are done")

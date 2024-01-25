@@ -1,4 +1,5 @@
-from typing import List, Optional, Union, Sequence, Mapping, TYPE_CHECKING
+from collections.abc import Sequence
+from typing import List, Optional, Union, Mapping, TYPE_CHECKING
 
 if TYPE_CHECKING:
     from .input import Input
