@@ -523,7 +523,6 @@ class Node(NodeBase):
             return
         if not self.tainted and not force:
             return
-        self.logger.debug(f"Node '{self.name}': Touch")
         ret = self.eval()
         self.fd.tainted = False  # self._always_tainted
         if self._auto_freeze:
@@ -539,7 +538,6 @@ class Node(NodeBase):
         self.fd.being_evaluated = True
         try:
             ret = self._eval()
-            self.logger.debug(f"Node '{self.name}': Evaluated return={ret}")
         except Exception as exc:
             raise exc
         self.fd.being_evaluated = False
@@ -548,7 +546,6 @@ class Node(NodeBase):
     def freeze(self):
         if self.frozen:
             return
-        self.logger.debug(f"Node '{self.name}': Freezing...")
         if self.tainted:
             raise CriticalError("Unable to freeze tainted node!", node=self)
         self.fd.freeze()
@@ -556,7 +553,6 @@ class Node(NodeBase):
     def unfreeze(self, force: bool = False):
         if not self.frozen and not force:
             return
-        self.logger.debug(f"Node '{self.name}': Unfreeze")
         self.fd.frozen = False
         if self.frozen_tainted:
             self.fd.frozen_tainted = False
