@@ -1,4 +1,5 @@
-from typing import TYPE_CHECKING, Optional, Sequence, Tuple, Union
+from collections.abc import Sequence
+from typing import TYPE_CHECKING, Optional, Tuple, Union
 
 from .exception import InitializationError
 

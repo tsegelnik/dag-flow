@@ -1,5 +1,6 @@
+from collections.abc import Sequence
 from pathlib import Path
-from typing import Mapping, Optional, Sequence
+from typing import Mapping, Optional
 
 from numpy.typing import NDArray
 from schema import And

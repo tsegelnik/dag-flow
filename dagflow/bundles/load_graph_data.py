@@ -1,6 +1,7 @@
+from collections.abc import Sequence
 from os.path import basename
 from pathlib import Path
-from typing import Mapping, Optional, Sequence, Tuple, TYPE_CHECKING
+from typing import Mapping, Optional, Tuple, TYPE_CHECKING
 
 from numpy import allclose, dtype, frombuffer, linspace, double
 from numpy.typing import NDArray

@@ -1,4 +1,5 @@
-from typing import TYPE_CHECKING, Mapping, Sequence, Union
+from collections.abc import Sequence
+from typing import TYPE_CHECKING, Mapping, Union
 
 from multikeydict.nestedmkdict import NestedMKDict
 

@@ -1,7 +1,8 @@
+from collections.abc import Sequence
 from pathlib import Path
 from typing import Generator, Mapping
 from typing import Optional as OptionalType
-from typing import Sequence, Tuple, Union
+from typing import Tuple, Union
 
 from schema import And, Optional, Or, Schema, SchemaError, Use
 

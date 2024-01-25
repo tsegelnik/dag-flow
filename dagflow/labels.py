@@ -1,5 +1,7 @@
-from typing import Optional, Union, Callable, Dict, List, Tuple, Sequence, Mapping
+from collections.abc import Sequence
 from pathlib import Path
+from typing import Optional, Union, Callable, Dict, List, Tuple, Mapping
+
 from .tools.schema import LoadYaml
 
 def format_latex(k, s, /, *args, **kwargs) -> str:

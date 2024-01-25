@@ -1,7 +1,8 @@
+from collections.abc import Sequence
 from contextlib import suppress
 from os import R_OK, access
 from pathlib import Path
-from typing import Any, Callable, Sequence, Union
+from typing import Any, Callable, Union
 
 from schema import And, Or, Schema, SchemaError, Use
 

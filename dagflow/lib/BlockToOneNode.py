@@ -1,4 +1,5 @@
-from typing import Any, Optional, Sequence, Tuple, Union
+from collections.abc import Sequence
+from typing import Any, Optional, Tuple, Union
 
 from multikeydict.typing import KeyLike, TupleKey, properkey
 

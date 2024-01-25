@@ -1,4 +1,5 @@
-from typing import TYPE_CHECKING, List, Optional, Sequence, Union
+from collections.abc import Sequence
+from typing import TYPE_CHECKING, List, Optional, Union
 
 from ..exception import InitializationError, TypeFunctionError
 from ..nodes import FunctionNode

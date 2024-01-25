@@ -1,5 +1,6 @@
+from collections.abc import Sequence
 from numbers import Number
-from typing import Optional, Sequence, Union
+from typing import Optional, Union
 
 from numpy import array, full
 from numpy.typing import ArrayLike, DTypeLike, NDArray
