@@ -1,9 +1,10 @@
 from collections.abc import Sequence
+from contextlib import suppress
 from os.path import basename
 from pathlib import Path
-from typing import Mapping, Optional, Tuple, TYPE_CHECKING
+from typing import TYPE_CHECKING, Mapping, Optional, Tuple
 
-from numpy import allclose, dtype, frombuffer, linspace, double
+from numpy import allclose, double, dtype, frombuffer, linspace
 from numpy.typing import NDArray
 from schema import And
 from schema import Optional as SchemaOptional
@@ -183,7 +184,7 @@ def _load_npz(filename: str, name: str) -> Tuple[NDArray, NDArray]:
     return data[cols[0]], data[cols[1]]
 
 
-def _load_root_uproot(filename: str, name: str) -> NDArray:
+def _load_root_uproot(filename: str, name: str) -> Tuple[NDArray, NDArray]:
     if not name:
         raise RuntimeError(f"Need an object name to read from {filename}")
     from uproot import open
@@ -199,7 +200,7 @@ def _load_root_uproot(filename: str, name: str) -> NDArray:
     return x[:-1], y
 
 
-def _load_root_ROOT(filename: str, name: str) -> NDArray:
+def _load_root_ROOT(filename: str, name: str) -> Tuple[NDArray, NDArray]:
     if not name:
         raise RuntimeError(f"Need an object name to read from {filename}")
     from ROOT import TFile
@@ -209,16 +210,14 @@ def _load_root_ROOT(filename: str, name: str) -> NDArray:
         raise RuntimeError(f"Can not open file {filename}")
     data = file.Get(name)
     if not data:
-        raise RuntimeError(f"Unable to read {name} from {filename}") from e
+        raise RuntimeError(f"Unable to read {name} from {filename}")
 
     return _get_buffers(data)
 
 
 def _load_root(filename: str, *args, **kwargs) -> NDArray:
-    try:
+    with suppress(AttributeError):
         return _load_root_uproot(filename, *args, **kwargs)
-    except AttributeError:
-        pass
 
     try:
         return _load_root_ROOT(filename, *args, **kwargs)
@@ -237,7 +236,7 @@ _loaders = {
 }
 
 
-def _get_buffer_hist1(h: "ROOT.TH1", flows=False) -> Tuple[NDArray, NDArray]:
+def _get_buffer_hist1(h: "ROOT.TH1", flows: bool = False) -> Tuple[NDArray, NDArray]:
     """Return TH1* histogram data buffer
     if flows=False, exclude underflow and overflow
     """
@@ -253,10 +252,10 @@ def _get_bin_left_edges(ax: "ROOT.TAxis") -> NDArray:
     """Get the array with bin centers"""
     xbins = ax.GetXbins()
     n = xbins.GetSize()
-    if n>0:
+    if n > 0:
         lims = frombuffer(xbins.GetArray(), double, n)
         return lims[:-1].copy()
-    return linspace(ax.GetXmin(), ax.GetXmax(), ax.GetNbins()+1)[:-1]
+    return linspace(ax.GetXmin(), ax.GetXmax(), ax.GetNbins() + 1)[:-1]
 
 
 def _get_buffers_hist1(h: "ROOT.TH1") -> Tuple[NDArray, NDArray]:
@@ -267,7 +266,7 @@ def _get_buffers_hist1(h: "ROOT.TH1") -> Tuple[NDArray, NDArray]:
 def _get_buffers_graph(g: "ROOT.TGraph") -> Tuple[NDArray, NDArray]:
     """Get TGraph x and y buffers"""
     npoints = g.GetN()
-    if npoints==0:
+    if npoints == 0:
         raise RuntimeError("Got graph with 0 points")
 
     return (
@@ -284,4 +283,4 @@ def _get_buffers(obj):
     if isinstance(obj, ROOT.TGraph):
         return _get_buffers_graph(obj)
 
-    raise RuntimeERror(f"Do not know how to get buffers from {obj}")
+    raise RuntimeError(f"Do not know how to get buffers from {obj}")

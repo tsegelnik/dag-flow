@@ -23,7 +23,7 @@ from .node import Node
 from .output import Output
 
 if TYPE_CHECKING:
-    from matplotlib.pyplot import Axes
+    from matplotlib.axes import Axes
 
 from LaTeXDatax import datax
 from numpy import nan, ndarray
