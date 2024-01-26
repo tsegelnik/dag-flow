@@ -23,6 +23,7 @@ from .SegmentIndex import SegmentIndex
 from .SumMatOrDiag import SumMatOrDiag
 from .SumSq import SumSq
 from .trigonometry import ArcCos, ArcSin, ArcTan, Cos, Sin, Tan
+from .exponential import Exp, Expm1, Log, Log1p, Log10
 from .VectorMatrixProduct import VectorMatrixProduct
 from .View import View
 from .ViewConcat import ViewConcat
@@ -41,11 +42,16 @@ __all__ = [
     "CovmatrixFromCormatrix",
     "Division",
     "ElSumSq",
+    "Exp",
+    "Expm1",
     "Integrator",
     "IntegratorGroup",
     "IntegratorSampler",
     "Interpolator",
     "InterpolatorGroup",
+    "Log",
+    "Log1p",
+    "Log10",
     "ManyToOneNode",
     "MatrixProductAB",
     "MatrixProductDVDt",
