@@ -3,9 +3,9 @@ from __future__ import annotations
 from timeit import repeat
 from collections.abc import Sequence
 from textwrap import shorten
-import types
+from types import MethodType
 
-import pandas as pd
+from pandas import DataFrame, concat
 
 from .profiling import Profiling
 from dagflow.nodes import FunctionNode
@@ -28,7 +28,7 @@ class FrameworkProfiling(Profiling):
                  sink: Sequence[FunctionNode]=[],
                  n_runs = 100) -> None:
         super().__init__(target_nodes, source, sink, n_runs)
-        if not self._source or not self._sink:
+        if not (self._source and self._sink):
             self._reveal_source_sink()
 
     def _taint_nodes(self):
@@ -43,7 +43,7 @@ class FrameworkProfiling(Profiling):
     def _make_fcns_empty(self):
         for node in self._target_nodes:
             node._stash_fcn()
-            node.fcn = types.MethodType(self.fcn_no_computation, node)
+            node.fcn = MethodType(self.fcn_no_computation, node)
 
     def _restore_fcns(self):
         for node in self._target_nodes:
@@ -63,13 +63,13 @@ class FrameworkProfiling(Profiling):
     def estimate_framework_time(self,
                                 append_results: bool=False) -> FrameworkProfiling:
         results = self._estimate_framework_time()
-        df = pd.DataFrame(results, columns=["time"])
+        df = DataFrame(results, columns=["time"])
         sink_names = str([n.name for n in self._sink])
         source_names = str([n.name for n in self._source])
         df.insert(0, "sink nodes", shorten(sink_names, width=SINK_COL_WIDTH))
         df.insert(0, "source nodes", shorten(source_names, width=SOURCE_COL_WIDTH))
         if append_results and hasattr(self, "_estimations_table"):
-            self._estimations_table = pd.concat([self._estimations_table, df])
+            self._estimations_table = concat([self._estimations_table, df])
         else:
             self._estimations_table = df
         return self

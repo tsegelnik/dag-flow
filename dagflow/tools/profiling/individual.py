@@ -1,18 +1,20 @@
 from __future__ import annotations
 
+from typing import TYPE_CHECKING
 from timeit import timeit
 from collections.abc import Sequence
 
-import pandas as pd
+from pandas import DataFrame
 
 from .profiling import Profiling
-from dagflow.nodes import FunctionNode
+if TYPE_CHECKING:
+    from dagflow.nodes import FunctionNode
 
 
 class IndividualProfiling(Profiling):
     """Profiling class for estimating the time of individual nodes"""
     _n_runs: int
-    _estimations_table: pd.DataFrame
+    _estimations_table: DataFrame
 
     DEFAULT_RUNS = 10000
     _TABLE_COLUMNS = ("node", "type", "name", "time")
@@ -40,7 +42,7 @@ class IndividualProfiling(Profiling):
             records["type"].append(type(node).__name__)
             records["name"].append(node.name)
             records["time"].append(estimations)
-        self._estimations_table = pd.DataFrame(records)
+        self._estimations_table = DataFrame(records)
         return self
 
     def make_report(self,
