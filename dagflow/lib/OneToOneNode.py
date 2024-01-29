@@ -40,10 +40,10 @@ class OneToOneNode(FunctionNode):
         replicate: Sequence[KeyLike] | None = None,
         **kwargs,
     ) -> tuple[Node | None, NodeStorage]:
-        if args and replicate is not None:
-            raise RuntimeError("OneToOneNode.replicate can use either `args` or `replicate`")
-
         if args:
+            if replicate is not None:
+                raise RuntimeError("OneToOneNode.replicate can use either `args` or `replicate`")
+
             return cls.replicate_from_args(name, *args, **kwargs)
 
         if replicate is None:
