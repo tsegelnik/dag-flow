@@ -196,6 +196,8 @@ def get_label(key: tuple, labelscfg: dict) -> dict:
         pass
     else:
         ret["index_values"] = list(key)
+        if isinstance(ret, NestedMKDict):
+            ret = ret.object
         return dict(ret)
 
     for n in range(1, len(key) + 1):
