@@ -1,5 +1,5 @@
 from collections.abc import Sequence
-from typing import Any, Optional, Tuple, Union
+from typing import Any, Tuple, Union
 
 from multikeydict.typing import KeyLike, TupleKey, properkey
 
@@ -61,7 +61,7 @@ class ManyToOneNode(FunctionNode):
         replicate: Sequence[KeyLike] = ((),),
         replicate_inputs: Union[Sequence[KeyLike], None] = None,
         **kwargs,
-    ) -> Tuple[Optional[Node], NodeStorage]:
+    ) -> Tuple[Node | None, NodeStorage]:
         if args and replicate_inputs is not None:
             raise RuntimeError(
                 "ManyToOneNode.replicate can use either `args` or `replicate_inputs`"
@@ -88,7 +88,7 @@ class ManyToOneNode(FunctionNode):
         replicate: Sequence[KeyLike] = ((),),
         allow_skip_inputs: bool = False,
         **kwargs,
-    ) -> Tuple[Optional[Node], NodeStorage]:
+    ) -> Tuple[Node | None, NodeStorage]:
         storage = NodeStorage(default_containers=True)
         nodes = storage("nodes")
         outputs = storage("outputs")
@@ -148,7 +148,7 @@ class ManyToOneNode(FunctionNode):
         replicate: Sequence[KeyLike] = ((),),
         replicate_inputs: Sequence[KeyLike] = ((),),
         **kwargs,
-    ) -> Tuple[Optional[Node], NodeStorage]:
+    ) -> Tuple[Node | None, NodeStorage]:
         storage = NodeStorage(default_containers=True)
         nodes = storage("nodes")
         outputs = storage("outputs")
