@@ -1,14 +1,17 @@
 from __future__ import annotations
 
-import collections
+from typing import TYPE_CHECKING
+from collections import deque
 from collections.abc import Generator, Sequence
 from abc import ABCMeta, abstractmethod
 
-import pandas as pd
-import tabulate
+from pandas import DataFrame
+from tabulate import tabulate
 
-from dagflow.nodes import FunctionNode
 from dagflow.iter import IsIterable
+if TYPE_CHECKING:
+    from dagflow.nodes import FunctionNode
+
 
 
 # prefix `t_` - time notation
@@ -44,7 +47,7 @@ class Profiling(metaclass=ABCMeta):
     _source: Sequence[FunctionNode]
     _sink: Sequence[FunctionNode]
     _n_runs: int
-    _estimations_table: pd.DataFrame
+    _estimations_table: DataFrame
     _ALLOWED_GROUPBY: tuple
     _ALLOWED_AGG_FUNCS = ("count", "mean", "median", "std", "min", "max",
                           "sum", "var", "%_of_total")
@@ -77,7 +80,7 @@ class Profiling(metaclass=ABCMeta):
             yield input.parent_node
 
     def __check_reachable(self, nodes_gathered):
-        if not all(s in nodes_gathered for s in self._sink):
+        if any(s not in nodes_gathered for s in self._sink):
             raise ValueError("Some of the `sink` nodes are unreachable "
                              "(no paths from source)")
 
@@ -85,8 +88,8 @@ class Profiling(metaclass=ABCMeta):
         """Find all nodes that lie on all possible paths
         between `self.source` and `self.sink`
         """
-        nodes_stack = collections.deque()
-        iters_stack = collections.deque()
+        nodes_stack = deque()
+        iters_stack = deque()
         related_nodes = set(self._source)
         for start_node in self._source:
             current_iterator = self.__child_nodes_gen(start_node)
@@ -148,10 +151,13 @@ class Profiling(metaclass=ABCMeta):
         """
         return self.__anything_from_alias(alias, _AGG_ALIASES)
 
-    def _pd_funcs_agg_df(self, grouped_df, grouped_by, agg_funcs) -> pd.DataFrame:
+    def _pd_funcs_agg_df(self, grouped_df, grouped_by, agg_funcs) -> DataFrame:
         df = grouped_df.agg({'time': agg_funcs})
         # grouped_by can be ["col1", "col2", ...] or "col"
-        new_columns = grouped_by.copy() if type(grouped_by)==list else [grouped_by]
+        if isinstance(grouped_by, list):
+            new_columns = grouped_by.copy()
+        else:
+            new_columns = [grouped_by]
         # get rid of multiindex
         new_columns += [self._cols_from_alias(c) for c in agg_funcs]
         df.columns = new_columns
@@ -165,7 +171,7 @@ class Profiling(metaclass=ABCMeta):
         except ValueError:
             return -1
 
-    def _aggregate_df(self, grouped_df, grouped_by, agg_funcs) -> pd.DataFrame:
+    def _aggregate_df(self, grouped_df, grouped_by, agg_funcs) -> DataFrame:
         tmp_aggs = self._aggs_from_alias(agg_funcs)
         p_index = self.__get_index_and_pop(tmp_aggs, '%_of_total')
         if p_index != -1 and 'sum' not in tmp_aggs:
@@ -189,41 +195,39 @@ class Profiling(metaclass=ABCMeta):
                                  group_by not in self._ALLOWED_GROUPBY):
             raise ValueError(f"Invalid `group_by` name \"{group_by}\"."
                              f"You must use one of these: {self._ALLOWED_GROUPBY}")
-        if not all(self._aggs_from_alias(a) in self._ALLOWED_AGG_FUNCS
-                   for a in agg_funcs):
+        if any(self._aggs_from_alias(a) not in self._ALLOWED_AGG_FUNCS
+               for a in agg_funcs):
             raise ValueError("Invalid aggregate function"
                              "You should use one of these:"
                              f"{self._ALLOWED_AGG_FUNCS}")
 
     @abstractmethod
-    def make_report(self, group_by, agg_funcs, sort_by) -> pd.DataFrame:
-        if agg_funcs == None or agg_funcs == []:
+    def make_report(self, group_by, agg_funcs, sort_by) -> DataFrame:
+        if agg_funcs is None or agg_funcs == []:
             agg_funcs = self._DEFAULT_AGG_FUNCS
         self._check_report_consistency(group_by, agg_funcs)
         sort_by = self._cols_from_alias(sort_by)
         report = self._estimations_table.copy()
-        if group_by == None:
+        if group_by is None:
             report.sort_values(sort_by or 'time', ascending=False,
                                ignore_index=True, inplace=True)
         else:
             grouped = report.groupby(group_by, as_index=False)
             report = self._aggregate_df(grouped, group_by, agg_funcs)
-            if sort_by == None:
+            if sort_by is None:
                 sort_by = self._cols_from_alias(agg_funcs[0])
             report.sort_values(sort_by, ascending=False,
                                ignore_index=True, inplace=True)
         return report
 
-    def _normalize(self, df: pd.DataFrame) -> pd.DataFrame:
+    def _normalize(self, df: DataFrame) -> DataFrame:
         for c in df.columns:
             if c.startswith('t_') or c == 'time':
                 df[c] /= self._n_runs
         return df
 
-    def _print_table(self, df: pd.DataFrame, rows):
-        print(tabulate.tabulate(df.head(rows),
-                                headers='keys',
-                                tablefmt='psql'))
+    def _print_table(self, df: DataFrame, rows):
+        print(tabulate(df.head(rows), headers='keys', tablefmt='psql'))
 
     @abstractmethod
     def print_report(self, rows, *args, **kwargs):
