@@ -1,8 +1,8 @@
-from collections.abc import Sequence
+from collections.abc import Callable, Sequence
 from contextlib import suppress
 from os import R_OK, access
 from pathlib import Path
-from typing import Any, Callable, Union
+from typing import Any, Type
 
 from schema import And, Or, Schema, SchemaError, Use
 
@@ -21,9 +21,7 @@ IsFilename = Or(str, And(Path, Use(str)))
 
 IsReadableFilename = And(IsFilename, IsReadable)
 
-IsFilenameSeqOrFilename = Or(
-    [IsFilename], (IsFilename,), And(IsFilename, Use(lambda s: (s,)))
-)
+IsFilenameSeqOrFilename = Or([IsFilename], (IsFilename,), And(IsFilename, Use(lambda s: (s,))))
 
 IsReadableFilenameSeqOrFilename = Or(
     [IsReadableFilename],
@@ -63,11 +61,11 @@ def AllFileswithExt(*exts: str):
 
 
 def LoadFileWithExt(
-    *, key: Union[str, dict, None] = None, update: bool = False, **kwargs: Callable
+    *, key: str | dict | None = None, update: bool = False, **kwargs: Callable
 ):
     """Returns a function that retunts True if the file extension is consistent"""
 
-    def checkfilename(filename: Union[str, dict]):
+    def checkfilename(filename: str | dict):
         if key is not None:
             dct = filename.copy()
             filename = dct.pop(key)
@@ -88,11 +86,12 @@ def LoadFileWithExt(
     return checkfilename
 
 
-from yaml import Loader, load
 from pathlib import Path
 
+from yaml import Loader, load
 
-def LoadYaml(fname: Union[Path,str]):
+
+def LoadYaml(fname: Path | str):
     fname = str(fname)
     with open(fname, "r") as file:
         ret = load(file, Loader)
@@ -100,17 +99,25 @@ def LoadYaml(fname: Union[Path,str]):
     logger.log(SUBINFO, f"Read: {fname}")
     return ret
 
+
 import runpy
 
 
-def LoadPy(fname: str, variable: str):
+def LoadPy(fname: Path | str, variable: str, *, type: Type | None = None):
     logger.log(SUBINFO, f"Read: {fname} ({variable})")
     dct = runpy.run_path(fname)
 
     try:
-        return dct[variable]
+        ret = dct[variable]
     except KeyError:
         raise RuntimeError(f"Variable {variable} is not provided in file {fname}")
+
+    if type is not None and not isinstance(ret, type):
+        raise RuntimeError(
+            f"Variable {variable} has wrong type ({type(ret).__name__}). Expect {type.__name__}"
+        )
+
+    return ret
 
 
 def MakeLoaderPy(variable: str):
@@ -125,10 +132,10 @@ from multikeydict.nestedmkdict import NestedMKDict
 
 class NestedSchema:
     __slots__ = ("_schema", "_processdicts")
-    _schema: Union[Schema, object]
+    _schema: Schema | object
     _processdicts: bool
 
-    def __init__(self, /, schema: Union[Schema, object], *, processdicts: bool = False):
+    def __init__(self, /, schema: Schema | object, *, processdicts: bool = False):
         self._schema = schema
         self._processdicts = processdicts
 
@@ -137,10 +144,7 @@ class NestedSchema:
             return self._schema.validate(data)
 
         if self._processdicts:
-            return {
-                key: self._process_dict((key,), subdata)
-                for key, subdata in data.items()
-            }
+            return {key: self._process_dict((key,), subdata) for key, subdata in data.items()}
 
         dtin = NestedMKDict(data)
         dtout = NestedMKDict({})
@@ -154,9 +158,7 @@ class NestedSchema:
             return self._schema.validate(subdata, _is_event_schema=False)
         except SchemaError as err:
             key = ".".join(str(k) for k in key)
-            raise SchemaError(
-                f'Key "{key}" has invalid value "{subdata}":\n{err.args[0]}'
-            ) from err
+            raise SchemaError(f'Key "{key}" has invalid value "{subdata}":\n{err.args[0]}') from err
 
     def _process_dict(self, key, data: Any) -> Any:
         if not isinstance(data, dict):
@@ -166,6 +168,5 @@ class NestedSchema:
             return self._schema.validate(data, _is_event_schema=False)
 
         return {
-            subkey: self._process_dict(key + (subkey,), subdata)
-            for subkey, subdata in data.items()
+            subkey: self._process_dict(key + (subkey,), subdata) for subkey, subdata in data.items()
         }
