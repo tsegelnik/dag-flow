@@ -1,5 +1,7 @@
 from typing import TYPE_CHECKING, List, Optional, Sequence
 
+from numpy.typing import NDArray
+
 from ..exception import InitializationError
 from ..nodes import FunctionNode
 from ..parameters import Parameter, Parameters
@@ -26,7 +28,7 @@ class Jacobian(FunctionNode):
         parameters: Optional[Sequence[Parameter]] = None,
         **kwargs,
     ) -> None:
-        super().__init__(name, **kwargs)
+        super().__init__(name, **kwargs, allowed_kw_inputs=("func",))
         # TODO: do we need a check of step and reldelta values?
         self._reldelta = reldelta
         self._step = step
@@ -56,7 +58,25 @@ class Jacobian(FunctionNode):
     def _typefunc(self) -> None:
         self._jacobian.dd.dtype = "d"
         self._jacobian.dd.shape = (self._func.dd.size, len(self._parameters_list))
+        # TODO: do we need to check smth?
 
     def _fcn(self):
-        # TODO: implement an algorithm
-        pass
+        reldelta_corrected = self._reldelta * self._step
+        f1 = 4.0 / (3.0 * reldelta_corrected)
+        f2 = 1.0 / (6.0 * reldelta_corrected)
+        res = self._jacobian.data
+        for i, parameter in enumerate(self._parameters_list):
+            # TODO: check coefficients
+            x0 = parameter.value
+            self._do_step(i, parameter, res, self._func, reldelta_corrected / 2.0, f1)
+            self._do_step(i, parameter, res, self._func, -reldelta_corrected / 2.0, -f1)
+            self._do_step(i, parameter, res, self._func, reldelta_corrected, -f2)
+            self._do_step(i, parameter, res, self._func, -reldelta_corrected, f2)
+            parameter.value = x0
+
+    def _do_step(
+        self, i: int, param: Parameter, res: NDArray, func: "Input", diff: float, coeff: float
+    ):
+        param.value += diff
+        func.touch()
+        res[:, i] += coeff * func.data[:]
