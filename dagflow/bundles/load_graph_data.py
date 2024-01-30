@@ -1,4 +1,5 @@
 from collections.abc import Sequence
+from contextlib import suppress
 from os.path import basename
 from pathlib import Path
 from typing import TYPE_CHECKING, Mapping, Optional, Tuple
@@ -213,7 +214,7 @@ def _load_root_ROOT(filename: str, name: str) -> Tuple[NDArray, NDArray]:
     return _get_buffers(data)
 
 
-def _load_root(filename: str, *args, **kwargs) -> NDArray:
+def _load_root(filename: str, *args, **kwargs) -> Tuple[NDArray, NDArray]:
     with suppress(AttributeError):
         return _load_root_uproot(filename, *args, **kwargs)
 
@@ -234,7 +235,7 @@ _loaders = {
 }
 
 
-def _get_buffer_hist1(h: "ROOT.TH1", flows: bool = False) -> Tuple[NDArray, NDArray]:
+def _get_buffer_hist1(h: "ROOT.TH1", flows: bool = False) -> NDArray:
     """Return TH1* histogram data buffer
     if flows=False, exclude underflow and overflow
     """
@@ -247,7 +248,7 @@ def _get_buffer_hist1(h: "ROOT.TH1", flows: bool = False) -> Tuple[NDArray, NDAr
 
 
 def _get_bin_left_edges(ax: "ROOT.TAxis") -> NDArray:
-    """Get the array with bin centers"""
+    """Get the array with bin left edges"""
     xbins = ax.GetXbins()
     n = xbins.GetSize()
     if n > 0:
