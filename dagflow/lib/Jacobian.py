@@ -1,4 +1,5 @@
-from typing import TYPE_CHECKING, List, Optional, Sequence
+from typing import TYPE_CHECKING
+from collections.abc import Sequence
 
 from numpy.typing import NDArray
 
@@ -18,14 +19,14 @@ class Jacobian(FunctionNode):
     _jacobian: "Output"
     _reldelta: float
     _step: float
-    _parameters_list: List[Parameter]
+    _parameters_list: list[Parameter]
 
     def __init__(
         self,
         name,
-        reldelta: float = 1e-1,
+        reldelta: float = 0.1,
         step: float = 0.1,
-        parameters: Optional[Sequence[Parameter]] = None,
+        parameters: Sequence[Parameter] | None = None,
         **kwargs,
     ) -> None:
         super().__init__(name, **kwargs, allowed_kw_inputs=("func",))
@@ -78,5 +79,6 @@ class Jacobian(FunctionNode):
         self, i: int, param: Parameter, res: NDArray, func: "Input", diff: float, coeff: float
     ):
         param.value += diff
-        func.touch()
+        # TODO: do we need to touch, actually?
+        # func.touch()
         res[:, i] += coeff * func.data[:]
