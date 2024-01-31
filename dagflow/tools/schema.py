@@ -60,9 +60,7 @@ def AllFileswithExt(*exts: str):
     return checkfilenames
 
 
-def LoadFileWithExt(
-    *, key: str | dict | None = None, update: bool = False, **kwargs: Callable
-):
+def LoadFileWithExt(*, key: str | dict | None = None, update: bool = False, **kwargs: Callable):
     """Returns a function that retunts True if the file extension is consistent"""
 
     def checkfilename(filename: str | dict):
@@ -75,7 +73,10 @@ def LoadFileWithExt(
             if filename.endswith(f".{ext}"):
                 break
         else:
-            raise SchemaError(f"Do not know how to load {filename}")
+            raise SchemaError(
+                f"Do not know how to load {filename}: no extension handler provided"
+                f" ({', '.join(kwargs.keys())})"
+            )
 
         ret = loader(filename)
         if update and dct is not None:
