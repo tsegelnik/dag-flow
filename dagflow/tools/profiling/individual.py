@@ -10,15 +10,13 @@ from .profiling import Profiling
 if TYPE_CHECKING:
     from dagflow.nodes import FunctionNode
 
+DEFAULT_RUNS = 10000
+_TABLE_COLUMNS = ("node", "type", "name", "time")
+_ALLOWED_GROUPBY = ("node", "type", "name")
 
 class IndividualProfiling(Profiling):
     """Profiling class for estimating the time of individual nodes"""
-    _n_runs: int
-    _estimations_table: DataFrame
-
-    DEFAULT_RUNS = 10000
-    _TABLE_COLUMNS = ("node", "type", "name", "time")
-    _ALLOWED_GROUPBY = ("node", "type", "name")
+    __slots__ = ()
 
     def __init__(self,
                  target_nodes: Sequence[FunctionNode]=[],
@@ -26,6 +24,7 @@ class IndividualProfiling(Profiling):
                  source: Sequence[FunctionNode]=[],
                  sink: Sequence[FunctionNode]=[],
                  n_runs: int=DEFAULT_RUNS):
+        self._ALLOWED_GROUPBY = _ALLOWED_GROUPBY
         super().__init__(target_nodes, source, sink, n_runs)
 
     @classmethod
@@ -35,7 +34,7 @@ class IndividualProfiling(Profiling):
         return timeit(stmt=node.fcn, number=n_runs)
 
     def estimate_target_nodes(self) -> IndividualProfiling:
-        records = {col: [] for col in self._TABLE_COLUMNS}
+        records = {col: [] for col in _TABLE_COLUMNS}
         for node in self._target_nodes:
             estimations = self.estimate_node(node, self._n_runs)
             records["node"].append(node)

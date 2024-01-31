@@ -13,7 +13,6 @@ if TYPE_CHECKING:
     from dagflow.nodes import FunctionNode
 
 
-
 # prefix `t_` - time notation
 _COLUMN_ALIASES: dict[str, str] = {
     "mean": "t_single",
@@ -42,22 +41,38 @@ _AGG_ALIASES: dict[str, str] = {
     "percentage": "%_of_total"
 }
 
+_ALLOWED_AGG_FUNCS = ("count", "mean", "median", "std", "min", "max", "sum",
+                      "var", "%_of_total")
+_DEFAULT_AGG_FUNCS = ("count", "single", "sum", "%_of_total")
+
+
 class Profiling(metaclass=ABCMeta):
+    __slots__ = (
+        "_target_nodes",
+        "_source",
+        "_sink",
+        "_n_runs",
+        "_estimations_table",
+        "_ALLOWED_GROUPBY",
+        "_ALLOWED_AGG_FUNCS",
+        "_DEFAULT_AGG_FUNCS"
+    )
     _target_nodes: Sequence[FunctionNode]
     _source: Sequence[FunctionNode]
     _sink: Sequence[FunctionNode]
     _n_runs: int
     _estimations_table: DataFrame
-    _ALLOWED_GROUPBY: tuple
-    _ALLOWED_AGG_FUNCS = ("count", "mean", "median", "std", "min", "max",
-                          "sum", "var", "%_of_total")
-    _DEFAULT_AGG_FUNCS = ("count", "single", "sum", "%_of_total")
+    _ALLOWED_GROUPBY: tuple[list[str] | str, ...]
+    _ALLOWED_AGG_FUNCS: tuple[str, ...]
+    _DEFAULT_AGG_FUNCS: tuple[str, ...]
 
     def __init__(self,
                  target_nodes: Sequence[FunctionNode]=[],
                  source: Sequence[FunctionNode]=[],
                  sink: Sequence[FunctionNode]=[],
                  n_runs: int=100):
+        self._ALLOWED_AGG_FUNCS = _ALLOWED_AGG_FUNCS
+        self._DEFAULT_AGG_FUNCS = _DEFAULT_AGG_FUNCS
         self._source = source
         self._sink = sink
         self._n_runs = n_runs
@@ -86,7 +101,7 @@ class Profiling(metaclass=ABCMeta):
 
     def _gather_related_nodes(self) -> set[FunctionNode]:
         """Find all nodes that lie on all possible paths
-        between `self.source` and `self.sink`
+        between `self._source` and `self._sink`
         """
         nodes_stack = deque()
         iters_stack = deque()
