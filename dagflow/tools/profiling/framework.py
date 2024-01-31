@@ -13,13 +13,17 @@ from dagflow.nodes import FunctionNode
 SOURCE_COL_WIDTH = 32
 SINK_COL_WIDTH = 32
 
+# it is possible to group by two columns
+_ALLOWED_GROUPBY = (
+    ["source nodes", "sink nodes"],
+    "source nodes",
+    "sink nodes",
+)
+
 class FrameworkProfiling(Profiling):
     """Profiling class that used to estimate
     the interaction time between nodes (framework time)"""
-    # it is possible to group by two columns
-    _ALLOWED_GROUPBY = (["source nodes", "sink nodes"],
-                       "source nodes",
-                       "sink nodes")
+    __slots__ = ()
 
     def __init__(self,
                  target_nodes: Sequence[FunctionNode]=[],
@@ -27,6 +31,7 @@ class FrameworkProfiling(Profiling):
                  source: Sequence[FunctionNode]=[],
                  sink: Sequence[FunctionNode]=[],
                  n_runs = 100) -> None:
+        self._ALLOWED_GROUPBY = _ALLOWED_GROUPBY
         super().__init__(target_nodes, source, sink, n_runs)
         if not (self._source and self._sink):
             self._reveal_source_sink()
