@@ -791,8 +791,8 @@ def check_array_edges_consistency(node: NodeT, outputkey: LimbKey = AllPositiona
             for i, edge in enumerate(edges):
                 if edge.dd.shape[0] != dd.shape[i] + 1:
                     raise TypeFunctionError(
-                        f"Array: the data lenght (={dd.shape[i]} + 1) must be "
-                        f"consistent with edges (={edge.dd.shape[0]})!",
+                        f"Array: the data length+1 ({dd.shape[i]+1}) "
+                        f"is not consistent with edges ({edge.dd.shape[0]})",
                         node=node,
                         output=output,
                     )
