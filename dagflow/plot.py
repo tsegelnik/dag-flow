@@ -23,7 +23,7 @@ from numpy import asanyarray, meshgrid, zeros_like
 from numpy.ma import array as masked_array
 from numpy.typing import ArrayLike, NDArray
 
-from .logger import SUBINFO, logger
+from .logger import INFO1, logger
 from .nodebase import NodeBase
 from .output import Output
 from .types import EdgesLike, MeshesLike
@@ -108,7 +108,7 @@ class plot_auto:
             self.annotate_axes(show_path=show_path, legend=has_legend)
 
         if save:
-            logger.log(SUBINFO, f"Write: {save}")
+            logger.log(INFO1, f"Write: {save}")
             savefig(save, **save_kw)
         if show:
             showfig()

@@ -6,7 +6,7 @@ from typing import Any, Type
 
 from schema import And, Or, Schema, SchemaError, Use
 
-from ..logger import SUBINFO, logger
+from ..logger import INFO1, logger
 
 IsStrSeq = Or((str,), And([str], Use(tuple)))
 IsStrSeqOrStr = Or(IsStrSeq, And(str, Use(lambda s: (s,))))
@@ -97,7 +97,7 @@ def LoadYaml(fname: Path | str):
     with open(fname, "r") as file:
         ret = load(file, Loader)
 
-    logger.log(SUBINFO, f"Read: {fname}")
+    logger.log(INFO1, f"Read: {fname}")
     return ret
 
 
@@ -105,7 +105,7 @@ import runpy
 
 
 def LoadPy(fname: Path | str, variable: str, *, type: Type | None = None):
-    logger.log(SUBINFO, f"Read: {fname} ({variable})")
+    logger.log(INFO1, f"Read: {fname} ({variable})")
     dct = runpy.run_path(fname)
 
     try:

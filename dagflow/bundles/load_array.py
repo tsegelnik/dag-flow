@@ -10,7 +10,7 @@ from schema import Or, Schema, Use
 from multikeydict.typing import TupleKey
 
 from ..lib.Array import Array
-from ..logger import SUBINFO, logger
+from ..logger import INFO1, logger
 from ..storage import NodeStorage
 from ..tools.schema import (
     AllFileswithExt,
@@ -92,7 +92,7 @@ def load_array(acfg: Optional[Mapping] = None, **kwargs):
         skey = ".".join(key)
         iname = objects.get(skey, skey)
         data[name + key] = loader(filename, iname)
-        logger.log(SUBINFO, f"Read: {filename}")
+        logger.log(INFO1, f"Read: {filename}")
     storage = NodeStorage(default_containers=True)
     with storage:
         for key, array in data.items():

@@ -47,10 +47,12 @@ def set_level(level, name="dagflow"):
         logger.handlers[0].setLevel(level)
     logger.setLevel(level)
 
-SUBINFO = INFO - 1
-SUBSUBINFO = INFO - 2
-addLevelName(SUBINFO, "SUBINFO")
-addLevelName(SUBSUBINFO, "SUBSUBINFO")
+INFO1 = INFO - 1
+INFO2 = INFO - 2
+INFO3 = INFO - 3
+addLevelName(INFO1, "INFO1")
+addLevelName(INFO2, "INFO2")
+addLevelName(INFO3, "INFO3")
 
 logger = get_logger()
 

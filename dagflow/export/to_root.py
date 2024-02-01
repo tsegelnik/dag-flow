@@ -1,5 +1,5 @@
 from multikeydict.visitor import NestedMKDictVisitor
-from ..logger import logger, SUBINFO, SUBSUBINFO
+from ..logger import logger, INFO1, INFO2
 from ..output import Output
 
 from numpy import allclose, frombuffer, dtype, array
@@ -137,7 +137,7 @@ class ExportToRootVisitor(NestedMKDictVisitor):
     def __init__(self, filename: Union['Path',str]):
         from ROOT import TFile
         filename = str(filename)
-        logger.log(SUBINFO, f"Create {filename}")
+        logger.log(INFO1, f"Create {filename}")
         self._file = TFile(filename, 'RECREATE')
         self._file.AddDirectory(False)
         if self._file.IsZombie():
@@ -172,13 +172,13 @@ class ExportToRootVisitor(NestedMKDictVisitor):
         name = path
         hist = objects.pop('hist', None)
         if hist is not None:
-            logger.log(SUBSUBINFO, f"write {'/'.join(key)}")
+            logger.log(INFO2, f"write {'/'.join(key)}")
             self._cwd.WriteTObject(hist, name, 'overwrite')
             name = f'{name}_graph'
 
         graph = objects.pop('graph', None)
         if graph is not None:
-            logger.log(SUBSUBINFO, f"write {'/'.join(key)}")
+            logger.log(INFO2, f"write {'/'.join(key)}")
             self._cwd.WriteTObject(graph, name, 'overwrite')
 
         if objects:
@@ -192,6 +192,6 @@ class ExportToRootVisitor(NestedMKDictVisitor):
         self._cwd = self._prevd.pop()
 
     def stop(self, dct):
-        logger.log(SUBINFO, f"Close {self._file.GetName()}")
+        logger.log(INFO1, f"Close {self._file.GetName()}")
         self._file.Close()
 

@@ -18,7 +18,7 @@ from multikeydict.typing import Key, TupleKey, KeyLike
 from multikeydict.visitor import NestedMKDictVisitor
 
 from .input import Input
-from .logger import DEBUG, SUBINFO, SUBSUBINFO, logger
+from .logger import DEBUG, INFO1, INFO3, logger
 from .node import Node
 from .output import Output
 
@@ -77,7 +77,7 @@ class NodeStorage(NestedMKDict):
 
     def __setitem__(self, key: KeyLike, item: Any) -> None:
         if isinstance(item, (Node, Output)) or type(item).__name__ in {"Parameter", "Parameters"}:
-            logger.log(SUBSUBINFO, f"Set {self.joinkey(key)}")
+            logger.log(INFO3, f"Set {self.joinkey(key)}")
         elif isinstance(item, Input):
             logger.log(DEBUG, f"Set {self.joinkey(key)}")
 
@@ -291,7 +291,7 @@ class NodeStorage(NestedMKDict):
 
         if filename:
             with open(filename, "w") as out:
-                logger.log(SUBINFO, f"Write: {filename}")
+                logger.log(INFO1, f"Write: {filename}")
                 out.write(tex)
 
         return tex, df if return_df else tex
@@ -302,7 +302,7 @@ class NodeStorage(NestedMKDict):
         odict = {
             ".".join(k): v for k, v in data.walkitems() if (k and k[-1] in include)
         }
-        logger.log(SUBINFO, f"Write: {filename}")
+        logger.log(INFO1, f"Write: {filename}")
         datax(filename, **odict)
 
     def to_root(self, filename: str) -> None:
@@ -444,7 +444,7 @@ class PlotVisitor(NestedMKDictVisitor):
             filename = f"{self._folder}/{path}.{self._format}"
             makedirs(dirname(filename), exist_ok=True)
 
-            logger.log(SUBINFO, f"Write: {filename}")
+            logger.log(INFO1, f"Write: {filename}")
             savefig(filename)
 
         if close:

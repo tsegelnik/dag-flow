@@ -12,7 +12,7 @@ from schema import Or, Schema, Use
 
 from multikeydict.typing import TupleKey
 
-from ..logger import SUBINFO, logger
+from ..logger import INFO1, logger
 from ..storage import NodeStorage
 from ..tools.schema import (
     AllFileswithExt,
@@ -121,7 +121,7 @@ def load_graph_data(acfg: Optional[Mapping] = None, **kwargs):
         skey = ".".join(key)
         iname = objects.get(skey, skey)
         x, y = loader(filename, iname)
-        logger.log(SUBINFO, f"Read: {filename}")
+        logger.log(INFO1, f"Read: {filename}")
         data[key] = x, y
         meshes.append(x)
 

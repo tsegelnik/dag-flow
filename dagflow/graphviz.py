@@ -1,7 +1,7 @@
 from .input import Input
 from .output import Output
 from .types import NodeT
-from .logger import logger, SUBINFO
+from .logger import logger, INFO1
 
 from numpy import square, printoptions
 from typing import (
@@ -549,7 +549,7 @@ else:
             self._graph.graph_attr["label"] = label
 
         def savegraph(self, fname):
-            logger.log(SUBINFO, f'Write: {fname}')
+            logger.log(INFO1, f'Write: {fname}')
             if fname.endswith(".dot"):
                 self._graph.write(fname)
             else:
