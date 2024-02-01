@@ -1,3 +1,4 @@
+from os import listdir
 from pathlib import Path
 from typing import TYPE_CHECKING, Any
 
@@ -23,7 +24,7 @@ class FileReaderMeta(type):
         """Register the file reader based on the `_extension`"""
 
         super().__init__(name, parents, args)
-        ext = args["_extension"]
+        ext = args.get("_extension")
         if ext:
             file_readers[ext] = self
 
@@ -82,6 +83,9 @@ class FileReader(metaclass=FileReaderMeta):
     def _close(self):
         pass
 
+    def keys(self) -> tuple[str, ...]:
+        raise RuntimeError("not implemented method")
+
     def _get_object_impl(self, object_name: str) -> Any:
         raise RuntimeError("not implemented method")
 
@@ -104,7 +108,9 @@ class FileReader(metaclass=FileReaderMeta):
 
     def get_hist(self, object_name: str) -> tuple[NDArray, NDArray]:
         x, y = self._get_hist(object_name)
-        logger.log(SUBSUBINFO, f"hist: x {x[0]}→{x[-1]}, hmin={y.min()}, hmax={y.max()}, hsum={y.sum()}")
+        logger.log(
+            SUBSUBINFO, f"hist: x {x[0]}→{x[-1]}, hmin={y.min()}, hmax={y.max()}, hsum={y.sum()}"
+        )
         return x, y
 
     def _get_array(self, object_name: str) -> NDArray:
@@ -112,7 +118,10 @@ class FileReader(metaclass=FileReaderMeta):
 
     def get_array(self, object_name: str) -> NDArray:
         a = self._get_array(object_name)
-        logger.log(SUBSUBINFO, f"array {'x'.join(map(str,a.shape))}: min={a.min()}, max={a.max()}, sum={a.sum()}")
+        logger.log(
+            SUBSUBINFO,
+            f"array {'x'.join(map(str,a.shape))}: min={a.min()}, max={a.max()}, sum={a.sum()}",
+        )
         return a
 
 
@@ -146,6 +155,9 @@ class FileReaderNPZ(FileReaderArray):
     def _get_object_impl(self, object_name: str) -> Any:
         return self._file[object_name]
 
+    def keys(self) -> tuple[str, ...]:
+        return tuple(self._file.keys())
+
     def get_xy(self, object_name: str) -> tuple[NDArray, NDArray]:
         data = self._get_object(object_name)
         cols = data.dtype.names
@@ -166,6 +178,9 @@ class FileReaderHDF5(FileReaderArray):
 
     def _get_object_impl(self, object_name: str) -> Any:
         return self._file[object_name]
+
+    def keys(self) -> tuple[str, ...]:
+        return tuple(self._file.keys())
 
     def get_xy(self, object_name: str) -> tuple[NDArray, NDArray]:
         data = self._get_object(object_name)
@@ -190,6 +205,9 @@ class FileReaderTSV(FileReaderArray):
 
         filename = self._file_name / f"{object_name}.{self._extension}"
         return loadtxt(filename, unpack=True)
+
+    def keys(self) -> tuple[str, ...]:
+        return tuple(file for file in listdir(self._file_name) if file.endswith(self._extension))
 
     def get_xy(self, object_name: str) -> tuple[NDArray, NDArray]:
         data = self._get_object(object_name)
@@ -255,6 +273,9 @@ except ImportError:
 
             raise ValueError(f"Do not know ho to convert {obj} to array")
 
+        def keys(self) -> tuple[str, ...]:
+            return tuple(key.split(';', 1)[0] for key in self._file.GetListOfKeys())
+
 else:
 
     class FileReaderROOTUpROOT(FileReader):
@@ -286,6 +307,9 @@ else:
             obj = self._get_object_impl(object_name)
             y, _ = obj.to_numpy()
             return y
+
+        def keys(self) -> tuple[str, ...]:
+            return tuple(self._file.keys())
 
 
 def _get_buffer_hist1(h: "ROOT.TH1", flows: bool = False) -> NDArray:
