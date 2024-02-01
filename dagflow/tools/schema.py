@@ -34,7 +34,7 @@ def IsFilewithExt(*exts: str):
     """Returns a function that retunts True if the file extension is consistent"""
 
     def checkfilename(filename: str):
-        return filename.endswith(f".{ext}" for ext in exts)
+        return filename.endswith(ext for ext in exts)
 
     return checkfilename
 
@@ -51,11 +51,11 @@ def AllFileswithExt(*exts: str):
         else:
             filename = filenames[0]
         for ext in exts:
-            if filename.endswith(f".{ext}"):
+            if filename.endswith(ext):
                 break
         else:
             return False
-        return all(filename.endswith(f".{ext}") for filename in filenames)
+        return all(filename.endswith(ext) for filename in filenames)
 
     return checkfilenames
 
