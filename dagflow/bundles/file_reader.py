@@ -5,7 +5,7 @@ from typing import TYPE_CHECKING, Any
 from numpy import double, dtype, frombuffer, linspace
 from numpy.typing import NDArray
 
-from ..logger import SUBINFO, SUBSUBINFO, logger
+from ..logger import INFO1, INFO2, logger
 
 if TYPE_CHECKING:
     import ROOT
@@ -14,11 +14,33 @@ if TYPE_CHECKING:
 file_readers = {}
 
 
+class HistGetter:
+    def __getitem__(self, names: tuple[str | Path, str]):
+        file_name, object_name = names
+        fr = FileReader[file_name]
+        return fr.get_hist(object_name)
+
+
+class GraphGetter:
+    def __getitem__(self, names: tuple[str | Path, str]):
+        file_name, object_name = names
+        fr = FileReader[file_name]
+        return fr.get_graph(object_name)
+
+
+class ArrayGetter:
+    def __getitem__(self, names: tuple[str | Path, str]):
+        file_name, object_name = names
+        fr = FileReader[file_name]
+        return fr.get_array(object_name)
+
+
 class FileReaderMeta(type):
     """Metaclass for `FileReader` class, implementing `FileReader[file_name]` method"""
 
     _opened_files: dict[str, "FileReader"] = {}
     _last_used_file: str = ""
+    hist = None
 
     def __init__(self, name: str, parents: tuple, args: dict):
         """Register the file reader based on the `_extension`"""
@@ -32,16 +54,33 @@ class FileReaderMeta(type):
         file_name_str = file_name if isinstance(file_name, str) else str(file_name)
         try:
             ret = self._opened_files[file_name_str]
-            action = "Read"
+            if file_name_str!=self._last_used_file:
+                action = "Use"
+            else:
+                action = None
         except KeyError:
             ret = FileReader.open(file_name)
-            action = "Use"
+            action = "Read"
 
-        logger.log(SUBINFO, f"{action}: {file_name_str}")
+        if action:
+            logger.log(INFO1, f"{action}: {file_name_str}")
+
         self._opened_files[file_name_str] = ret
         self._last_used_file = file_name_str
 
         return ret
+
+    @property
+    def hist(self):
+        return HistGetter()
+
+    @property
+    def array(self):
+        return ArrayGetter()
+
+    @property
+    def graph(self):
+        return GraphGetter()
 
 
 class FileReader(metaclass=FileReaderMeta):
@@ -55,11 +94,8 @@ class FileReader(metaclass=FileReaderMeta):
 
     @classmethod
     def open(cls, file_name: str | Path) -> "FileReader":
-        if not isinstance(cls, FileReader):
-            return cls(file_name)
-
         file_path = file_name if isinstance(file_name, Path) else Path(file_name)
-        ext = file_path.suffix()  # pyright: ignore [reportGeneralTypeIssues]
+        ext = file_path.suffix
 
         try:
             cls = file_readers[ext]
@@ -100,7 +136,9 @@ class FileReader(metaclass=FileReaderMeta):
 
     def get_graph(self, object_name: str) -> tuple[NDArray, NDArray]:
         x, y = self._get_graph(object_name)
-        logger.log(SUBSUBINFO, f"graph: x {x[0]}→{x[-1]}, ymin={y.min()}, ymax={y.max()}")
+        logger.log(
+            INFO2, f"graph: x {x[0]:.2f}→{x[-1]:.2f}, ymin={y.min():.2f}, ymax={y.max():.2f}"
+        )
         return x, y
 
     def _get_hist(self, object_name: str) -> tuple[NDArray, NDArray]:
@@ -109,7 +147,9 @@ class FileReader(metaclass=FileReaderMeta):
     def get_hist(self, object_name: str) -> tuple[NDArray, NDArray]:
         x, y = self._get_hist(object_name)
         logger.log(
-            SUBSUBINFO, f"hist: x {x[0]}→{x[-1]}, hmin={y.min()}, hmax={y.max()}, hsum={y.sum()}"
+            INFO2,
+            f"hist {object_name:10}: x {x[0]:.2f}→{x[-1]:.2f}, hmin={y.min():.2f},"
+            f" hmax={y.max():.2f}, hsum={y.sum():.2f}",
         )
         return x, y
 
@@ -119,8 +159,9 @@ class FileReader(metaclass=FileReaderMeta):
     def get_array(self, object_name: str) -> NDArray:
         a = self._get_array(object_name)
         logger.log(
-            SUBSUBINFO,
-            f"array {'x'.join(map(str,a.shape))}: min={a.min()}, max={a.max()}, sum={a.sum()}",
+            INFO2,
+            f"array {'x'.join(map(str,a.shape))}: min={a.min():.2f}, max={a.max():.2f},"
+            f" sum={a.sum():.2f}",
         )
         return a
 
@@ -218,6 +259,41 @@ try:
     import ROOT
 except ImportError:
 
+    class FileReaderROOTUpROOT(FileReader):
+        _extension: str = ".root"
+
+        def __init__(self, file_name: str | Path):
+            super().__init__(file_name)
+            from uproot import open
+
+            self._file = open(file_name)
+
+        def _close(self):
+            self._file.close()
+
+        def _get_object_impl(self, object_name: str) -> Any:
+            return self._file[object_name]
+
+        def _get_hist(self, object_name: str) -> tuple[NDArray, NDArray]:
+            obj = self._get_object_impl(object_name)
+            y, x = obj.to_numpy()
+            return x, y
+
+        def _get_graph(self, object_name: str) -> tuple[NDArray, NDArray]:
+            obj = self._get_object_impl(object_name)
+            y, x = obj.to_numpy()
+            return x[:-1], y
+
+        def _get_array(self, object_name: str) -> NDArray:
+            obj = self._get_object_impl(object_name)
+            y, _ = obj.to_numpy()
+            return y
+
+        def keys(self) -> tuple[str, ...]:
+            return tuple(key.split(";", 1)[0] for key in self._file.GetListOfKeys())
+
+else:
+
     class FileReaderROOTROOT(FileReader):
         _extension: str = ".root"
 
@@ -274,42 +350,7 @@ except ImportError:
             raise ValueError(f"Do not know ho to convert {obj} to array")
 
         def keys(self) -> tuple[str, ...]:
-            return tuple(key.split(';', 1)[0] for key in self._file.GetListOfKeys())
-
-else:
-
-    class FileReaderROOTUpROOT(FileReader):
-        _extension: str = ".root"
-
-        def __init__(self, file_name: str | Path):
-            super().__init__(file_name)
-            from uproot import open
-
-            self._file = open(file_name)
-
-        def _close(self):
-            self._file.close()
-
-        def _get_object_impl(self, object_name: str) -> Any:
-            return self._file[object_name]
-
-        def _get_hist(self, object_name: str) -> tuple[NDArray, NDArray]:
-            obj = self._get_object_impl(object_name)
-            y, x = obj.to_numpy()
-            return x, y
-
-        def _get_graph(self, object_name: str) -> tuple[NDArray, NDArray]:
-            obj = self._get_object_impl(object_name)
-            y, x = obj.to_numpy()
-            return x[:-1], y
-
-        def _get_array(self, object_name: str) -> NDArray:
-            obj = self._get_object_impl(object_name)
-            y, _ = obj.to_numpy()
-            return y
-
-        def keys(self) -> tuple[str, ...]:
-            return tuple(self._file.keys())
+            return tuple(key.GetName().split(";", 1)[0] for key in self._file.GetListOfKeys())
 
 
 def _get_buffer_hist1(h: "ROOT.TH1", flows: bool = False) -> NDArray:
