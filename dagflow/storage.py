@@ -220,13 +220,24 @@ class NodeStorage(NestedMKDict):
 
     def remove_connected_inputs(self, key: Key = ()):
         source = self(key)
+        def connected(input: Input | tuple[Input,...]):
+            match input:
+                case Input():
+                    return input.connected()
+                case tuple():
+                    return all(inp.connected() for inp in input)
+
         to_remove = [
             key
             for key, input in source.walkitems()
-            if isinstance(input, Input) and input.connected()
+            if connected(input)
         ]
         for key in to_remove:
             source.delete_with_parents(key)
+        for key, dct in tuple(source.walkdicts()):
+            if not dct:
+                source.delete_with_parents(key)
+                
 
     #
     # Converters
