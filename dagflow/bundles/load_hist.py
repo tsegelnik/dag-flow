@@ -1,4 +1,4 @@
-from collections.abc import Callable, Mapping, Sequence
+from collections.abc import Callable, Mapping
 from pathlib import Path
 from typing import Optional
 
@@ -7,10 +7,10 @@ from schema import And
 from schema import Optional as SchemaOptional
 from schema import Or, Schema, Use
 
-from multikeydict.typing import KeyLike, properkey, strkey
+from multikeydict.typing import strkey
 
-from .file_reader import FileReader, file_readers
 from ..lib.Array import Array
+from ..logger import INFO3, logger
 from ..storage import NodeStorage
 from ..tools.schema import (
     AllFileswithExt,
@@ -19,6 +19,7 @@ from ..tools.schema import (
     LoadFileWithExt,
     LoadYaml,
 )
+from .file_reader import FileReader, file_readers, iterate_filenames_and_objectnames
 
 _schema_cfg = Schema(
     {
@@ -30,6 +31,9 @@ _schema_cfg = Schema(
         SchemaOptional("normalize", default=False): bool,
         SchemaOptional("replicate", default=((),)): Or((IsStrSeqOrStr,), [IsStrSeqOrStr]),
         SchemaOptional("replicate_files", default=((),)): Or((IsStrSeqOrStr,), [IsStrSeqOrStr]),
+        SchemaOptional("skip", default=None): And(
+            Or(((str,),), [[str]]), Use(lambda l: tuple(set(k) for k in l))
+        ),
         SchemaOptional("objects", default=lambda s: s): Or(
             Callable, And({str: str}, Use(lambda dct: lambda s: dct.get(s, s)))
         ),
@@ -45,20 +49,6 @@ _schema_loadable_cfg = And(
     _schema_cfg,
 )
 
-def iterate_files(filenames: Sequence[str | Path], keys: Sequence[KeyLike]):
-    for keylike in keys:
-        key = properkey(keylike)
-        for afilename in filenames:
-            filename = str(afilename)
-            if '{' in filename:
-                 ffilename = filename.format(*key)
-                 yield key, ffilename
-                 break
-            elif all(map(filename.__contains__, key)):
-                yield key, afilename
-                break
-        else:
-            raise RuntimeError(f"Could not find a file for key {'.'.join(key)}")
 
 def _validate_cfg(cfg):
     if isinstance(cfg, dict) and "load" in cfg:
@@ -77,22 +67,26 @@ def load_hist(acfg: Optional[Mapping] = None, **kwargs):
     file_keys = cfg["replicate_files"]
     objectname = cfg["objects"]
     normalize = cfg["normalize"]
+    skip = cfg["skip"]
 
     xname = name, cfg["x"]
     yname = name, cfg["y"]
 
     edges_list = []
     data = {}
-    for filekey, filename in iterate_files(filenames, file_keys):
-        sfilekey = strkey(filekey),
-        for key in keys:
-            skey = strkey(sfilekey+key)
-            x, y = FileReader.hist[filename, objectname(skey)]
-            if normalize and (ysum:=y.sum())!=0.0:
-                y /= ysum
+    for filekey, filename, objectkey, key in iterate_filenames_and_objectnames(
+        filenames, file_keys, keys, skip=skip
+    ):
+        skey = strkey(key)
+        logger.log(INFO3, f"Process {skey}")
 
-            data[key] = x, y
-            edges_list.append(x)
+        x, y = FileReader.hist[filename, objectname(skey)]
+        if normalize and (ysum := y.sum()) != 0.0:
+            y /= ysum
+            logger.log(INFO3, f"[normalize]")
+
+        data[key] = x, y
+        edges_list.append(x)
 
     if cfg["merge_x"]:
         x0 = edges_list[0]
