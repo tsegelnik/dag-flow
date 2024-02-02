@@ -247,7 +247,7 @@ class FileReaderTSV(FileReaderArray):
     def _get_object_impl(self, object_name: str) -> Any:
         from numpy import loadtxt
 
-        filename = self._file_name / f"{object_name}{self._extension}"
+        filename = self._file_name / f"{self._file_name.stem}_{object_name}{self._extension}"
         return loadtxt(filename, unpack=True)
 
     def _get_xy(self, object_name: str) -> tuple[NDArray, NDArray]:
