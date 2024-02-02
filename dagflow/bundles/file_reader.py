@@ -16,6 +16,8 @@ if TYPE_CHECKING:
 
 file_readers = {}
 
+_log_float_format = ".3g"
+
 
 class HistGetter:
     def __getitem__(self, names: tuple[str | Path, str]):
@@ -140,7 +142,9 @@ class FileReader(metaclass=FileReaderMeta):
     def get_graph(self, object_name: str) -> tuple[NDArray, NDArray]:
         x, y = self._get_graph(object_name)
         logger.log(
-            INFO2, f"graph: x {x[0]:.2f}→{x[-1]:.2f}, ymin={y.min():.2f}, ymax={y.max():.2f}"
+            INFO2,
+            f"graph: x {x[0]:{_log_float_format}}→{x[-1]:{_log_float_format}},"
+            f" ymin={y.min():{_log_float_format}}, ymax={y.max():{_log_float_format}}",
         )
         return x, y
 
@@ -151,8 +155,9 @@ class FileReader(metaclass=FileReaderMeta):
         x, y = self._get_hist(object_name)
         logger.log(
             INFO2,
-            f"hist {object_name:10}: x {x[0]:.2f}→{x[-1]:.2f}, hmin={y.min():.2f},"
-            f" hmax={y.max():.2f}, hsum={y.sum():.2f}",
+            f"hist {object_name:10}: x {x[0]:{_log_float_format}}→{x[-1]:{_log_float_format}},"
+            f" hmin={y.min():{_log_float_format}}, hmax={y.max():{_log_float_format}},"
+            f" hsum={y.sum():{_log_float_format}}",
         )
         return x, y
 
@@ -163,8 +168,8 @@ class FileReader(metaclass=FileReaderMeta):
         a = self._get_array(object_name)
         logger.log(
             INFO2,
-            f"array {'x'.join(map(str,a.shape))}: min={a.min():.2f}, max={a.max():.2f},"
-            f" sum={a.sum():.2f}",
+            f"array {'x'.join(map(str,a.shape))}: min={a.min():{_log_float_format}},"
+            f" max={a.max():{_log_float_format}}, sum={a.sum():{_log_float_format}}",
         )
         return a
 
