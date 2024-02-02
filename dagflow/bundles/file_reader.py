@@ -199,13 +199,13 @@ class FileReaderNPZ(FileReaderArray):
     def _get_object_impl(self, object_name: str) -> Any:
         return self._file[object_name]
 
-    def keys(self) -> tuple[str, ...]:
-        return tuple(self._file.keys())
-
-    def get_xy(self, object_name: str) -> tuple[NDArray, NDArray]:
+    def _get_xy(self, object_name: str) -> tuple[NDArray, NDArray]:
         data = self._get_object(object_name)
         cols = data.dtype.names
         return data[cols[0]], data[cols[1]]
+
+    def keys(self) -> tuple[str, ...]:
+        return tuple(self._file.keys())
 
 
 class FileReaderHDF5(FileReaderArray):
@@ -223,10 +223,7 @@ class FileReaderHDF5(FileReaderArray):
     def _get_object_impl(self, object_name: str) -> Any:
         return self._file[object_name]
 
-    def keys(self) -> tuple[str, ...]:
-        return tuple(self._file.keys())
-
-    def get_xy(self, object_name: str) -> tuple[NDArray, NDArray]:
+    def _get_xy(self, object_name: str) -> tuple[NDArray, NDArray]:
         data = self._get_object(object_name)
         cols = data.dtype.names
         return data[cols[0]], data[cols[1]]
@@ -234,6 +231,9 @@ class FileReaderHDF5(FileReaderArray):
     def _get_array(self, object_name: str) -> NDArray:
         ret = self._get_object(object_name)
         return ret[:]
+
+    def keys(self) -> tuple[str, ...]:
+        return tuple(self._file.keys())
 
 
 class FileReaderTSV(FileReaderArray):
@@ -247,15 +247,15 @@ class FileReaderTSV(FileReaderArray):
     def _get_object_impl(self, object_name: str) -> Any:
         from numpy import loadtxt
 
-        filename = self._file_name / f"{object_name}.{self._extension}"
+        filename = self._file_name / f"{object_name}{self._extension}"
         return loadtxt(filename, unpack=True)
+
+    def _get_xy(self, object_name: str) -> tuple[NDArray, NDArray]:
+        data = self._get_object(object_name)
+        return data[0], data[1]
 
     def keys(self) -> tuple[str, ...]:
         return tuple(file for file in listdir(self._file_name) if file.endswith(self._extension))
-
-    def get_xy(self, object_name: str) -> tuple[NDArray, NDArray]:
-        data = self._get_object(object_name)
-        return data[0], data[1]
 
 
 try:
@@ -384,9 +384,9 @@ def iterate_filenames_and_objectnames(
     for filekey, filename in iterate_filenames(filenames, filename_keys):
         for key in keys:
             key = properkey(key)
-            fullkey = filekey+key
+            fullkey = filekey + key
             if skip is not None and any(skipkey.issubset(fullkey) for skipkey in skip):
-                 continue
+                continue
             yield filekey, filename, key, fullkey
 
 
