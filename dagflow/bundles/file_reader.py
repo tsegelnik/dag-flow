@@ -1,4 +1,5 @@
 from collections.abc import Generator, Sequence
+from contextlib import suppress
 from os import listdir
 from pathlib import Path
 from typing import TYPE_CHECKING, Any
@@ -157,7 +158,7 @@ class FileReader(metaclass=FileReaderMeta):
             INFO2,
             f"hist {object_name:10}: x {x[0]:{_log_float_format}}→{x[-1]:{_log_float_format}},"
             f" hmin={y.min():{_log_float_format}}, hmax={y.max():{_log_float_format}},"
-            f" hsum={y.sum():{_log_float_format}}",
+            f" Σh={y.sum():{_log_float_format}}",
         )
         return x, y
 
@@ -169,7 +170,7 @@ class FileReader(metaclass=FileReaderMeta):
         logger.log(
             INFO2,
             f"array {'x'.join(map(str,a.shape))}: min={a.min():{_log_float_format}},"
-            f" max={a.max():{_log_float_format}}, sum={a.sum():{_log_float_format}}",
+            f" max={a.max():{_log_float_format}}, Σ={a.sum():{_log_float_format}}",
         )
         return a
 
@@ -244,19 +245,26 @@ class FileReaderHDF5(FileReaderArray):
 class FileReaderTSV(FileReaderArray):
     _extension: str = ".tsv"
 
-    def __init__(self, file_name: str | Path):
-        super().__init__(file_name)
-        if not self._file_name.is_dir():
-            raise FileNotFoundError(file_name)
+    # def __init__(self, file_name: str | Path):
+    #     super().__init__(file_name)
+        # if not self._file_name.is_dir():
+        #     raise FileNotFoundError(file_name)
 
     def _get_object_impl(self, object_name: str) -> Any:
         from numpy import loadtxt
 
-        filename = self._file_name / f"{self._file_name.stem}_{object_name}{self._extension}"
-        return loadtxt(filename, unpack=True)
+        filenames = (
+            self._file_name / f"{self._file_name.stem}_{object_name}{self._extension}",
+            f"{self._file_name.parent/self._file_name.stem!s}_{object_name}{self._extension}"
+        )
+        for filename in filenames:
+            with suppress(FileNotFoundError):
+                return loadtxt(filename)
+        
+        raise FileNotFoundError(filenames)
 
     def _get_xy(self, object_name: str) -> tuple[NDArray, NDArray]:
-        data = self._get_object(object_name)
+        data = self._get_object(object_name).T
         return data[0], data[1]
 
     def keys(self) -> tuple[str, ...]:
