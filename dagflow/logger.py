@@ -19,7 +19,8 @@ def get_logger(
     filename: Optional[str] = None,
     debug: bool = False,
     console: bool = True,
-    formatstr: Optional[str] = "%(asctime)s - %(levelname)s - %(message)s",
+    # formatstr: Optional[str] = "%(asctime)s - %(levelname)s - %(message)s",
+    formatstr: Optional[str] = "%(levelname)s: %(message)s",
 ) -> Logger:
     if logger := _loggers.get(name):
         return logger
