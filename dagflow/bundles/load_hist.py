@@ -35,7 +35,7 @@ _schema_cfg = Schema(
             Or(((str,),), [[str]]), Use(lambda l: tuple(set(k) for k in l))
         ),
         SchemaOptional("objects", default=lambda s: s): Or(
-            Callable, And({str: str}, Use(lambda dct: lambda s: dct.get(s, s)))
+            Callable, And({str: str}, Use(lambda dct: lambda st, tpl: dct.get(st, st)))
         ),
     }
 )
@@ -80,7 +80,7 @@ def load_hist(acfg: Optional[Mapping] = None, **kwargs):
         skey = strkey(key)
         logger.log(INFO3, f"Process {skey}")
 
-        x, y = FileReader.hist[filename, objectname(skey)]
+        x, y = FileReader.hist[filename, objectname(skey, key)]
         if normalize and (ysum := y.sum()) != 0.0:
             y /= ysum
             logger.log(INFO3, f"[normalize]")
@@ -92,7 +92,7 @@ def load_hist(acfg: Optional[Mapping] = None, **kwargs):
         x0 = edges_list[0]
         for xi in edges_list[1:]:
             if not allclose(x0, xi, atol=0, rtol=0):
-                raise RuntimeError("load_graph: inconsistent x axes, unable to merge.")
+                raise RuntimeError("load_hist: inconsistent x axes, unable to merge.")
 
         commonedges, _ = Array.make_stored(".".join(xname), x0)
     else:
