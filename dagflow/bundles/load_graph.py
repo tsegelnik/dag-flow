@@ -56,7 +56,7 @@ def _validate_cfg(cfg):
         return _schema_cfg.validate(cfg)
 
 
-def load_graph_new(acfg: Optional[Mapping] = None, **kwargs):
+def load_graph(acfg: Optional[Mapping] = None, **kwargs):
     acfg = dict(acfg or {}, **kwargs)
     cfg = _validate_cfg(acfg)
 
