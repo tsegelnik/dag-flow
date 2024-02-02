@@ -1,9 +1,12 @@
+from collections.abc import Generator, Sequence
 from os import listdir
 from pathlib import Path
 from typing import TYPE_CHECKING, Any
 
 from numpy import double, dtype, frombuffer, linspace
 from numpy.typing import NDArray
+
+from multikeydict.typing import KeyLike, TupleKey, properkey
 
 from ..logger import INFO1, INFO2, logger
 
@@ -54,7 +57,7 @@ class FileReaderMeta(type):
         file_name_str = file_name if isinstance(file_name, str) else str(file_name)
         try:
             ret = self._opened_files[file_name_str]
-            if file_name_str!=self._last_used_file:
+            if file_name_str != self._last_used_file:
                 action = "Use"
             else:
                 action = None
@@ -351,6 +354,40 @@ else:
 
         def keys(self) -> tuple[str, ...]:
             return tuple(key.GetName().split(";", 1)[0] for key in self._file.GetListOfKeys())
+
+
+def iterate_filenames(
+    filenames: Sequence[str | Path], keys: Sequence[KeyLike]
+) -> Generator[tuple[TupleKey, str | Path], None, None]:
+    for keylike in keys:
+        key = properkey(keylike)
+        for afilename in filenames:
+            filename = str(afilename)
+            if "{" in filename:
+                ffilename = filename.format(*key)
+                yield key, ffilename
+                break
+            elif all(map(filename.__contains__, key)):
+                yield key, afilename
+                break
+        else:
+            raise RuntimeError(f"Could not find a file for key {'.'.join(key)}")
+
+
+def iterate_filenames_and_objectnames(
+    filenames: Sequence[str | Path],
+    filename_keys: Sequence[KeyLike],
+    keys: Sequence[KeyLike],
+    *,
+    skip: Sequence[set[str]] | None = None,
+) -> Generator[tuple[TupleKey, str | Path, TupleKey, TupleKey], None, None]:
+    for filekey, filename in iterate_filenames(filenames, filename_keys):
+        for key in keys:
+            key = properkey(key)
+            fullkey = filekey+key
+            if skip is not None and any(skipkey.issubset(fullkey) for skipkey in skip):
+                 continue
+            yield filekey, filename, key, fullkey
 
 
 def _get_buffer_hist1(h: "ROOT.TH1", flows: bool = False) -> NDArray:
