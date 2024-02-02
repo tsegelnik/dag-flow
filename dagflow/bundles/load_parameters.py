@@ -63,24 +63,15 @@ def IsFormatOk(format):
     if not isinstance(format, (tuple, list)):
         return format == "value"
 
-    if len(format) == 1:
-        (f1,) = format
-        return f1 == "value"
-    else:
-        if len(format) == 2:
-            f1, f3 = format
-        elif len(format) == 3:
-            f1, f2, f3 = format
+    match format:
+        case "value" | ["value"]:
+            return True
+        case [*valcent, "sigma_absolute" | "sigma_relative" | "sigma_percent"]:
+            match valcent:
+                case ["value" | "central"] | ["value", "central"] | ["central", "value"]:
+                    return True
 
-            if f2 not in ("value", "central") or f1 == f2:
-                return False
-        else:
-            return False
-
-        if f3 not in ("sigma_absolute", "sigma_relative", "sigma_percent"):
-            return False
-
-        return f1 in ("value", "central")
+    return False
 
 
 def CheckCorrelationSizes(cfg):
