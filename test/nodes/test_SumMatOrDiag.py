@@ -1,7 +1,9 @@
 #!/usr/bin/env python
-
-from numpy import allclose, arange, diag
-from pytest import mark, raises
+from numpy import allclose
+from numpy import arange
+from numpy import diag
+from pytest import mark
+from pytest import raises
 
 from dagflow.exception import TypeFunctionError
 from dagflow.graph import Graph

@@ -1,6 +1,8 @@
 #!/usr/bin/env python
-
-from numpy import arange, array, copyto, result_type
+from numpy import arange
+from numpy import array
+from numpy import copyto
+from numpy import result_type
 
 from dagflow.graph import Graph
 from dagflow.inputhandler import MissingInputAddOne

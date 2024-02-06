@@ -1,15 +1,15 @@
-from typing import TYPE_CHECKING, Callable, Literal
+from collections.abc import Callable
+from typing import Literal
+from typing import TYPE_CHECKING
 
 from numba import njit
 from numpy.typing import NDArray
 
 from ..inputhandler import MissingInputAddPair
-from ..typefunctions import (
-    AllPositionals,
-    check_input_shape,
-    check_input_square,
-    check_inputs_equivalence,
-)
+from ..typefunctions import AllPositionals
+from ..typefunctions import check_input_shape
+from ..typefunctions import check_input_square
+from ..typefunctions import check_inputs_equivalence
 from .OneToOneNode import OneToOneNode
 
 if TYPE_CHECKING:

@@ -1,32 +1,36 @@
-from typing import TYPE_CHECKING, Any, Callable, Mapping, Optional, Sequence, Tuple, Union, List
-from weakref import ReferenceType
+from collections.abc import Callable
+from collections.abc import Mapping
+from collections.abc import Sequence
+from typing import Any
+from typing import Optional
+from typing import TYPE_CHECKING
 from weakref import ref as weakref
+from weakref import ReferenceType
 
 from multikeydict.typing import KeyLike
-from .flagsdescriptor import FlagsDescriptor
 
-from .exception import (
-    AllocationError,
-    ClosedGraphError,
-    ClosingError,
-    CriticalError,
-    DagflowError,
-    InitializationError,
-    OpeningError,
-    ReconnectionError,
-    UnclosedGraphError,
-)
+from .exception import AllocationError
+from .exception import ClosedGraphError
+from .exception import ClosingError
+from .exception import CriticalError
+from .exception import DagflowError
+from .exception import InitializationError
+from .exception import OpeningError
+from .exception import ReconnectionError
+from .exception import UnclosedGraphError
+from .flagsdescriptor import FlagsDescriptor
 from .input import Input
 from .iter import IsIterable
 from .labels import Labels
+from .logger import get_logger
+from .logger import Logger
 from .nodebase import NodeBase
-from .logger import Logger, get_logger
 from .output import Output
 
 if TYPE_CHECKING:
+    from .graph import Graph
     from .metanode import MetaNode
     from .storage import NodeStorage
-    from .graph import Graph
 
 
 class Node(NodeBase):
@@ -46,12 +50,12 @@ class Node(NodeBase):
 
     _name: str
     _labels: Labels
-    _allowed_kw_inputs: Tuple[str, ...]
+    _allowed_kw_inputs: tuple[str, ...]
     _graph: Optional["Graph"]
-    _exception: Optional[str]
+    _exception: str | None
     _logger: Logger
 
-    _metanode: Optional[ReferenceType]
+    _metanode: ReferenceType | None
     _fd: FlagsDescriptor
 
     # Options
@@ -64,11 +68,11 @@ class Node(NodeBase):
         self,
         name,
         *,
-        label: Union[str, dict, None] = None,
+        label: str | dict | None = None,
         graph: Optional["Graph"] = None,
-        debug: Optional[bool] = None,
-        logger: Optional[Any] = None,
-        missing_input_handler: Optional[Callable] = None,
+        debug: bool | None = None,
+        logger: Any | None = None,
+        missing_input_handler: Callable | None = None,
         immediate: bool = False,
         auto_freeze: bool = False,
         frozen: bool = False,
@@ -119,8 +123,8 @@ class Node(NodeBase):
 
     @classmethod
     def make_stored(
-        cls, name: str, *args, label_from: Optional[Mapping] = None, **kwargs
-    ) -> Tuple[Optional["Node"], "NodeStorage"]:
+        cls, name: str, *args, label_from: Mapping | None = None, **kwargs
+    ) -> tuple[Optional["Node"], "NodeStorage"]:
         from multikeydict.nestedmkdict import NestedMKDict  # fmt: skip
         if label_from is not None:
             label_from = NestedMKDict(label_from, sep=".")
@@ -146,9 +150,9 @@ class Node(NodeBase):
     def replicate(
         cls,
         name: str,
-        replicate: Tuple[KeyLike, ...] = ((),),
+        replicate: tuple[KeyLike, ...] = ((),),
         **kwargs,
-    ) -> Tuple[Optional["Node"], "NodeStorage"]:
+    ) -> tuple[Optional["Node"], "NodeStorage"]:
         from .storage import NodeStorage
 
         storage = NodeStorage(default_containers=True)
@@ -209,7 +213,7 @@ class Node(NodeBase):
         self._name = name
 
     @property
-    def allowed_kw_inputs(self) -> Tuple[str]:
+    def allowed_kw_inputs(self) -> tuple[str]:
         return self._allowed_kw_inputs
 
     @property
@@ -312,13 +316,13 @@ class Node(NodeBase):
     def labels(self) -> Labels:
         return self._labels
 
-    def label(self) -> Optional[str]:
+    def label(self) -> str | None:
         return self._labels.text
 
     #
     # Methods
     #
-    def __call__(self, name: Optional[str] = None, *args, **kwargs) -> Optional[Input]:
+    def __call__(self, name: str | None = None, *args, **kwargs) -> Input | None:
         """
         Returns an existing input by `name`, else try to create new one.
         If `name` is given, creates an input by the default way,
@@ -344,7 +348,7 @@ class Node(NodeBase):
             raise ReconnectionError(input=inp, node=self, output=output)
         return inp
 
-    def _make_input(self, *args, exception=True, **kwargs) -> Optional[Input]:
+    def _make_input(self, *args, exception=True, **kwargs) -> Input | None:
         """
         Creates a single input via an input handler
         """
@@ -380,7 +384,7 @@ class Node(NodeBase):
             inp = self._add_input(name, **kwargs)
         return inp
 
-    def _add_inputs(self, name: Sequence[str], **kwargs) -> Tuple[Input, ...]:
+    def _add_inputs(self, name: Sequence[str], **kwargs) -> tuple[Input, ...]:
         """
         Creates a sequence of inputs
 
@@ -428,7 +432,7 @@ class Node(NodeBase):
             raise ClosedGraphError(node=self)
         return self._add_output(name, keyword=keyword, positional=positional, **kwargs)
 
-    def _add_outputs(self, name: Sequence[str], **kwargs) -> Tuple[Output, ...]:
+    def _add_outputs(self, name: Sequence[str], **kwargs) -> tuple[Output, ...]:
         """
         Creates a sequence of outputs
 
@@ -465,7 +469,7 @@ class Node(NodeBase):
 
     def add_pair(
         self, iname: str, oname: str, **kwargs
-    ) -> Tuple[Union[Input, Tuple[Input]], Union[Output, Tuple[Output]]]:
+    ) -> tuple[Input | tuple[Input], Output | tuple[Output]]:
         """
         Creates a pair of input and output
         """
@@ -477,9 +481,9 @@ class Node(NodeBase):
         self,
         inames: Sequence[str],
         onames: Sequence[str],
-        input_kws: Optional[dict] = None,
-        output_kws: Optional[dict] = None,
-    ) -> Tuple[List[Input], List[Output]]:
+        input_kws: dict | None = None,
+        output_kws: dict | None = None,
+    ) -> tuple[list[Input], list[Output]]:
         """
         Creates sequence of pairs of input and output
 
@@ -504,9 +508,9 @@ class Node(NodeBase):
         self,
         iname: str,
         oname: str,
-        input_kws: Optional[dict] = None,
-        output_kws: Optional[dict] = None,
-    ) -> Tuple[Union[Input, Tuple[Input]], Union[Output, Tuple[Output]]]:
+        input_kws: dict | None = None,
+        output_kws: dict | None = None,
+    ) -> tuple[Input | tuple[Input], Output | tuple[Output]]:
         """
         Creates a pair of input and output
 
@@ -558,7 +562,7 @@ class Node(NodeBase):
             self.fd.frozen_tainted = False
             self.taint(force=True)
 
-    def taint(self, *, caller: Optional[Input] = None, force: bool = False):
+    def taint(self, *, caller: Input | None = None, force: bool = False):
         self.logger.debug(f"Node '{self.name}': Taint...")
         if self.tainted and not force:
             return

@@ -1,17 +1,15 @@
 #!/usr/bin/env python
-
-from pytest import raises
 import numpy as np
+import pytest
+from pytest import raises
 
+from dagflow.exception import ConnectionError
 from dagflow.graph import Graph
 from dagflow.graphviz import savegraph
-from dagflow.lib import ViewConcat
-from dagflow.lib import View
-from dagflow.lib import NormalizeCorrelatedVars2
 from dagflow.lib import Array
-from dagflow.exception import ConnectionError
-
-import pytest
+from dagflow.lib import NormalizeCorrelatedVars2
+from dagflow.lib import View
+from dagflow.lib import ViewConcat
 
 debug = False
 

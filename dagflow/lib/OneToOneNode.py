@@ -1,5 +1,5 @@
 from collections.abc import Sequence
-from typing import Any, Optional
+from typing import Any
 
 from multikeydict.typing import KeyLike
 
@@ -39,11 +39,11 @@ class OneToOneNode(FunctionNode):
         *args: NodeStorage | Any,
         replicate: Sequence[KeyLike] | None = None,
         **kwargs,
-    ) -> tuple[Optional[Node], NodeStorage]:
-        if args and replicate is not None:
-            raise RuntimeError("OneToOneNode.replicate can use either `args` or `replicate`")
-
+    ) -> tuple[Node | None, NodeStorage]:
         if args:
+            if replicate is not None:
+                raise RuntimeError("OneToOneNode.replicate can use either `args` or `replicate`")
+
             return cls.replicate_from_args(name, *args, **kwargs)
 
         if replicate is None:
@@ -57,7 +57,7 @@ class OneToOneNode(FunctionNode):
         name: str,
         replicate: Sequence[KeyLike] = ((),),
         **kwargs,
-    ) -> tuple[Optional[Node], NodeStorage]:
+    ) -> tuple[Node | None, NodeStorage]:
         storage = NodeStorage(default_containers=True)
         nodes = storage("nodes")
         inputs = storage("inputs")
@@ -87,7 +87,7 @@ class OneToOneNode(FunctionNode):
         name: str,
         *args: NodeStorage | Any,
         **kwargs,
-    ) -> tuple[Optional[Node], NodeStorage]:
+    ) -> tuple[Node | None, NodeStorage]:
         storage = NodeStorage(default_containers=True)
         nodes = storage("nodes")
         outputs = storage("outputs")

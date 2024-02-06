@@ -1,12 +1,12 @@
 #!/usr/bin/env python
-
-from dagflow.storage import NodeStorage
-from dagflow.graph import Graph
-from dagflow.lib import Array
-from dagflow.graphviz import savegraph
-
-from numpy import arange, meshgrid
+from numpy import arange
+from numpy import meshgrid
 from pytest import mark
+
+from dagflow.graph import Graph
+from dagflow.graphviz import savegraph
+from dagflow.lib import Array
+from dagflow.storage import NodeStorage
 
 @mark.skip(reason="no way of currently testing this")
 @mark.parametrize('dtype', ('d', 'f',))
@@ -121,4 +121,3 @@ def test_to_root(testname, debug_graph, dtype):
         storage('outputs').to_root(f'output/{testname}.root')
 
     savegraph(graph, f"output/{testname}.pdf")
-

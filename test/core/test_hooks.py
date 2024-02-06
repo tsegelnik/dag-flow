@@ -1,13 +1,11 @@
 #!/usr/bin/env python
-
-from numpy import arange, copyto
+from numpy import arange
+from numpy import copyto
 from pytest import raises
 
-from dagflow.exception import (
-    CriticalError,
-    ReconnectionError,
-    UnclosedGraphError,
-)
+from dagflow.exception import CriticalError
+from dagflow.exception import ReconnectionError
+from dagflow.exception import UnclosedGraphError
 from dagflow.graph import Graph
 from dagflow.lib import Array
 from dagflow.lib import ManyToOneNode

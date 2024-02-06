@@ -1,13 +1,13 @@
 import numpy as np
+from pytest import raises
 
+from dagflow.exception import CriticalError
 from dagflow.graph import Graph
 from dagflow.graphviz import savegraph
-from dagflow.metanode import MetaNode
 from dagflow.lib.Array import Array
-from dagflow.lib.trigonometry import Cos, Sin
-from dagflow.exception import CriticalError
-
-from pytest import raises
+from dagflow.lib.trigonometry import Cos
+from dagflow.lib.trigonometry import Sin
+from dagflow.metanode import MetaNode
 
 
 def test_metanode_strategy_leading_node(testname):

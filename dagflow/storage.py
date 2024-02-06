@@ -1,24 +1,22 @@
-from typing import (
-    TYPE_CHECKING,
-    Any,
-    Dict,
-    List,
-    Mapping,
-    MutableSet,
-    Optional,
-    Sequence,
-    Tuple,
-    Union,
-)
-
-from orderedset import OrderedSet
+from collections.abc import Mapping
+from collections.abc import MutableSet
+from collections.abc import Sequence
+from typing import Any
+from typing import Optional
+from typing import TYPE_CHECKING
 
 from multikeydict.nestedmkdict import NestedMKDict
-from multikeydict.typing import Key, TupleKey, KeyLike
+from multikeydict.typing import Key
+from multikeydict.typing import KeyLike
+from multikeydict.typing import TupleKey
 from multikeydict.visitor import NestedMKDictVisitor
+from orderedset import OrderedSet
 
 from .input import Input
-from .logger import DEBUG, SUBINFO, SUBSUBINFO, logger
+from .logger import DEBUG
+from .logger import INFO1
+from .logger import INFO3
+from .logger import logger
 from .node import Node
 from .output import Output
 
@@ -27,7 +25,8 @@ if TYPE_CHECKING:
 
 from LaTeXDatax import datax
 from numpy import nan, ndarray
-from pandas import DataFrame, set_option as pandas_set_option
+from pandas import DataFrame
+from pandas import set_option as pandas_set_option
 from tabulate import tabulate
 
 pandas_set_option("display.max_rows", None)
@@ -76,10 +75,12 @@ class NodeStorage(NestedMKDict):
         self.visit(PlotVisitor(*args, **kwargs))
 
     def __setitem__(self, key: KeyLike, item: Any) -> None:
-        if isinstance(item, (Node, Output)) or type(item).__name__ in {"Parameter", "Parameters"}:
-            logger.log(SUBSUBINFO, f"Set {self.joinkey(key)}")
-        elif isinstance(item, Input):
-            logger.log(DEBUG, f"Set {self.joinkey(key)}")
+        from .parameters import Parameter, Parameters
+        match item:
+            case Node() | Output() | Parameter() | Parameters():
+                logger.log(INFO3, f"Set {self.joinkey(key)}")
+            case Input():
+                logger.log(DEBUG, f"Set {self.joinkey(key)}")
 
         super().__setitem__(key, item)
 
@@ -150,10 +151,10 @@ class NodeStorage(NestedMKDict):
 
     def read_labels(
         self,
-        source: Union[NestedMKDict, Dict],
+        source: NestedMKDict | dict,
         *,
         strict: bool = False,
-        processed_keys_set: Optional[MutableSet[Key]] = None,
+        processed_keys_set: MutableSet[Key] | None = None,
     ) -> None:
         source = NestedMKDict(source, sep=".")
 
@@ -220,13 +221,24 @@ class NodeStorage(NestedMKDict):
 
     def remove_connected_inputs(self, key: Key = ()):
         source = self(key)
+        def connected(input: Input | tuple[Input,...]):
+            match input:
+                case Input():
+                    return input.connected()
+                case tuple():
+                    return all(inp.connected() for inp in input)
+
         to_remove = [
             key
             for key, input in source.walkitems()
-            if isinstance(input, Input) and input.connected()
+            if connected(input)
         ]
         for key in to_remove:
             source.delete_with_parents(key)
+        for key, dct in tuple(source.walkdicts()):
+            if not dct:
+                source.delete_with_parents(key)
+                
 
     #
     # Converters
@@ -238,7 +250,7 @@ class NodeStorage(NestedMKDict):
     def to_dict(self, **kwargs) -> NestedMKDict:
         return self.visit(ParametersVisitor(kwargs)).data_dict
 
-    def to_df(self, *, columns: Optional[List[str]] = None, **kwargs) -> DataFrame:
+    def to_df(self, *, columns: list[str] | None = None, **kwargs) -> DataFrame:
         dct = self.to_list(**kwargs)
         if columns is None:
             columns = ["path", "value", "central", "sigma", "flags", "shape", "label"]
@@ -269,7 +281,7 @@ class NodeStorage(NestedMKDict):
         return df.to_str(**kwargs)
 
     def to_table(
-        self, *, df_kwargs: Mapping = {}, truncate: Union[int, bool] = False, **kwargs
+        self, *, df_kwargs: Mapping = {}, truncate: int | bool = False, **kwargs
     ) -> str:
         df = self.to_df(**df_kwargs)
         kwargs.setdefault("headers", df.columns)
@@ -284,14 +296,14 @@ class NodeStorage(NestedMKDict):
         return ret
 
     def to_latex(
-        self, filename: Optional[str] = None, *, return_df: bool = False, **kwargs
-    ) -> Union[str, Tuple[str, DataFrame]]:
+        self, filename: str | None = None, *, return_df: bool = False, **kwargs
+    ) -> str | tuple[str, DataFrame]:
         df = self.to_df(label_from="latex", **kwargs)
         tex = df.to_latex(escape=False)
 
         if filename:
             with open(filename, "w") as out:
-                logger.log(SUBINFO, f"Write: {filename}")
+                logger.log(INFO1, f"Write: {filename}")
                 out.write(tex)
 
         return tex, df if return_df else tex
@@ -302,7 +314,7 @@ class NodeStorage(NestedMKDict):
         odict = {
             ".".join(k): v for k, v in data.walkitems() if (k and k[-1] in include)
         }
-        logger.log(SUBINFO, f"Write: {filename}")
+        logger.log(INFO1, f"Write: {filename}")
         datax(filename, **odict)
 
     def to_root(self, filename: str) -> None:
@@ -336,7 +348,7 @@ class NodeStorage(NestedMKDict):
             common_storage |= storage
 
 
-_context_storage: List[NodeStorage] = []
+_context_storage: list[NodeStorage] = []
 
 
 class PlotVisitor(NestedMKDictVisitor):
@@ -352,20 +364,20 @@ class PlotVisitor(NestedMKDictVisitor):
         "_close_on_exitdict",
     )
     _show_all: bool
-    _folder: Optional[str]
-    _format: Optional[str]
+    _folder: str | None
+    _format: str | None
     _args: Sequence
-    _kwargs: Dict
-    _active_figures: Dict
+    _kwargs: dict
+    _active_figures: dict
     _overlay_priority: Sequence[OrderedSet]
-    _currently_active_overlay: Optional[OrderedSet]
+    _currently_active_overlay: OrderedSet | None
     _close_on_exitdict: bool
 
     def __init__(
         self,
         *args,
         show_all: bool = False,
-        folder: Optional[str] = None,
+        folder: str | None = None,
         format: str = "pdf",
         overlay_priority: Sequence[Sequence[str]] = ((),),
         **kwargs,
@@ -388,7 +400,7 @@ class PlotVisitor(NestedMKDictVisitor):
 
     def _try_start_join(
         self, key: TupleKey
-    ) -> Tuple[Optional[Tuple[str]], Optional[str], bool]:
+    ) -> tuple[tuple[str] | None, str | None, bool]:
         key_set = OrderedSet(key)
         need_new_figure = True
         if self._currently_active_overlay is None:
@@ -410,10 +422,10 @@ class PlotVisitor(NestedMKDictVisitor):
 
     def _makefigure(
         self, key: TupleKey, *, force_new: bool = False
-    ) -> Tuple["Axes", Optional[Tuple[str]], Optional[str], bool]:
+    ) -> tuple["Axes", tuple[str] | None, str | None, bool]:
         from matplotlib.pyplot import sca, subplots
 
-        def mkfig(storekey: Optional[TupleKey] = None) -> "Axes":
+        def mkfig(storekey: TupleKey | None = None) -> "Axes":
             fig, ax = subplots(1, 1)
             if storekey is not None:
                 self._active_figures[tuple(storekey)] = fig
@@ -444,7 +456,7 @@ class PlotVisitor(NestedMKDictVisitor):
             filename = f"{self._folder}/{path}.{self._format}"
             makedirs(dirname(filename), exist_ok=True)
 
-            logger.log(SUBINFO, f"Write: {filename}")
+            logger.log(INFO1, f"Write: {filename}")
             savefig(filename)
 
         if close:
@@ -507,11 +519,11 @@ class PlotVisitor(NestedMKDictVisitor):
 class ParametersVisitor(NestedMKDictVisitor):
     __slots__ = ("_kwargs", "_data_list", "_localdata", "_path")
     _kwargs: dict
-    _data_list: List[dict]
+    _data_list: list[dict]
     _data_dict: NestedMKDict
-    _localdata: List[dict]
-    _paths: List[Tuple[str, ...]]
-    _path: Tuple[str, ...]
+    _localdata: list[dict]
+    _paths: list[tuple[str, ...]]
+    _path: tuple[str, ...]
     # _npars: List[int]
 
     def __init__(self, kwargs: dict):
@@ -519,7 +531,7 @@ class ParametersVisitor(NestedMKDictVisitor):
         # self._npars = []
 
     @property
-    def data_list(self) -> List[dict]:
+    def data_list(self) -> list[dict]:
         return self._data_list
 
     @property

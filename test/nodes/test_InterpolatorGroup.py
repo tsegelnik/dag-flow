@@ -1,6 +1,10 @@
-from matplotlib.pyplot import close, gca
-from numpy import allclose, finfo, linspace
-from numpy.random import seed, shuffle
+from matplotlib.pyplot import close
+from matplotlib.pyplot import gca
+from numpy import allclose
+from numpy import finfo
+from numpy import linspace
+from numpy.random import seed
+from numpy.random import shuffle
 
 from dagflow.graph import Graph
 from dagflow.graphviz import savegraph

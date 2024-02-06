@@ -1,12 +1,17 @@
 #!/usr/bin/env python
-
-from numpy import allclose, finfo, geomspace, linspace, ndarray, ones_like, zeros_like
 from matplotlib import pyplot as plt
+from numpy import allclose
+from numpy import finfo
+from numpy import geomspace
+from numpy import linspace
+from numpy import ndarray
+from numpy import ones_like
+from numpy import zeros_like
 
 from dagflow.graph import Graph
+from dagflow.graphviz import savegraph
 from dagflow.lib import Array
 from dagflow.lib import BinCenter
-from dagflow.graphviz import savegraph
 
 
 def test_BinCenter_01(testname, debug_graph):

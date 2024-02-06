@@ -1,14 +1,19 @@
 #!/usr/bin/env python
-
 import numpy as np
-from numpy import array, diag, sqrt, allclose, finfo
+from numpy import allclose
+from numpy import array
+from numpy import diag
+from numpy import finfo
+from numpy import sqrt
+from pytest import mark
+from pytest import raises
+from scipy import linalg
+
 from dagflow.exception import TypeFunctionError
 from dagflow.graph import Graph
 from dagflow.graphviz import savegraph
 from dagflow.lib import Array
 from dagflow.lib import Cholesky
-from pytest import mark, raises
-from scipy import linalg
 
 
 @mark.parametrize("dtype", ("d", "f"))

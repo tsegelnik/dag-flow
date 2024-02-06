@@ -1,27 +1,33 @@
+from collections.abc import Generator
+from collections.abc import Mapping
 from collections.abc import Sequence
 from pathlib import Path
-from typing import Generator, Mapping
 from typing import Optional as OptionalType
-from typing import Tuple, Union
-
-from schema import And, Optional, Or, Schema, SchemaError, Use
 
 from multikeydict.nestedmkdict import NestedMKDict
 from multikeydict.typing import properkey
+from schema import And
+from schema import Optional
+from schema import Or
+from schema import Schema
+from schema import SchemaError
+from schema import Use
 
 from ..exception import InitializationError
-from ..labels import format_latex, inherit_labels
+from ..labels import format_latex
+from ..labels import inherit_labels
 from ..storage import NodeStorage
-from ..tools.schema import IsStrSeqOrStr, LoadFileWithExt, LoadYaml, MakeLoaderPy, NestedSchema
+from ..tools.schema import IsStrSeqOrStr
+from ..tools.schema import LoadFileWithExt
+from ..tools.schema import LoadYaml
+from ..tools.schema import MakeLoaderPy
+from ..tools.schema import NestedSchema
 
 
-class ParsCfgHasProperFormat(object):
+class ParsCfgHasProperFormat:
     def validate(self, data: dict) -> dict:
         format = data["format"]
-        if isinstance(format, str):
-            nelements = 1
-        else:
-            nelements = len(format)
+        nelements = 1 if isinstance(format, str) else len(format)
 
         dtin = NestedMKDict(data)
         for key, subdata in dtin("parameters").walkitems():
@@ -63,24 +69,15 @@ def IsFormatOk(format):
     if not isinstance(format, (tuple, list)):
         return format == "value"
 
-    if len(format) == 1:
-        (f1,) = format
-        return f1 == "value"
-    else:
-        if len(format) == 2:
-            f1, f3 = format
-        elif len(format) == 3:
-            f1, f2, f3 = format
+    match format:
+        case "value" | ["value"]:
+            return True
+        case [*valcent, "sigma_absolute" | "sigma_relative" | "sigma_percent"]:
+            match valcent:
+                case ["value" | "central"] | ["value", "central"] | ["central", "value"]:
+                    return True
 
-            if f2 not in ("value", "central") or f1 == f2:
-                return False
-        else:
-            return False
-
-        if f3 not in ("sigma_absolute", "sigma_relative", "sigma_percent"):
-            return False
-
-        return f1 in ("value", "central")
+    return False
 
 
 def CheckCorrelationSizes(cfg):
@@ -196,6 +193,8 @@ def get_label(key: tuple, labelscfg: dict) -> dict:
         pass
     else:
         ret["index_values"] = list(key)
+        if isinstance(ret, NestedMKDict):
+            ret = ret.object
         return dict(ret)
 
     for n in range(1, len(key) + 1):
@@ -220,7 +219,7 @@ def get_label(key: tuple, labelscfg: dict) -> dict:
 
 def iterate_varcfgs(
     cfg: NestedMKDict,
-) -> Generator[Tuple[Tuple[str, ...], NestedMKDict], None, None]:
+) -> Generator[tuple[tuple[str, ...], NestedMKDict], None, None]:
     parameterscfg = cfg("parameters")
     labelscfg = cfg("labels")
     format = cfg["format"]
@@ -259,7 +258,7 @@ def check_correlations_consistent(cfg: NestedMKDict) -> None:
 def load_parameters(
     acfg: OptionalType[Mapping] = None,
     *,
-    nuisance_location: Union[str, Sequence[str], None] = "statistic.nuisance.parts",
+    nuisance_location: str | Sequence[str] | None = "statistic.nuisance.parts",
     **kwargs,
 ):
     acfg = dict(acfg or {}, **kwargs)
@@ -267,10 +266,7 @@ def load_parameters(
     cfg = NestedMKDict(cfg)
 
     pathstr = cfg["path"]
-    if pathstr:
-        path = tuple(pathstr.split("."))
-    else:
-        path = ()
+    path = tuple(pathstr.split(".")) if pathstr else ()
 
     state = cfg["state"]
 

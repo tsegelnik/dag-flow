@@ -1,19 +1,20 @@
 #!/usr/bin/env python
+import pytest
+from numpy import allclose
+from numpy import arange
+from numpy import array
+from numpy import finfo
+from numpy import sqrt
+from pytest import raises
+from scipy.linalg import cholesky
+from scipy.linalg import solve_triangular
 
-from numpy import arange, finfo
 from dagflow.exception import TypeFunctionError
-
 from dagflow.graph import Graph
 from dagflow.graphviz import savegraph
 from dagflow.lib import Array
-from dagflow.lib import NormalizeCorrelatedVars
 from dagflow.lib import Cholesky
-
-from numpy import array, arange, allclose, sqrt
-from scipy.linalg import solve_triangular, cholesky
-
-import pytest
-from pytest import raises
+from dagflow.lib import NormalizeCorrelatedVars
 
 debug = False
 
@@ -123,4 +124,3 @@ def test_NormalizeCorrelatedVars_01(dtype='d'):
 
     with raises(TypeFunctionError):
         graph2.close()
-

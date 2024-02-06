@@ -1,14 +1,12 @@
+from numba import njit
 from numpy.typing import NDArray
 
-from numba import njit
 from ..inputhandler import MissingInputAddOne
 from ..nodes import FunctionNode
-from ..typefunctions import (
-    check_has_inputs,
-    eval_output_dtype,
-    check_inputs_same_dtype,
-    AllPositionals,
-)
+from ..typefunctions import AllPositionals
+from ..typefunctions import check_has_inputs
+from ..typefunctions import check_inputs_same_dtype
+from ..typefunctions import eval_output_dtype
 
 
 @njit(cache=True)

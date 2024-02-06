@@ -1,14 +1,17 @@
 from random import choice
 from string import ascii_lowercase
 
+from numpy import linspace
+from numpy.random import seed
+from numpy.random import shuffle
+from pytest import mark
+from pytest import raises
+
 from dagflow.exception import InitializationError
 from dagflow.graph import Graph
 from dagflow.graphviz import savegraph
 from dagflow.lib import Array
 from dagflow.lib import SegmentIndex
-from numpy import linspace
-from numpy.random import seed, shuffle
-from pytest import mark, raises
 
 
 @mark.parametrize("mode", ("left", "right"))

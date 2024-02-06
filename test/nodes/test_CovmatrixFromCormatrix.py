@@ -1,11 +1,14 @@
 #!/usr/bin/env python
+from numpy import allclose
+from numpy import arange
+from numpy import array
+from numpy import tril
+from pytest import mark
 
 from dagflow.graph import Graph
 from dagflow.graphviz import savegraph
 from dagflow.lib import Array
 from dagflow.lib import CovmatrixFromCormatrix
-from numpy import allclose, arange, array, tril
-from pytest import mark
 
 
 @mark.parametrize("dtype", ("d", "f"))

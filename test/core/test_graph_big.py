@@ -1,11 +1,13 @@
 #!/usr/bin/env python
 from dagflow.graph import Graph
 from dagflow.graphviz import GraphDot
-from dagflow.printl import current_level, set_prefix_function
 from dagflow.lib.Dummy import Dummy
-from dagflow.wrappers import toucher, printer
+from dagflow.printl import current_level
+from dagflow.printl import set_prefix_function
+from dagflow.wrappers import printer
+from dagflow.wrappers import toucher
 
-set_prefix_function(lambda: "{:<2d} ".format(current_level()))
+set_prefix_function(lambda: f"{current_level():<2d} ")
 
 counter = 0
 
@@ -21,7 +23,7 @@ def test_graph_big_01():
         newlabel = label and label + suffix or suffix
         if newlabel is not None:
             d.set_label(newlabel)
-        d.savegraph("output/test_graph_big_{:03d}.png".format(counter))
+        d.savegraph(f"output/test_graph_big_{counter:03d}.png")
         counter += 1
 
     def plotter(fcn, node):

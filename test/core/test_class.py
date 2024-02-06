@@ -4,10 +4,13 @@ from numpy import arange
 from dagflow.graph import Graph
 from dagflow.graphviz import savegraph
 from dagflow.lib import Array
-from dagflow.lib import Product, Sum
-from dagflow.printl import current_level, printl, set_prefix_function
+from dagflow.lib import Product
+from dagflow.lib import Sum
+from dagflow.printl import current_level
+from dagflow.printl import printl
+from dagflow.printl import set_prefix_function
 
-set_prefix_function(lambda: "{:<2d} ".format(current_level()))
+set_prefix_function(lambda: f"{current_level():<2d} ")
 
 
 def test_00(testname, debug_graph):

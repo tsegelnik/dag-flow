@@ -1,8 +1,8 @@
 #!/usr/bin/env python
-
 import contextlib
 
-from dagflow.input import Input, Inputs
+from dagflow.input import Input
+from dagflow.input import Inputs
 from dagflow.nodebase import NodeBase
 from dagflow.output import Output
 

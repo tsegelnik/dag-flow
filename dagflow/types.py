@@ -1,12 +1,8 @@
-from typing import Tuple, TypeVar
+from typing import TYPE_CHECKING
 
-GraphT = TypeVar("GraphT", bound="Graph")
-NodeT = TypeVar("NodeT", bound="Node")
-InputT = TypeVar("InputT", bound="Input")
-InputsT = TypeVar("InputsT", bound="Inputs")
-OutputT = TypeVar("OutputT", bound="Output")
-OutputsT = TypeVar("OutputsT", bound="Outputs")
+if TYPE_CHECKING:
+    from .output import Output
 
-ShapeLike = Tuple[int, ...]
-EdgesLike = Tuple[OutputT]
-MeshesLike = Tuple[OutputT]
+ShapeLike = tuple[int, ...]
+EdgesLike = tuple["Output"]
+MeshesLike = tuple["Output"]

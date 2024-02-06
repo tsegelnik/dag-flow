@@ -1,14 +1,11 @@
-from logging import (
-    DEBUG,
-    INFO,
-    FileHandler,
-    Formatter,
-    Logger,
-    StreamHandler,
-    addLevelName,
-    getLogger,
-)
-from typing import Optional
+from logging import addLevelName
+from logging import DEBUG
+from logging import FileHandler
+from logging import Formatter
+from logging import getLogger
+from logging import INFO
+from logging import Logger
+from logging import StreamHandler
 
 # To avoid a creation of duplicates save an instance
 _loggers = {}
@@ -16,10 +13,11 @@ _loggers = {}
 def get_logger(
     name="dagflow",
     *,
-    filename: Optional[str] = None,
+    filename: str | None = None,
     debug: bool = False,
     console: bool = True,
-    formatstr: Optional[str] = "%(asctime)s - %(levelname)s - %(message)s",
+    # formatstr: Optional[str] = "%(asctime)s - %(levelname)s - %(message)s",
+    formatstr: str | None = "%(levelname)s: %(message)s",
 ) -> Logger:
     if logger := _loggers.get(name):
         return logger
@@ -44,13 +42,14 @@ def get_logger(
 def set_level(level, name="dagflow"):
     logger = _loggers[name]
     for handler in logger.handlers:
-        logger.handlers[0].setLevel(level)
+        handler.setLevel(level)
     logger.setLevel(level)
 
-SUBINFO = INFO - 1
-SUBSUBINFO = INFO - 2
-addLevelName(SUBINFO, "SUBINFO")
-addLevelName(SUBSUBINFO, "SUBSUBINFO")
+INFO1 = INFO - 1
+INFO2 = INFO - 2
+INFO3 = INFO - 3
+addLevelName(INFO1, "INFO1")
+addLevelName(INFO2, "INFO2")
+addLevelName(INFO3, "INFO3")
 
 logger = get_logger()
-

@@ -1,11 +1,13 @@
-from typing import Mapping, TYPE_CHECKING, Tuple
+from collections.abc import Mapping
+from typing import TYPE_CHECKING
+
+from multikeydict.typing import KeyLike
 
 from ..metanode import MetaNode
 from ..storage import NodeStorage
 from .Integrator import Integrator
-from .IntegratorSampler import IntegratorSampler, ModeType
-
-from multikeydict.typing import KeyLike
+from .IntegratorSampler import IntegratorSampler
+from .IntegratorSampler import ModeType
 
 if TYPE_CHECKING:
     from ..node import Node
@@ -79,9 +81,9 @@ class IntegratorGroup(MetaNode):
         *,
         name_x: str = "mesh_x",
         name_y: str = "mesh_y",
-        replicate: Tuple[KeyLike, ...] = ((),),
+        replicate: tuple[KeyLike, ...] = ((),),
         dropdim: bool = True,
-    ) -> Tuple["IntegratorGroup", "NodeStorage"]:
+    ) -> tuple["IntegratorGroup", "NodeStorage"]:
         storage = NodeStorage(default_containers=True)
         nodes = storage("nodes")
         inputs = storage("inputs")

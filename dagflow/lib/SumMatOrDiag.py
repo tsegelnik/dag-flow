@@ -1,17 +1,16 @@
 from numba import njit
-from numpy import add, copyto
+from numpy import add
+from numpy import copyto
 from numpy.typing import NDArray
 
 from ..inputhandler import MissingInputAddOne
 from ..nodes import FunctionNode
-from ..typefunctions import (
-    AllPositionals,
-    check_has_inputs,
-    eval_output_dtype,
-    copy_input_shape_to_outputs,
-    check_inputs_same_dtype,
-    check_inputs_consistent_square_or_diag,
-)
+from ..typefunctions import AllPositionals
+from ..typefunctions import check_has_inputs
+from ..typefunctions import check_inputs_consistent_square_or_diag
+from ..typefunctions import check_inputs_same_dtype
+from ..typefunctions import copy_input_shape_to_outputs
+from ..typefunctions import eval_output_dtype
 
 
 @njit(cache=True)

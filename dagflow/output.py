@@ -1,5 +1,8 @@
+from collections.abc import Mapping
 from collections.abc import Sequence
-from typing import List, Optional, Union, Mapping, TYPE_CHECKING
+from typing import Optional
+from typing import TYPE_CHECKING
+from typing import Union
 
 if TYPE_CHECKING:
     from .input import Input
@@ -9,32 +12,31 @@ if TYPE_CHECKING:
 from numpy import zeros
 from numpy.typing import ArrayLike, DTypeLike, NDArray
 
+from .datadescriptor import DataDescriptor
 from .edges import EdgeContainer
 from .exception import (
-    DagflowError,
+    AllocationError,
     ClosedGraphError,
     ConnectionError,
     CriticalError,
+    DagflowError,
     InitializationError,
-    AllocationError,
     UnclosedGraphError,
 )
-from .shift import rshift
 from .iter import StopNesting
+from .labels import Labels, repr_pretty
+from .shift import rshift
 from .types import EdgesLike, ShapeLike
-
-from .datadescriptor import DataDescriptor
-from .labels import repr_pretty, Labels
 
 
 class Output:
-    _data: Optional[NDArray] = None
+    _data: NDArray | None = None
     _dd: DataDescriptor
 
     _node: Optional["Node"]
-    _name: Optional[str]
+    _name: str | None
 
-    _child_inputs: List["Input"]
+    _child_inputs: list["Input"]
     _parent_input: Optional["Input"] = None
     _allocating_input: Optional["Input"] = None
 
@@ -44,21 +46,21 @@ class Output:
 
     _debug: bool = False
 
-    _labels: Optional[Labels] = None
+    _labels: Labels | None = None
 
     def __init__(
         self,
-        name: Optional[str],
+        name: str | None,
         node: Optional["Node"],
         *,
-        debug: Optional[bool] = None,
-        allocatable: Optional[bool] = None,
-        data: Optional[NDArray] = None,
-        owns_buffer: Optional[bool] = None,
+        debug: bool | None = None,
+        allocatable: bool | None = None,
+        data: NDArray | None = None,
+        owns_buffer: bool | None = None,
         dtype: DTypeLike = None,
-        shape: Optional[ShapeLike] = None,
-        axes_edges: Optional[EdgesLike] = None,
-        axes_meshes: Optional[EdgesLike] = None,
+        shape: ShapeLike | None = None,
+        axes_edges: EdgesLike | None = None,
+        axes_meshes: EdgesLike | None = None,
         forbid_reallocation: bool = False,
     ):
         self._name = name
@@ -106,7 +108,7 @@ class Output:
         return self._node
 
     @property
-    def labels(self) -> Optional[Labels]:
+    def labels(self) -> Labels | None:
         return self._labels if self._labels is not None else self._node and self._node.labels
 
     @labels.setter
@@ -167,7 +169,7 @@ class Output:
         *,
         owns_buffer: bool,
         override: bool = False,
-        forbid_reallocation: Optional[bool] = None,
+        forbid_reallocation: bool | None = None,
     ):
         if self.closed:
             raise ClosedGraphError("Unable to set output data.", node=self._node, output=self)
@@ -279,9 +281,10 @@ class Output:
         """
         self >> other
         """
+        from multikeydict.nestedmkdict import NestedMKDict
+
         from .input import Input
         from .node import Node
-        from multikeydict.nestedmkdict import NestedMKDict
 
         if isinstance(other, Input):
             self.connect_to(other)

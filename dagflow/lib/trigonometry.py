@@ -1,4 +1,9 @@
-from numpy import arccos, arcsin, arctan, cos, sin, tan
+from numpy import arccos
+from numpy import arcsin
+from numpy import arctan
+from numpy import cos
+from numpy import sin
+from numpy import tan
 
 from .OneToOneNode import OneToOneNode
 

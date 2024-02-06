@@ -1,12 +1,12 @@
 #!/usr/bin/env python
+import pytest
+from numpy import arange
+from numpy import sum
 
 from dagflow.graph import Graph
+from dagflow.graphviz import savegraph
 from dagflow.lib import Array
 from dagflow.lib import SumSq
-from dagflow.graphviz import savegraph
-
-from numpy import arange, sum
-import pytest
 
 debug = False
 

@@ -1,19 +1,18 @@
-from collections.abc import Sequence
-from typing import Any, Optional, Tuple, Union
+from __future__ import annotations
 
-from multikeydict.typing import KeyLike, TupleKey, properkey
+from collections.abc import Sequence
+from typing import Any
+from typing import TYPE_CHECKING
+
+from multikeydict.typing import properkey
 
 from ..inputhandler import MissingInputAddOne
 from ..node import Node
 from ..nodes import FunctionNode
 from ..storage import NodeStorage
-from ..typefunctions import (
-    AllPositionals,
-    check_has_inputs,
-    check_inputs_equivalence,
-    copy_from_input_to_output,
-    eval_output_dtype,
-)
+
+if TYPE_CHECKING:
+    from multikeydict.typing import KeyLike, TupleKey
 
 
 class ManyToOneNode(FunctionNode):
@@ -35,11 +34,19 @@ class ManyToOneNode(FunctionNode):
         self._broadcastable = broadcastable
 
     @staticmethod
-    def _input_names() -> Tuple[str, ...]:
+    def _input_names() -> tuple[str, ...]:
         return ("input",)
 
     def _typefunc(self) -> None:
         """A output takes this function to determine the dtype and shape"""
+        from ..typefunctions import (
+            AllPositionals,
+            check_has_inputs,
+            check_inputs_equivalence,
+            copy_from_input_to_output,
+            eval_output_dtype,
+        )
+
         check_has_inputs(self)  # at least one input
         check_inputs_equivalence(
             self, broadcastable=self._broadcastable
@@ -57,11 +64,11 @@ class ManyToOneNode(FunctionNode):
     def replicate(
         cls,
         name: str,
-        *args: Union[NodeStorage, Any],
+        *args: NodeStorage | Any,
         replicate: Sequence[KeyLike] = ((),),
-        replicate_inputs: Union[Sequence[KeyLike], None] = None,
+        replicate_inputs: Sequence[KeyLike] | None = None,
         **kwargs,
-    ) -> Tuple[Optional[Node], NodeStorage]:
+    ) -> tuple[Node | None, NodeStorage]:
         if args and replicate_inputs is not None:
             raise RuntimeError(
                 "ManyToOneNode.replicate can use either `args` or `replicate_inputs`"
@@ -75,20 +82,17 @@ class ManyToOneNode(FunctionNode):
                 name, replicate=replicate, replicate_inputs=replicate_inputs, **kwargs
             )
 
-        return cls.replicate_from_indices(
-            name, replicate=replicate, **kwargs
-        )
-
+        return cls.replicate_from_indices(name, replicate=replicate, **kwargs)
 
     @classmethod
     def replicate_from_args(
         cls,
         fullname: str,
-        *args: Union[NodeStorage, Any],
+        *args: NodeStorage | Any,
         replicate: Sequence[KeyLike] = ((),),
         allow_skip_inputs: bool = False,
         **kwargs,
-    ) -> Tuple[Optional[Node], NodeStorage]:
+    ) -> tuple[Node | None, NodeStorage]:
         storage = NodeStorage(default_containers=True)
         nodes = storage("nodes")
         outputs = storage("outputs")
@@ -148,7 +152,7 @@ class ManyToOneNode(FunctionNode):
         replicate: Sequence[KeyLike] = ((),),
         replicate_inputs: Sequence[KeyLike] = ((),),
         **kwargs,
-    ) -> Tuple[Optional[Node], NodeStorage]:
+    ) -> tuple[Node | None, NodeStorage]:
         storage = NodeStorage(default_containers=True)
         nodes = storage("nodes")
         outputs = storage("outputs")

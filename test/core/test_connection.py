@@ -1,12 +1,14 @@
 #!/usr/bin/env python
 from pytest import raises
-from dagflow.graphviz import savegraph
 
-from dagflow.exception import ClosedGraphError, UnclosedGraphError, ConnectionError
+from dagflow.exception import ClosedGraphError
+from dagflow.exception import ConnectionError
+from dagflow.exception import UnclosedGraphError
 from dagflow.graph import Graph
+from dagflow.graphviz import savegraph
 from dagflow.input import Input
-from dagflow.nodes import FunctionNode
 from dagflow.lib.Dummy import Dummy
+from dagflow.nodes import FunctionNode
 from dagflow.output import Output
 
 

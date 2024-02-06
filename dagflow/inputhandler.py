@@ -1,5 +1,7 @@
 from collections.abc import Sequence
-from typing import TYPE_CHECKING, Optional, Tuple, Union
+from typing import Optional
+from typing import TYPE_CHECKING
+from typing import Union
 
 from .exception import InitializationError
 
@@ -58,7 +60,7 @@ class SimpleFormatter(Formatter):
 class SequentialFormatter(Formatter):
     __slots__ = ("_base", "_numfmt", "_startidx")
 
-    _base: Tuple[str, ...]
+    _base: tuple[str, ...]
     _numfmt: str
     _startidx: int
 
@@ -131,10 +133,10 @@ class MissingInputAdd(MissingInputHandler):
         self,
         node: Optional["Node"] = None,
         *,
-        input_fmt: Union[str, Sequence[str], Formatter] = SimpleFormatter("input", "_{:02d}"),
-        input_kws: Optional[dict] = None,
-        output_fmt: Union[str, Sequence[str], Formatter] = SimpleFormatter("output", "_{:02d}"),
-        output_kws: Optional[dict] = None,
+        input_fmt: str | Sequence[str] | Formatter = SimpleFormatter("input", "_{:02d}"),
+        input_kws: dict | None = None,
+        output_fmt: str | Sequence[str] | Formatter = SimpleFormatter("output", "_{:02d}"),
+        output_kws: dict | None = None,
     ):
         if input_kws is None:
             input_kws = {}
@@ -146,7 +148,7 @@ class MissingInputAdd(MissingInputHandler):
         self.input_fmt = Formatter.from_value(input_fmt)
         self.output_fmt = Formatter.from_value(output_fmt)
 
-    def __call__(self, idx=None, scope=None, *, fmt: Optional[Formattable] = None, **kwargs):
+    def __call__(self, idx=None, scope=None, *, fmt: Formattable | None = None, **kwargs):
         kwargs_combined = dict(self.input_kws, **kwargs)
         if fmt is None:
             fmt = self.input_fmt

@@ -1,6 +1,3 @@
-# -*- coding: utf-8 -*-
-
-
 printlevel = 0
 singlemargin = "    "
 marginflag = False
