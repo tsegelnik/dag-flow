@@ -162,7 +162,7 @@ class FileReader(metaclass=FileReaderMeta):
         logger.log(
             INFO2,
             f"hist {object_name:10}: x {x[0]:{_log_float_format}}→{x[-1]:{_log_float_format}},"
-            f" hmin={y.min():{_log_float_format}}, hmax={y.max():{_log_float_format}},"
+            f" min={y.min():{_log_float_format}}, max={y.max():{_log_float_format}},"
             f" Σh={y.sum():{_log_float_format}}",
         )
         return x, y
