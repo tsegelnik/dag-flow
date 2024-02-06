@@ -1,7 +1,8 @@
+from contextlib import suppress
 from typing import List, Mapping, Optional, Tuple, Union
 
 from matplotlib import colormaps
-from matplotlib.pyplot import Axes
+from matplotlib.axes import Axes
 from matplotlib.pyplot import close as closefig
 from matplotlib.pyplot import cm
 from matplotlib.pyplot import colorbar as plot_colorbar
@@ -187,10 +188,8 @@ class plot_auto:
         except Exception:
             prev_zlabel = ""
         if self._zlabel and prev_zlabel:
-            try:
+            with suppress(AttributeError):
                 ax.set_zlabel(self._zlabel)
-            except AttributeError:
-                pass
 
         if legend:
             ax.legend()
@@ -202,13 +201,9 @@ class plot_auto:
 
             fig = gcf()
             try:
-                ax.text2D(
-                    0.05, 0.05, path[0], transform=fig.dpi_scale_trans, fontsize="small"
-                )
+                ax.text2D(0.05, 0.05, path[0], transform=fig.dpi_scale_trans, fontsize="small")
             except AttributeError:
-                ax.text(
-                    0.05, 0.05, path[0], transform=fig.dpi_scale_trans, fontsize="small"
-                )
+                ax.text(0.05, 0.05, path[0], transform=fig.dpi_scale_trans, fontsize="small")
 
     @property
     def zlabel(self) -> Optional[str]:
@@ -239,9 +234,7 @@ def plot_array_1d(
         return plot_array_1d_hist(array, edges, *args, **kwargs)
     elif meshes is not None:
         if yerr is not None or xerr is not None:
-            return plot_array_1d_errors(
-                meshes, array, yerr=yerr, xerr=xerr, *args, **kwargs
-            )
+            return plot_array_1d_errors(meshes, array, yerr=yerr, xerr=xerr, *args, **kwargs)
         return plot_array_1d_vs(array, meshes, *args, **kwargs)
     else:
         return plot_array_1d_array(array, *args, **kwargs)
@@ -296,43 +289,6 @@ def plot_array_2d(
         return plot_array_2d_array(array, *args, **kwargs)
 
 
-def plot_array_2d_hist(
-    dZ: NDArray, edges: List[NDArray], *args, method: Optional[str] = None, **kwargs
-) -> Tuple:
-    method = method in {"auto", None} and "pcolormesh" or method
-    fcn = {
-        "pcolor": plot_array_2d_hist_pcolor,
-        "pcolorfast": plot_array_2d_hist_pcolorfast,
-        "pcolormesh": plot_array_2d_hist_pcolormesh,
-        "imshow": plot_array_2d_hist_imshow,
-        "matshow": plot_array_2d_hist_matshow,
-        "bar3d": plot_array_2d_hist_bar3d,
-    }.get(method, None)
-
-    if fcn is None:
-        raise RuntimeError(f"Invlid 2d hist method: {method}")
-
-    return fcn(dZ, edges, *args, **kwargs)
-
-
-def plot_array_2d_vs(
-    array: NDArray, meshes: List[NDArray], *args, method: Optional[str] = None, **kwargs
-) -> Tuple:
-    method = method in {"auto", None} and "pcolormesh" or method
-    fcn = {
-        "surface": plot_array_2d_vs_surface,
-        "wireframe": plot_array_2d_vs_wireframe,
-        "pcolormesh": plot_array_2d_vs_pcolormesh,
-        "pcolor": plot_array_2d_vs_pcolor,
-        "slicesx": plot_array_2d_vs_slicesx,
-        "slicesy": plot_array_2d_vs_slicesy,
-    }.get(method, None)
-    if fcn is None:
-        raise RuntimeError("unimplemented")
-
-    return fcn(array, meshes, *args, **kwargs)
-
-
 def plot_array_2d_array(
     array: NDArray, *args, plotter: Optional[plot_auto] = None, **kwargs
 ) -> Tuple:
@@ -359,7 +315,7 @@ def plot_array_2d_hist_bar3d(
     dX, dY, dZ = dX.ravel(), dY.ravel(), dZ.ravel()
     Z = zeros_like(dZ)
 
-    _, cmapper = apply_colors(dZ, cmap, kwargs, "color")
+    apply_colors(dZ, cmap, kwargs, "color")
     colorbar = kwargs.pop("colorbar", False)
 
     ax = gca()
@@ -431,6 +387,30 @@ def plot_array_2d_hist_matshow(
     return matshow(Z.T, *args, **kwargs)
 
 
+plot_array_2d_hist_methods = {
+    "pcolor": plot_array_2d_hist_pcolor,
+    "pcolorfast": plot_array_2d_hist_pcolorfast,
+    "pcolormesh": plot_array_2d_hist_pcolormesh,
+    "imshow": plot_array_2d_hist_imshow,
+    "matshow": plot_array_2d_hist_matshow,
+    "bar3d": plot_array_2d_hist_bar3d,
+}
+
+
+def plot_array_2d_hist(
+    dZ: NDArray, edges: List[NDArray], *args, method: Optional[str] = None, **kwargs
+) -> Tuple:
+    smethod: str = (
+        "pcolormesh" if method in {"auto", None} else method
+    )  # pyright: ignore [reportGeneralTypeIssues]
+    try:
+        fcn = plot_array_2d_hist_methods[smethod]
+    except KeyError:
+        raise RuntimeError(f"Invlid 2d hist method: {method}")
+
+    return fcn(dZ, edges, *args, **kwargs)
+
+
 def plot_array_2d_vs_pcolormesh(
     Z: NDArray,
     meshes: List[NDArray],
@@ -480,9 +460,7 @@ def plot_array_2d_vs_slicesx(
 
 
 def plot_array_2d_vs_slicesy(Z: NDArray, meshes: List[NDArray], *args, **kwargs):
-    return plot_array_2d_vs_slicesx(
-        Z.T, [mesh.T for mesh in reversed(meshes)], *args, **kwargs
-    )
+    return plot_array_2d_vs_slicesx(Z.T, [mesh.T for mesh in reversed(meshes)], *args, **kwargs)
 
 
 def plot_array_2d_vs_surface(
@@ -522,9 +500,31 @@ def plot_array_2d_vs_wireframe(
     return ax.plot_wireframe(X, Y, Z, *args, **kwargs)
 
 
-def _mask_if_needed(
-    datain: ArrayLike, /, *, masked_value: Optional[float] = None
-) -> NDArray:
+plot_array_2d_vs_methods = {
+    "surface": plot_array_2d_vs_surface,
+    "wireframe": plot_array_2d_vs_wireframe,
+    "pcolormesh": plot_array_2d_vs_pcolormesh,
+    "pcolor": plot_array_2d_vs_pcolor,
+    "slicesx": plot_array_2d_vs_slicesx,
+    "slicesy": plot_array_2d_vs_slicesy,
+}
+
+
+def plot_array_2d_vs(
+    array: NDArray, meshes: List[NDArray], *args, method: Optional[str] = None, **kwargs
+) -> Tuple:
+    smethod: str = (
+        "pcolormesh" if method in {"auto", None} else method
+    )  # pyright: ignore [reportGeneralTypeIssues]
+    try:
+        fcn = plot_array_2d_vs_methods[smethod]
+    except KeyError:
+        raise RuntimeError("unimplemented")
+
+    return fcn(array, meshes, *args, **kwargs)
+
+
+def _mask_if_needed(datain: ArrayLike, /, *, masked_value: Optional[float] = None) -> NDArray:
     data = asanyarray(datain)
     if masked_value is None:
         return data
