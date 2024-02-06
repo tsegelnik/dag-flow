@@ -1,26 +1,32 @@
 stages:
-    - tests
+  - tests
 
 tests:
-    image: git.jinr.ru:5005/gna/gna-base-docker-image:latest
-    stage: tests
+  image: 'python:3.11.7-bullseye'
+  stage: tests
 
-    script:
-        - git submodule sync
-        - git submodule update --init --recursive --depth=1
-        - python3 -m pip install -r requirements.txt
-        - coverage run --source=dagflow --omit=submodules/* -m pytest
-        - coverage report
-        - coverage xml
-    coverage: '/(?i)total.*? (100(?:\.0+)?\%|[1-9]?\d(?:\.\d+)?\%)$/'
-    artifacts:
-        paths:
-            - test/output
-        reports:
-            coverage_report:
-                coverage_format: cobertura
-                path: coverage.xml
-    only:
-        - master
-        - update-to-data-preservation
-        - merge_requests
+  script:
+    - apt-get update
+    - apt-get -y install libgraphviz-dev graphviz
+    - python3 -m venv venv
+    - source venv/bin/activate
+    - pip install --upgrade wheel setuptools pip
+    - pip install cython
+    - python3 -m pip install -r requirements.txt
+    - git submodule sync
+    - git submodule update --init --recursive --depth=1
+    - coverage run --source=dagflow --omit=submodules/* -m pytest
+    - coverage report
+    - coverage xml
+  coverage: '/(?i)total.*? (100(?:\.0+)?\%|[1-9]?\d(?:\.\d+)?\%)$/'
+  artifacts:
+    paths:
+      - test/output
+    reports:
+      coverage_report:
+        coverage_format: cobertura
+        path: coverage.xml
+  only:
+    - master
+    - main
+    - merge_requests
