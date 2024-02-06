@@ -1,13 +1,14 @@
 #!/usr/bin/env python
-
 import numpy
 from matplotlib.pyplot import close
-from numpy import allclose, finfo, linspace
+from numpy import allclose
+from numpy import finfo
+from numpy import linspace
 from pytest import mark
 
+from dagflow import lib
 from dagflow.graph import Graph
 from dagflow.graphviz import savegraph
-from dagflow import lib
 from dagflow.lib import Array
 from dagflow.plot import plot_auto
 

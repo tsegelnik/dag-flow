@@ -1,25 +1,20 @@
-from typing import (
-    TYPE_CHECKING,
-    Callable,
-    Dict,
-    List,
-    Literal,
-    Optional,
-    Sequence,
-    Tuple,
-    Type,
-    Union,
-)
+from collections.abc import Callable
+from collections.abc import Sequence
+from typing import Literal
+from typing import Optional
+from typing import TYPE_CHECKING
+from typing import Union
 
+from .exception import CriticalError
+from .exception import InitializationError
 from .node import Node
 from .nodebase import NodeBase
-from .exception import CriticalError, InitializationError
 
 if TYPE_CHECKING:
     from .input import Input
 
-TStrOrPair = Union[str, Tuple[str, str]]
-TPairsOrDict = Union[Sequence[TStrOrPair], Dict]
+TStrOrPair = Union[str, tuple[str, str]]
+TPairsOrDict = Union[Sequence[TStrOrPair], dict]
 
 MetaNodeStrategies = {"LeadingNode", "NewNode", "Disable"}
 MetaNodeStrategiesType = Literal[MetaNodeStrategies]
@@ -41,20 +36,20 @@ class MetaNode(NodeBase):
         "__weakref__",  # needed for weakref
     )
 
-    _nodes: List[Node]
+    _nodes: list[Node]
     _strategy: MetaNodeStrategiesType
-    _leading_node: Optional[Node]
-    _new_node_cls: Type[Node]
-    _call_functions: Dict[str, Callable]
-    _node_inputs_pos: Optional[Node]
-    _node_outputs_pos: Optional[Node]
+    _leading_node: Node | None
+    _new_node_cls: type[Node]
+    _call_functions: dict[str, Callable]
+    _node_inputs_pos: Node | None
+    _node_outputs_pos: Node | None
     _missing_input_handler: Callable
     _call_positional_input: Callable
 
     def __init__(
         self,
         strategy: MetaNodeStrategiesType = "LeadingNode",
-        new_node_cls: Type[Node] = Node,
+        new_node_cls: type[Node] = Node,
     ):
         super().__init__()
         if strategy not in MetaNodeStrategies:
@@ -77,19 +72,19 @@ class MetaNode(NodeBase):
         self._new_node_cls = new_node_cls
 
     @property
-    def nodes(self) -> Dict[str, Node]:
+    def nodes(self) -> dict[str, Node]:
         return {node.name: node for node in self._nodes}
 
     @property
-    def leading_node(self) -> Optional[Node]:
+    def leading_node(self) -> Node | None:
         return self._leading_node
 
     @property
-    def new_node_cls(self) -> Type[Node]:
+    def new_node_cls(self) -> type[Node]:
         return self._new_node_cls
 
     def _add_input_to_node(
-        self, node: Node, name: Optional[str] = None, *args, **kwargs
+        self, node: Node, name: str | None = None, *args, **kwargs
     ) -> Optional["Input"]:
         inp = node(name, *args, **kwargs)
         if inp and inp.name not in self.inputs:
@@ -100,10 +95,10 @@ class MetaNode(NodeBase):
 
     def _call_new_node(
         self,
-        node_args: Optional[dict] = None,
-        input_args: Optional[dict] = None,
-        metanode_args: Optional[dict] = None,
-        new_node_cls: Optional[Type[Node]] = None,
+        node_args: dict | None = None,
+        input_args: dict | None = None,
+        metanode_args: dict | None = None,
+        new_node_cls: type[Node] | None = None,
     ) -> Optional["Input"]:
         """
         Creates new node with positional input
@@ -143,11 +138,11 @@ class MetaNode(NodeBase):
 
     def __call__(
         self,
-        name: Optional[Union[str, Sequence[str]]] = None,
-        nodename: Optional[str] = None,
+        name: str | Sequence[str] | None = None,
+        nodename: str | None = None,
         *args,
         **kwargs,
-    ) -> Union[Optional["Input"], Tuple[Optional["Input"], ...]]:
+    ) -> Optional["Input"] | tuple[Optional["Input"], ...]:
         """
         For positional inputs there are two strategies:
             * append a new positional input into the leading node,
@@ -275,7 +270,7 @@ class MetaNode(NodeBase):
         print(f"MetaNode: →[{len(self.inputs)}],[{len(self.outputs)}]→")
 
         def getstr(prefix_disconnected, prefix_connected, name, obj):
-            if isinstance(obj, Tuple):
+            if isinstance(obj, tuple):
                 Nconnected = sum(1 for node in obj if node.connected())
                 Nnode = len(obj)
                 Ndisconnected = Nnode - Nconnected

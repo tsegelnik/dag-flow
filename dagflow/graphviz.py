@@ -1,13 +1,17 @@
 from __future__ import annotations
 
+from collections.abc import Mapping
+from collections.abc import Sequence
 from contextlib import suppress
-from typing import List, Literal, Mapping, Optional, Sequence, Set, Union
+from typing import Literal
 
-from numpy import printoptions, square
+from numpy import printoptions
+from numpy import square
 
 from .graph import Graph
 from .input import Input
-from .logger import INFO1, logger
+from .logger import INFO1
+from .logger import logger
 from .node import Node
 from .output import Output
 
@@ -49,10 +53,10 @@ else:
         _graph: G.AGraph
         _node_id_map: dict
         _nodes_map_dag: Dict[Node, G.agraph.Node]
-        _filter: Dict[str, List[Union[str, int]]]
-        _filtered_nodes: Set
+        _filter: Dict[str, list[str | int]]
+        _filtered_nodes: set
 
-        _show: Set[
+        _show: set[
             Literal[
                 "type",
                 "mark",
@@ -68,12 +72,12 @@ else:
 
         def __init__(
             self,
-            graph_or_node: Union[Graph, Node, None],
+            graph_or_node: Graph | Node | None,
             graphattr: dict = {},
             edgeattr: dict = {},
             nodeattr: dict = {},
-            show: Union[Sequence, str] = ["type", "mark", "label"],
-            filter: Mapping[str, Sequence[Union[str, int]]] = {},
+            show: Sequence | str = ["type", "mark", "label"],
+            filter: Mapping[str, Sequence[str | int]] = {},
             **kwargs,
         ):
             if show == "full" or "full" in show:
@@ -140,7 +144,7 @@ else:
                 raise RuntimeError("Invalid graph entry point")
 
         @classmethod
-        def from_graph(cls, graph: Graph, *args, **kwargs) -> "GraphDot":
+        def from_graph(cls, graph: Graph, *args, **kwargs) -> GraphDot:
             gd = cls(None, *args, **kwargs)
             if label := kwargs.pop("label", graph.label()):
                 gd.set_label(label)
@@ -160,7 +164,7 @@ else:
             self.update_style()
 
         @classmethod
-        def from_output(cls, output: Output, *args, **kwargs) -> "GraphDot":
+        def from_output(cls, output: Output, *args, **kwargs) -> GraphDot:
             return cls.from_node(output.node, *args, **kwargs)
 
         @classmethod
@@ -168,11 +172,11 @@ else:
             cls,
             node: Node,
             *args,
-            mindepth: Optional[int] = None,
-            maxdepth: Optional[int] = None,
-            minsize: Optional[int] = None,
+            mindepth: int | None = None,
+            maxdepth: int | None = None,
+            minsize: int | None = None,
             **kwargs,
-        ) -> "GraphDot":
+        ) -> GraphDot:
             gd = cls(None, *args, **kwargs)
             label = [node.name]
             if mindepth is not None:
@@ -188,9 +192,9 @@ else:
         def _transform_from_node(
             self,
             node: Node,
-            mindepth: Optional[int] = None,
-            maxdepth: Optional[int] = None,
-            minsize: Optional[int] = None,
+            mindepth: int | None = None,
+            maxdepth: int | None = None,
+            minsize: int | None = None,
             no_forward: bool = False,
             no_backward: bool = False,
         ) -> None:
@@ -218,13 +222,13 @@ else:
             node: Node,
             *,
             including_self: bool = False,
-            mindepth: Optional[int] = None,
-            maxdepth: Optional[int] = None,
-            minsize: Optional[int] = None,
+            mindepth: int | None = None,
+            maxdepth: int | None = None,
+            minsize: int | None = None,
             no_forward: bool = False,
             no_backward: bool = False,
             depth: int = 0,
-            visited_nodes: Set[Node] = set(),
+            visited_nodes: set[Node] = set(),
         ) -> None:
             if no_forward and no_backward:
                 raise RuntimeError("May not set no_forward and no_backward simultaneously")
@@ -278,12 +282,12 @@ else:
             node: Node,
             *,
             including_self: bool = False,
-            mindepth: Optional[int] = None,
-            maxdepth: Optional[int] = None,
-            minsize: Optional[int] = None,
+            mindepth: int | None = None,
+            maxdepth: int | None = None,
+            minsize: int | None = None,
             no_backward: bool = False,
             depth: int = 0,
-            visited_nodes: Set[Node] = set(),
+            visited_nodes: set[Node] = set(),
             ignore_visit: bool = False,
         ) -> None:
             if self._node_is_filtered(node):
@@ -325,7 +329,7 @@ else:
                         ignore_visit=True,
                     )
 
-        def _add_node(self, nodedag: Node, *, depth: Optional[int] = None) -> None:
+        def _add_node(self, nodedag: Node, *, depth: int | None = None) -> None:
             if nodedag in self._nodes_map_dag or self._node_is_filtered(nodedag):
                 return
 
@@ -465,9 +469,9 @@ else:
             output,
             input,
             *,
-            vsource: Optional[str] = None,
-            vtarget: Optional[str] = None,
-            style: Optional[dict] = None,
+            vsource: str | None = None,
+            vtarget: str | None = None,
+            style: dict | None = None,
         ) -> None:
             if self._node_is_filtered(nodedag):
                 return
@@ -605,7 +609,7 @@ else:
             onum = omap.setdefault(object, len(omap))
             return f"{name}_{onum}{suffix}"
 
-        def get_label(self, node: Node, *, depth: Optional[int] = None) -> str:
+        def get_label(self, node: Node, *, depth: int | None = None) -> str:
             text = node.labels.graph or node.name
             try:
                 out0 = node.outputs[0]
@@ -730,7 +734,7 @@ else:
 
             return self._combine_labels((left, right))
 
-        def _combine_labels(self, labels: Union[Sequence, str]) -> str:
+        def _combine_labels(self, labels: Sequence | str) -> str:
             if isinstance(labels, str):
                 return labels
 
@@ -738,7 +742,7 @@ else:
             return f"{{{'|'.join(slabels)}}}"
 
 
-def num_in_range(num: int, minnum: Optional[int], maxnum: Optional[int] = None) -> bool:
+def num_in_range(num: int, minnum: int | None, maxnum: int | None = None) -> bool:
     if minnum is not None and num < minnum:
         return False
     if maxnum is not None and num > maxnum:

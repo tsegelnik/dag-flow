@@ -1,5 +1,7 @@
-from .iter import IsIterable, StopNesting
 from multikeydict.nestedmkdict import NestedMKDict
+
+from .iter import IsIterable
+from .iter import StopNesting
 
 def get_proper_iterator(obj, methodname, onerror, **kwargs):
     if methodname:

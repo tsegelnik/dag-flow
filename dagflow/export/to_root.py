@@ -1,12 +1,22 @@
-from typing import TYPE_CHECKING, Any, Dict, List, Tuple, Union
-
-from numpy import allclose, array, dtype, frombuffer
-from numpy.typing import NDArray
-from ROOT import TH1D, TH2D, TFile, TGraph, TGraph2D
+from typing import Any
+from typing import TYPE_CHECKING
+from typing import Union
 
 from multikeydict.visitor import NestedMKDictVisitor
+from numpy import allclose
+from numpy import array
+from numpy import dtype
+from numpy import frombuffer
+from numpy.typing import NDArray
+from ROOT import TFile
+from ROOT import TGraph
+from ROOT import TGraph2D
+from ROOT import TH1D
+from ROOT import TH2D
 
-from ..logger import INFO1, INFO2, logger
+from ..logger import INFO1
+from ..logger import INFO2
+from ..logger import logger
 from ..output import Output
 
 if TYPE_CHECKING:
@@ -17,7 +27,7 @@ if TYPE_CHECKING:
         from ROOT import TH1, TH2, TDirectory, TObject
 
 
-def to_root(output: Union[Output, Any]) -> Dict[str, "TObject"]:
+def to_root(output: Output | Any) -> dict[str, "TObject"]:
     rets = {}
     if not isinstance(output, Output):
         return rets
@@ -45,7 +55,7 @@ def _buffer_clean(buf: NDArray) -> NDArray:
     return array(buf, dtype="d")
 
 
-def edges_to_args(edges: NDArray, *, rtol: float = 1.0e-9) -> Tuple:
+def edges_to_args(edges: NDArray, *, rtol: float = 1.0e-9) -> tuple:
     edges = _buffer_clean(edges)
     widths = edges[1:] - edges[:-1]
     if allclose(widths, widths.max(), rtol=rtol, atol=0):
@@ -139,7 +149,7 @@ def to_TGraph2(output):
 class ExportToRootVisitor(NestedMKDictVisitor):
     __slots__ = ("_file", "_cwd", "_prevd", "_level")
     _file: "TFile"
-    _prevd: List["TDirectory"]
+    _prevd: list["TDirectory"]
     _cwd: "TDirectory"
     _level: int
 

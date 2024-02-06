@@ -1,9 +1,14 @@
-from typing import List, Optional, Literal
-from numpy.typing import DTypeLike, NDArray
-from numpy import prod
+from typing import Literal
 
-from .types import EdgesLike, ShapeLike, MeshesLike
+from numpy import prod
+from numpy.typing import DTypeLike
+from numpy.typing import NDArray
+
 from .labels import repr_pretty
+from .types import EdgesLike
+from .types import MeshesLike
+from .types import ShapeLike
+
 
 class DataDescriptor:
     """
@@ -13,7 +18,7 @@ class DataDescriptor:
 
     __slots__ = ("dtype", "shape", "axes_edges", "axes_meshes", "edges_inherited", "meshes_inherited")
     dtype: DTypeLike  # DTypeLike is already Optional
-    shape: Optional[ShapeLike]
+    shape: ShapeLike | None
     axes_edges: EdgesLike
     axes_meshes: EdgesLike
 
@@ -23,9 +28,9 @@ class DataDescriptor:
     def __init__(
         self,
         dtype: DTypeLike,  # DTypeLike is already Optional
-        shape: Optional[ShapeLike],
-        axes_edges: Optional[EdgesLike] = None,
-        axes_meshes: Optional[MeshesLike] = None,
+        shape: ShapeLike | None,
+        axes_edges: EdgesLike | None = None,
+        axes_meshes: MeshesLike | None = None,
     ) -> None:
         """
         Sets the attributes
@@ -56,11 +61,11 @@ class DataDescriptor:
         return prod(self.shape)
 
     @property
-    def edges_arrays(self) -> Optional[List[NDArray]]:
+    def edges_arrays(self) -> list[NDArray] | None:
         return tuple(o.data for o in self.axes_edges)
 
     @property
-    def meshes_arrays(self) -> Optional[List[NDArray]]:
+    def meshes_arrays(self) -> list[NDArray] | None:
         return tuple(o.data for o in self.axes_meshes)
 
     def axis_label(
@@ -69,7 +74,7 @@ class DataDescriptor:
         axistype: Literal['any', 'edges', 'mesh']='any',
         *,
         root: bool=False
-    ) -> Optional[str]:
+    ) -> str | None:
         if self.axes_edges and axistype in {'any', 'edges'}:
             try:
                 if root:

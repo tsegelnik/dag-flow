@@ -1,24 +1,26 @@
-from collections.abc import Callable, Mapping
+from collections.abc import Callable
+from collections.abc import Mapping
 from pathlib import Path
-from typing import Mapping, Optional
-
-from schema import And
-from schema import Optional as SchemaOptional
-from schema import Or, Schema, Use
 
 from multikeydict.typing import strkey
+from schema import And
+from schema import Optional as SchemaOptional
+from schema import Or
+from schema import Schema
+from schema import Use
 
 from ..lib.Array import Array
-from ..logger import INFO3, logger
+from ..logger import INFO3
+from ..logger import logger
 from ..storage import NodeStorage
-from ..tools.schema import (
-    AllFileswithExt,
-    IsFilenameSeqOrFilename,
-    IsStrSeqOrStr,
-    LoadFileWithExt,
-    LoadYaml,
-)
-from .file_reader import FileReader, file_readers, iterate_filenames_and_objectnames
+from ..tools.schema import AllFileswithExt
+from ..tools.schema import IsFilenameSeqOrFilename
+from ..tools.schema import IsStrSeqOrStr
+from ..tools.schema import LoadFileWithExt
+from ..tools.schema import LoadYaml
+from .file_reader import file_readers
+from .file_reader import FileReader
+from .file_reader import iterate_filenames_and_objectnames
 
 _schema_cfg = Schema(
     {
@@ -52,7 +54,7 @@ def _validate_cfg(cfg):
         return _schema_cfg.validate(cfg)
 
 
-def load_array(acfg: Optional[Mapping] = None, **kwargs):
+def load_array(acfg: Mapping | None = None, **kwargs):
     acfg = dict(acfg or {}, **kwargs)
     cfg = _validate_cfg(acfg)
 

@@ -1,4 +1,8 @@
-from os import chdir, getcwd, mkdir, listdir, environ
+from os import chdir
+from os import environ
+from os import getcwd
+from os import listdir
+from os import mkdir
 from os.path import isdir
 
 from pytest import fixture

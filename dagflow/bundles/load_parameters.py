@@ -1,18 +1,27 @@
+from collections.abc import Generator
+from collections.abc import Mapping
 from collections.abc import Sequence
 from pathlib import Path
-from typing import Generator, Mapping
 from typing import Optional as OptionalType
-from typing import Tuple, Union
-
-from schema import And, Optional, Or, Schema, SchemaError, Use
 
 from multikeydict.nestedmkdict import NestedMKDict
 from multikeydict.typing import properkey
+from schema import And
+from schema import Optional
+from schema import Or
+from schema import Schema
+from schema import SchemaError
+from schema import Use
 
 from ..exception import InitializationError
-from ..labels import format_latex, inherit_labels
+from ..labels import format_latex
+from ..labels import inherit_labels
 from ..storage import NodeStorage
-from ..tools.schema import IsStrSeqOrStr, LoadFileWithExt, LoadYaml, MakeLoaderPy, NestedSchema
+from ..tools.schema import IsStrSeqOrStr
+from ..tools.schema import LoadFileWithExt
+from ..tools.schema import LoadYaml
+from ..tools.schema import MakeLoaderPy
+from ..tools.schema import NestedSchema
 
 
 class ParsCfgHasProperFormat:
@@ -210,7 +219,7 @@ def get_label(key: tuple, labelscfg: dict) -> dict:
 
 def iterate_varcfgs(
     cfg: NestedMKDict,
-) -> Generator[Tuple[Tuple[str, ...], NestedMKDict], None, None]:
+) -> Generator[tuple[tuple[str, ...], NestedMKDict], None, None]:
     parameterscfg = cfg("parameters")
     labelscfg = cfg("labels")
     format = cfg["format"]
@@ -249,7 +258,7 @@ def check_correlations_consistent(cfg: NestedMKDict) -> None:
 def load_parameters(
     acfg: OptionalType[Mapping] = None,
     *,
-    nuisance_location: Union[str, Sequence[str], None] = "statistic.nuisance.parts",
+    nuisance_location: str | Sequence[str] | None = "statistic.nuisance.parts",
     **kwargs,
 ):
     acfg = dict(acfg or {}, **kwargs)

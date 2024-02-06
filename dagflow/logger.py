@@ -1,14 +1,11 @@
-from logging import (
-    DEBUG,
-    INFO,
-    FileHandler,
-    Formatter,
-    Logger,
-    StreamHandler,
-    addLevelName,
-    getLogger,
-)
-from typing import Optional
+from logging import addLevelName
+from logging import DEBUG
+from logging import FileHandler
+from logging import Formatter
+from logging import getLogger
+from logging import INFO
+from logging import Logger
+from logging import StreamHandler
 
 # To avoid a creation of duplicates save an instance
 _loggers = {}
@@ -16,11 +13,11 @@ _loggers = {}
 def get_logger(
     name="dagflow",
     *,
-    filename: Optional[str] = None,
+    filename: str | None = None,
     debug: bool = False,
     console: bool = True,
     # formatstr: Optional[str] = "%(asctime)s - %(levelname)s - %(message)s",
-    formatstr: Optional[str] = "%(levelname)s: %(message)s",
+    formatstr: str | None = "%(levelname)s: %(message)s",
 ) -> Logger:
     if logger := _loggers.get(name):
         return logger
@@ -56,4 +53,3 @@ addLevelName(INFO2, "INFO2")
 addLevelName(INFO3, "INFO3")
 
 logger = get_logger()
-

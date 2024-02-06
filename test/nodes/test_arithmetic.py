@@ -1,12 +1,14 @@
 #!/usr/bin/env python
+from numpy import arange
+from numpy import sum
+from pytest import mark
 
 from dagflow.graph import Graph
-from dagflow.lib import Array
-from dagflow.lib import Sum, Product, Division
 from dagflow.graphviz import savegraph
-
-from numpy import arange, sum
-from pytest import mark
+from dagflow.lib import Array
+from dagflow.lib import Division
+from dagflow.lib import Product
+from dagflow.lib import Sum
 
 
 @mark.parametrize("dtype", ("d", "f"))

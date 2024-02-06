@@ -1,9 +1,11 @@
 from collections.abc import Sequence
-from typing import TYPE_CHECKING, List, Optional, Union
+from typing import TYPE_CHECKING
 
-from ..exception import InitializationError, TypeFunctionError
+from ..exception import InitializationError
+from ..exception import TypeFunctionError
 from ..nodes import FunctionNode
-from ..parameters import Parameter, Parameters
+from ..parameters import Parameter
+from ..parameters import Parameters
 
 if TYPE_CHECKING:
     from ..input import Input
@@ -14,11 +16,11 @@ class ParArrayInput(FunctionNode):
 
     __slots__ = ("_parameters_list", "_values")
 
-    _parameters_list: List[Parameter]
+    _parameters_list: list[Parameter]
     _values: "Input"
 
     def __init__(
-        self, name, parameters: Optional[Union[Sequence[Parameter], Parameters]] = None, **kwargs
+        self, name, parameters: Sequence[Parameter] | Parameters | None = None, **kwargs
     ) -> None:
         super().__init__(name, **kwargs)
         self._parameters_list = []  # pyright: ignore

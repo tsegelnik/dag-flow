@@ -1,7 +1,8 @@
 from __future__ import annotations
 
 from collections.abc import Sequence
-from typing import TYPE_CHECKING, Any, Tuple, Union
+from typing import Any
+from typing import TYPE_CHECKING
 
 from multikeydict.typing import properkey
 
@@ -33,7 +34,7 @@ class ManyToOneNode(FunctionNode):
         self._broadcastable = broadcastable
 
     @staticmethod
-    def _input_names() -> Tuple[str, ...]:
+    def _input_names() -> tuple[str, ...]:
         return ("input",)
 
     def _typefunc(self) -> None:
@@ -63,11 +64,11 @@ class ManyToOneNode(FunctionNode):
     def replicate(
         cls,
         name: str,
-        *args: Union[NodeStorage, Any],
+        *args: NodeStorage | Any,
         replicate: Sequence[KeyLike] = ((),),
-        replicate_inputs: Union[Sequence[KeyLike], None] = None,
+        replicate_inputs: Sequence[KeyLike] | None = None,
         **kwargs,
-    ) -> Tuple[Node | None, NodeStorage]:
+    ) -> tuple[Node | None, NodeStorage]:
         if args and replicate_inputs is not None:
             raise RuntimeError(
                 "ManyToOneNode.replicate can use either `args` or `replicate_inputs`"
@@ -87,11 +88,11 @@ class ManyToOneNode(FunctionNode):
     def replicate_from_args(
         cls,
         fullname: str,
-        *args: Union[NodeStorage, Any],
+        *args: NodeStorage | Any,
         replicate: Sequence[KeyLike] = ((),),
         allow_skip_inputs: bool = False,
         **kwargs,
-    ) -> Tuple[Node | None, NodeStorage]:
+    ) -> tuple[Node | None, NodeStorage]:
         storage = NodeStorage(default_containers=True)
         nodes = storage("nodes")
         outputs = storage("outputs")
@@ -151,7 +152,7 @@ class ManyToOneNode(FunctionNode):
         replicate: Sequence[KeyLike] = ((),),
         replicate_inputs: Sequence[KeyLike] = ((),),
         **kwargs,
-    ) -> Tuple[Node | None, NodeStorage]:
+    ) -> tuple[Node | None, NodeStorage]:
         storage = NodeStorage(default_containers=True)
         nodes = storage("nodes")
         outputs = storage("outputs")

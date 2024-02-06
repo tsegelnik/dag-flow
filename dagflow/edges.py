@@ -1,8 +1,9 @@
 from collections.abc import Sequence
-from typing import Any, List, Dict, Union, Optional
+from typing import Any
 
 from .exception import CriticalError
 from .iter import IsIterable
+
 
 class EdgeContainer:
     __slots__ = (
@@ -13,11 +14,11 @@ class EdgeContainer:
         '_all_edges',
         '_dtype'
     )
-    _kw_edges: Dict[str, Any]
-    _pos_edges_list: List
-    _pos_edges: Dict
-    _nonpos_edges: Dict[str, Any]
-    _all_edges: Dict[str, Any]
+    _kw_edges: dict[str, Any]
+    _pos_edges_list: list
+    _pos_edges: dict
+    _nonpos_edges: dict[str, Any]
+    _all_edges: dict[str, Any]
 
     def __init__(self, iterable=None):
         self._kw_edges = {}
@@ -40,7 +41,7 @@ class EdgeContainer:
         self,
         value: Any,
         *,
-        name: Optional[str]=None,
+        name: str | None=None,
         positional: bool=True,
         keyword: bool=True,
         merge: bool=False
@@ -96,7 +97,7 @@ class EdgeContainer:
         del self._nonpos_edges[name]
         return limb
 
-    def make_positionals(self, *names) -> List[Any]:
+    def make_positionals(self, *names) -> list[Any]:
         return [self.make_positional(name) for name in names]
 
     def allocate(self) -> bool:
@@ -112,27 +113,27 @@ class EdgeContainer:
         raise TypeError(f"Unsupported key type: {type(key).__name__}")
 
     @property
-    def kw(self) -> Dict:
+    def kw(self) -> dict:
         return self._kw_edges
 
     @property
-    def kw_edges(self) -> Dict:
+    def kw_edges(self) -> dict:
         return self._kw_edges
 
     @property
-    def all_edges(self) -> Dict:
+    def all_edges(self) -> dict:
         return self._all_edges
 
     @property
-    def pos_edges(self) -> List:
+    def pos_edges(self) -> list:
         return self._pos_edges
 
     @property
-    def pos_edges_list(self) -> List:
+    def pos_edges_list(self) -> list:
         return self._pos_edges_list
 
     @property
-    def nonpos_edges(self) -> Dict:
+    def nonpos_edges(self) -> dict:
         return self._nonpos_edges
 
     def get(self, key, default = None):
@@ -201,7 +202,7 @@ class EdgeContainer:
 
     def iter(
         self,
-        key: Union[int, str, slice, Sequence],
+        key: int | str | slice | Sequence,
         *,
         include_kw: bool=False,
         exclude_pos: bool=False

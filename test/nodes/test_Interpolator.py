@@ -1,3 +1,14 @@
+from numpy import allclose
+from numpy import exp
+from numpy import finfo
+from numpy import linspace
+from numpy import log
+from numpy import sin
+from numpy.random import seed
+from numpy.random import shuffle
+from pytest import mark
+from pytest import raises
+
 from dagflow.exception import InitializationError
 from dagflow.graph import Graph
 from dagflow.graphviz import savegraph
@@ -5,9 +16,6 @@ from dagflow.lib import Array
 from dagflow.lib import Interpolator
 from dagflow.lib import SegmentIndex
 from dagflow.lib import Sin
-from numpy import allclose, exp, finfo, linspace, log, sin
-from numpy.random import seed, shuffle
-from pytest import mark, raises
 
 
 @mark.parametrize("k", (1.234, -0.578))

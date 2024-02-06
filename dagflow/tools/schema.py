@@ -1,12 +1,20 @@
-from collections.abc import Callable, Mapping, Sequence
+from collections.abc import Callable
+from collections.abc import Mapping
+from collections.abc import Sequence
 from contextlib import suppress
-from os import R_OK, access
+from os import access
+from os import R_OK
 from pathlib import Path
-from typing import Any, Type
+from typing import Any
 
-from schema import And, Or, Schema, SchemaError, Use
+from schema import And
+from schema import Or
+from schema import Schema
+from schema import SchemaError
+from schema import Use
 
-from ..logger import INFO1, logger
+from ..logger import INFO1
+from ..logger import logger
 
 IsStrSeq = Or((str,), And([str], Use(tuple)))
 IsStrSeqOrStr = Or(IsStrSeq, And(str, Use(lambda s: (s,))))
@@ -94,7 +102,7 @@ from yaml import Loader, load
 
 def LoadYaml(fname: Path | str):
     fname = str(fname)
-    with open(fname, "r") as file:
+    with open(fname) as file:
         ret = load(file, Loader)
 
     logger.log(INFO1, f"Read: {fname}")
@@ -104,7 +112,7 @@ def LoadYaml(fname: Path | str):
 import runpy
 
 
-def LoadPy(fname: Path | str, variable: str, *, type: Type | None = None):
+def LoadPy(fname: Path | str, variable: str, *, type: type | None = None):
     logger.log(INFO1, f"Read: {fname} ({variable})")
     dct = runpy.run_path(fname)
 

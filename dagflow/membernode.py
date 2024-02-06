@@ -1,10 +1,9 @@
 from .graph import Graph
 from .node import Node
 
-from typing import Optional
 
 class MemberNodesHolder:
-    _graph: Optional[Graph] = None
+    _graph: Graph | None = None
 
     def __init__(self, graph: Graph=None):
         self.graph = graph

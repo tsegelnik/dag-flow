@@ -1,6 +1,6 @@
-from dagflow.graphviz import savegraph
-from dagflow.graph import Graph
 from dagflow.bundles.load_parameters import load_parameters
+from dagflow.graph import Graph
+from dagflow.graphviz import savegraph
 
 cfg1 = {
         'parameters': {

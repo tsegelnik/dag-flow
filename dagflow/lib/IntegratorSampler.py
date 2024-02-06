@@ -1,17 +1,23 @@
-from typing import TYPE_CHECKING, Literal, Optional
+from typing import Literal
+from typing import TYPE_CHECKING
 
-from numpy import empty, errstate, integer, linspace, matmul, meshgrid, newaxis
+from numpy import empty
+from numpy import errstate
+from numpy import integer
+from numpy import linspace
+from numpy import matmul
+from numpy import meshgrid
+from numpy import newaxis
 from numpy.polynomial.legendre import leggauss
-from numpy.typing import DTypeLike, NDArray
+from numpy.typing import DTypeLike
+from numpy.typing import NDArray
 
 from ..exception import InitializationError
 from ..nodes import FunctionNode
-from ..typefunctions import (
-    check_input_dimension,
-    check_input_edges_dim,
-    check_input_subtype,
-    check_inputs_number,
-)
+from ..typefunctions import check_input_dimension
+from ..typefunctions import check_input_edges_dim
+from ..typefunctions import check_input_subtype
+from ..typefunctions import check_inputs_number
 
 if TYPE_CHECKING:
     from ..input import Input
@@ -73,7 +79,7 @@ class IntegratorSampler(FunctionNode):
 
     _dtype: DTypeLike
     _mode: ModeType
-    _align: Optional[Literal["left", "center", "right"]]
+    _align: Literal["left", "center", "right"] | None
     __bufferX: NDArray
     __bufferY: NDArray
     _ordersX: "Input"
@@ -87,7 +93,7 @@ class IntegratorSampler(FunctionNode):
         *args,
         mode: ModeType,
         dtype: DTypeLike = "d",
-        align: Optional[Literal["left", "center", "right"]] = None,
+        align: Literal["left", "center", "right"] | None = None,
         **kwargs,
     ) -> None:
         super().__init__(*args, **kwargs, allowed_kw_inputs=("ordersX", "ordersY"))
@@ -127,7 +133,7 @@ class IntegratorSampler(FunctionNode):
         return self._dtype
 
     @property
-    def align(self) -> Optional[str]:
+    def align(self) -> str | None:
         return self._align
 
     def _typefunc(self) -> None:

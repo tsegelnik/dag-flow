@@ -1,15 +1,23 @@
-from collections.abc import Generator, Sequence
+from collections.abc import Generator
+from collections.abc import Sequence
 from contextlib import suppress
 from os import listdir
 from pathlib import Path
-from typing import TYPE_CHECKING, Any
+from typing import Any
+from typing import TYPE_CHECKING
 
-from numpy import double, dtype, frombuffer, linspace
+from multikeydict.typing import KeyLike
+from multikeydict.typing import properkey
+from multikeydict.typing import TupleKey
+from numpy import double
+from numpy import dtype
+from numpy import frombuffer
+from numpy import linspace
 from numpy.typing import NDArray
 
-from multikeydict.typing import KeyLike, TupleKey, properkey
-
-from ..logger import INFO1, INFO2, logger
+from ..logger import INFO1
+from ..logger import INFO2
+from ..logger import logger
 
 if TYPE_CHECKING:
     import ROOT

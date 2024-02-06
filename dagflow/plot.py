@@ -1,33 +1,36 @@
+from collections.abc import Mapping
 from contextlib import suppress
-from typing import List, Mapping, Optional, Tuple, Union
 
 from matplotlib import colormaps
 from matplotlib.axes import Axes
 from matplotlib.pyplot import close as closefig
 from matplotlib.pyplot import cm
 from matplotlib.pyplot import colorbar as plot_colorbar
-from matplotlib.pyplot import (
-    errorbar,
-    gca,
-    gcf,
-    imshow,
-    matshow,
-    pcolor,
-    pcolormesh,
-    plot,
-    savefig,
-    sca,
-)
+from matplotlib.pyplot import errorbar
+from matplotlib.pyplot import gca
+from matplotlib.pyplot import gcf
+from matplotlib.pyplot import imshow
+from matplotlib.pyplot import matshow
+from matplotlib.pyplot import pcolor
+from matplotlib.pyplot import pcolormesh
+from matplotlib.pyplot import plot
+from matplotlib.pyplot import savefig
+from matplotlib.pyplot import sca
 from matplotlib.pyplot import show as showfig
 from matplotlib.pyplot import stairs
-from numpy import asanyarray, meshgrid, zeros_like
+from numpy import asanyarray
+from numpy import meshgrid
+from numpy import zeros_like
 from numpy.ma import array as masked_array
-from numpy.typing import ArrayLike, NDArray
+from numpy.typing import ArrayLike
+from numpy.typing import NDArray
 
-from .logger import INFO1, logger
+from .logger import INFO1
+from .logger import logger
 from .nodebase import NodeBase
 from .output import Output
-from .types import EdgesLike, MeshesLike
+from .types import EdgesLike
+from .types import MeshesLike
 
 
 class plot_auto:
@@ -44,26 +47,26 @@ class plot_auto:
         "_ylabel",
         "_zlabel",
     )
-    _object: Union[NodeBase, Output, ArrayLike]
-    _output: Optional[Output]
+    _object: NodeBase | Output | ArrayLike
+    _output: Output | None
     _array: NDArray
     _edges: EdgesLike
     _meshes: MeshesLike
-    _plotmethod: Optional[str]
-    _ret: Tuple
+    _plotmethod: str | None
+    _ret: tuple
 
-    _title: Optional[str]
-    _xlabel: Optional[str]
-    _ylabel: Optional[str]
-    _zlabel: Optional[str]
+    _title: str | None
+    _xlabel: str | None
+    _ylabel: str | None
+    _zlabel: str | None
 
     def __init__(
         self,
-        object: Union[NodeBase, Output, ArrayLike],
+        object: NodeBase | Output | ArrayLike,
         *args,
         filter_kw: dict = {},
         show_path: bool = True,
-        save: Optional[str] = None,
+        save: str | None = None,
         close: bool = False,
         show: bool = False,
         save_kw: dict = {},
@@ -169,7 +172,7 @@ class plot_auto:
     def annotate_axes(
         self,
         /,
-        ax: Optional[Axes] = None,
+        ax: Axes | None = None,
         *,
         legend: bool = False,
         show_path: bool = True,
@@ -206,19 +209,19 @@ class plot_auto:
                 ax.text(0.05, 0.05, path[0], transform=fig.dpi_scale_trans, fontsize="small")
 
     @property
-    def zlabel(self) -> Optional[str]:
+    def zlabel(self) -> str | None:
         return self._zlabel
 
 
 def plot_array_1d(
     array: NDArray,
-    edges: Optional[NDArray] = None,
-    meshes: Optional[NDArray] = None,
-    yerr: Optional[Union[float, NDArray]] = None,
-    xerr: Optional[Union[float, NDArray]] = None,
+    edges: NDArray | None = None,
+    meshes: NDArray | None = None,
+    yerr: float | NDArray | None = None,
+    xerr: float | NDArray | None = None,
     *args,
     **kwargs,
-) -> Tuple[tuple, ...]:
+) -> tuple[tuple, ...]:
     if edges is not None:
         if yerr is not None or xerr is not None:
             if xerr is None:
@@ -242,45 +245,45 @@ def plot_array_1d(
 
 def plot_array_1d_hist(
     array: NDArray,
-    edges: Optional[NDArray] = None,
+    edges: NDArray | None = None,
     *args,
-    plotter: Optional[plot_auto] = None,
+    plotter: plot_auto | None = None,
     **kwargs,
-) -> Tuple:
+) -> tuple:
     return stairs(array, edges, *args, **kwargs)
 
 
 def plot_array_1d_errors(
     x: NDArray,
     y: NDArray,
-    yerr: Optional[Union[float, NDArray]] = None,
-    xerr: Optional[Union[float, NDArray]] = None,
+    yerr: float | NDArray | None = None,
+    xerr: float | NDArray | None = None,
     *args,
-    plotter: Optional[plot_auto] = None,
+    plotter: plot_auto | None = None,
     **kwargs,
-) -> Tuple:
+) -> tuple:
     return errorbar(x, y, yerr=yerr, xerr=xerr, *args, **kwargs)
 
 
 def plot_array_1d_vs(
     array: NDArray,
-    meshes: Optional[NDArray] = None,
+    meshes: NDArray | None = None,
     *args,
-    plotter: Optional[plot_auto] = None,
+    plotter: plot_auto | None = None,
     **kwargs,
-) -> Tuple:
+) -> tuple:
     return plot(meshes, array, *args, **kwargs)
 
 
 def plot_array_1d_array(
-    array: NDArray, *args, plotter: Optional[plot_auto] = None, **kwargs
-) -> Tuple:
+    array: NDArray, *args, plotter: plot_auto | None = None, **kwargs
+) -> tuple:
     return plot(array, *args, **kwargs)
 
 
 def plot_array_2d(
     array: NDArray, edges: EdgesLike, meshes: MeshesLike, *args, **kwargs
-) -> Tuple[tuple, ...]:
+) -> tuple[tuple, ...]:
     if edges:
         return plot_array_2d_hist(array, edges, *args, **kwargs)
     elif meshes:
@@ -290,20 +293,20 @@ def plot_array_2d(
 
 
 def plot_array_2d_array(
-    array: NDArray, *args, plotter: Optional[plot_auto] = None, **kwargs
-) -> Tuple:
+    array: NDArray, *args, plotter: plot_auto | None = None, **kwargs
+) -> tuple:
     kwargs.setdefault("aspect", "auto")
     return plot_array_2d_hist_matshow(array, None, *args, **kwargs)
 
 
 def plot_array_2d_hist_bar3d(
     dZ: NDArray,
-    edges: List[NDArray],
+    edges: list[NDArray],
     *args,
-    plotter: Optional[plot_auto] = None,
-    cmap: Optional[str] = None,
+    plotter: plot_auto | None = None,
+    cmap: str | None = None,
     **kwargs,
-) -> Tuple:
+) -> tuple:
     xedges, yedges = edges
     xw = xedges[1:] - xedges[:-1]
     yw = yedges[1:] - yedges[:-1]
@@ -326,42 +329,42 @@ def plot_array_2d_hist_bar3d(
 
 def plot_array_2d_hist_pcolorfast(
     Z: NDArray,
-    edges: List[NDArray],
+    edges: list[NDArray],
     *args,
-    plotter: Optional[plot_auto] = None,
+    plotter: plot_auto | None = None,
     **kwargs,
-) -> Tuple:
+) -> tuple:
     xedges, yedges = edges
     return pcolorfast(xedges, yedges, Z.T, *args, **kwargs)
 
 
 def plot_array_2d_hist_pcolormesh(
     Z: NDArray,
-    edges: List[NDArray],
+    edges: list[NDArray],
     *args,
-    plotter: Optional[plot_auto] = None,
+    plotter: plot_auto | None = None,
     **kwargs,
-) -> Tuple:
+) -> tuple:
     x, y = meshgrid(edges[0], edges[1], indexing="ij")
     return pcolormesh(x, y, Z, *args, **kwargs)
 
 
 def plot_array_2d_hist_pcolor(
     Z: NDArray,
-    edges: List[NDArray],
+    edges: list[NDArray],
     *args,
-    plotter: Optional[plot_auto] = None,
+    plotter: plot_auto | None = None,
     **kwargs,
-) -> Tuple:
+) -> tuple:
     x, y = meshgrid(edges[0], edges[1], indexing="ij")
     return pcolor(x, y, Z, *args, **kwargs)
 
 
 def plot_array_2d_hist_imshow(
     Z: NDArray,
-    edges: Optional[EdgesLike] = None,
+    edges: EdgesLike | None = None,
     *args,
-    plotter: Optional[plot_auto] = None,
+    plotter: plot_auto | None = None,
     **kwargs,
 ):
     if edges:
@@ -374,9 +377,9 @@ def plot_array_2d_hist_imshow(
 
 def plot_array_2d_hist_matshow(
     Z: NDArray,
-    edges: Optional[EdgesLike] = None,
+    edges: EdgesLike | None = None,
     *args,
-    plotter: Optional[plot_auto] = None,
+    plotter: plot_auto | None = None,
     **kwargs,
 ):
     kwargs.setdefault("fignum", False)
@@ -398,8 +401,8 @@ plot_array_2d_hist_methods = {
 
 
 def plot_array_2d_hist(
-    dZ: NDArray, edges: List[NDArray], *args, method: Optional[str] = None, **kwargs
-) -> Tuple:
+    dZ: NDArray, edges: list[NDArray], *args, method: str | None = None, **kwargs
+) -> tuple:
     smethod: str = (
         "pcolormesh" if method in {"auto", None} else method
     )  # pyright: ignore [reportGeneralTypeIssues]
@@ -413,11 +416,11 @@ def plot_array_2d_hist(
 
 def plot_array_2d_vs_pcolormesh(
     Z: NDArray,
-    meshes: List[NDArray],
+    meshes: list[NDArray],
     *args,
-    plotter: Optional[plot_auto] = None,
+    plotter: plot_auto | None = None,
     **kwargs,
-) -> Tuple:
+) -> tuple:
     x, y = meshes
     kwargs.setdefault("shading", "nearest")
     return pcolormesh(x, y, Z, *args, **kwargs)
@@ -425,11 +428,11 @@ def plot_array_2d_vs_pcolormesh(
 
 def plot_array_2d_vs_pcolor(
     Z: NDArray,
-    meshes: List[NDArray],
+    meshes: list[NDArray],
     *args,
-    plotter: Optional[plot_auto] = None,
+    plotter: plot_auto | None = None,
     **kwargs,
-) -> Tuple:
+) -> tuple:
     x, y = meshes
     kwargs.setdefault("shading", "nearest")
     return pcolormesh(x, y, Z, *args, **kwargs)
@@ -437,9 +440,9 @@ def plot_array_2d_vs_pcolor(
 
 def plot_array_2d_vs_slicesx(
     Z: NDArray,
-    meshes: List[NDArray],
+    meshes: list[NDArray],
     *args,
-    plotter: Optional[plot_auto] = None,
+    plotter: plot_auto | None = None,
     **kwargs,
 ):
     x, y = meshes
@@ -459,30 +462,30 @@ def plot_array_2d_vs_slicesx(
         ax.legend()
 
 
-def plot_array_2d_vs_slicesy(Z: NDArray, meshes: List[NDArray], *args, **kwargs):
+def plot_array_2d_vs_slicesy(Z: NDArray, meshes: list[NDArray], *args, **kwargs):
     return plot_array_2d_vs_slicesx(Z.T, [mesh.T for mesh in reversed(meshes)], *args, **kwargs)
 
 
 def plot_array_2d_vs_surface(
     Z: NDArray,
-    meshes: List[NDArray],
+    meshes: list[NDArray],
     *args,
-    plotter: Optional[plot_auto] = None,
+    plotter: plot_auto | None = None,
     **kwargs,
-) -> Tuple:
+) -> tuple:
     return plot_surface(meshes[0], meshes[1], Z, *args, **kwargs)
 
 
 def plot_array_2d_vs_wireframe(
     Z: NDArray,
-    meshes: List[NDArray],
+    meshes: list[NDArray],
     *args,
     # facecolors: Optional[str] = None,
-    plotter: Optional[plot_auto] = None,
-    cmap: Union[str, bool, None] = None,
-    colorbar: Union[dict, bool] = False,
+    plotter: plot_auto | None = None,
+    cmap: str | bool | None = None,
+    colorbar: dict | bool = False,
     **kwargs,
-) -> Tuple:
+) -> tuple:
     X, Y = meshes
 
     ax = gca()
@@ -511,8 +514,8 @@ plot_array_2d_vs_methods = {
 
 
 def plot_array_2d_vs(
-    array: NDArray, meshes: List[NDArray], *args, method: Optional[str] = None, **kwargs
-) -> Tuple:
+    array: NDArray, meshes: list[NDArray], *args, method: str | None = None, **kwargs
+) -> tuple:
     smethod: str = (
         "pcolormesh" if method in {"auto", None} else method
     )  # pyright: ignore [reportGeneralTypeIssues]
@@ -524,7 +527,7 @@ def plot_array_2d_vs(
     return fcn(array, meshes, *args, **kwargs)
 
 
-def _mask_if_needed(datain: ArrayLike, /, *, masked_value: Optional[float] = None) -> NDArray:
+def _mask_if_needed(datain: ArrayLike, /, *, masked_value: float | None = None) -> NDArray:
     data = asanyarray(datain)
     if masked_value is None:
         return data
@@ -540,8 +543,8 @@ def _patch_with_colorbar(fcn, mode3d=False):
 
         def newfcn(
             *args,
-            cmap: Union[bool, str, None] = None,
-            colorbar: Optional[bool] = None,
+            cmap: bool | str | None = None,
+            colorbar: bool | None = None,
             **kwargs,
         ):
             ax = gca()
@@ -554,8 +557,8 @@ def _patch_with_colorbar(fcn, mode3d=False):
 
         def newfcn(
             *args,
-            cmap: Union[bool, str, None] = None,
-            colorbar: Optional[bool] = None,
+            cmap: bool | str | None = None,
+            colorbar: bool | None = None,
             **kwargs,
         ):
             kwargs["cmap"] = cmap is True and "viridis" or cmap
@@ -566,8 +569,8 @@ def _patch_with_colorbar(fcn, mode3d=False):
 
 
 def apply_colors(
-    buf: NDArray, cmap: Union[str, bool, None], kwargs: dict, colorsname: str
-) -> Tuple:
+    buf: NDArray, cmap: str | bool | None, kwargs: dict, colorsname: str
+) -> tuple:
     if cmap is True:
         cmap = "viridis"
     elif not cmap:
@@ -586,8 +589,8 @@ def add_colorbar(
     colormapable,
     rasterized: bool = True,
     minorticks: bool = False,
-    minorticks_values: Optional[NDArray] = None,
-    label: Optional[str] = None,
+    minorticks_values: NDArray | None = None,
+    label: str | None = None,
     **kwargs,
 ):
     """Add a colorbar to the axis with height aligned to the axis"""
@@ -637,7 +640,7 @@ def add_colorbar_3d(res, cbaropt: dict = {}, mappable=None):
     return res, cbar
 
 
-def _colorbar_or_not(res, cbaropt: Union[Mapping, bool, None]):
+def _colorbar_or_not(res, cbaropt: Mapping | bool | None):
     if not cbaropt:
         return res
 
@@ -649,7 +652,7 @@ def _colorbar_or_not(res, cbaropt: Union[Mapping, bool, None]):
     return res, cbar
 
 
-def _colorbar_or_not_3d(res, cbaropt: Union[Mapping, bool, None], mappable=None):
+def _colorbar_or_not_3d(res, cbaropt: Mapping | bool | None, mappable=None):
     if not cbaropt:
         return res
 

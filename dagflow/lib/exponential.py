@@ -1,4 +1,8 @@
-from numpy import exp, expm1, log, log1p, log10
+from numpy import exp
+from numpy import expm1
+from numpy import log
+from numpy import log10
+from numpy import log1p
 
 from .OneToOneNode import OneToOneNode
 

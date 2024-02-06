@@ -1,16 +1,16 @@
 from typing import TYPE_CHECKING
 
-from numpy import empty, matmul, multiply
+from numpy import empty
+from numpy import matmul
+from numpy import multiply
 from numpy.typing import NDArray
 
 from ..nodes import FunctionNode
-from ..typefunctions import (
-    check_has_inputs,
-    check_input_dimension,
-    check_input_matrix_or_diag,
-    check_inputs_multiplicable_mat,
-    eval_output_dtype,
-)
+from ..typefunctions import check_has_inputs
+from ..typefunctions import check_input_dimension
+from ..typefunctions import check_input_matrix_or_diag
+from ..typefunctions import check_inputs_multiplicable_mat
+from ..typefunctions import eval_output_dtype
 
 if TYPE_CHECKING:
     from ..input import Input

@@ -1,13 +1,13 @@
-from numpy import add, empty, square
+from numpy import add
+from numpy import empty
+from numpy import square
 from numpy.typing import NDArray
 
-from ..typefunctions import (
-    check_has_inputs,
-    eval_output_dtype,
-    copy_input_shape_to_outputs,
-    check_inputs_equivalence,
-    AllPositionals
-)
+from ..typefunctions import AllPositionals
+from ..typefunctions import check_has_inputs
+from ..typefunctions import check_inputs_equivalence
+from ..typefunctions import copy_input_shape_to_outputs
+from ..typefunctions import eval_output_dtype
 from .ManyToOneNode import ManyToOneNode
 
 class SumSq(ManyToOneNode):

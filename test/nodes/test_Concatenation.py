@@ -1,9 +1,11 @@
 #!/usr/bin/env python
+from numpy import concatenate
+from numpy import linspace
+
 from dagflow.graph import Graph
 from dagflow.graphviz import savegraph
 from dagflow.lib import Array
 from dagflow.lib import Concatenation
-from numpy import concatenate, linspace
 
 
 def test_Concatenation_00(debug_graph):

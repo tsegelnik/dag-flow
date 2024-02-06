@@ -1,32 +1,37 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Optional, Union
+from typing import TYPE_CHECKING
 
 from numpy import zeros
-from numpy.typing import DTypeLike, NDArray
+from numpy.typing import DTypeLike
+from numpy.typing import NDArray
 
 from .datadescriptor import DataDescriptor
 from .edges import EdgeContainer
-from .exception import AllocationError, ClosedGraphError, InitializationError, ReconnectionError
+from .exception import AllocationError
+from .exception import ClosedGraphError
+from .exception import InitializationError
+from .exception import ReconnectionError
 from .iter import StopNesting
 from .labels import repr_pretty
 from .output import Output
 from .shift import rshift
-from .types import EdgesLike, ShapeLike
+from .types import EdgesLike
+from .types import ShapeLike
 
 if TYPE_CHECKING:
     from .node import Node
 
 
 class Input:
-    _own_data: Optional[NDArray] = None
+    _own_data: NDArray | None = None
     _own_dd: DataDescriptor
 
-    _node: Optional[Node]
-    _name: Optional[str]
+    _node: Node | None
+    _name: str | None
 
-    _parent_output: Optional[Output] = None
-    _child_output: Optional[Output] = None
+    _parent_output: Output | None = None
+    _child_output: Output | None = None
 
     _allocatable: bool = False
     _owns_buffer: bool = False
@@ -35,18 +40,18 @@ class Input:
 
     def __init__(
         self,
-        name: Optional[str] = None,
-        node: Optional[Node] = None,
+        name: str | None = None,
+        node: Node | None = None,
         *,
-        child_output: Optional[Output] = None,
-        parent_output: Optional[Output] = None,
-        debug: Optional[bool] = None,
+        child_output: Output | None = None,
+        parent_output: Output | None = None,
+        debug: bool | None = None,
         allocatable: bool = False,
-        data: Optional[NDArray] = None,
+        data: NDArray | None = None,
         dtype: DTypeLike = None,
-        shape: Optional[ShapeLike] = None,
-        axes_edges: Optional[EdgesLike] = None,
-        axes_meshes: Optional[EdgesLike] = None,
+        shape: ShapeLike | None = None,
+        axes_edges: EdgesLike | None = None,
+        axes_meshes: EdgesLike | None = None,
     ):
         if data is not None and (allocatable or dtype is not None or shape is not None):
             raise InitializationError(input=input, node=node)
@@ -74,7 +79,7 @@ class Input:
     _repr_pretty_ = repr_pretty
 
     @property
-    def own_data(self) -> Optional[NDArray]:
+    def own_data(self) -> NDArray | None:
         return self._own_data
 
     @property
@@ -90,8 +95,8 @@ class Input:
         data,
         *,
         owns_buffer: bool,
-        axes_edges: Optional[EdgesLike] = None,
-        axes_meshes: Optional[EdgesLike] = None,
+        axes_edges: EdgesLike | None = None,
+        axes_meshes: EdgesLike | None = None,
     ):
         if self.closed:
             raise ClosedGraphError("Unable to set input data.", node=self._node, input=self)
@@ -109,7 +114,7 @@ class Input:
     def closed(self):
         return self._node.closed if self.node else False
 
-    def set_child_output(self, child_output: Optional[Output], force: bool = False) -> None:
+    def set_child_output(self, child_output: Output | None, force: bool = False) -> None:
         if not self.closed:
             return self._set_child_output(child_output, force)
         raise ClosedGraphError(input=self, node=self.node, output=child_output)
@@ -132,7 +137,7 @@ class Input:
         self._parent_output = parent_output
 
     @property
-    def name(self) -> Optional[str]:
+    def name(self) -> str | None:
         return self._name
 
     @name.setter
@@ -140,11 +145,11 @@ class Input:
         self._name = name
 
     @property
-    def node(self) -> Optional[Node]:
+    def node(self) -> Node | None:
         return self._node
 
     @property
-    def parent_node(self) -> Optional[Node]:
+    def parent_node(self) -> Node | None:
         return self._parent_output.node
 
     @property
@@ -152,7 +157,7 @@ class Input:
         return self._node.logger
 
     @property
-    def child_output(self) -> Optional[Output]:
+    def child_output(self) -> Output | None:
         return self._child_output
 
     @property
@@ -271,7 +276,7 @@ class Inputs(EdgeContainer):
                 continue
             yield input
 
-    def deep_iter_child_outputs(self) -> Iterator[Union[Input, Output]]:
+    def deep_iter_child_outputs(self) -> Iterator[Input | Output]:
         for child_output in self:
             yield child_output.child_output
 

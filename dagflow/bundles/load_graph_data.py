@@ -1,32 +1,38 @@
 from __future__ import annotations
 
+from collections.abc import Mapping
 from collections.abc import Sequence
 from contextlib import suppress
 from os.path import basename
 from pathlib import Path
-from typing import TYPE_CHECKING, Mapping, Optional, Tuple
+from typing import TYPE_CHECKING
 
-from numpy import allclose, double, dtype, frombuffer, linspace
+from numpy import allclose
+from numpy import double
+from numpy import dtype
+from numpy import frombuffer
+from numpy import linspace
 from schema import And
 from schema import Optional as SchemaOptional
-from schema import Or, Schema, Use
+from schema import Or
+from schema import Schema
+from schema import Use
 
-from ..logger import INFO1, logger
+from ..logger import INFO1
+from ..logger import logger
 from ..storage import NodeStorage
-from ..tools.schema import (
-    AllFileswithExt,
-    IsFilenameSeqOrFilename,
-    IsReadable,
-    IsStrSeqOrStr,
-    LoadFileWithExt,
-    LoadYaml,
-)
+from ..tools.schema import AllFileswithExt
+from ..tools.schema import IsFilenameSeqOrFilename
+from ..tools.schema import IsReadable
+from ..tools.schema import IsStrSeqOrStr
+from ..tools.schema import LoadFileWithExt
+from ..tools.schema import LoadYaml
 
 if TYPE_CHECKING:
     import ROOT
+    from numpy.typing import NDArray
 
     from multikeydict.typing import TupleKey
-    from numpy.typing import NDArray
 
 _extensions = {"root", "hdf5", "tsv", "txt", "npz"}
 _schema_cfg = Schema(
@@ -91,7 +97,7 @@ def get_filename(
     raise RuntimeError(f"Unable to find readable filename for {key}. Checked: {checked_filenames}")
 
 
-def load_graph_data(acfg: Optional[Mapping] = None, **kwargs):
+def load_graph_data(acfg: Mapping | None = None, **kwargs):
     acfg = dict(acfg or {}, **kwargs)
     cfg = _validate_cfg(acfg)
 
@@ -159,7 +165,7 @@ def _load_tsv(filename: str, name: str) -> NDArray:
     return loadtxt(filename, unpack=True)
 
 
-def _load_hdf5(filename: str, name: str) -> Tuple[NDArray, NDArray]:
+def _load_hdf5(filename: str, name: str) -> tuple[NDArray, NDArray]:
     from h5py import File
 
     file = File(filename, "r")
@@ -172,7 +178,7 @@ def _load_hdf5(filename: str, name: str) -> Tuple[NDArray, NDArray]:
     return data[cols[0]].to_numpy(), data[cols[1]].to_numpy()
 
 
-def _load_npz(filename: str, name: str) -> Tuple[NDArray, NDArray]:
+def _load_npz(filename: str, name: str) -> tuple[NDArray, NDArray]:
     from numpy import load
 
     file = load(filename)
@@ -185,7 +191,7 @@ def _load_npz(filename: str, name: str) -> Tuple[NDArray, NDArray]:
     return data[cols[0]], data[cols[1]]
 
 
-def _load_root_uproot(filename: str, name: str) -> Tuple[NDArray, NDArray]:
+def _load_root_uproot(filename: str, name: str) -> tuple[NDArray, NDArray]:
     if not name:
         raise RuntimeError(f"Need an object name to read from {filename}")
     from uproot import open
@@ -201,7 +207,7 @@ def _load_root_uproot(filename: str, name: str) -> Tuple[NDArray, NDArray]:
     return x[:-1], y
 
 
-def _load_root_ROOT(filename: str, name: str) -> Tuple[NDArray, NDArray]:
+def _load_root_ROOT(filename: str, name: str) -> tuple[NDArray, NDArray]:
     if not name:
         raise RuntimeError(f"Need an object name to read from {filename}")
     from ROOT import TFile
@@ -216,7 +222,7 @@ def _load_root_ROOT(filename: str, name: str) -> Tuple[NDArray, NDArray]:
     return _get_buffers(data)
 
 
-def _load_root(filename: str, *args, **kwargs) -> Tuple[NDArray, NDArray]:
+def _load_root(filename: str, *args, **kwargs) -> tuple[NDArray, NDArray]:
     with suppress(AttributeError):
         return _load_root_uproot(filename, *args, **kwargs)
 
@@ -237,7 +243,7 @@ _loaders = {
 }
 
 
-def _get_buffer_hist1(h: "ROOT.TH1", flows: bool = False) -> NDArray:
+def _get_buffer_hist1(h: ROOT.TH1, flows: bool = False) -> NDArray:
     """Return TH1* histogram data buffer
     if flows=False, exclude underflow and overflow
     """
@@ -249,7 +255,7 @@ def _get_buffer_hist1(h: "ROOT.TH1", flows: bool = False) -> NDArray:
     return buf.copy()
 
 
-def _get_bin_left_edges(ax: "ROOT.TAxis") -> NDArray:
+def _get_bin_left_edges(ax: ROOT.TAxis) -> NDArray:
     """Get the array with bin left edges"""
     xbins = ax.GetXbins()
     n = xbins.GetSize()
@@ -259,12 +265,12 @@ def _get_bin_left_edges(ax: "ROOT.TAxis") -> NDArray:
     return linspace(ax.GetXmin(), ax.GetXmax(), ax.GetNbins() + 1)[:-1]
 
 
-def _get_buffers_hist1(h: "ROOT.TH1") -> Tuple[NDArray, NDArray]:
+def _get_buffers_hist1(h: ROOT.TH1) -> tuple[NDArray, NDArray]:
     """Get X(left edges)/Y buffers of 1D histogram"""
     return _get_bin_left_edges(h.GetXaxis()), _get_buffer_hist1(h, flows=False)
 
 
-def _get_buffers_graph(g: "ROOT.TGraph") -> Tuple[NDArray, NDArray]:
+def _get_buffers_graph(g: ROOT.TGraph) -> tuple[NDArray, NDArray]:
     """Get TGraph x and y buffers"""
     npoints = g.GetN()
     if npoints == 0:

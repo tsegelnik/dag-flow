@@ -1,15 +1,16 @@
 #!/usr/bin/env python
-
-from dagflow.graph import Graph
-from dagflow import lib
-from dagflow.lib import Array
-from dagflow.graphviz import savegraph
-from dagflow.plot import plot_auto
-
 import numpy
-from numpy import allclose, pi, linspace
 from matplotlib.pyplot import close
+from numpy import allclose
+from numpy import linspace
+from numpy import pi
 from pytest import mark
+
+from dagflow import lib
+from dagflow.graph import Graph
+from dagflow.graphviz import savegraph
+from dagflow.lib import Array
+from dagflow.plot import plot_auto
 
 @mark.parametrize("dtype", ("d", "f"))
 @mark.parametrize("fcnname", ("cos", "sin", "tan", "arccos", "arcsin", "arctan"))

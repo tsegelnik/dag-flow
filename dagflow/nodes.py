@@ -1,4 +1,5 @@
-from typing import Any, Callable, Dict
+from collections.abc import Callable
+from typing import Any
 
 from .exception import DagflowError
 from .node import Node
@@ -29,7 +30,7 @@ class FunctionNode(Node):
         super().__init__(name, **kwargs)
         self._fcn_chain = []
 
-        self._functions: Dict[Any, Callable] = {"default": self._fcn}
+        self._functions: dict[Any, Callable] = {"default": self._fcn}
         self.fcn = self._functions["default"]
 
     def _stash_fcn(self):

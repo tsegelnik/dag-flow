@@ -1,21 +1,27 @@
 from enum import IntEnum
-from typing import TYPE_CHECKING, Callable, Literal
+from collections.abc import Callable
+from typing import Literal
+from typing import TYPE_CHECKING
 
-from numba import float64, int32, njit, void
+from numba import float64
+from numba import int32
+from numba import njit
+from numba import void
 from numba.core.types import FunctionType
-from numpy import exp, float_, integer, log
+from numpy import exp
+from numpy import float_
+from numpy import integer
+from numpy import log
 from numpy.typing import NDArray
 
 from ..exception import InitializationError
 from ..nodes import FunctionNode
-from ..typefunctions import (
-    assign_output_axes_from_inputs,
-    check_has_inputs,
-    check_input_dtype,
-    check_input_shape,
-    check_inputs_number,
-    copy_from_input_to_output,
-)
+from ..typefunctions import assign_output_axes_from_inputs
+from ..typefunctions import check_has_inputs
+from ..typefunctions import check_input_dtype
+from ..typefunctions import check_input_shape
+from ..typefunctions import check_inputs_number
+from ..typefunctions import copy_from_input_to_output
 
 if TYPE_CHECKING:
     from ..input import Input

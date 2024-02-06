@@ -1,27 +1,31 @@
 #!/usr/bin/env python
+from numpy import array
+from numpy import floating
+from numpy import integer
+from numpy import linspace
+from numpy import newaxis
+from pytest import mark
+from pytest import raises
+
 from dagflow.exception import TypeFunctionError
 from dagflow.graph import Graph
 from dagflow.graphviz import savegraph
 from dagflow.inputhandler import MissingInputAddOne
 from dagflow.lib import Array
 from dagflow.lib.Dummy import Dummy
-from dagflow.typefunctions import (
-    AllPositionals,
-    check_input_dimension,
-    check_input_dtype,
-    check_input_shape,
-    check_input_square,
-    check_input_matrix_or_diag,
-    check_input_subtype,
-    check_inputs_equivalence,
-    check_inputs_multiplicable_mat,
-    check_inputs_same_dtype,
-    check_inputs_same_shape,
-    check_output_subtype,
-    copy_from_input_to_output,
-)
-from numpy import array, floating, integer, linspace, newaxis
-from pytest import mark, raises
+from dagflow.typefunctions import AllPositionals
+from dagflow.typefunctions import check_input_dimension
+from dagflow.typefunctions import check_input_dtype
+from dagflow.typefunctions import check_input_matrix_or_diag
+from dagflow.typefunctions import check_input_shape
+from dagflow.typefunctions import check_input_square
+from dagflow.typefunctions import check_input_subtype
+from dagflow.typefunctions import check_inputs_equivalence
+from dagflow.typefunctions import check_inputs_multiplicable_mat
+from dagflow.typefunctions import check_inputs_same_dtype
+from dagflow.typefunctions import check_inputs_same_shape
+from dagflow.typefunctions import check_output_subtype
+from dagflow.typefunctions import copy_from_input_to_output
 
 
 @mark.parametrize(

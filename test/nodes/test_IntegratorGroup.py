@@ -1,13 +1,17 @@
-from dagflow.graph import Graph
-from dagflow.metanode import MetaNode
-from dagflow.lib import Array
-from dagflow.lib import IntegratorGroup
-from dagflow.lib import Cos, Sin
-from numpy import allclose, linspace, pi
+from matplotlib.pyplot import close
+from matplotlib.pyplot import gca
+from numpy import allclose
+from numpy import linspace
+from numpy import pi
 
+from dagflow.graph import Graph
 from dagflow.graphviz import savegraph
+from dagflow.lib import Array
+from dagflow.lib import Cos
+from dagflow.lib import IntegratorGroup
+from dagflow.lib import Sin
+from dagflow.metanode import MetaNode
 from dagflow.plot import plot_auto
-from matplotlib.pyplot import gca, close
 
 
 def test_IntegratorGroup_trap(debug_graph):

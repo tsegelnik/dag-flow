@@ -1,4 +1,7 @@
-from numpy import add, copyto, divide, multiply
+from numpy import add
+from numpy import copyto
+from numpy import divide
+from numpy import multiply
 
 from .ManyToOneNode import ManyToOneNode
 
