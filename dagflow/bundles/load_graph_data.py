@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from collections.abc import Sequence
 from contextlib import suppress
 from os.path import basename
@@ -5,12 +7,9 @@ from pathlib import Path
 from typing import TYPE_CHECKING, Mapping, Optional, Tuple
 
 from numpy import allclose, double, dtype, frombuffer, linspace
-from numpy.typing import NDArray
 from schema import And
 from schema import Optional as SchemaOptional
 from schema import Or, Schema, Use
-
-from multikeydict.typing import TupleKey
 
 from ..logger import INFO1, logger
 from ..storage import NodeStorage
@@ -25,6 +24,9 @@ from ..tools.schema import (
 
 if TYPE_CHECKING:
     import ROOT
+
+    from multikeydict.typing import TupleKey
+    from numpy.typing import NDArray
 
 _extensions = {"root", "hdf5", "tsv", "txt", "npz"}
 _schema_cfg = Schema(
@@ -167,7 +169,7 @@ def _load_hdf5(filename: str, name: str) -> Tuple[NDArray, NDArray]:
         raise RuntimeError(f"Unable to read {name} from {filename}") from e
 
     cols = data.dtype.names
-    return data[cols[0]], data[cols[1]]
+    return data[cols[0]].to_numpy(), data[cols[1]].to_numpy()
 
 
 def _load_npz(filename: str, name: str) -> Tuple[NDArray, NDArray]:

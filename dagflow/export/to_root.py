@@ -1,67 +1,72 @@
+from typing import TYPE_CHECKING, Any, Dict, List, Tuple, Union
+
+from numpy import allclose, array, dtype, frombuffer
+from numpy.typing import NDArray
+from ROOT import TH1D, TH2D, TFile, TGraph, TGraph2D
+
 from multikeydict.visitor import NestedMKDictVisitor
-from ..logger import logger, INFO1, INFO2
+
+from ..logger import INFO1, INFO2, logger
 from ..output import Output
 
-from numpy import allclose, frombuffer, dtype, array
-
-from typing import List, Dict, Union, Any, Tuple, TYPE_CHECKING
-from numpy.typing import NDArray
-
-from ROOT import TFile, TH1D, TH2D, TGraph, TGraph2D
-
 if TYPE_CHECKING:
+    from contextlib import suppress
     from pathlib import Path
 
-    try:
-        from ROOT import TDirectory, TObject, TH1, TH2
-    except ImportError:
-        pass
+    with suppress(ImportError):
+        from ROOT import TH1, TH2, TDirectory, TObject
 
-def to_root(output: Union[Output, Any]) -> Dict[str, 'TObject']:
+
+def to_root(output: Union[Output, Any]) -> Dict[str, "TObject"]:
     rets = {}
     if not isinstance(output, Output):
         return rets
 
     dd = output.dd
     dim = dd.dim
-    if dim==1:
+    if dim == 1:
         if dd.axes_edges:
-            rets['hist'] = to_TH1(output)
+            rets["hist"] = to_TH1(output)
         if dd.axes_meshes:
-            rets['graph'] = to_TGraph(output)
-    elif dim==2:
+            rets["graph"] = to_TGraph(output)
+    elif dim == 2:
         if dd.axes_edges:
-            rets['hist'] = to_TH2(output)
+            rets["hist"] = to_TH2(output)
         if dd.axes_meshes:
-            rets['graph'] = to_TGraph2(output)
+            rets["graph"] = to_TGraph2(output)
     else:
-        raise RuntimeError(f'Unsupported output dimension: {dim}')
+        raise RuntimeError(f"Unsupported output dimension: {dim}")
 
     return rets
 
+
 def _buffer_clean(buf: NDArray) -> NDArray:
     # Should use ascontiguousarray, but it does not work properly for 'f'
-    return array(buf, dtype='d')
+    return array(buf, dtype="d")
 
-def edges_to_args(edges: NDArray, *, rtol: float=1.e-9) -> Tuple:
+
+def edges_to_args(edges: NDArray, *, rtol: float = 1.0e-9) -> Tuple:
     edges = _buffer_clean(edges)
-    widths = edges[1:]-edges[:-1]
+    widths = edges[1:] - edges[:-1]
     if allclose(widths, widths.max(), rtol=rtol, atol=0):
-        return edges.size-1, edges[0], edges[-1]
+        return edges.size - 1, edges[0], edges[-1]
 
-    return edges.size-1, edges
+    return edges.size - 1, edges
 
-def get_buffer_hist1(hist: 'TH1') -> NDArray:
+
+def get_buffer_hist1(hist: "TH1") -> NDArray:
     buf = hist.GetArray()
-    buf = frombuffer(buf, dtype(buf.typecode), hist.GetNbinsX()+2)
+    buf = frombuffer(buf, dtype(buf.typecode), hist.GetNbinsX() + 2)
     return buf[1:-1]
 
-def get_buffer_hist2(hist: 'TH2') -> NDArray:
+
+def get_buffer_hist2(hist: "TH2") -> NDArray:
     nx, ny = hist.GetNbinsX(), hist.GetNbinsY()
     buf = hist.GetArray()
-    res = frombuffer(buf, dtype(buf.typecode), (nx+2)*(ny+2)).reshape((ny+2, nx+2))
+    res = frombuffer(buf, dtype(buf.typecode), (nx + 2) * (ny + 2)).reshape((ny + 2, nx + 2))
     # TODO: check order
-    return res[1:ny+1, 1:nx+1].T
+    return res[1 : ny + 1, 1 : nx + 1].T
+
 
 def to_TH1(output: "Output") -> "TH1D":
     data = _buffer_clean(output.data)
@@ -78,13 +83,14 @@ def to_TH1(output: "Output") -> "TH1D":
 
     return hist
 
+
 def to_TH2(output: "Output") -> "TH2D":
     data = _buffer_clean(output.data)
     labels = output.labels
 
     edgesX = edges_to_args(output.dd.axes_edges[0].data)
     edgesY = edges_to_args(output.dd.axes_edges[1].data)
-    hist = TH2D("", labels.roottitle, *(edgesX+edgesY))
+    hist = TH2D("", labels.roottitle, *(edgesX + edgesY))
     buffer = get_buffer_hist2(hist)
 
     buffer[:] = data
@@ -94,6 +100,7 @@ def to_TH2(output: "Output") -> "TH2D":
     hist.SetZTitle(labels.rootaxis)
 
     return hist
+
 
 def to_TGraph(output):
     labels = output.labels
@@ -106,9 +113,10 @@ def to_TGraph(output):
     ytitle = labels.rootaxis
 
     graph = TGraph(x.size, x, y)
-    graph.SetTitle(f'{title};{xtitle};{ytitle}')
+    graph.SetTitle(f"{title};{xtitle};{ytitle}")
 
     return graph
+
 
 def to_TGraph2(output):
     labels = output.labels
@@ -123,25 +131,27 @@ def to_TGraph2(output):
     ztitle = labels.rootaxis
 
     graph = TGraph2D(x.size, x.ravel(), y.ravel(), z.ravel())
-    graph.SetTitle(f'{title};{xtitle};{ytitle};{ztitle}')
+    graph.SetTitle(f"{title};{xtitle};{ytitle};{ztitle}")
 
     return graph
 
+
 class ExportToRootVisitor(NestedMKDictVisitor):
-    __slots__ = ('_file', '_cwd', '_prevd', '_level')
-    _file: 'TFile'
+    __slots__ = ("_file", "_cwd", "_prevd", "_level")
+    _file: "TFile"
     _prevd: List["TDirectory"]
     _cwd: "TDirectory"
     _level: int
 
-    def __init__(self, filename: Union['Path',str]):
+    def __init__(self, filename: Union["Path", str]):
         from ROOT import TFile
+
         filename = str(filename)
         logger.log(INFO1, f"Create {filename}")
-        self._file = TFile(filename, 'RECREATE')
+        self._file = TFile(filename, "RECREATE")
         self._file.AddDirectory(False)
         if self._file.IsZombie():
-            raise RuntimeError(f'File {filename!s} is zombie')
+            raise RuntimeError(f"File {filename!s} is zombie")
         self._prevd = []
         self._cwd = self._file
         self._level = 0
@@ -163,26 +173,26 @@ class ExportToRootVisitor(NestedMKDictVisitor):
         self._cwd = cwd
 
     def visit(self, key, value):
-        path = '/'.join(key[self._level:])
+        path = "/".join(key[self._level :])
 
         objects = to_root(value)
         if not objects:
             return
 
         name = path
-        hist = objects.pop('hist', None)
+        hist = objects.pop("hist", None)
         if hist is not None:
             logger.log(INFO2, f"write {'/'.join(key)}")
-            self._cwd.WriteTObject(hist, name, 'overwrite')
-            name = f'{name}_graph'
+            self._cwd.WriteTObject(hist, name, "overwrite")
+            name = f"{name}_graph"
 
-        graph = objects.pop('graph', None)
+        graph = objects.pop("graph", None)
         if graph is not None:
             logger.log(INFO2, f"write {'/'.join(key)}")
-            self._cwd.WriteTObject(graph, name, 'overwrite')
+            self._cwd.WriteTObject(graph, name, "overwrite")
 
         if objects:
-            raise RuntimeError(f'Unsupported ROOT objects: {objects}')
+            raise RuntimeError(f"Unsupported ROOT objects: {objects}")
 
     def exitdict(self, k, v):
         if not self._prevd:
@@ -194,4 +204,3 @@ class ExportToRootVisitor(NestedMKDictVisitor):
     def stop(self, dct):
         logger.log(INFO1, f"Close {self._file.GetName()}")
         self._file.Close()
-

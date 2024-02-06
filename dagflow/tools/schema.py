@@ -1,4 +1,4 @@
-from collections.abc import Callable, Sequence
+from collections.abc import Callable, Mapping, Sequence
 from contextlib import suppress
 from os import R_OK, access
 from pathlib import Path
@@ -32,11 +32,7 @@ IsReadableFilenameSeqOrFilename = Or(
 
 def IsFilewithExt(*exts: str):
     """Returns a function that retunts True if the file extension is consistent"""
-
-    def checkfilename(filename: str):
-        return filename.endswith(ext for ext in exts)
-
-    return checkfilename
+    return lambda filename: filename.endswith(exts)
 
 
 def AllFileswithExt(*exts: str):
@@ -60,15 +56,19 @@ def AllFileswithExt(*exts: str):
     return checkfilenames
 
 
-def LoadFileWithExt(*, key: str | dict | None = None, update: bool = False, **kwargs: Callable):
+def LoadFileWithExt(*, key: str | Mapping | None = None, update: bool = False, **kwargs: Callable):
     """Returns a function that retunts True if the file extension is consistent"""
 
-    def checkfilename(filename: str | dict):
+    def checkfilename(filename_or_dict: str | Mapping):
         if key is not None:
-            dct = filename.copy()
+            if not isinstance(filename_or_dict, Mapping):
+                raise SchemaError("Expect dictionary as a filename")
+            dct = filename_or_dict.copy()
             filename = dct.pop(key)
         else:
-            dct = None
+            if not isinstance(filename_or_dict, str):
+                raise SchemaError("Expect str as a filename")
+            filename, dct = filename_or_dict, None
         for ext, loader in kwargs.items():
             if filename.endswith(f".{ext}"):
                 break
@@ -122,10 +122,7 @@ def LoadPy(fname: Path | str, variable: str, *, type: Type | None = None):
 
 
 def MakeLoaderPy(variable: str):
-    def loader(fname):
-        return LoadPy(fname, variable)
-
-    return loader
+    return lambda fname: LoadPy(fname, variable)
 
 
 from multikeydict.nestedmkdict import NestedMKDict

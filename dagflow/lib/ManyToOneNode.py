@@ -1,19 +1,17 @@
-from collections.abc import Sequence
-from typing import Any, Tuple, Union
+from __future__ import annotations
 
-from multikeydict.typing import KeyLike, TupleKey, properkey
+from collections.abc import Sequence
+from typing import TYPE_CHECKING, Any, Tuple, Union
+
+from multikeydict.typing import properkey
 
 from ..inputhandler import MissingInputAddOne
 from ..node import Node
 from ..nodes import FunctionNode
 from ..storage import NodeStorage
-from ..typefunctions import (
-    AllPositionals,
-    check_has_inputs,
-    check_inputs_equivalence,
-    copy_from_input_to_output,
-    eval_output_dtype,
-)
+
+if TYPE_CHECKING:
+    from multikeydict.typing import KeyLike, TupleKey
 
 
 class ManyToOneNode(FunctionNode):
@@ -40,6 +38,14 @@ class ManyToOneNode(FunctionNode):
 
     def _typefunc(self) -> None:
         """A output takes this function to determine the dtype and shape"""
+        from ..typefunctions import (
+            AllPositionals,
+            check_has_inputs,
+            check_inputs_equivalence,
+            copy_from_input_to_output,
+            eval_output_dtype,
+        )
+
         check_has_inputs(self)  # at least one input
         check_inputs_equivalence(
             self, broadcastable=self._broadcastable
@@ -75,10 +81,7 @@ class ManyToOneNode(FunctionNode):
                 name, replicate=replicate, replicate_inputs=replicate_inputs, **kwargs
             )
 
-        return cls.replicate_from_indices(
-            name, replicate=replicate, **kwargs
-        )
-
+        return cls.replicate_from_indices(name, replicate=replicate, **kwargs)
 
     @classmethod
     def replicate_from_args(

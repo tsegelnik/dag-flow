@@ -76,10 +76,12 @@ class NodeStorage(NestedMKDict):
         self.visit(PlotVisitor(*args, **kwargs))
 
     def __setitem__(self, key: KeyLike, item: Any) -> None:
-        if isinstance(item, (Node, Output)) or type(item).__name__ in {"Parameter", "Parameters"}:
-            logger.log(INFO3, f"Set {self.joinkey(key)}")
-        elif isinstance(item, Input):
-            logger.log(DEBUG, f"Set {self.joinkey(key)}")
+        from .parameters import Parameter, Parameters
+        match item:
+            case Node() | Output() | Parameter() | Parameters():
+                logger.log(INFO3, f"Set {self.joinkey(key)}")
+            case Input():
+                logger.log(DEBUG, f"Set {self.joinkey(key)}")
 
         super().__setitem__(key, item)
 

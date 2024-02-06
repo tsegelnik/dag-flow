@@ -64,7 +64,7 @@ def load_array(acfg: Optional[Mapping] = None, **kwargs):
     skip = cfg["skip"]
 
     data = {}
-    for filekey, filename, objectkey, key in iterate_filenames_and_objectnames(
+    for _, filename, _, key in iterate_filenames_and_objectnames(
         filenames, file_keys, keys, skip=skip
     ):
         skey = strkey(key)

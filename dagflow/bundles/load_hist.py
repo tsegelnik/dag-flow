@@ -74,7 +74,7 @@ def load_hist(acfg: Optional[Mapping] = None, **kwargs):
 
     edges_list = []
     data = {}
-    for filekey, filename, objectkey, key in iterate_filenames_and_objectnames(
+    for _, filename, _, key in iterate_filenames_and_objectnames(
         filenames, file_keys, keys, skip=skip
     ):
         skey = strkey(key)
@@ -83,7 +83,7 @@ def load_hist(acfg: Optional[Mapping] = None, **kwargs):
         x, y = FileReader.hist[filename, objectname(skey, key)]
         if normalize and (ysum := y.sum()) != 0.0:
             y /= ysum
-            logger.log(INFO3, f"[normalize]")
+            logger.log(INFO3, "[normalize]")
 
         data[key] = x, y
         edges_list.append(x)

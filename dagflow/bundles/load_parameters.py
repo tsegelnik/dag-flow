@@ -15,13 +15,10 @@ from ..storage import NodeStorage
 from ..tools.schema import IsStrSeqOrStr, LoadFileWithExt, LoadYaml, MakeLoaderPy, NestedSchema
 
 
-class ParsCfgHasProperFormat(object):
+class ParsCfgHasProperFormat:
     def validate(self, data: dict) -> dict:
         format = data["format"]
-        if isinstance(format, str):
-            nelements = 1
-        else:
-            nelements = len(format)
+        nelements = 1 if isinstance(format, str) else len(format)
 
         dtin = NestedMKDict(data)
         for key, subdata in dtin("parameters").walkitems():
@@ -260,10 +257,7 @@ def load_parameters(
     cfg = NestedMKDict(cfg)
 
     pathstr = cfg["path"]
-    if pathstr:
-        path = tuple(pathstr.split("."))
-    else:
-        path = ()
+    path = tuple(pathstr.split(".")) if pathstr else ()
 
     state = cfg["state"]
 

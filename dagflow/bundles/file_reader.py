@@ -60,10 +60,7 @@ class FileReaderMeta(type):
         file_name_str = file_name if isinstance(file_name, str) else str(file_name)
         try:
             ret = self._opened_files[file_name_str]
-            if file_name_str != self._last_used_file:
-                action = "Use"
-            else:
-                action = None
+            action = file_name_str!=self._last_used_file and "Use" or None
         except KeyError:
             ret = FileReader.open(file_name)
             action = "Read"
@@ -232,7 +229,7 @@ class FileReaderHDF5(FileReaderArray):
     def _get_xy(self, object_name: str) -> tuple[NDArray, NDArray]:
         data = self._get_object(object_name)
         cols = data.dtype.names
-        return data[cols[0]], data[cols[1]]
+        return data[cols[0]].to_numpy(), data[cols[1]].to_numpy()
 
     def _get_array(self, object_name: str) -> NDArray:
         ret = self._get_object(object_name)
