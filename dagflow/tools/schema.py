@@ -101,7 +101,8 @@ from yaml import Loader, load
 
 
 def LoadYaml(fname: Path | str):
-    fname = str(fname)
+    if isinstance(fname, Path):
+        fname = str(fname)
     with open(fname) as file:
         ret = load(file, Loader)
 
@@ -113,6 +114,8 @@ import runpy
 
 
 def LoadPy(fname: Path | str, variable: str, *, type: type | None = None):
+    if isinstance(fname, Path):
+        fname = str(fname)
     logger.log(INFO1, f"Read: {fname} ({variable})")
     dct = runpy.run_path(fname)
 
