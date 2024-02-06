@@ -1,27 +1,16 @@
-from collections.abc import Generator
-from collections.abc import Mapping
-from collections.abc import Sequence
+from collections.abc import Generator, Mapping, Sequence
 from pathlib import Path
 from typing import Optional as OptionalType
 
+from schema import And, Optional, Or, Schema, SchemaError, Use
+
 from multikeydict.nestedmkdict import NestedMKDict
 from multikeydict.typing import properkey
-from schema import And
-from schema import Optional
-from schema import Or
-from schema import Schema
-from schema import SchemaError
-from schema import Use
 
 from ..exception import InitializationError
-from ..labels import format_latex
-from ..labels import inherit_labels
+from ..labels import format_latex, inherit_labels
 from ..storage import NodeStorage
-from ..tools.schema import IsStrSeqOrStr
-from ..tools.schema import LoadFileWithExt
-from ..tools.schema import LoadYaml
-from ..tools.schema import MakeLoaderPy
-from ..tools.schema import NestedSchema
+from ..tools.schema import IsStrSeqOrStr, LoadFileWithExt, LoadYaml, MakeLoaderPy, NestedSchema
 
 
 class ParsCfgHasProperFormat:

@@ -1,32 +1,26 @@
 from __future__ import annotations
 
-from collections.abc import Mapping
-from collections.abc import Sequence
+from collections.abc import Mapping, Sequence
 from contextlib import suppress
 from os.path import basename
 from pathlib import Path
 from typing import TYPE_CHECKING
 
-from numpy import allclose
-from numpy import double
-from numpy import dtype
-from numpy import frombuffer
-from numpy import linspace
+from numpy import allclose, double, dtype, frombuffer, linspace
 from schema import And
 from schema import Optional as SchemaOptional
-from schema import Or
-from schema import Schema
-from schema import Use
+from schema import Or, Schema, Use
 
-from ..logger import INFO1
-from ..logger import logger
+from ..logger import INFO1, logger
 from ..storage import NodeStorage
-from ..tools.schema import AllFileswithExt
-from ..tools.schema import IsFilenameSeqOrFilename
-from ..tools.schema import IsReadable
-from ..tools.schema import IsStrSeqOrStr
-from ..tools.schema import LoadFileWithExt
-from ..tools.schema import LoadYaml
+from ..tools.schema import (
+    AllFileswithExt,
+    IsFilenameSeqOrFilename,
+    IsReadable,
+    IsStrSeqOrStr,
+    LoadFileWithExt,
+    LoadYaml,
+)
 
 if TYPE_CHECKING:
     import ROOT
