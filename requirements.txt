@@ -13,3 +13,4 @@ pyyaml
 schema
 scipy
 tabulate
+uproot
