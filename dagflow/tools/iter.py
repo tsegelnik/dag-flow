@@ -1,11 +1,13 @@
-from typing import Generator, Sequence, TypeVar, Union
+from collections.abc import Generator
+from collections.abc import Sequence
+from typing import TypeVar
 
 T = TypeVar("T")
 
 
 def iter_sequence_not_string(
-    seq_or_str: Union[str, T, Sequence[T], None]
-) -> Generator[Union[T, str], None, None]:
+    seq_or_str: str | T | Sequence[T] | None
+) -> Generator[T | str, None, None]:
     """Iterate a sequence o yield an object. Strings are not sequences here."""
     if isinstance(seq_or_str, str):
         yield seq_or_str

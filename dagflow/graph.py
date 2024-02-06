@@ -1,13 +1,12 @@
-from typing import List, Optional
+from typing import Optional
 
-from .exception import (
-    ClosedGraphError,
-    ClosingError,
-    InitializationError,
-    UnclosedGraphError,
-)
-from .logger import Logger, get_logger
+from .exception import ClosedGraphError
+from .exception import ClosingError
+from .exception import InitializationError
+from .exception import UnclosedGraphError
 from .graphbase import GraphBase
+from .logger import get_logger
+from .logger import Logger
 
 
 class Graph(GraphBase):
@@ -26,7 +25,7 @@ class Graph(GraphBase):
         "_logger",
     )
 
-    _label: Optional[str]
+    _label: str | None
     _name: str
     _close: bool
     _closed: bool
@@ -175,4 +174,4 @@ class Graph(GraphBase):
             self.close(strict=self._strict)
 
 
-_context_graph: List["Graph"] = []
+_context_graph: list["Graph"] = []

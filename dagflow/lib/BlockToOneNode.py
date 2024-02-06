@@ -1,19 +1,19 @@
-from typing import Any, Optional, Sequence, Tuple, Union
+from collections.abc import Sequence
+from typing import Any
 
-from multikeydict.nestedmkdict import walkkeys
-from multikeydict.typing import KeyLike, TupleKey, properkey
+from multikeydict.typing import KeyLike
+from multikeydict.typing import properkey
+from multikeydict.typing import TupleKey
 
 from ..inputhandler import MissingInputAddEach
 from ..node import Node
 from ..nodes import FunctionNode
 from ..storage import NodeStorage
-from ..typefunctions import (
-    AllPositionals,
-    check_has_inputs,
-    check_inputs_equivalence,
-    copy_from_input_to_output,
-    eval_output_dtype,
-)
+from ..typefunctions import AllPositionals
+from ..typefunctions import check_has_inputs
+from ..typefunctions import check_inputs_equivalence
+from ..typefunctions import copy_from_input_to_output
+from ..typefunctions import eval_output_dtype
 
 
 class BlockToOneNode(FunctionNode):
@@ -34,7 +34,7 @@ class BlockToOneNode(FunctionNode):
         self._broadcastable = broadcastable
 
     @staticmethod
-    def _input_names() -> Tuple[str, ...]:
+    def _input_names() -> tuple[str, ...]:
         return ("input",)
 
     @classmethod
@@ -61,31 +61,38 @@ class BlockToOneNode(FunctionNode):
     def replicate(
         cls,
         name: str,
-        *args: Union[NodeStorage, Any],
+        *args: NodeStorage | Any,
         replicate: Sequence[KeyLike] = ((),),
-        replicate_inputs: Optional[Sequence[KeyLike]] = None,
+        replicate_inputs: Sequence[KeyLike] | None = None,
         **kwargs,
-    ) -> Tuple[Optional[Node], NodeStorage]:
+    ) -> tuple[Node | None, NodeStorage]:
         if args and replicate_inputs is not None:
             raise RuntimeError(
                 "ManyToOneNode.replicate can use either `args` or `replicate_inputs`"
             )
 
-        if replicate_inputs is not None:
+        if args:
+            return cls.replicate_from_args(name, *args, replicate=replicate, **kwargs)
+
+        if replicate_inputs:
             return cls.replicate_from_indices(
                 name, replicate=replicate, replicate_inputs=replicate_inputs, **kwargs
             )
 
-        return cls.replicate_from_args(name, *args, replicate=replicate, **kwargs)
+        return cls.replicate_from_indices(
+            name, replicate=replicate, **kwargs
+        )
+
 
     @classmethod
     def replicate_from_args(
         cls,
         fullname: str,
-        *args: Union[NodeStorage, Any],
+        *args: NodeStorage | Any,
         replicate: Sequence[KeyLike] = ((),),
+        allow_skip_inputs: bool = False,
         **kwargs,
-    ) -> Tuple[Optional[Node], NodeStorage]:
+    ) -> tuple[Node | None, NodeStorage]:
         storage = NodeStorage(default_containers=True)
         nodes = storage("nodes")
         outputs = storage("outputs")
@@ -99,13 +106,12 @@ class BlockToOneNode(FunctionNode):
         path = properkey(fullname, sep=".")
 
         def fcn_outer_before(outkey: TupleKey):
-            nonlocal outname, instance, nodes
+            nonlocal outname, instance
             outname = path + outkey
             instance = cls(".".join(outname), **kwargs)
             nodes[outname] = instance
 
         def fcn(i: int, inkey: TupleKey, outkey: TupleKey):
-            nonlocal args, instance
             container = args[i]
             output = container[inkey] if inkey else container
             try:
@@ -116,10 +122,10 @@ class BlockToOneNode(FunctionNode):
                 ) from e
 
         def fcn_outer_after(_):
-            nonlocal outname, instance
             outputs[outname] = instance.outputs[-1]
 
         from multikeydict.match import match_keys
+        from multikeydict.nestedmkdict import walkkeys
 
         keys_left = tuple(tuple(walkkeys(arg)) for arg in args)
         match_keys(
@@ -128,6 +134,8 @@ class BlockToOneNode(FunctionNode):
             fcn,
             fcn_outer_before=fcn_outer_before,
             fcn_outer_after=fcn_outer_after,
+            require_all_left_keys_processed=not allow_skip_inputs,
+            require_all_right_keys_processed=False,
         )
 
         NodeStorage.update_current(storage, strict=True)
@@ -143,9 +151,9 @@ class BlockToOneNode(FunctionNode):
         fullname: str,
         *,
         replicate: Sequence[KeyLike] = ((),),
-        replicate_inputs: Optional[Sequence[KeyLike]] = None,
+        replicate_inputs: Sequence[KeyLike] | None = None,
         **kwargs,
-    ) -> Tuple[Optional[Node], NodeStorage]:
+    ) -> tuple[Node | None, NodeStorage]:
         storage = NodeStorage(default_containers=True)
         nodes = storage("nodes")
         outputs = storage("outputs")

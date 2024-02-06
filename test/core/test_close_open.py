@@ -1,8 +1,12 @@
 #!/usr/bin/env python
+from numpy import arange
+from numpy import array
 
 from dagflow.graph import Graph
-from dagflow.lib import Array, Product, Sum, WeightedSum
-from numpy import arange, array
+from dagflow.lib import Array
+from dagflow.lib import Product
+from dagflow.lib import Sum
+from dagflow.lib import WeightedSum
 
 
 def test_00(debug_graph):

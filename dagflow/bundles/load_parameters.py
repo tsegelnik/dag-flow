@@ -1,7 +1,6 @@
+from collections.abc import Generator, Mapping, Sequence
 from pathlib import Path
-from typing import Generator, Mapping
 from typing import Optional as OptionalType
-from typing import Sequence, Tuple, Union
 
 from schema import And, Optional, Or, Schema, SchemaError, Use
 
@@ -14,13 +13,10 @@ from ..storage import NodeStorage
 from ..tools.schema import IsStrSeqOrStr, LoadFileWithExt, LoadYaml, MakeLoaderPy, NestedSchema
 
 
-class ParsCfgHasProperFormat(object):
+class ParsCfgHasProperFormat:
     def validate(self, data: dict) -> dict:
         format = data["format"]
-        if isinstance(format, str):
-            nelements = 1
-        else:
-            nelements = len(format)
+        nelements = 1 if isinstance(format, str) else len(format)
 
         dtin = NestedMKDict(data)
         for key, subdata in dtin("parameters").walkitems():
@@ -62,24 +58,15 @@ def IsFormatOk(format):
     if not isinstance(format, (tuple, list)):
         return format == "value"
 
-    if len(format) == 1:
-        (f1,) = format
-        return f1 == "value"
-    else:
-        if len(format) == 2:
-            f1, f3 = format
-        elif len(format) == 3:
-            f1, f2, f3 = format
+    match format:
+        case "value" | ["value"]:
+            return True
+        case [*valcent, "sigma_absolute" | "sigma_relative" | "sigma_percent"]:
+            match valcent:
+                case ["value" | "central"] | ["value", "central"] | ["central", "value"]:
+                    return True
 
-            if f2 not in ("value", "central") or f1 == f2:
-                return False
-        else:
-            return False
-
-        if f3 not in ("sigma_absolute", "sigma_relative", "sigma_percent"):
-            return False
-
-        return f1 in ("value", "central")
+    return False
 
 
 def CheckCorrelationSizes(cfg):
@@ -195,6 +182,8 @@ def get_label(key: tuple, labelscfg: dict) -> dict:
         pass
     else:
         ret["index_values"] = list(key)
+        if isinstance(ret, NestedMKDict):
+            ret = ret.object
         return dict(ret)
 
     for n in range(1, len(key) + 1):
@@ -219,7 +208,7 @@ def get_label(key: tuple, labelscfg: dict) -> dict:
 
 def iterate_varcfgs(
     cfg: NestedMKDict,
-) -> Generator[Tuple[Tuple[str, ...], NestedMKDict], None, None]:
+) -> Generator[tuple[tuple[str, ...], NestedMKDict], None, None]:
     parameterscfg = cfg("parameters")
     labelscfg = cfg("labels")
     format = cfg["format"]
@@ -258,7 +247,7 @@ def check_correlations_consistent(cfg: NestedMKDict) -> None:
 def load_parameters(
     acfg: OptionalType[Mapping] = None,
     *,
-    nuisance_location: Union[str, Sequence[str], None] = "statistic.nuisance.parts",
+    nuisance_location: str | Sequence[str] | None = "statistic.nuisance.parts",
     **kwargs,
 ):
     acfg = dict(acfg or {}, **kwargs)
@@ -266,16 +255,14 @@ def load_parameters(
     cfg = NestedMKDict(cfg)
 
     pathstr = cfg["path"]
-    if pathstr:
-        path = tuple(pathstr.split("."))
-    else:
-        path = ()
+    path = tuple(pathstr.split(".")) if pathstr else ()
 
     state = cfg["state"]
 
     ret = NestedMKDict(
         {
             "parameter": {
+                "all": {},
                 "constant": {},
                 "free": {},
                 "constrained": {},
@@ -286,7 +273,12 @@ def load_parameters(
                 "nuisance_parts": {},
                 "nuisance": {},
             },
-            "parameter_node": {"constant": {}, "free": {}, "constrained": {}},
+            "parameter_node": {
+                "all": {},
+                "constant": {},
+                "free": {},
+                "constrained": {}
+            },
         },
         sep=".",
     )
@@ -377,19 +369,22 @@ def load_parameters(
         pars[key] = par
 
     for key, par in pars.walkitems():
+        pathkey = path + key
         if par.is_constrained:
-            target = ("constrained",) + path
+            targetkey = ("constrained",) + pathkey
         elif par.is_fixed:
-            target = ("constant",) + path
+            targetkey = ("constant",) + pathkey
         else:
-            target = ("free",) + path
+            targetkey = ("free",) + pathkey
 
-        targetkey = target + key
         ret[("parameter_node",) + targetkey] = par
+        ret[("parameter_node", "all") + pathkey] = par
 
         ptarget = ("parameter",) + targetkey
+        atarget = ("parameter", "all") + pathkey
         for subname, subpar in par.iteritems():
             ret[ptarget + subname] = subpar
+            ret[atarget + subname] = subpar
 
         if constraint := par.constraint:
             normpars_i = normpars.setdefault(key[0], [])

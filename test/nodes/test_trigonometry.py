@@ -1,21 +1,22 @@
 #!/usr/bin/env python
-
-from dagflow.graph import Graph
-from dagflow.lib import Array
-from dagflow.lib import Cos, Sin, Tan, ArcCos, ArcSin, ArcTan # Accessed via globals()
-from dagflow.graphviz import savegraph
-from dagflow.plot import plot_auto
-
-from numpy import allclose, pi, linspace
-from numpy import cos, sin, tan, arccos, arcsin, arctan # accessed via globals()
+import numpy
 from matplotlib.pyplot import close
+from numpy import allclose
+from numpy import linspace
+from numpy import pi
 from pytest import mark
+
+from dagflow import lib
+from dagflow.graph import Graph
+from dagflow.graphviz import savegraph
+from dagflow.lib import Array
+from dagflow.plot import plot_auto
 
 @mark.parametrize("dtype", ("d", "f"))
 @mark.parametrize("fcnname", ("cos", "sin", "tan", "arccos", "arcsin", "arctan"))
-def test_Cos_01(testname, debug_graph, fcnname, dtype):
-    fcn_np = globals()[fcnname]
-    fcn_node = globals()[f"{fcnname[:3].capitalize()}{fcnname[3:].capitalize()}"]
+def test_Trigonometry_01(testname, debug_graph, fcnname, dtype):
+    fcn_np = getattr(numpy, fcnname)
+    fcn_node = getattr(lib, f"{fcnname[:3].capitalize()}{fcnname[3:].capitalize()}")
     if fcnname in ("cos", "sin", "tan"):
         arrays_in = tuple(linspace(-2*pi, 2*pi, 101, dtype=dtype) * i for i in (1, 2, 3))
     elif fcnname=="arctan":

@@ -5,14 +5,12 @@ from numpy import integer
 from numpy.typing import NDArray
 
 from ..exception import TypeFunctionError
-from ..typefunctions import (
-    AllPositionals,
-    check_has_inputs,
-    check_input_dimension,
-    check_input_shape,
-    check_input_subtype,
-    copy_input_dtype_to_output,
-)
+from ..typefunctions import AllPositionals
+from ..typefunctions import check_has_inputs
+from ..typefunctions import check_input_dimension
+from ..typefunctions import check_input_shape
+from ..typefunctions import check_input_subtype
+from ..typefunctions import copy_input_dtype_to_output
 from .OneToOneNode import OneToOneNode
 
 if TYPE_CHECKING:

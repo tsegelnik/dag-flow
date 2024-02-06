@@ -1,14 +1,20 @@
-from .node import Node, Output
-from .exception import InitializationError
-from .lib.NormalizeCorrelatedVars2 import NormalizeCorrelatedVars2
-from .lib.Cholesky import Cholesky
-from .lib.Array import Array
-from .lib.CovmatrixFromCormatrix import CovmatrixFromCormatrix
-from .labels import inherit_labels
+from collections.abc import Generator
+from collections.abc import Sequence
 
-from numpy import zeros_like, array, ndarray
-from numpy.typing import DTypeLike, ArrayLike
-from typing import Optional, Dict, Tuple, List, Union, Generator, Sequence
+from numpy import array
+from numpy import ndarray
+from numpy import zeros_like
+from numpy.typing import ArrayLike
+from numpy.typing import DTypeLike
+
+from .exception import InitializationError
+from .labels import inherit_labels
+from .lib.Array import Array
+from .lib.Cholesky import Cholesky
+from .lib.CovmatrixFromCormatrix import CovmatrixFromCormatrix
+from .lib.NormalizeCorrelatedVars2 import NormalizeCorrelatedVars2
+from .node import Node
+from .node import Output
 
 
 class Parameter:
@@ -25,7 +31,7 @@ class Parameter:
         idx: int = 0,
         *,
         parent: "Parameters",
-        connectible: Optional[Output] = None,
+        connectible: Output | None = None,
         labelfmt: str = "{}",
     ):
         self._idx = idx
@@ -196,21 +202,21 @@ class Parameters:
     )
     value: Output
     _value_node: Node
-    _pars: List[Parameter]
-    _names: Tuple[Tuple[str, ...], ...]
-    _norm_pars: List[Parameter]
+    _pars: list[Parameter]
+    _names: tuple[tuple[str, ...], ...]
+    _norm_pars: list[Parameter]
 
     _is_variable: bool
 
-    _constraint: Optional[Constraint]
+    _constraint: Constraint | None
 
     def __init__(
         self,
-        names: Tuple[Tuple[str, ...], ...],
+        names: tuple[tuple[str, ...], ...],
         value: Node,
         *,
-        variable: Optional[bool] = None,
-        fixed: Optional[bool] = None,
+        variable: bool | None = None,
+        fixed: bool | None = None,
         close: bool = True,
     ):
         self._value_node = value
@@ -264,17 +270,17 @@ class Parameters:
         return False if self._constraint is None else self._constraint.is_correlated
 
     @property
-    def parameters(self) -> List:
+    def parameters(self) -> list:
         return self._pars
 
     @property
-    def norm_parameters(self) -> List:
+    def norm_parameters(self) -> list:
         return self._norm_pars
 
-    def iteritems(self) -> Generator[Tuple[Tuple[str, ...], Parameter], None, None]:
+    def iteritems(self) -> Generator[tuple[tuple[str, ...], Parameter], None, None]:
         yield from zip(self._names, self._pars)
 
-    def iteritems_norm(self) -> Generator[Tuple[Tuple[str, ...], Parameter], None, None]:
+    def iteritems_norm(self) -> Generator[tuple[tuple[str, ...], Parameter], None, None]:
         yield from zip(self._names, self._norm_pars)
 
     def _reset_pars(self) -> None:
@@ -282,7 +288,7 @@ class Parameters:
         self._norm_pars = []
 
     @property
-    def constraint(self) -> Optional[Constraint]:
+    def constraint(self) -> Constraint | None:
         return self._constraint
 
     def to_dict(self, *, label_from: str = "text") -> dict:
@@ -300,13 +306,13 @@ class Parameters:
 
     @staticmethod
     def from_numbers(
-        value: Union[float, int, ArrayLike],
+        value: float | int | ArrayLike,
         *,
-        names: Tuple[Tuple[str, ...], ...] = ((),),
+        names: tuple[tuple[str, ...], ...] = ((),),
         dtype: DTypeLike = "d",
-        variable: Optional[bool] = None,
-        fixed: Optional[bool] = None,
-        label: Optional[Dict[str, str]] = None,
+        variable: bool | None = None,
+        fixed: bool | None = None,
+        label: dict[str, str] | None = None,
         **kwargs,
     ) -> "Parameters":
         if label is None:
@@ -377,10 +383,10 @@ class GaussianConstraint(Constraint):
     _sigma_node: Node
     _normvalue_node: Node
 
-    _cholesky_node: Optional[Node]
-    _covariance_node: Optional[Node]
-    _correlation_node: Optional[Node]
-    _sigma_total_node: Optional[Node]
+    _cholesky_node: Node | None
+    _covariance_node: Node | None
+    _correlation_node: Node | None
+    _sigma_total_node: Node | None
 
     _norm_node: Node
 
@@ -391,11 +397,11 @@ class GaussianConstraint(Constraint):
         central: Node,
         *,
         parameters: Parameters,
-        sigma: Optional[Node] = None,
-        covariance: Optional[Node] = None,
-        correlation: Optional[Node] = None,
-        constrained: Optional[bool] = None,
-        free: Optional[bool] = None,
+        sigma: Node | None = None,
+        covariance: Node | None = None,
+        correlation: Node | None = None,
+        constrained: bool | None = None,
+        free: bool | None = None,
         **_,
     ):
         super().__init__(parameters=parameters)
@@ -522,9 +528,9 @@ class GaussianConstraint(Constraint):
     @staticmethod
     def from_numbers(
         *,
-        central: Union[float, Sequence[float]],
-        sigma: Union[float, Sequence[float]],
-        label: Optional[Dict[str, str]] = None,
+        central: float | Sequence[float],
+        sigma: float | Sequence[float],
+        label: dict[str, str] | None = None,
         dtype: DTypeLike = "d",
         **kwargs,
     ) -> Parameters:
@@ -556,7 +562,7 @@ class GaussianConstraint(Constraint):
         return GaussianConstraint(central=node_central, sigma=node_sigma, **kwargs)
 
 
-def GaussianParameters(names: Tuple[Tuple[str]], value: Node, *args, **kwargs) -> Parameters:
+def GaussianParameters(names: tuple[tuple[str]], value: Node, *args, **kwargs) -> Parameters:
     pars = Parameters(names, value, close=False)
     pars.set_constraint(GaussianConstraint(*args, parameters=pars, **kwargs))
     pars._close()

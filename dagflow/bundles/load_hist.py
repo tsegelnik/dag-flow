@@ -27,6 +27,7 @@ _schema_cfg = Schema(
         SchemaOptional("merge_x", default=False): bool,
         SchemaOptional("x", default="x"): str,
         SchemaOptional("y", default="y"): str,
+        SchemaOptional("normalize", default=False): bool,
         SchemaOptional("replicate", default=((),)): Or((IsStrSeqOrStr,), [IsStrSeqOrStr]),
         SchemaOptional("replicate_files", default=((),)): Or((IsStrSeqOrStr,), [IsStrSeqOrStr]),
         SchemaOptional("skip", default=None): And(
@@ -55,7 +56,7 @@ def _validate_cfg(cfg):
         return _schema_cfg.validate(cfg)
 
 
-def load_graph_data(acfg: Mapping | None = None, **kwargs):
+def load_hist(acfg: Mapping | None = None, **kwargs):
     acfg = dict(acfg or {}, **kwargs)
     cfg = _validate_cfg(acfg)
 
@@ -65,11 +66,12 @@ def load_graph_data(acfg: Mapping | None = None, **kwargs):
     file_keys = cfg["replicate_files"]
     objectname = cfg["objects"]
     skip = cfg["skip"]
+    normalize = cfg["normalize"]
 
     xname = name, cfg["x"]
     yname = name, cfg["y"]
 
-    meshes_list = []
+    edges_list = []
     data = {}
     for _, filename, _, key in iterate_filenames_and_objectnames(
         filenames, file_keys, keys, skip=skip
@@ -77,31 +79,34 @@ def load_graph_data(acfg: Mapping | None = None, **kwargs):
         skey = strkey(key)
         logger.log(INFO3, f"Process {skey}")
 
-        x, y = FileReader.graph[filename, objectname(skey, key)]
+        x, y = FileReader.hist[filename, objectname(skey, key)]
+        if normalize and (ysum := y.sum()) != 0.0:
+            y /= ysum
+            logger.log(INFO3, "[normalize]")
 
         data[key] = x, y
-        meshes_list.append(x)
+        edges_list.append(x)
 
     if cfg["merge_x"]:
-        x0 = meshes_list[0]
-        for xi in meshes_list[1:]:
+        x0 = edges_list[0]
+        for xi in edges_list[1:]:
             if not allclose(x0, xi, atol=0, rtol=0):
-                raise RuntimeError("load_graph: inconsistent x axes, unable to merge.")
+                raise RuntimeError("load_hist: inconsistent x axes, unable to merge.")
 
-        commonmesh = x0
+        commonedges, _ = Array.make_stored(".".join(xname), x0)
     else:
-        commonmesh = None
+        commonedges = None
 
     storage = NodeStorage(default_containers=True)
-    data_storage = storage("data")
-    if commonmesh is not None:
-        data_storage[xname] = commonmesh
     with storage:
         for key, (x, y) in data.items():
-            if commonmesh is None:
-                data_storage[xname + key] = x
-
-            data_storage[yname + key] = y
+            if commonedges:
+                edges = commonedges
+            else:
+                xkey = ".".join(xname + key)
+                edges, _ = Array.make_stored(xkey, x)
+            ykey = ".".join(yname + key)
+            Array.make_stored(ykey, y, edges=edges)
 
     NodeStorage.update_current(storage, strict=True)
 

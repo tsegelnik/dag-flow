@@ -1,31 +1,37 @@
-from typing import Iterator, Optional, Union
+from __future__ import annotations
+
+from typing import TYPE_CHECKING
 
 from numpy import zeros
-from numpy.typing import DTypeLike, NDArray
+from numpy.typing import DTypeLike
+from numpy.typing import NDArray
 
 from .datadescriptor import DataDescriptor
 from .edges import EdgeContainer
-from .exception import (
-    AllocationError,
-    ClosedGraphError,
-    InitializationError,
-    ReconnectionError,
-)
+from .exception import AllocationError
+from .exception import ClosedGraphError
+from .exception import InitializationError
+from .exception import ReconnectionError
 from .iter import StopNesting
+from .labels import repr_pretty
 from .output import Output
 from .shift import rshift
-from .types import EdgesLike, NodeT, ShapeLike
-from .labels import repr_pretty
+from .types import EdgesLike
+from .types import ShapeLike
+
+if TYPE_CHECKING:
+    from .node import Node
+
 
 class Input:
-    _own_data: Optional[NDArray] = None
+    _own_data: NDArray | None = None
     _own_dd: DataDescriptor
 
-    _node: Optional[NodeT]
-    _name: Optional[str]
+    _node: Node | None
+    _name: str | None
 
-    _parent_output: Optional[Output] = None
-    _child_output: Optional[Output] = None
+    _parent_output: Output | None = None
+    _child_output: Output | None = None
 
     _allocatable: bool = False
     _owns_buffer: bool = False
@@ -34,22 +40,20 @@ class Input:
 
     def __init__(
         self,
-        name: Optional[str] = None,
-        node: Optional[NodeT] = None,
+        name: str | None = None,
+        node: Node | None = None,
         *,
-        child_output: Optional[Output] = None,
-        parent_output: Optional[Output] = None,
-        debug: Optional[bool] = None,
+        child_output: Output | None = None,
+        parent_output: Output | None = None,
+        debug: bool | None = None,
         allocatable: bool = False,
-        data: Optional[NDArray] = None,
+        data: NDArray | None = None,
         dtype: DTypeLike = None,
-        shape: Optional[ShapeLike] = None,
-        axes_edges: Optional[EdgesLike] = None,
-        axes_meshes: Optional[EdgesLike] = None,
+        shape: ShapeLike | None = None,
+        axes_edges: EdgesLike | None = None,
+        axes_meshes: EdgesLike | None = None,
     ):
-        if data is not None and (
-            allocatable or dtype is not None or shape is not None
-        ):
+        if data is not None and (allocatable or dtype is not None or shape is not None):
             raise InitializationError(input=input, node=node)
 
         self._name = name
@@ -75,7 +79,7 @@ class Input:
     _repr_pretty_ = repr_pretty
 
     @property
-    def own_data(self) -> Optional[NDArray]:
+    def own_data(self) -> NDArray | None:
         return self._own_data
 
     @property
@@ -91,17 +95,13 @@ class Input:
         data,
         *,
         owns_buffer: bool,
-        axes_edges: Optional[EdgesLike] = None,
-        axes_meshes: Optional[EdgesLike] = None,
+        axes_edges: EdgesLike | None = None,
+        axes_meshes: EdgesLike | None = None,
     ):
         if self.closed:
-            raise ClosedGraphError(
-                "Unable to set input data.", node=self._node, input=self
-            )
+            raise ClosedGraphError("Unable to set input data.", node=self._node, input=self)
         if self.own_data is not None:
-            raise AllocationError(
-                "Input already has data.", node=self._node, input=self
-            )
+            raise AllocationError("Input already has data.", node=self._node, input=self)
 
         self._own_data = data
         self._owns_buffer = owns_buffer
@@ -114,40 +114,30 @@ class Input:
     def closed(self):
         return self._node.closed if self.node else False
 
-    def set_child_output(
-        self, child_output: Optional[Output], force: bool = False
-    ) -> None:
+    def set_child_output(self, child_output: Output | None, force: bool = False) -> None:
         if not self.closed:
             return self._set_child_output(child_output, force)
         raise ClosedGraphError(input=self, node=self.node, output=child_output)
 
-    def _set_child_output(
-        self, child_output: Output, force: bool = False
-    ) -> None:
+    def _set_child_output(self, child_output: Output, force: bool = False) -> None:
         if self.child_output and not force:
             raise ReconnectionError(output=self.child_output, node=self.node)
         self._child_output = child_output
         if child_output:
             child_output.parent_input = self
 
-    def set_parent_output(
-        self, parent_output: Output, force: bool = False
-    ) -> None:
+    def set_parent_output(self, parent_output: Output, force: bool = False) -> None:
         if not self.closed:
             return self._set_parent_output(parent_output, force)
-        raise ClosedGraphError(
-            input=self, node=self.node, output=parent_output
-        )
+        raise ClosedGraphError(input=self, node=self.node, output=parent_output)
 
-    def _set_parent_output(
-        self, parent_output: Output, force: bool = False
-    ) -> None:
+    def _set_parent_output(self, parent_output: Output, force: bool = False) -> None:
         if self.connected() and not force:
             raise ReconnectionError(output=self._parent_output, node=self.node)
         self._parent_output = parent_output
 
     @property
-    def name(self) -> Optional[str]:
+    def name(self) -> str | None:
         return self._name
 
     @name.setter
@@ -155,11 +145,11 @@ class Input:
         self._name = name
 
     @property
-    def node(self) -> Optional[NodeT]:
+    def node(self) -> Node | None:
         return self._node
 
     @property
-    def parent_node(self) -> Optional[NodeT]:
+    def parent_node(self) -> Node | None:
         return self._parent_output.node
 
     @property
@@ -167,7 +157,7 @@ class Input:
         return self._node.logger
 
     @property
-    def child_output(self) -> Optional[Output]:
+    def child_output(self) -> Output | None:
         return self._child_output
 
     @property
@@ -251,13 +241,9 @@ class Input:
                 output=self,
             )
         try:
-            self._own_data = zeros(
-                self.own_dd.shape, self.own_dd.dtype, **kwargs
-            )
+            self._own_data = zeros(self.own_dd.shape, self.own_dd.dtype, **kwargs)
         except Exception as exc:
-            raise AllocationError(
-                f"Input: {exc.args[0]}", node=self._node, input=self
-            ) from exc
+            raise AllocationError(f"Input: {exc.args[0]}", node=self._node, input=self) from exc
 
         return True
 
@@ -265,36 +251,32 @@ class Input:
         try:
             output = self.output
         except AttributeError:
-            return {
-                    "label": "input",
-                    "shape": "?"
-                    }
+            return {"label": "input", "shape": "?"}
         else:
             shape = output.dd.shape
             return {
-                    "label": output.labels[label_from],
-                    "shape": shape[0] if len(shape)==1 else shape,
+                "label": output.labels[label_from],
+                "shape": shape[0] if len(shape) == 1 else shape,
             }
+
 
 class Inputs(EdgeContainer):
     def __init__(self, iterable=None):
         super().__init__(iterable)
-        self._dtype=Input
+        self._dtype = Input
 
     def __str__(self):
         return f"→[{tuple(obj.name for obj in self)}]○"
 
     _repr_pretty_ = repr_pretty
 
-    def deep_iter_inputs(
-        self, disconnected_only: bool = False
-    ) -> Iterator[Input]:
+    def deep_iter_inputs(self, disconnected_only: bool = False) -> Iterator[Input]:
         for input in self:
             if disconnected_only and input.connected():
                 continue
             yield input
 
-    def deep_iter_child_outputs(self) -> Iterator[Union[Input, Output]]:
+    def deep_iter_child_outputs(self) -> Iterator[Input | Output]:
         for child_output in self:
             yield child_output.child_output
 

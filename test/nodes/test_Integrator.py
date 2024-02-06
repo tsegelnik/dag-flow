@@ -1,17 +1,24 @@
 #!/usr/bin/env python
-from matplotlib.pyplot import close, subplots
-from numpy import allclose, linspace, meshgrid, pi, vectorize
-from pytest import mark, raises
+from matplotlib.pyplot import close
+from matplotlib.pyplot import subplots
+from numpy import allclose
+from numpy import linspace
+from numpy import meshgrid
+from numpy import pi
+from numpy import vectorize
+from pytest import mark
+from pytest import raises
 
 from dagflow.exception import TypeFunctionError
 from dagflow.graph import Graph
 from dagflow.graphviz import savegraph
 from dagflow.lib import Array
+from dagflow.lib import Cos
 from dagflow.lib import Integrator
 from dagflow.lib import IntegratorSampler
 from dagflow.lib import ManyToOneNode
 from dagflow.lib import OneToOneNode
-from dagflow.lib import Cos, Sin
+from dagflow.lib import Sin
 from dagflow.plot import plot_auto
 
 

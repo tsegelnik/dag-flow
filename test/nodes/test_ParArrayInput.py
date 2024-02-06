@@ -1,6 +1,7 @@
 #!/usr/bin/env python
-
-from numpy import allclose, arange, ones
+from numpy import allclose
+from numpy import arange
+from numpy import ones
 from pytest import mark
 
 from dagflow.graph import Graph

@@ -1,12 +1,11 @@
 #!/usr/bin/env python
-
-from dagflow.graph import Graph
-from dagflow.lib import Array
-from dagflow.lib import MatrixProductDVDt
-from dagflow.graphviz import savegraph
-
 import numpy as np
 from pytest import mark
+
+from dagflow.graph import Graph
+from dagflow.graphviz import savegraph
+from dagflow.lib import Array
+from dagflow.lib import MatrixProductDVDt
 
 
 @mark.parametrize("dtype", ("d", "f"))

@@ -1,13 +1,8 @@
 from ..inputhandler import MissingInputAddOne
-from ..nodes import FunctionNode
-from ..typefunctions import (
-    check_has_inputs,
-    check_input_dimension,
-    check_input_dtype,
-)
+from .ManyToOneNode import ManyToOneNode
 
 
-class Concatenation(FunctionNode):
+class Concatenation(ManyToOneNode):
     """
     Creates a node with a single data output which is a concatenated data of the inputs.
     Now supports only 1d arrays.
@@ -22,6 +17,8 @@ class Concatenation(FunctionNode):
 
     def _typefunc(self) -> None:
         """A output takes this function to determine the dtype and shape"""
+        from ..typefunctions import check_has_inputs, check_input_dimension, check_input_dtype
+
         check_has_inputs(self)
         cdtype = self.inputs[0].dd.dtype
         check_input_dtype(self, slice(None), cdtype)

@@ -1,10 +1,11 @@
-from typing import TYPE_CHECKING, List, Optional
+from typing import TYPE_CHECKING
 
 from numpy import zeros
 from numpy.typing import NDArray
 
 from ..nodes import FunctionNode
-from ..typefunctions import check_input_dimension, check_input_dtype
+from ..typefunctions import check_input_dimension
+from ..typefunctions import check_input_dtype
 
 if TYPE_CHECKING:
     from ..input import Input
@@ -16,7 +17,7 @@ class ViewConcat(FunctionNode):
 
     __slots__ = ("_output", "_offsets")
     _output: "Output"
-    _offsets: List[int]
+    _offsets: list[int]
 
     def __init__(self, name, outname="concat", **kwargs) -> None:
         super().__init__(name, **kwargs)
@@ -26,7 +27,7 @@ class ViewConcat(FunctionNode):
         self._offsets = []
 
     def missing_input_handler(
-        self, idx: Optional[int] = None, scope: Optional[int] = None
+        self, idx: int | None = None, scope: int | None = None
     ) -> "Input":
         idx = idx if idx is not None else len(self.inputs)
         iname = f"input_{idx:02d}"

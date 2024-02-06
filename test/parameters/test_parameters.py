@@ -1,13 +1,13 @@
 #!/usr/bin/env python
+import pytest
+from numpy import allclose
+from numpy import square
 
-from dagflow.lib import Array
-from dagflow.parameters import GaussianParameters
+from dagflow.exception import CriticalError
 from dagflow.graph import Graph
 from dagflow.graphviz import savegraph
-from dagflow.exception import CriticalError
-
-from numpy import square, allclose
-import pytest
+from dagflow.lib import Array
+from dagflow.parameters import GaussianParameters
 
 @pytest.mark.parametrize('mode', ('single', 'uncorr', 'cov', 'cov1d'))
 def test_variables_00_variable(mode) -> None:
@@ -80,4 +80,3 @@ def test_variables_00_variable(mode) -> None:
 
     savegraph(graph, f"output/test_variables_00_{mode}.png", show=['all'])
     savegraph(graph, f"output/test_variables_00_{mode}.pdf", show=['all'])
-

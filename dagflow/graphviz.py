@@ -1,22 +1,19 @@
-from .input import Input
-from .output import Output
-from .types import NodeT
-from .logger import logger, SUBINFO
+from __future__ import annotations
 
-from numpy import square, printoptions
-from typing import (
-    Dict,
-    List,
-    Literal,
-    Mapping,
-    Optional,
-    Sequence,
-    Set,
-    Union
-)
+from collections.abc import Mapping
+from collections.abc import Sequence
+from contextlib import suppress
+from typing import Literal
+
+from numpy import printoptions
+from numpy import square
 
 from .graph import Graph
+from .input import Input
+from .logger import INFO1
+from .logger import logger
 from .node import Node
+from .output import Output
 
 try:
     import pygraphviz as G
@@ -30,7 +27,8 @@ else:
         gd.savegraph(*args)
 
     class EdgeDef:
-        __slots__ = ('nodein', 'nodemid', 'nodeout', 'edges')
+        __slots__ = ("nodein", "nodemid", "nodeout", "edges")
+
         def __init__(self, nodeout, nodemid, nodein, edge):
             self.nodein = nodein
             self.nodemid = nodemid
@@ -42,38 +40,71 @@ else:
 
     class GraphDot:
         __slots__ = (
-                '_graph',
-                '_node_id_map',
-                '_show',
-                '_nodes_map_dag',
-                '_nodes_open_input',
-                '_nodes_open_output',
-                '_edges',
-                '_filter',
-                '_filtered_nodes'
-                )
+            "_graph",
+            "_node_id_map",
+            "_show",
+            "_nodes_map_dag",
+            "_nodes_open_input",
+            "_nodes_open_output",
+            "_edges",
+            "_filter",
+            "_filtered_nodes",
+        )
         _graph: G.AGraph
         _node_id_map: dict
         _nodes_map_dag: Dict[Node, G.agraph.Node]
-        _filter: Dict[str, List[Union[str, int]]]
-        _filtered_nodes: Set
+        _filter: Dict[str, list[str | int]]
+        _filtered_nodes: set
 
-        _show: Set[Literal['type', 'mark', 'label', 'path', 'index', 'status', 'data', 'data_part', 'data_summary']]
+        _show: set[
+            Literal[
+                "type",
+                "mark",
+                "label",
+                "path",
+                "index",
+                "status",
+                "data",
+                "data_part",
+                "data_summary",
+            ]
+        ]
+
         def __init__(
             self,
-            graph_or_node: Union[Graph, Node, None],
-            graphattr: dict={}, edgeattr: dict={}, nodeattr: dict={},
-            show: Union[Sequence,str] = ['type', 'mark', 'label'],
-            filter: Mapping[str, Sequence[Union[str, int]]] = {},
-            **kwargs
+            graph_or_node: Graph | Node | None,
+            graphattr: dict = {},
+            edgeattr: dict = {},
+            nodeattr: dict = {},
+            show: Sequence | str = ["type", "mark", "label"],
+            filter: Mapping[str, Sequence[str | int]] = {},
+            **kwargs,
         ):
-            if show=='full' or 'full' in show:
-                self._show = {'type', 'mark', 'label', 'path', 'index', 'status', 'data', 'data_summary'}
-            elif show=='all' or 'all' in show:
-                self._show = {'type', 'mark', 'label', 'path', 'index', 'status', 'data_part', 'data_summary'}
+            if show == "full" or "full" in show:
+                self._show = {
+                    "type",
+                    "mark",
+                    "label",
+                    "path",
+                    "index",
+                    "status",
+                    "data",
+                    "data_summary",
+                }
+            elif show == "all" or "all" in show:
+                self._show = {
+                    "type",
+                    "mark",
+                    "label",
+                    "path",
+                    "index",
+                    "status",
+                    "data_part",
+                    "data_summary",
+                }
             else:
                 self._show = set(show)
-            self._filter = {k:list(v) for k,v in filter.items()}
+            self._filter = {k: list(v) for k, v in filter.items()}
             self._filtered_nodes = set()
 
             graphattr = dict(graphattr)
@@ -86,7 +117,7 @@ else:
             edgeattr.setdefault("labeldistance", 1.2)
 
             nodeattr = dict(nodeattr)
-            if any(s in self._show for s in ('data', 'data_part')):
+            if any(s in self._show for s in ("data", "data_part")):
                 nodeattr.setdefault("fontname", "Liberation Mono")
 
             self._node_id_map = {}
@@ -109,13 +140,13 @@ else:
                 self._transform_graph(graph_or_node)
             elif isinstance(graph_or_node, Node):
                 self._transform_from_node(graph_or_node)
-            elif graph_or_node!=None:
+            elif graph_or_node != None:
                 raise RuntimeError("Invalid graph entry point")
 
         @classmethod
-        def from_graph(cls, graph: Graph, *args, **kwargs) -> 'GraphDot':
+        def from_graph(cls, graph: Graph, *args, **kwargs) -> GraphDot:
             gd = cls(None, *args, **kwargs)
-            if (label := kwargs.pop("label", graph.label())):
+            if label := kwargs.pop("label", graph.label()):
                 gd.set_label(label)
             gd._transform_graph(graph)
             return gd
@@ -133,7 +164,7 @@ else:
             self.update_style()
 
         @classmethod
-        def from_output(cls, output: Output, *args, **kwargs) -> 'GraphDot':
+        def from_output(cls, output: Output, *args, **kwargs) -> GraphDot:
             return cls.from_node(output.node, *args, **kwargs)
 
         @classmethod
@@ -141,26 +172,29 @@ else:
             cls,
             node: Node,
             *args,
-            mindepth: Optional[int] = None,
-            maxdepth: Optional[int] = None,
-            minsize: Optional[int] = None,
-            **kwargs
-        ) -> 'GraphDot':
+            mindepth: int | None = None,
+            maxdepth: int | None = None,
+            minsize: int | None = None,
+            **kwargs,
+        ) -> GraphDot:
             gd = cls(None, *args, **kwargs)
             label = [node.name]
-            if mindepth is not None: label.append(f'{mindepth=:+d}')
-            if maxdepth is not None: label.append(f'{maxdepth=:+d}')
-            if minsize is not None: label.append(f'{minsize=:d}')
-            gd.set_label(', '.join(label))
+            if mindepth is not None:
+                label.append(f"{mindepth=:+d}")
+            if maxdepth is not None:
+                label.append(f"{maxdepth=:+d}")
+            if minsize is not None:
+                label.append(f"{minsize=:d}")
+            gd.set_label(", ".join(label))
             gd._transform_from_node(node, mindepth=mindepth, maxdepth=maxdepth, minsize=minsize)
             return gd
 
         def _transform_from_node(
             self,
             node: Node,
-            mindepth: Optional[int] = None,
-            maxdepth: Optional[int] = None,
-            minsize: Optional[int] = None,
+            mindepth: int | None = None,
+            maxdepth: int | None = None,
+            minsize: int | None = None,
             no_forward: bool = False,
             no_backward: bool = False,
         ) -> None:
@@ -187,17 +221,17 @@ else:
             self,
             node: Node,
             *,
-            including_self: bool=False,
-            mindepth: Optional[int] = None,
-            maxdepth: Optional[int] = None,
-            minsize: Optional[int] = None,
+            including_self: bool = False,
+            mindepth: int | None = None,
+            maxdepth: int | None = None,
+            minsize: int | None = None,
             no_forward: bool = False,
             no_backward: bool = False,
-            depth: int=0,
-            visited_nodes: Set[Node] = set()
+            depth: int = 0,
+            visited_nodes: set[Node] = set(),
         ) -> None:
             if no_forward and no_backward:
-                raise RuntimeError('May not set no_forward and no_backward simultaneously')
+                raise RuntimeError("May not set no_forward and no_backward simultaneously")
             if self._node_is_filtered(node):
                 return
             if node not in visited_nodes:
@@ -208,11 +242,11 @@ else:
                     return
                 if not num_in_range(depth, mindepth, maxdepth):
                     return
-                if depth>0 or num_in_range(node.outputs[0].dd.size, minsize):
+                if depth > 0 or num_in_range(node.outputs[0].dd.size, minsize):
                     self._add_node(node, depth=depth)
                 else:
                     return
-            depth-=1
+            depth -= 1
             if not no_backward:
                 for input in node.inputs.iter_all():
                     try:
@@ -227,34 +261,34 @@ else:
                         maxdepth=maxdepth,
                         minsize=minsize,
                         no_forward=no_forward,
-                        visited_nodes=visited_nodes
+                        visited_nodes=visited_nodes,
                     )
 
             if not no_forward:
                 self._add_nodes_forward_recursive(
                     node,
                     including_self=False,
-                    depth=depth+1,
+                    depth=depth + 1,
                     no_backward=no_backward,
                     mindepth=mindepth,
                     maxdepth=maxdepth,
                     minsize=minsize,
                     ignore_visit=True,
-                    visited_nodes=visited_nodes
+                    visited_nodes=visited_nodes,
                 )
 
         def _add_nodes_forward_recursive(
             self,
             node: Node,
             *,
-            including_self: bool=False,
-            mindepth: Optional[int] = None,
-            maxdepth: Optional[int] = None,
-            minsize: Optional[int] = None,
+            including_self: bool = False,
+            mindepth: int | None = None,
+            maxdepth: int | None = None,
+            minsize: int | None = None,
             no_backward: bool = False,
-            depth: int=0,
-            visited_nodes: Set[Node] = set(),
-            ignore_visit: bool = False
+            depth: int = 0,
+            visited_nodes: set[Node] = set(),
+            ignore_visit: bool = False,
         ) -> None:
             if self._node_is_filtered(node):
                 return
@@ -266,11 +300,11 @@ else:
                     return
                 if not num_in_range(depth, mindepth, maxdepth):
                     return
-                if depth>0 or num_in_range(node.outputs[0].dd.size, minsize):
+                if depth > 0 or num_in_range(node.outputs[0].dd.size, minsize):
                     self._add_node(node, depth=depth)
                 else:
                     return
-            depth+=1
+            depth += 1
             for output in node.outputs.iter_all():
                 for child_input in output.child_inputs:
                     if not no_backward:
@@ -281,7 +315,7 @@ else:
                             mindepth=mindepth,
                             maxdepth=maxdepth,
                             minsize=minsize,
-                            visited_nodes=visited_nodes
+                            visited_nodes=visited_nodes,
                         )
                     self._add_nodes_forward_recursive(
                         child_input.node,
@@ -292,22 +326,19 @@ else:
                         maxdepth=maxdepth,
                         minsize=minsize,
                         visited_nodes=visited_nodes,
-                        ignore_visit=True
+                        ignore_visit=True,
                     )
 
-        def _add_node(self, nodedag: Node, *, depth: Optional[int]=None) -> None:
+        def _add_node(self, nodedag: Node, *, depth: int | None = None) -> None:
             if nodedag in self._nodes_map_dag or self._node_is_filtered(nodedag):
                 return
 
-            styledict = {
-                "shape": "Mrecord",
-                "label": self.get_label(nodedag, depth=depth)
-            }
+            styledict = {"shape": "Mrecord", "label": self.get_label(nodedag, depth=depth)}
             target = self.get_id(nodedag)
             self._graph.add_node(target, **styledict)
             nodedot = self._graph.get_node(target)
-            nodedot.attr['nodedag'] = nodedag
-            nodedot.attr['depth'] = depth
+            nodedot.attr["nodedag"] = nodedag
+            nodedot.attr["depth"] = depth
             self._nodes_map_dag[nodedag] = nodedot
 
         def _add_open_inputs(self, nodedag):
@@ -324,7 +355,7 @@ else:
             source = self.get_id(input, "_in")
             target = self.get_id(nodedag)
 
-            self._get_index(input, styledict, 'headlabel')
+            self._get_index(input, styledict, "headlabel")
 
             self._graph.add_node(source, label="", shape="none", **styledict)
             self._graph.add_edge(source, target, **styledict)
@@ -342,12 +373,10 @@ else:
             styledict = {}
             source = self.get_id(nodedag)
             target = self.get_id(output, "_out")
-            self._get_index(output, styledict, 'taillabel')
+            self._get_index(output, styledict, "taillabel")
 
             self._graph.add_node(target, label="", shape="none", **styledict)
-            self._graph.add_edge(
-                source, target, arrowhead="empty", **styledict
-            )
+            self._graph.add_edge(source, target, arrowhead="empty", **styledict)
             nodein = self._graph.get_node(source)
             edge = self._graph.get_edge(source, target)
             nodeout = self._graph.get_node(target)
@@ -355,13 +384,12 @@ else:
             self._nodes_open_output[output] = nodeout
             self._edges[output] = EdgeDef(nodein, None, nodeout, edge)
 
-
         def _add_edges(self, nodedag):
             if self._node_is_filtered(nodedag):
                 return
             for output in nodedag.outputs.iter_all():
                 if output.connected():
-                    if len(output.child_inputs)>1:
+                    if len(output.child_inputs) > 1:
                         self._add_edges_multi(nodedag, output)
                     else:
                         self._add_edge(nodedag, output, output.child_inputs[0])
@@ -377,7 +405,9 @@ else:
             if self._node_is_filtered(nodedag):
                 return
             vnode = self.get_id(output, "_mid")
-            self._graph.add_node(vnode, label="", shape="none", width=0, height=0, penwidth=0, weight=10)
+            self._graph.add_node(
+                vnode, label="", shape="none", width=0, height=0, penwidth=0, weight=10
+            )
             firstinput = output.child_inputs[0]
             self._add_edge(nodedag, output, firstinput, vtarget=vnode)
             for input in output.child_inputs:
@@ -390,7 +420,7 @@ else:
                 return
 
             for eoutput in output.dd.axes_edges:
-                self._add_edge(eoutput.node, eoutput, output, style={'style': 'dotted'})
+                self._add_edge(eoutput.node, eoutput, output, style={"style": "dotted"})
 
         def _add_mesh(self, output: Output) -> None:
             if self._node_is_filtered(output.node):
@@ -398,7 +428,7 @@ else:
             if output.dd.meshes_inherited:
                 return
             for noutput in output.dd.axes_meshes:
-                self._add_edge(noutput.node, noutput, output, style={'style': 'dotted'})
+                self._add_edge(noutput.node, noutput, output, style={"style": "dotted"})
 
         def _get_index(self, leg, styledict: dict, target: str):
             if isinstance(leg, Input):
@@ -408,7 +438,7 @@ else:
                 container = leg.node.outputs
                 connected = True
 
-            if container.len_all()<2 and connected:
+            if container.len_all() < 2 and connected:
                 return
 
             idx = ""
@@ -433,7 +463,16 @@ else:
             if idx:
                 styledict[target] = str(idx)
 
-        def _add_edge(self, nodedag, output, input, *, vsource: Optional[str]=None, vtarget: Optional[str]=None, style: Optional[dict]=None) -> None:
+        def _add_edge(
+            self,
+            nodedag,
+            output,
+            input,
+            *,
+            vsource: str | None = None,
+            vtarget: str | None = None,
+            style: dict | None = None,
+        ) -> None:
             if self._node_is_filtered(nodedag):
                 return
             if self._node_is_filtered(input.node):
@@ -443,17 +482,17 @@ else:
 
             if vsource is not None:
                 source = vsource
-                styledict['arrowtail'] = 'none'
+                styledict["arrowtail"] = "none"
             else:
                 source = self.get_id(nodedag)
-                self._get_index(output, styledict, 'taillabel')
+                self._get_index(output, styledict, "taillabel")
 
             if vtarget is not None:
                 target = vtarget
-                styledict['arrowhead'] = 'none'
+                styledict["arrowhead"] = "none"
             else:
                 target = self.get_id(input.node)
-                self._get_index(input, styledict, 'headlabel')
+                self._get_index(input, styledict, "headlabel")
 
             self._graph.add_edge(source, target, **styledict)
 
@@ -473,7 +512,11 @@ else:
 
             index = node.labels.index_dict
             for category, list_accepted in self._filter.items():
-                if (idxnum:=index.get(category)) is not None and idxnum[0] not in list_accepted and idxnum[1] not in list_accepted:
+                if (
+                    (idxnum := index.get(category)) is not None
+                    and idxnum[0] not in list_accepted
+                    and idxnum[1] not in list_accepted
+                ):
                     self._filtered_nodes.add(node)
                     return True
 
@@ -484,13 +527,20 @@ else:
                 attr["color"] = "gray"
             else:
                 try:
-                    if   node.invalid:         attr["color"] = "black"
-                    elif node.being_evaluated: attr["color"] = "gold"
-                    elif node.tainted:         attr["color"] = "red"
-                    elif node.frozen_tainted:  attr["color"] = "blue"
-                    elif node.frozen:          attr["color"] = "cyan"
-                    elif node.immediate:       attr["color"] = "green"
-                    else:                      attr["color"] = "forestgreen"
+                    if node.invalid:
+                        attr["color"] = "black"
+                    elif node.being_evaluated:
+                        attr["color"] = "gold"
+                    elif node.tainted:
+                        attr["color"] = "red"
+                    elif node.frozen_tainted:
+                        attr["color"] = "blue"
+                    elif node.frozen:
+                        attr["color"] = "cyan"
+                    elif node.immediate:
+                        attr["color"] = "green"
+                    else:
+                        attr["color"] = "forestgreen"
 
                     if node.exception is not None:
                         attr["color"] = "magenta"
@@ -519,20 +569,17 @@ else:
             elif isinstance(obj, Output):
                 allocated_on_input = False
                 allocated_on_output = obj.owns_buffer
-            attr.update({
-                "dir": "both",
-                "arrowsize": 0.5
-                })
-            attr["arrowhead"] = attr["arrowhead"] or allocated_on_input  and 'dotopen' or 'odotopen'
-            attr["arrowtail"] = attr["arrowtail"] or allocated_on_output and 'dot' or 'odot'
+            attr.update({"dir": "both", "arrowsize": 0.5})
+            attr["arrowhead"] = attr["arrowhead"] or allocated_on_input and "dotopen" or "odotopen"
+            attr["arrowtail"] = attr["arrowtail"] or allocated_on_output and "dot" or "odot"
 
             if node:
                 if node.frozen:
                     attrin["style"] = "dashed"
-                    if attr["style"]!="dotted":
+                    if attr["style"] != "dotted":
                         attr["style"] = "dashed"
                     # attr['arrowhead']='tee'
-                elif attr["style"]=="dashed":
+                elif attr["style"] == "dashed":
                     attr["style"] = ""
 
         def update_style(self):
@@ -549,26 +596,26 @@ else:
             self._graph.graph_attr["label"] = label
 
         def savegraph(self, fname):
-            logger.log(SUBINFO, f'Write: {fname}')
+            logger.log(INFO1, f"Write: {fname}")
             if fname.endswith(".dot"):
                 self._graph.write(fname)
             else:
                 self._graph.layout(prog="dot")
                 self._graph.draw(fname)
 
-        def get_id(self, object, suffix: str="") -> str:
+        def get_id(self, object, suffix: str = "") -> str:
             name = type(object).__name__
             omap = self._node_id_map.setdefault(name, {})
             onum = omap.setdefault(object, len(omap))
             return f"{name}_{onum}{suffix}"
 
-        def get_label(self, node: NodeT, *, depth: Optional[int]=None) -> str:
+        def get_label(self, node: Node, *, depth: int | None = None) -> str:
             text = node.labels.graph or node.name
             try:
                 out0 = node.outputs[0]
             except IndexError:
-                shape0 = '?'
-                dtype0 = '?'
+                shape0 = "?"
+                dtype0 = "?"
                 hasedges = False
                 hasnodes = False
                 out0 = None
@@ -577,74 +624,82 @@ else:
                 hasnodes = bool(out0.dd.axes_meshes)
                 shape0 = out0.dd.shape
                 if shape0 is None:
-                    shape0 = '?'
-                shape0="x".join(str(s) for s in shape0)
+                    shape0 = "?"
+                shape0 = "x".join(str(s) for s in shape0)
 
                 dtype0 = out0.dd.dtype
                 if dtype0 is None:
-                    dtype0 = '?'
+                    dtype0 = "?"
                 else:
                     dtype0 = dtype0.char
 
             nout_pos = len(node.outputs)
-            nout_nonpos = node.outputs.len_all()-nout_pos
+            nout_nonpos = node.outputs.len_all() - nout_pos
             nout = []
-            if nout_pos: nout.append(f'{nout_pos}p')
-            if nout_nonpos: nout.append(f'{nout_nonpos}k')
-            nout = '+'.join(nout) or '0'
+            if nout_pos:
+                nout.append(f"{nout_pos}p")
+            if nout_nonpos:
+                nout.append(f"{nout_nonpos}k")
+            nout = "+".join(nout) or "0"
 
             nin_pos = len(node.inputs)
             nin_nonpos = node.inputs.len_all() - nin_pos
             nin = []
-            if nin_pos: nin.append(f'{nin_pos}p')
-            if nin_nonpos: nin.append(f'{nin_nonpos}k')
-            nin = '+'.join(nin) or '0'
+            if nin_pos:
+                nin.append(f"{nin_pos}p")
+            if nin_nonpos:
+                nin.append(f"{nin_nonpos}k")
+            nin = "+".join(nin) or "0"
 
-            nlimbs = f' {nin}→{nout}'
+            nlimbs = f" {nin}→{nout}"
 
             left, right = [], []
             if hasedges:
-                br_left, br_right = '\\{', '\\}'
+                br_left, br_right = "\\{", "\\}"
             else:
-                br_left, br_right = '[', ']'
+                br_left, br_right = "[", "]"
             if hasnodes:
-                br_right+='…'
+                br_right += "…"
             info_type = f"{br_left}{shape0}{br_right}{dtype0}\\n{nlimbs}"
-            if 'type' in self._show:
+            if "type" in self._show:
                 left.append(info_type)
-            if 'mark' in self._show and (mark:=node.labels.mark) is not None:
+            if "mark" in self._show and (mark := node.labels.mark) is not None:
                 left.append(mark)
-            if 'label' in self._show:
+            if "label" in self._show:
                 right.append(text)
-            if 'path' in self._show and (paths:=node.labels.paths):
-                right.append(f'path: {paths[0]}')
-            if 'index' in self._show and (index:=node.labels.index_values):
+            if "path" in self._show and (paths := node.labels.paths):
+                right.append(f"path: {paths[0]}")
+            if "index" in self._show and (index := node.labels.index_values):
                 right.append(f'index: {", ".join(index)}')
-            if 'status' in self._show:
+            if "status" in self._show:
                 status = []
-                try:
-                    if node.types_tainted:  status.append('types_tainted')
-                    if node.tainted:        status.append('tainted')
-                    if node.frozen:         status.append('frozen')
-                    if node.frozen_tainted: status.append('frozen_tainted')
-                    if node.invalid:        status.append('invalid')
-                    if not node.closed:     status.append('open')
-                except AttributeError:
-                    pass
+                with suppress(AttributeError):
+                    if node.types_tainted:
+                        status.append("types_tainted")
+                    if node.tainted:
+                        status.append("tainted")
+                    if node.frozen:
+                        status.append("frozen")
+                    if node.frozen_tainted:
+                        status.append("frozen_tainted")
+                    if node.invalid:
+                        status.append("invalid")
+                    if not node.closed:
+                        status.append("open")
                 if status:
                     right.append(status)
 
-            show_data = 'data' in self._show
-            show_data_part = 'data_part' in self._show
-            show_data_summary = 'data_summary' in self._show
+            show_data = "data" in self._show
+            show_data_part = "data_part" in self._show
+            show_data_summary = "data_summary" in self._show
             need_data = show_data or show_data_part or show_data_summary
             if need_data and out0 is not None:
                 data = None
-                tainted = out0.tainted and 'tainted' or 'updated'
+                tainted = out0.tainted and "tainted" or "updated"
                 try:
                     data = out0.data
                 except Exception:
-                    right.append('cought exception')
+                    right.append("cought exception")
                     data = out0._data
 
                 if show_data_summary and data is not None:
@@ -652,9 +707,15 @@ else:
                     sm2 = square(data).sum()
                     mn = data.min()
                     mx = data.max()
-                    block = [f'Σ={sm:.2g}', f'Σ²={sm2:.2g}', f'min={mn:.2g}', f'max={mx:.2g}', f'{tainted}']
+                    block = [
+                        f"Σ={sm:.2g}",
+                        f"Σ²={sm2:.2g}",
+                        f"min={mn:.2g}",
+                        f"max={mx:.2g}",
+                        f"{tainted}",
+                    ]
                     if depth is not None:
-                        block.append(f'd: {depth:+d}'.replace('-', '−'))
+                        block.append(f"d: {depth:+d}".replace("-", "−"))
                     right.append(block)
 
                 if show_data_part:
@@ -663,26 +724,27 @@ else:
                         precision=2,
                         # formatter={'float': '{:.2g}'.format}
                     ):
-                        right.append(str(data).replace('\n', '\\l')+'\\l')
+                        right.append(str(data).replace("\n", "\\l") + "\\l")
 
                 if show_data:
-                    right.append(str(data).replace('\n', '\\l')+'\\l')
+                    right.append(str(data).replace("\n", "\\l") + "\\l")
 
-            if getattr(node, 'exception', None) is not None:
+            if getattr(node, "exception", None) is not None:
                 right.append(node.exception)
 
             return self._combine_labels((left, right))
 
-        def _combine_labels(self, labels: Union[Sequence,str]) -> str:
+        def _combine_labels(self, labels: Sequence | str) -> str:
             if isinstance(labels, str):
                 return labels
 
             slabels = [self._combine_labels(l) for l in labels]
             return f"{{{'|'.join(slabels)}}}"
 
-def num_in_range(num: int, minnum: Optional[int], maxnum: Optional[int]=None) -> bool:
-    if minnum is not None and num<minnum:
+
+def num_in_range(num: int, minnum: int | None, maxnum: int | None = None) -> bool:
+    if minnum is not None and num < minnum:
         return False
-    if maxnum is not None and num>maxnum:
+    if maxnum is not None and num > maxnum:
         return False
     return True

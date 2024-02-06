@@ -1,17 +1,20 @@
+from collections.abc import Sequence
 from numbers import Number
-from typing import Optional, Sequence, Union
-
-from numpy import array, full
-from numpy.typing import ArrayLike, DTypeLike, NDArray
 
 from multikeydict.nestedmkdict import NestedMKDict
+from numpy import array
+from numpy import full
+from numpy.typing import ArrayLike
+from numpy.typing import DTypeLike
+from numpy.typing import NDArray
 
 from ..exception import InitializationError
 from ..node import Node
 from ..nodes import FunctionNode
 from ..output import Output
-from ..typefunctions import check_array_edges_consistency, check_edges_type
 from ..tools.iter import iter_sequence_not_string
+from ..typefunctions import check_array_edges_consistency
+from ..typefunctions import check_edges_type
 
 
 class Array(FunctionNode):
@@ -30,9 +33,9 @@ class Array(FunctionNode):
         *,
         mode: str = "store",
         outname="array",
-        mark: Optional[str] = None,
-        edges: Union[Output, Sequence[Output], Node, None] = None,
-        meshes: Union[Output, Sequence[Output], Node, None] = None,
+        mark: str | None = None,
+        edges: Output | Sequence[Output] | Node | None = None,
+        meshes: Output | Sequence[Output] | Node | None = None,
         **kwargs,
     ):
         super().__init__(name, **kwargs)
@@ -82,7 +85,7 @@ class Array(FunctionNode):
         name,
         value: Number,
         *,
-        edges: Union[Output, Sequence[Output], Node],
+        edges: Output | Sequence[Output] | Node,
         dtype: DTypeLike = None,
         **kwargs,
     ):
@@ -104,8 +107,8 @@ class Array(FunctionNode):
         path: str,
         storage: NestedMKDict,
         *,
-        edgesname: Union[str, Sequence[str]] = [],
-        meshname: Union[str, Sequence[str]] = [],
+        edgesname: str | Sequence[str] = [],
+        meshname: str | Sequence[str] = [],
         remove_used_arrays: bool = False,
         **kwargs,
     ):
@@ -154,7 +157,7 @@ class Array(FunctionNode):
             f"Array ndim is {ndim}. {type} of {value} are not consistent"
         )
 
-    def set_edges(self, edges: Union[Output, Node, Sequence[Union[Output, Node]]]):
+    def set_edges(self, edges: Output | Node | Sequence[Output | Node]):
         if not edges:
             return
 
@@ -181,7 +184,7 @@ class Array(FunctionNode):
                     f"got {edges=}, {type(edges)=}"
                 )
 
-    def set_mesh(self, meshes: Union[Output, Node, Sequence[Output]]):
+    def set_mesh(self, meshes: Output | Node | Sequence[Output]):
         if not meshes:
             return
 

@@ -1,18 +1,17 @@
-from typing import TYPE_CHECKING, Literal
+from typing import Literal
+from typing import TYPE_CHECKING
 
-from numpy import matmul, multiply
-
-from dagflow.inputhandler import MissingInputAddPair
+from numpy import matmul
+from numpy import multiply
 
 from ..exception import TypeFunctionError
 from ..nodes import FunctionNode
-from ..typefunctions import (
-    AllPositionals,
-    check_input_dimension,
-    check_input_matrix_or_diag,
-    check_inputs_multiplicable_mat,
-    eval_output_dtype,
-)
+from ..typefunctions import AllPositionals
+from ..typefunctions import check_input_dimension
+from ..typefunctions import check_input_matrix_or_diag
+from ..typefunctions import check_inputs_multiplicable_mat
+from ..typefunctions import eval_output_dtype
+from dagflow.inputhandler import MissingInputAddPair
 
 if TYPE_CHECKING:
     from ..input import Input

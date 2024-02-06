@@ -1,8 +1,10 @@
-from typing import Literal, TYPE_CHECKING
+from typing import Literal
+from typing import TYPE_CHECKING
 
 from ..exception import InitializationError
 from ..nodes import FunctionNode
-from ..typefunctions import check_inputs_number, copy_from_input_to_output
+from ..typefunctions import check_inputs_number
+from ..typefunctions import copy_from_input_to_output
 
 if TYPE_CHECKING:
     from ..input import Input

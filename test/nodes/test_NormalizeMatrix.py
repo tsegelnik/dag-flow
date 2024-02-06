@@ -1,12 +1,12 @@
 #!/usr/bin/env python
+from numpy import allclose
+from numpy import arange
+from pytest import mark
 
 from dagflow.graph import Graph
+from dagflow.graphviz import savegraph
 from dagflow.lib.Array import Array
 from dagflow.lib.NormalizeMatrix import NormalizeMatrix
-from dagflow.graphviz import savegraph
-
-from numpy import arange, allclose
-from pytest import mark
 
 
 @mark.parametrize("dtype", ("d", "f"))

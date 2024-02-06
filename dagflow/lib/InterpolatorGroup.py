@@ -1,4 +1,6 @@
-from typing import Literal, Mapping, Tuple
+from collections.abc import Mapping
+from typing import Literal
+
 from multikeydict.typing import KeyLike
 
 from ..metanode import MetaNode
@@ -73,9 +75,9 @@ class InterpolatorGroup(MetaNode):
         name_interpolator: str = "interpolator",
         labels: Mapping = {},
         *,
-        replicate: Tuple[KeyLike, ...] = ((),),
+        replicate: tuple[KeyLike, ...] = ((),),
         **kwargs,
-    ) -> Tuple["InterpolatorGroup", "NodeStorage"]:
+    ) -> tuple["InterpolatorGroup", "NodeStorage"]:
         storage = NodeStorage(default_containers=True)
         nodes = storage("nodes")
         inputs = storage("inputs")

@@ -1,19 +1,21 @@
 from typing import TYPE_CHECKING
 
-from numpy import add, divide, matmul, multiply, subtract
+from numpy import add
+from numpy import divide
+from numpy import matmul
+from numpy import multiply
+from numpy import subtract
 from scipy.linalg import solve_triangular
 
 from ..exception import InitializationError
 from ..inputhandler import MissingInputAddPair
 from ..nodes import FunctionNode
-from ..typefunctions import (
-    check_has_inputs,
-    check_input_dimension,
-    check_input_matrix_or_diag,
-    check_inputs_equivalence,
-    check_inputs_multiplicable_mat,
-    copy_from_input_to_output,
-)
+from ..typefunctions import check_has_inputs
+from ..typefunctions import check_input_dimension
+from ..typefunctions import check_input_matrix_or_diag
+from ..typefunctions import check_inputs_equivalence
+from ..typefunctions import check_inputs_multiplicable_mat
+from ..typefunctions import copy_from_input_to_output
 
 if TYPE_CHECKING:
     from ..input import Input

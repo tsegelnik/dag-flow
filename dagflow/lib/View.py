@@ -1,4 +1,5 @@
-from typing import TYPE_CHECKING, Optional
+from typing import Optional
+from typing import TYPE_CHECKING
 
 from numpy.typing import NDArray
 

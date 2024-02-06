@@ -1,6 +1,9 @@
 #!/usr/bin/env python
-
-from numpy import allclose, arange, diag, finfo, zeros_like
+from numpy import allclose
+from numpy import arange
+from numpy import diag
+from numpy import finfo
+from numpy import zeros_like
 from pytest import mark
 
 from dagflow.graph import Graph

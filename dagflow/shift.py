@@ -1,9 +1,10 @@
+from itertools import repeat
 from itertools import zip_longest
 
 from .exception import ConnectionError
-from .iterators import iter_child_outputs, iter_inputs, iter_outputs
-
-from itertools import repeat
+from .iterators import iter_child_outputs
+from .iterators import iter_inputs
+from .iterators import iter_outputs
 
 _rshift_scope_id = 0
 
@@ -60,4 +61,3 @@ def rshift(outputs, inputs):
 
     child_outputs = tuple(iter_child_outputs(inputs))
     return child_outputs[0] if len(child_outputs) == 1 else child_outputs
-

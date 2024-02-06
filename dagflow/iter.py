@@ -1,4 +1,4 @@
-from typing import Iterable
+from collections.abc import Iterable
 
 class StopNesting(Exception):
     def __init__(self, object):
@@ -6,4 +6,3 @@ class StopNesting(Exception):
 
 def IsIterable(obj):
     return isinstance(obj, Iterable) and not isinstance(obj, str)
-

@@ -1,4 +1,8 @@
-from typing import List, Optional, Union, Sequence, Mapping, TYPE_CHECKING
+from collections.abc import Mapping
+from collections.abc import Sequence
+from typing import Optional
+from typing import TYPE_CHECKING
+from typing import Union
 
 if TYPE_CHECKING:
     from .input import Input
@@ -8,32 +12,31 @@ if TYPE_CHECKING:
 from numpy import zeros
 from numpy.typing import ArrayLike, DTypeLike, NDArray
 
+from .datadescriptor import DataDescriptor
 from .edges import EdgeContainer
 from .exception import (
-    DagflowError,
+    AllocationError,
     ClosedGraphError,
     ConnectionError,
     CriticalError,
+    DagflowError,
     InitializationError,
-    AllocationError,
     UnclosedGraphError,
 )
-from .shift import rshift
 from .iter import StopNesting
+from .labels import Labels, repr_pretty
+from .shift import rshift
 from .types import EdgesLike, ShapeLike
-
-from .datadescriptor import DataDescriptor
-from .labels import repr_pretty, Labels
 
 
 class Output:
-    _data: Optional[NDArray] = None
+    _data: NDArray | None = None
     _dd: DataDescriptor
 
     _node: Optional["Node"]
-    _name: Optional[str]
+    _name: str | None
 
-    _child_inputs: List["Input"]
+    _child_inputs: list["Input"]
     _parent_input: Optional["Input"] = None
     _allocating_input: Optional["Input"] = None
 
@@ -43,21 +46,21 @@ class Output:
 
     _debug: bool = False
 
-    _labels: Optional[Labels] = None
+    _labels: Labels | None = None
 
     def __init__(
         self,
-        name: Optional[str],
+        name: str | None,
         node: Optional["Node"],
         *,
-        debug: Optional[bool] = None,
-        allocatable: Optional[bool] = None,
-        data: Optional[NDArray] = None,
-        owns_buffer: Optional[bool] = None,
+        debug: bool | None = None,
+        allocatable: bool | None = None,
+        data: NDArray | None = None,
+        owns_buffer: bool | None = None,
         dtype: DTypeLike = None,
-        shape: Optional[ShapeLike] = None,
-        axes_edges: Optional[EdgesLike] = None,
-        axes_meshes: Optional[EdgesLike] = None,
+        shape: ShapeLike | None = None,
+        axes_edges: EdgesLike | None = None,
+        axes_meshes: EdgesLike | None = None,
         forbid_reallocation: bool = False,
     ):
         self._name = name
@@ -105,7 +108,7 @@ class Output:
         return self._node
 
     @property
-    def labels(self) -> Optional[Labels]:
+    def labels(self) -> Labels | None:
         return self._labels if self._labels is not None else self._node and self._node.labels
 
     @labels.setter
@@ -157,7 +160,7 @@ class Output:
                 "An exception occured while the node was touched!",
                 node=self._node,
                 output=self,
-                args=exc.args
+                args=exc.args,
             ) from exc
 
     def _set_data(
@@ -166,7 +169,7 @@ class Output:
         *,
         owns_buffer: bool,
         override: bool = False,
-        forbid_reallocation: Optional[bool] = None,
+        forbid_reallocation: bool | None = None,
     ):
         if self.closed:
             raise ClosedGraphError("Unable to set output data.", node=self._node, output=self)
@@ -278,9 +281,10 @@ class Output:
         """
         self >> other
         """
+        from multikeydict.nestedmkdict import NestedMKDict
+
         from .input import Input
         from .node import Node
-        from multikeydict.nestedmkdict import NestedMKDict
 
         if isinstance(other, Input):
             self.connect_to(other)
@@ -353,32 +357,30 @@ class Output:
         return True
 
     def seti(self, idx: int, value: float, check_taint: bool = False, force: bool = False) -> bool:
-        if self.node._frozen and not force:
+        if self.node.frozen and not force:
             return False
 
         tainted = self._data[idx] != value if check_taint else True
-
         if tainted:
             self._data[idx] = value
-            self.taint_children()
-            self.node.invalidate_parents()
-            self.node._tainted = False
-
+            self.__taint_children()
         return tainted
 
     def set(self, data: ArrayLike, check_taint: bool = False, force: bool = False) -> bool:
-        if self.node._frozen and not force:
+        if self.node.frozen and not force:
             return False
 
         tainted = (self._data != data).any() if check_taint else True
-
         if tainted:
             self._data[:] = data
-            self.taint_children()
-            self.node.invalidate_parents()
-            self.node._tainted = False
-
+            self.__taint_children()
         return tainted
+
+    # TODO: maybe move it into `self.taint_children()`?
+    def __taint_children(self):
+        self.taint_children()
+        self.node.invalidate_parents()
+        self.node.fd.tainted = False
 
     def to_dict(self, *, label_from: str = "text") -> dict:
         try:
@@ -396,8 +398,8 @@ class Output:
             ret["value"] = "…"
             return ret
 
-        if data.size>0:
-            ret["value"]=float(data.ravel()[0])
+        if data.size > 0:
+            ret["value"] = float(data.ravel()[0])
 
         return ret
 
