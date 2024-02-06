@@ -229,7 +229,7 @@ class FileReaderHDF5(FileReaderArray):
     def _get_xy(self, object_name: str) -> tuple[NDArray, NDArray]:
         data = self._get_object(object_name)
         cols = data.dtype.names
-        return data[cols[0]].to_numpy(), data[cols[1]].to_numpy()
+        return data[cols[0]], data[cols[1]]
 
     def _get_array(self, object_name: str) -> NDArray:
         ret = self._get_object(object_name)
