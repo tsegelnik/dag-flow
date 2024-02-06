@@ -1,20 +1,25 @@
-from typing import Optional, Tuple
+from __future__ import annotations
 
-from .types import InputT, NodeT, OutputT
+from typing import TYPE_CHECKING, Optional, Tuple
+
+if TYPE_CHECKING:
+    from .input import Input
+    from .node import Node
+    from .output import Output
 
 
 class DagflowError(RuntimeError):
-    node: Optional[NodeT]
-    input: Optional[InputT]
-    output: Optional[OutputT]
+    node: Optional[Node]
+    input: Optional[Input]
+    output: Optional[Output]
 
     def __init__(
         self,
         message: str,
-        node: Optional[NodeT] = None,
+        node: Optional[Node] = None,
         *,
-        input: Optional[InputT] = None,
-        output: Optional[OutputT] = None,
+        input: Optional[Input] = None,
+        output: Optional[Output] = None,
         args: Optional[Tuple[str, ...]] = None,
     ):
         if node:
