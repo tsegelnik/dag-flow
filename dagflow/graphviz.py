@@ -1,4 +1,7 @@
-from typing import Dict, List, Literal, Mapping, Optional, Sequence, Set, Union
+from __future__ import annotations
+
+from contextlib import suppress
+from typing import List, Literal, Mapping, Optional, Sequence, Set, Union
 
 from numpy import printoptions, square
 
@@ -7,7 +10,6 @@ from .input import Input
 from .logger import INFO1, logger
 from .node import Node
 from .output import Output
-from .types import NodeT
 
 try:
     import pygraphviz as G
@@ -603,7 +605,7 @@ else:
             onum = omap.setdefault(object, len(omap))
             return f"{name}_{onum}{suffix}"
 
-        def get_label(self, node: NodeT, *, depth: Optional[int] = None) -> str:
+        def get_label(self, node: Node, *, depth: Optional[int] = None) -> str:
             text = node.labels.graph or node.name
             try:
                 out0 = node.outputs[0]
@@ -667,7 +669,7 @@ else:
                 right.append(f'index: {", ".join(index)}')
             if "status" in self._show:
                 status = []
-                try:
+                with suppress(AttributeError):
                     if node.types_tainted:
                         status.append("types_tainted")
                     if node.tainted:
@@ -680,8 +682,6 @@ else:
                         status.append("invalid")
                     if not node.closed:
                         status.append("open")
-                except AttributeError:
-                    pass
                 if status:
                     right.append(status)
 
