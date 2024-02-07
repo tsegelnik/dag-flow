@@ -1,6 +1,7 @@
 from collections.abc import Sequence
 from typing import TYPE_CHECKING
 
+from numba import njit
 from numpy.typing import NDArray
 
 from ..exception import InitializationError
@@ -20,7 +21,7 @@ class Jacobian(OneToOneNode):
     def __init__(
         self,
         name,
-        scale: float = 0.1,
+        scale: float = 0.5,
         parameters: Sequence[GaussianParameter] | None = None,
         **kwargs,
     ) -> None:
@@ -67,7 +68,7 @@ class Jacobian(OneToOneNode):
 
     def _do_step(
         self,
-        i: int,
+        icol: int,
         param: GaussianParameter,
         newval: float,
         coeff: float,
@@ -76,6 +77,10 @@ class Jacobian(OneToOneNode):
     ):
         param.value = newval
         inp.touch()
-        inpdata = inp.data
-        for j in range(inp.dd.size):
-            res[j, i] += coeff * inpdata[j]
+        _step_in_numba(res, inp.data, coeff, icol)
+
+
+@njit(cache=True)
+def _step_in_numba(res: NDArray, inpdata: NDArray, coeff: float, icol: int) -> None:
+    for j in range(len(inpdata)):
+        res[j, icol] += coeff * inpdata[j]

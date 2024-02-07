@@ -2,7 +2,7 @@
 
 from typing import TYPE_CHECKING
 
-from numpy import allclose, arange, eye, finfo, ones
+from numpy import allclose, arange, array, eye, finfo, ones
 from pytest import mark
 
 from dagflow.graph import Graph
@@ -29,9 +29,10 @@ class LinearFunction(OneToOneNode):
 
     def _typefunc(self) -> None:
         super()._typefunc()
-        from dagflow.typefunctions import check_input_size
+        from dagflow.typefunctions import AllPositionals, check_input_size, check_inputs_same_dtype
 
         check_input_size(self, ("a", "b"), exact=1)
+        check_inputs_same_dtype(self, ("a", "b", AllPositionals))
 
     def _fcn(self):
         a = self._a.data[0]
@@ -48,7 +49,7 @@ def test_Jacobian_01(dtype, testname):
     y_i = a_i, so the Jacobian is [dy/da_i]_i = 1 and [dy/da_i]_j = 0 when j != i
     """
     size = 10
-    scale = 0.5
+    scale = 1
     values = arange(size, dtype=dtype)
     sigmas = ones(size, dtype=dtype)
 
@@ -75,7 +76,7 @@ def test_Jacobian_01(dtype, testname):
         parsconcat >> jac
 
     res = jac.outputs[0].data
-    assert allclose(res, eye(size), atol=10 * finfo(dtype).resolution, rtol=0)
+    assert allclose(res, eye(size), atol=2 * finfo(dtype).resolution, rtol=0)
 
     savegraph(graph, f"output/{testname}.png")
 
@@ -84,10 +85,10 @@ def test_Jacobian_01(dtype, testname):
 def test_Jacobian_02(dtype, testname):
     """
     Test of the linear function input.
-    y = a x + b, so the Jacobian must be [dy/da, dy/db]_i = [x_i, 0]
+    y = a x + b, so the Jacobian must be [dy/da, dy/db]_i = [x_i, 1]
     """
     size = 10
-    scale = 0.5
+    scale = 1
 
     a = 2.3
     b = -3.2
@@ -96,8 +97,8 @@ def test_Jacobian_02(dtype, testname):
 
     with Graph(close=True) as graph:
         X = Array("x", x)
-        A = Array("a", [a])
-        B = Array("b", [b])
+        A = Array("a", array([a], dtype=dtype))
+        B = Array("b", array([b], dtype=dtype))
         Y = LinearFunction("f(x)", label="f(x)=ax+b")
         A >> Y("a")
         B >> Y("b")
@@ -123,7 +124,7 @@ def test_Jacobian_02(dtype, testname):
 
     res = jac.outputs[0].data
     assert allclose(
-        res, list(zip(x, ones(size, dtype=dtype))), atol=10 * finfo(dtype).resolution, rtol=0
+        res, list(zip(x, ones(size, dtype=dtype))), atol=5 * finfo(dtype).resolution, rtol=0
     )
 
     savegraph(graph, f"output/{testname}.png")
