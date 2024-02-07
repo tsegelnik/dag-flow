@@ -1,45 +1,15 @@
 #!/usr/bin/env python
 
-from typing import TYPE_CHECKING
-
 from numpy import allclose, arange, array, eye, finfo, ones
 from pytest import mark
 
 from dagflow.graph import Graph
 from dagflow.graphviz import savegraph
-from dagflow.lib import OneToOneNode
 from dagflow.lib.Array import Array
 from dagflow.lib.Concatenation import Concatenation
 from dagflow.lib.Jacobian import Jacobian
+from dagflow.lib.LinearFunction import LinearFunction
 from dagflow.parameters import GaussianParameter
-
-if TYPE_CHECKING:
-    from dagflow.input import Input
-
-
-class LinearFunction(OneToOneNode):
-    __slots__ = ("_a", "_b")
-    _a: "Input"
-    _b: "Input"
-
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self._a = self._add_input("a", positional=False)
-        self._b = self._add_input("b", positional=False)
-
-    def _typefunc(self) -> None:
-        super()._typefunc()
-        from dagflow.typefunctions import AllPositionals, check_input_size, check_inputs_same_dtype
-
-        check_input_size(self, ("a", "b"), exact=1)
-        check_inputs_same_dtype(self, ("a", "b", AllPositionals))
-
-    def _fcn(self):
-        a = self._a.data[0]
-        b = self._b.data[0]
-        for inp, out in zip(self.inputs, self.outputs):
-            for i in range(inp.dd.size):
-                out.data[i] = a * inp.data[i] + b
 
 
 @mark.parametrize("dtype", ("d", "f"))
