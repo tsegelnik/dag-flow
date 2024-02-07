@@ -1,5 +1,6 @@
 from collections.abc import Generator, Sequence
 from contextlib import suppress
+from itertools import chain
 from os import listdir
 from pathlib import Path
 from typing import TYPE_CHECKING, Any
@@ -60,7 +61,7 @@ class FileReaderMeta(type):
         file_name_str = file_name if isinstance(file_name, str) else str(file_name)
         try:
             ret = self._opened_files[file_name_str]
-            action = file_name_str!=self._last_used_file and "Use" or None
+            action = file_name_str != self._last_used_file and "Use" or None
         except KeyError:
             ret = FileReader.open(file_name)
             action = "Read"
@@ -244,20 +245,20 @@ class FileReaderTSV(FileReaderArray):
 
     # def __init__(self, file_name: str | Path):
     #     super().__init__(file_name)
-        # if not self._file_name.is_dir():
-        #     raise FileNotFoundError(file_name)
+    # if not self._file_name.is_dir():
+    #     raise FileNotFoundError(file_name)
 
     def _get_object_impl(self, object_name: str) -> Any:
         from numpy import loadtxt
 
         filenames = (
             self._file_name / f"{self._file_name.stem}_{object_name}{self._extension}",
-            f"{self._file_name.parent/self._file_name.stem!s}_{object_name}{self._extension}"
+            f"{self._file_name.parent/self._file_name.stem!s}_{object_name}{self._extension}",
         )
         for filename in filenames:
             with suppress(FileNotFoundError):
                 return loadtxt(filename)
-        
+
         raise FileNotFoundError(filenames)
 
     def _get_xy(self, object_name: str) -> tuple[NDArray, NDArray]:
@@ -390,6 +391,7 @@ def iterate_filenames_and_objectnames(
     keys: Sequence[KeyLike],
     *,
     skip: Sequence[set[str]] | None = None,
+    index_order: Sequence[int] | None = None,
 ) -> Generator[tuple[TupleKey, str | Path, TupleKey, TupleKey], None, None]:
     for filekey, filename in iterate_filenames(filenames, filename_keys):
         for key in keys:
@@ -397,6 +399,8 @@ def iterate_filenames_and_objectnames(
             fullkey = filekey + key
             if skip is not None and any(skipkey.issubset(fullkey) for skipkey in skip):
                 continue
+            if index_order is not None:
+                fullkey = tuple(fullkey[i] for i in index_order)
             yield filekey, filename, key, fullkey
 
 
