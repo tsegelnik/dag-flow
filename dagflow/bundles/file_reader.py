@@ -1,6 +1,5 @@
 from collections.abc import Generator, Sequence
 from contextlib import suppress
-from itertools import chain
 from os import listdir
 from pathlib import Path
 from typing import TYPE_CHECKING, Any
@@ -10,7 +9,7 @@ from numpy.typing import NDArray
 
 from multikeydict.typing import KeyLike, TupleKey, properkey
 
-from ..logger import INFO1, INFO2, logger
+from ..logger import INFO1, INFO2, INFO3, logger
 
 if TYPE_CHECKING:
     import ROOT
@@ -74,6 +73,19 @@ class FileReaderMeta(type):
 
         return ret
 
+    def __enter__(self):
+        pass
+
+    def __exit__(self, *args, **kwargs):
+        self.release_files()
+
+    def release_files(self):
+        for k, v in list(self._opened_files.items()):
+            v._close()
+            del self._opened_files[k]
+
+            logger.log(INFO3, f"Close: {v._file_name!s}")
+
     @property
     def hist(self):
         return HistGetter()
@@ -113,12 +125,6 @@ class FileReader(metaclass=FileReaderMeta):
             return cls(file_name)
         except FileNotFoundError as e:
             raise FileNotFoundError(f"Can not open file {file_name!s} (loader {ext})") from e
-
-    @classmethod
-    def release_files(cls):
-        for k, v in list(cls._opened_files.items()):
-            v._close()
-            del cls._opened_files[k]
 
     def _close(self):
         pass
