@@ -188,7 +188,7 @@ class FileReaderArray(FileReader):
 
     def _get_hist(self, object_name: str) -> tuple[NDArray, NDArray]:
         x, y = self._get_xy(object_name)
-        return x, y
+        return x, y[:-1]
 
     def _get_array(self, object_name: str) -> NDArray:
         return self._get_object(object_name)
