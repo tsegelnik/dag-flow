@@ -28,6 +28,7 @@ _schema_cfg = Schema(
         SchemaOptional("skip", default=None): And(
             Or(((str,),), [[str]]), Use(lambda l: tuple(set(k) for k in l))
         ),
+        SchemaOptional("index_order", default=None): Or((int,), [int]),
         SchemaOptional("objects", default=lambda: lambda st, tpl: st): Or(
             Callable, And({str: str}, Use(lambda dct: lambda st, tpl: dct.get(st, st)))
         ),
@@ -61,15 +62,17 @@ def load_array(acfg: Mapping | None = None, **kwargs):
     file_keys = cfg["replicate_files"]
     objectname = cfg["objects"]
     skip = cfg["skip"]
+    index_order = cfg["index_order"]
 
     data = {}
     for _, filename, _, key in iterate_filenames_and_objectnames(
-        filenames, file_keys, keys, skip=skip
+        filenames, file_keys, keys, skip=skip, index_order=index_order
     ):
         skey = strkey(key)
         logger.log(INFO3, f"Process {skey}")
 
         data[key] = FileReader.array[filename, objectname(skey, key)]
+
     storage = NodeStorage(default_containers=True)
     with storage:
         for key, array in data.items():

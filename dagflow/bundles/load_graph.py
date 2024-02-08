@@ -84,7 +84,7 @@ def _load_graph_data(
     meshes_list: list[NDArray] = []
     data: dict[TupleKey, tuple[NDArray, NDArray]] = {}
     for _, filename, _, key in iterate_filenames_and_objectnames(
-        filenames, file_keys, keys, skip=skip
+        filenames, file_keys, keys, skip=skip, index_order=index_order
     ):
         skey = strkey(key)
         logger.log(INFO3, f"Process {skey}")
