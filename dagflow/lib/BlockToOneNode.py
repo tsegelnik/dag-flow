@@ -124,7 +124,7 @@ class BlockToOneNode(FunctionNode):
         def fcn_outer_after(_):
             outputs[outname] = instance.outputs[-1]
 
-        from multikeydict.match import match_keys
+        from multikeydict.tools import match_keys
         from multikeydict.nestedmkdict import walkkeys
 
         keys_left = tuple(tuple(walkkeys(arg)) for arg in args)
@@ -189,7 +189,7 @@ class BlockToOneNode(FunctionNode):
             nonlocal outname, instance
             outputs[outname] = instance.outputs[-1]
 
-        from multikeydict.match import match_keys
+        from multikeydict.tools import match_keys
 
         match_keys(
             (replicate_inputs,),

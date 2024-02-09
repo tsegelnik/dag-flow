@@ -91,7 +91,7 @@ class NodeStorage(NestedMKDict):
         if not isinstance(other, NestedMKDict):
             raise RuntimeError("Operator >> RHS should be NestedMKDict")
 
-        from multikeydict.match import match_keys
+        from multikeydict.tools import match_keys
         from multikeydict.nestedmkdict import walkkeys
 
         keys_left = list(walkkeys(self))
