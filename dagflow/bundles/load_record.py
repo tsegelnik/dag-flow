@@ -1,5 +1,8 @@
+from __future__ import annotations
+
 from collections.abc import Callable, Mapping
 from pathlib import Path
+from typing import TYPE_CHECKING
 
 from schema import And
 from schema import Optional as SchemaOptional
@@ -19,6 +22,10 @@ from ..tools.schema import (
 )
 from .file_reader import FileReader, file_readers, iterate_filenames_and_objectnames
 
+if TYPE_CHECKING:
+    from numpy.typing import NDArray
+
+    from multikeydict.typing import TupleKey
 _schema_cfg = Schema(
     {
         SchemaOptional("name", default=()): And(str, Use(lambda s: (s,))),
@@ -53,7 +60,9 @@ def _validate_cfg(cfg):
         return _schema_cfg.validate(cfg)
 
 
-def load_record(acfg: Mapping | None = None, **kwargs):
+def _load_record_data(
+    acfg: Mapping | None = None, **kwargs
+) -> tuple[TupleKey, dict[TupleKey, NDArray]]:
     acfg = dict(acfg or {}, **kwargs)
     cfg = _validate_cfg(acfg)
 
@@ -66,7 +75,7 @@ def load_record(acfg: Mapping | None = None, **kwargs):
     index_order = cfg["index_order"]
     columns = cfg["columns"]
 
-    data = {}
+    data: dict[TupleKey, NDArray] = {}
     for _, filename, _, key in iterate_filenames_and_objectnames(
         filenames, file_keys, keys, skip=skip, index_order=index_order
     ):
@@ -75,13 +84,32 @@ def load_record(acfg: Mapping | None = None, **kwargs):
 
         record = FileReader.record[filename, objectname(skey, key)]
         for column in columns:
-            fullkey = (column,)+key
-            data[fullkey] = record[column]
+            fullkey = (column,) + key
+            data[fullkey] = record[column][:]
+
+    return name, data
+
+
+def load_record(acfg: Mapping | None = None, **kwargs) -> NodeStorage:
+    name, data = _load_record_data(acfg, **kwargs)
 
     storage = NodeStorage(default_containers=True)
     with storage:
         for key, record in data.items():
-            Array.make_stored(name+key, record)
+            Array.make_stored(strkey(name + key), record)
+
+    NodeStorage.update_current(storage, strict=True)
+
+    return storage
+
+
+def load_record_data(acfg: Mapping | None = None, **kwargs) -> NodeStorage:
+    name, data = _load_record_data(acfg, **kwargs)
+
+    storage = NodeStorage(default_containers=True)
+    data_storage = storage("data")
+    for key, record in data.items():
+        data_storage[name+key] = record
 
     NodeStorage.update_current(storage, strict=True)
 
