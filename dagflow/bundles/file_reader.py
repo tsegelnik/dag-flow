@@ -127,9 +127,11 @@ class FileReader(metaclass=FileReaderMeta):
     _file: Any = None
     _file_name: Path = Path("")
     _opened_files: dict[str, "FileReader"] = FileReaderMeta._opened_files
+    _read_objects: dict[str, Any]
 
     def __init__(self, file_name: str | Path):
         self._file_name = Path(file_name)
+        self._read_objects = {}
 
     @classmethod
     def open(cls, file_name: str | Path) -> "FileReader":
@@ -150,7 +152,7 @@ class FileReader(metaclass=FileReaderMeta):
             raise FileNotFoundError(f"Can not open file {file_name!s} (loader {ext})") from e
 
     def _close(self):
-        pass
+        self._read_objects = {}
 
     def keys(self) -> tuple[str, ...]:
         raise RuntimeError("not implemented method")
@@ -159,8 +161,14 @@ class FileReader(metaclass=FileReaderMeta):
         raise RuntimeError("not implemented method")
 
     def _get_object(self, object_name: str, **kwargs) -> Any:
+        with suppress(KeyError):
+            return self._read_objects[object_name]
+
         try:
-            return self._get_object_impl(object_name, **kwargs)
+            self._read_objects[object_name] = (
+                object := self._get_object_impl(object_name, **kwargs)
+            )
+            return object
         except KeyError as e:
             raise KeyError(f"Can not read {object_name} from {self._file_name!s}") from e
 
@@ -206,8 +214,11 @@ class FileReader(metaclass=FileReaderMeta):
 
     def get_record(self, object_name: str) -> NDArray:
         a = self._get_record(object_name)
+
         logger.log(
-            INFO2, f"record {a.shape}: {', '.join(a.dtype.names) if a.dtype.names else '???'}"
+            INFO2,
+            f"record ({','.join(map(str,a.shape))}):"
+            f" {', '.join(a.dtype.names) if a.dtype.names else '???'}",
         )
         return a
 
@@ -243,6 +254,7 @@ class FileReaderNPZ(FileReaderArray):
         self._file = load(self._file_name)
 
     def _close(self):
+        super()._close()
         del self._file
 
     def _get_object_impl(self, object_name: str, **kwargs) -> Any:
@@ -263,6 +275,7 @@ class FileReaderHDF5(FileReaderArray):
         self._file = File(self._file_name, "r")
 
     def _close(self):
+        super()._close()
         self._file.close()
 
     def _get_object_impl(self, object_name: str, **kwargs) -> Any:
@@ -294,7 +307,7 @@ class FileReaderTSV(FileReaderArray):
 
             for filename in filenames:
                 with suppress(FileNotFoundError):
-                    df = read_table(filename, comment="#", sep=None)
+                    df = read_table(filename, comment="#", sep=None, engine="python")
                     ret = df.to_records(index=False)
                     return ret
         else:
@@ -327,6 +340,7 @@ except ImportError:
             self._file = open(file_name)
 
         def _close(self):
+            super()._close()
             self._file.close()
 
         def _get_object_impl(self, object_name: str, **kwargs) -> Any:
@@ -365,6 +379,7 @@ else:
                 raise FileNotFoundError(file_name)
 
         def _close(self):
+            super()._close()
             self._file.Close()
 
         def _get_object_impl(self, object_name: str, **kwargs) -> Any:
