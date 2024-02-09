@@ -110,7 +110,7 @@ def _load_hist_data(
     return xname, yname, None, data
 
 
-def load_hist(acfg: Mapping | None = None, **kwargs):
+def load_hist(acfg: Mapping | None = None, **kwargs) -> NodeStorage:
     xname, yname, edges_common, data = _load_hist_data(acfg, **kwargs)
 
     storage = NodeStorage(default_containers=True)
@@ -132,7 +132,7 @@ def load_hist(acfg: Mapping | None = None, **kwargs):
     return storage
 
 
-def load_hist_data(acfg: Mapping | None = None, **kwargs):
+def load_hist_data(acfg: Mapping | None = None, **kwargs) -> NodeStorage:
     xname, yname, edges_common, data = _load_hist_data(acfg, **kwargs)
 
     storage = NodeStorage(default_containers=True)

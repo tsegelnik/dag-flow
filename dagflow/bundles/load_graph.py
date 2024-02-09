@@ -105,7 +105,7 @@ def _load_graph_data(
     return xname, yname, None, data
 
 
-def load_graph(acfg: Mapping | None = None, **kwargs):
+def load_graph(acfg: Mapping | None = None, **kwargs) -> NodeStorage:
     xname, yname, mesh_common, data = _load_graph_data(acfg, **kwargs)
 
     storage = NodeStorage(default_containers=True)
@@ -127,7 +127,7 @@ def load_graph(acfg: Mapping | None = None, **kwargs):
     return storage
 
 
-def load_graph_data(acfg: Mapping | None = None, **kwargs):
+def load_graph_data(acfg: Mapping | None = None, **kwargs) -> NodeStorage:
     xname, yname, mesh_common, data = _load_graph_data(acfg, **kwargs)
 
     storage = NodeStorage(default_containers=True)

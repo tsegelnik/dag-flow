@@ -179,7 +179,7 @@ class FileReader(metaclass=FileReaderMeta):
         x, y = self._get_graph(object_name)
         logger.log(
             INFO2,
-            f"graph: x {x[0]:{_log_float_format}}→{x[-1]:{_log_float_format}},"
+            f"graph {object_name} ({len(y)}): x {x[0]:{_log_float_format}}→{x[-1]:{_log_float_format}},"
             f" ymin={y.min():{_log_float_format}}, ymax={y.max():{_log_float_format}}",
         )
         return x, y
@@ -191,7 +191,7 @@ class FileReader(metaclass=FileReaderMeta):
         x, y = self._get_hist(object_name)
         logger.log(
             INFO2,
-            f"hist {object_name:10}: x {x[0]:{_log_float_format}}→{x[-1]:{_log_float_format}},"
+            f"hist {object_name} ({len(y)}): x {x[0]:{_log_float_format}}→{x[-1]:{_log_float_format}},"
             f" min={y.min():{_log_float_format}}, max={y.max():{_log_float_format}},"
             f" Σh={y.sum():{_log_float_format}}",
         )
@@ -204,7 +204,7 @@ class FileReader(metaclass=FileReaderMeta):
         a = self._get_array(object_name)
         logger.log(
             INFO2,
-            f"array {'x'.join(map(str,a.shape))}: min={a.min():{_log_float_format}},"
+            f"array {object_name} {'x'.join(map(str,a.shape))}: min={a.min():{_log_float_format}},"
             f" max={a.max():{_log_float_format}}, Σ={a.sum():{_log_float_format}}",
         )
         return a
@@ -217,7 +217,7 @@ class FileReader(metaclass=FileReaderMeta):
 
         logger.log(
             INFO2,
-            f"record ({','.join(map(str,a.shape))}):"
+            f"record {object_name} ({','.join(map(str,a.shape))}):"
             f" {', '.join(a.dtype.names) if a.dtype.names else '???'}",
         )
         return a
