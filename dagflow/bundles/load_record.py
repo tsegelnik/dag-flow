@@ -21,6 +21,7 @@ from ..tools.schema import (
     LoadYaml,
 )
 from .file_reader import FileReader, file_readers, iterate_filenames_and_objectnames
+from multikeydict.tools import reorder_key
 
 if TYPE_CHECKING:
     from numpy.typing import NDArray
@@ -36,7 +37,7 @@ _schema_cfg = Schema(
         SchemaOptional("skip", default=None): And(
             Or(((str,),), [[str]]), Use(lambda l: tuple(set(k) for k in l))
         ),
-        SchemaOptional("index_order", default=None): Or((int,), [int]),
+        SchemaOptional("key_order", default=None): Or((int,), [int]),
         SchemaOptional("objects", default=lambda: lambda st, tpl: st): Or(
             Callable, And({str: str}, Use(lambda dct: lambda st, tpl: dct.get(st, st)))
         ),
@@ -72,19 +73,19 @@ def _load_record_data(
     file_keys = cfg["replicate_files"]
     objectname = cfg["objects"]
     skip = cfg["skip"]
-    index_order = cfg["index_order"]
+    key_order = cfg["key_order"]
     columns = cfg["columns"]
 
     data: dict[TupleKey, NDArray] = {}
     for _, filename, _, key in iterate_filenames_and_objectnames(
-        filenames, file_keys, keys, skip=skip, index_order=index_order
-    ):
+        filenames, file_keys, keys, skip=skip
+        ):
         skey = strkey(key)
         logger.log(INFO3, f"Process {skey}")
 
         record = FileReader.record[filename, objectname(skey, key)]
         for column in columns:
-            fullkey = (column,) + key
+            fullkey = reorder_key((column,) + key, key_order)
             data[fullkey] = record[column][:]
 
     return name, data
@@ -109,7 +110,7 @@ def load_record_data(acfg: Mapping | None = None, **kwargs) -> NodeStorage:
     storage = NodeStorage(default_containers=True)
     data_storage = storage("data")
     for key, record in data.items():
-        data_storage[name+key] = record
+        data_storage[name + key] = record
 
     NodeStorage.update_current(storage, strict=True)
 

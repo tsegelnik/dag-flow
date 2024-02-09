@@ -41,7 +41,7 @@ _schema_cfg = Schema(
         SchemaOptional("skip", default=None): And(
             Or(((str,),), [[str]]), Use(lambda l: tuple(set(k) for k in l))
         ),
-        SchemaOptional("index_order", default=None): Or((int,), [int]),
+        SchemaOptional("key_order", default=None): Or((int,), [int]),
         SchemaOptional("objects", default=lambda: lambda st, tpl: st): Or(
             Callable, And({str: str}, Use(lambda dct: lambda st, tpl: dct.get(st, st)))
         ),
@@ -77,7 +77,7 @@ def _load_hist_data(
     file_keys = cfg["replicate_files"]
     objectname = cfg["objects"]
     skip = cfg["skip"]
-    index_order = cfg["index_order"]
+    key_order = cfg["key_order"]
     normalize = cfg["normalize"]
 
     xname = name, cfg["x"]
@@ -86,7 +86,7 @@ def _load_hist_data(
     edges_list: list[NDArray] = []
     data = {}
     for _, filename, _, key in iterate_filenames_and_objectnames(
-        filenames, file_keys, keys, skip=skip, index_order=index_order
+        filenames, file_keys, keys, skip=skip, key_order=key_order
     ):
         skey = strkey(key)
         logger.log(INFO3, f"Process {skey}")

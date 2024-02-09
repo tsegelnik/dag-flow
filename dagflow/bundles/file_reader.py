@@ -8,6 +8,7 @@ from numpy import double, dtype, frombuffer, linspace
 from numpy.typing import NDArray
 
 from multikeydict.typing import KeyLike, TupleKey, properkey
+from multikeydict.tools import reorder_key
 
 from ..logger import INFO1, INFO2, INFO3, logger
 
@@ -452,7 +453,7 @@ def iterate_filenames_and_objectnames(
     keys: Sequence[KeyLike],
     *,
     skip: Sequence[set[str]] | None = None,
-    index_order: Sequence[int] | None = None,
+    key_order: Sequence[int] | None = None,
 ) -> Generator[tuple[TupleKey, str | Path, TupleKey, TupleKey], None, None]:
     for filekey, filename in iterate_filenames(filenames, filename_keys):
         for key in keys:
@@ -460,8 +461,7 @@ def iterate_filenames_and_objectnames(
             fullkey = filekey + key
             if skip is not None and any(skipkey.issubset(fullkey) for skipkey in skip):
                 continue
-            if index_order is not None:
-                fullkey = tuple(fullkey[i] for i in index_order)
+            fullkey = reorder_key(fullkey, key_order)
             yield filekey, filename, key, fullkey
 
 
