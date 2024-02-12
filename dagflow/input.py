@@ -24,19 +24,31 @@ if TYPE_CHECKING:
 
 
 class Input:
-    _own_data: NDArray | None = None
+    __slots__ = (
+        "_own_data",
+        "_own_dd",
+        "_node",
+        "_name",
+        "_parent_output",
+        "_child_output",
+        "_allocatable",
+        "_owns_buffer",
+        "_debug",
+    )
+
+    _own_data: NDArray | None
     _own_dd: DataDescriptor
 
     _node: Node | None
     _name: str | None
 
-    _parent_output: Output | None = None
-    _child_output: Output | None = None
+    _parent_output: Output | None
+    _child_output: Output | None
 
-    _allocatable: bool = False
-    _owns_buffer: bool = False
+    _allocatable: bool
+    _owns_buffer: bool
 
-    _debug: bool = False
+    _debug: bool
 
     def __init__(
         self,
@@ -58,9 +70,12 @@ class Input:
 
         self._name = name
         self._node = node
+        self._child_output = None
         self._set_child_output(child_output)
         self._parent_output = parent_output
         self._allocatable = allocatable
+        self._owns_buffer = False
+        self._own_data = None
         if debug is not None:
             self._debug = debug
         elif node:
@@ -119,7 +134,7 @@ class Input:
             return self._set_child_output(child_output, force)
         raise ClosedGraphError(input=self, node=self.node, output=child_output)
 
-    def _set_child_output(self, child_output: Output, force: bool = False) -> None:
+    def _set_child_output(self, child_output: Output | None, force: bool = False) -> None:
         if self.child_output and not force:
             raise ReconnectionError(output=self.child_output, node=self.node)
         self._child_output = child_output

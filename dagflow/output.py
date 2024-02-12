@@ -30,23 +30,37 @@ from .types import EdgesLike, ShapeLike
 
 
 class Output:
-    _data: NDArray | None = None
+    __slots__ = (
+        "_data",
+        "_dd",
+        "_node",
+        "_name",
+        "_child_inputs",
+        "_parent_input",
+        "_allocating_input",
+        "_allocatable",
+        "_owns_buffer",
+        "_forbid_reallocation",
+        "_debug",
+        "_labels",
+    )
+    _data: NDArray | None
     _dd: DataDescriptor
 
     _node: Optional["Node"]
     _name: str | None
 
     _child_inputs: list["Input"]
-    _parent_input: Optional["Input"] = None
-    _allocating_input: Optional["Input"] = None
+    _parent_input: Optional["Input"]
+    _allocating_input: Optional["Input"]
 
-    _allocatable: bool = True
-    _owns_buffer: bool = False
-    _forbid_reallocation: bool = False
+    _allocatable: bool
+    _owns_buffer: bool
+    _forbid_reallocation: bool
 
-    _debug: bool = False
+    _debug: bool
 
-    _labels: Labels | None = None
+    _labels: Labels | None
 
     def __init__(
         self,
@@ -66,8 +80,13 @@ class Output:
         self._name = name
         self._node = node
         self._child_inputs = []
+        self._parent_input = None
         self._debug = debug if debug is not None else node.debug if node else False
+        self._allocating_input = None
         self._forbid_reallocation = forbid_reallocation
+        self._owns_buffer = False
+        self._labels = None
+        self._data = None
 
         self._dd = DataDescriptor(dtype, shape, axes_edges, axes_meshes)
 
