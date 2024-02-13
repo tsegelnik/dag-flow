@@ -21,7 +21,7 @@ class SumSq(ManyToOneNode):
         self._labels.setdefault("mark", "Σ()²")
 
     def _fcn(self):
-        out = self.outputs["result"].data
+        out = self._result_output.data
         square(self.inputs[0].data, out=out)
         if len(self.inputs) > 1:
             for _input in self.inputs[1:]:

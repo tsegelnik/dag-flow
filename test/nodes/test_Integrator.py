@@ -124,7 +124,7 @@ def test_Integrator_gl1d(debug_graph, testname):
 def test_Integrator_gl2d(debug_graph, testname):
     class Polynomial1(ManyToOneNode):
         def _fcn(self):
-            self.outputs["result"].data[:] = vecF0(self.inputs[1].data) * vecF0(
+            self._result_output.data[:] = vecF0(self.inputs[1].data) * vecF0(
                 self.inputs[0].data
             )
             return list(self.outputs.iter_data())
@@ -209,7 +209,7 @@ def test_Integrator_gl2d(debug_graph, testname):
 def test_Integrator_gl2to1d_x(debug_graph, testname, dropdim):
     class Polynomial21(ManyToOneNode):
         def _fcn(self):
-            self.outputs["result"].data[:] = vecF0(self.inputs[1].data) * vecF0(
+            self._result_output.data[:] = vecF0(self.inputs[1].data) * vecF0(
                 self.inputs[0].data
             )
             return list(self.outputs.iter_data())
@@ -275,7 +275,7 @@ def test_Integrator_gl2to1d_x(debug_graph, testname, dropdim):
 def test_Integrator_gl2to1d_y(debug_graph, testname, dropdim):
     class Polynomial21(ManyToOneNode):
         def _fcn(self):
-            self.outputs["result"].data[:] = vecF0(self.inputs[1].data) * vecF0(
+            self._result_output.data[:] = vecF0(self.inputs[1].data) * vecF0(
                 self.inputs[0].data
             )
             return list(self.outputs.iter_data())

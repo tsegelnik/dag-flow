@@ -15,7 +15,7 @@ class Sum(ManyToOneNode):
         self._labels.setdefault("mark", "Σ")
 
     def _fcn(self):
-        out = self.outputs["result"].data
+        out = self._result_output.data
         copyto(out, self.inputs[0].data)
         for _input in self.inputs[1:]:
             add(out, _input.data, out=out)
@@ -30,7 +30,7 @@ class Product(ManyToOneNode):
         self._labels.setdefault("mark", "Π")
 
     def _fcn(self):
-        out = self.outputs["result"].data
+        out = self._result_output.data
         copyto(out, self.inputs[0].data)
         for _input in self.inputs[1:]:
             multiply(out, _input.data, out=out)
@@ -48,7 +48,7 @@ class Division(ManyToOneNode):
         self._labels.setdefault("mark", "÷")
 
     def _fcn(self):
-        out = self.outputs[0].data
+        out = self._result_output.data
         copyto(out, self.inputs[0].data.copy())
         for _input in self.inputs[1:]:
             divide(out, _input.data, out=out)

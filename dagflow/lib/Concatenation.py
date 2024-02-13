@@ -23,7 +23,7 @@ class Concatenation(ManyToOneNode):
         cdtype = self.inputs[0].dd.dtype
         check_input_dtype(self, slice(None), cdtype)
         check_input_dimension(self, slice(None), 1)
-        _output = self.outputs["result"]
+        _output = self._result_output
         size = 0
         for input in self.inputs:
             self._offsets.append(size)
@@ -32,8 +32,7 @@ class Concatenation(ManyToOneNode):
         _output.dd.dtype = cdtype
 
     def _fcn(self):
-        _output = self.outputs["result"]
-        data = _output.data
+        out = self._result_output.data
         for offset, _input in zip(self._offsets, self.inputs):
             size = _input.dd.shape[0]
-            data[offset : offset + size] = _input.data[:]
+            out[offset : offset + size] = _input.data[:]

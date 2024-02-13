@@ -14,7 +14,7 @@ from dagflow.lib import WeightedSum
 
 class ThreeInputsSum(ManyToOneNode):
     def _fcn(self):
-        out = self.outputs["result"].data
+        out = self._result_output.data
         copyto(out, self.inputs[0].data.copy())
         for _input in self.inputs[1:3]:
             out += _input.data

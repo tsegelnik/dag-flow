@@ -12,6 +12,7 @@ from ..storage import NodeStorage
 
 if TYPE_CHECKING:
     from multikeydict.typing import KeyLike, TupleKey
+    from ..output import Output
 
 
 class ManyToOneNode(FunctionNode):
@@ -20,16 +21,17 @@ class ManyToOneNode(FunctionNode):
     which is the result of some function of all the positional inputs
     """
 
-    __slots__ = ("_broadcastable",)
+    __slots__ = ("_broadcastable", "_result_output")
 
     _broadcastable: bool
+    _result_output: Output
 
     def __init__(self, *args, broadcastable: bool = False, output_name: str = "result", **kwargs):
         kwargs.setdefault(
             "missing_input_handler", MissingInputAddOne(input_fmt=self._input_names())
         )
         super().__init__(*args, **kwargs)
-        self._add_output(output_name)
+        self._result_output = self._add_output(output_name)
         self._broadcastable = broadcastable
 
     @staticmethod
@@ -127,7 +129,7 @@ class ManyToOneNode(FunctionNode):
                 ) from e
 
         def fcn_outer_after(_):
-            outputs[outname] = instance.outputs[0]
+            outputs[outname] = instance._result_output
 
         from multikeydict.nestedmkdict import walkkeys
         from multikeydict.tools import match_keys
@@ -188,7 +190,7 @@ class ManyToOneNode(FunctionNode):
 
         def fcn_outer_after(_):
             nonlocal outputs, outname, instance
-            outputs[outname] = instance.outputs[0]
+            outputs[outname] = instance._result_output
 
         from multikeydict.tools import match_keys
 

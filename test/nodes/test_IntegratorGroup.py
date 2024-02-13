@@ -74,7 +74,7 @@ def test_IntegratorGroup_trap(debug_graph):
 #
 #    class Polynomial1(ManyToOneNode):
 #        def _fcn(self):
-#            self.outputs["result"].data[:] = vecF0(self.inputs[1].data) * vecF0(
+#            self._result_output.data[:] = vecF0(self.inputs[1].data) * vecF0(
 #                self.inputs[0].data
 #            )
 #            return list(self.outputs.iter_data())
