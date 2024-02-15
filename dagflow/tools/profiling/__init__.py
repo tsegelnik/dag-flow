@@ -1,9 +1,9 @@
-from .individual import IndividualProfiling
-from .framework import FrameworkProfiling
+from .nodeprofiler import NodeProfiler
+from .frwkprofiler import FrameworkProfiler
 from .SleepingNode import SleepingNode
 
 __all__ = [
-    "IndividualProfiling",
-    "FrameworkProfiling",
+    "NodeProfiler",
+    "FrameworkProfiler",
     "SleepingNode"
 ]

@@ -10,7 +10,7 @@ if TYPE_CHECKING:
 class SleepingNode(FunctionNode):
     """
     A node that sleeps for a certain time.
-    Used for profiling debugging and testing.
+    Used for profiler debugging and testing.
 
     use `sleep_time` argument to set execution time in seconds
     """

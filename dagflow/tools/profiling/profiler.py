@@ -46,7 +46,7 @@ _ALLOWED_AGG_FUNCS = ("count", "mean", "median", "std", "min", "max", "sum",
 _DEFAULT_AGG_FUNCS = ("count", "single", "sum", "%_of_total")
 
 
-class Profiling(metaclass=ABCMeta):
+class Profiler(metaclass=ABCMeta):
     __slots__ = (
         "_target_nodes",
         "_source",
