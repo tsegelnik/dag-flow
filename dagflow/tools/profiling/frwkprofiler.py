@@ -28,12 +28,12 @@ class FrameworkProfiler(Profiler):
     def __init__(self,
                  target_nodes: Sequence[FunctionNode]=[],
                  *,
-                 source: Sequence[FunctionNode]=[],
-                 sink: Sequence[FunctionNode]=[],
+                 sources: Sequence[FunctionNode]=[],
+                 sinks: Sequence[FunctionNode]=[],
                  n_runs = 100) -> None:
         self._ALLOWED_GROUPBY = _ALLOWED_GROUPBY
-        super().__init__(target_nodes, source, sink, n_runs)
-        if not (self._source and self._sink):
+        super().__init__(target_nodes, sources, sinks, n_runs)
+        if not (self._sources and self._sinks):
             self._reveal_source_sink()
 
     def _taint_nodes(self):
@@ -58,7 +58,7 @@ class FrameworkProfiler(Profiler):
         self._make_fcns_empty()
         setup = lambda: self._taint_nodes()
         def repeat_stmt():
-            for sink_node in self._sink:
+            for sink_node in self._sinks:
                 sink_node.eval()
         results = repeat(stmt=repeat_stmt, setup=setup,
                          repeat=self._n_runs, number=1)
@@ -69,8 +69,8 @@ class FrameworkProfiler(Profiler):
                                 append_results: bool=False) -> FrameworkProfiler:
         results = self._estimate_framework_time()
         df = DataFrame(results, columns=["time"])
-        sink_names = str([n.name for n in self._sink])
-        source_names = str([n.name for n in self._source])
+        sink_names = str([n.name for n in self._sinks])
+        source_names = str([n.name for n in self._sources])
         df.insert(0, "sink nodes", shorten(sink_names, width=SINK_COL_WIDTH))
         df.insert(0, "source nodes", shorten(source_names, width=SOURCE_COL_WIDTH))
         if append_results and hasattr(self, "_estimations_table"):

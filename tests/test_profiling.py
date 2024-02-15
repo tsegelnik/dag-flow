@@ -90,24 +90,24 @@ class TestProfilerBase:
         profiling = Profiler(target_nodes, n_runs=10000)
         assert profiling._target_nodes == target_nodes
         assert profiling._n_runs == 10000
-        assert profiling._source == profiling._sink == []
+        assert profiling._sources == profiling._sinks == []
 
-        source, sink = [a2, a3], [s3]
+        sources, sinks = [a2, a3], [s3]
         target_nodes = [a2, a3, s0, p1, s1, s2, s3]
-        profiling = Profiler(source=source, sink=sink)
+        profiling = Profiler(sources=sources, sinks=sinks)
 
         assert Counter(profiling._target_nodes) == Counter(target_nodes)
-        assert profiling._source == source
-        assert profiling._sink == sink
+        assert profiling._sources == sources
+        assert profiling._sinks == sinks
 
-        source, sink = [a0, a1, a2, a3, l_matrix], [s3, mdvdt]
+        sources, sinks = [a0, a1, a2, a3, l_matrix], [s3, mdvdt]
         target_nodes = nodes
-        profiling = Profiler(source=source, sink=sink)
+        profiling = Profiler(sources=sources, sinks=sinks)
         assert Counter(profiling._target_nodes) == Counter(target_nodes)
 
-        source, sink = [a2, a3], [l_matrix]
+        sources, sinks = [a2, a3], [l_matrix]
         with pytest.raises(ValueError) as excinfo:
-            Profiler(source=source, sink=sink)
+            Profiler(sources=sources, sinks=sinks)
         assert "nodes are unreachable" in str(excinfo.value)
 
         with pytest.raises(ValueError) as excinfo:
@@ -119,27 +119,27 @@ class TestProfilerBase:
         graph, nodes = graph_1()
         a0, a1, a2, a3, a4, s1, s2, p1, p2 = nodes
 
-        source, sink = [a4, s1], [p2]
+        sources, sinks = [a4, s1], [p2]
         target_nodes = [a4, s1, p1, p2]
-        profiling = Profiler(source=source, sink=sink)
+        profiling = Profiler(sources=sources, sinks=sinks)
 
         assert Counter(profiling._target_nodes) == Counter(target_nodes)
-        assert profiling._source == source
-        assert profiling._sink == sink
+        assert profiling._sources == sources
+        assert profiling._sinks == sinks
 
-        source, sink = [a0, a1, a2, a3, a4], [p2]
+        sources, sinks = [a0, a1, a2, a3, a4], [p2]
         target_nodes = nodes
-        profiling = Profiler(source=source, sink=sink)
+        profiling = Profiler(sources=sources, sinks=sinks)
         assert Counter(profiling._target_nodes) == Counter(target_nodes)
 
-        source, sink = [a0, a2], [p1]
+        sources, sinks = [a0, a2], [p1]
         target_nodes = [a0, a2, s1, p1]
-        profiling = Profiler(source=source, sink=sink)
+        profiling = Profiler(sources=sources, sinks=sinks)
         assert Counter(profiling._target_nodes) == Counter(target_nodes)
 
-        source, sink = [a0, a1], [s2]
+        sources, sinks = [a0, a1], [s2]
         with pytest.raises(ValueError) as excinfo:
-            Profiler(source=source, sink=sink)
+            Profiler(sources=sources, sinks=sinks)
         assert "nodes are unreachable" in str(excinfo.value)
 
 
@@ -153,9 +153,9 @@ class TestNodeProfiler:
         profiling = NodeProfiler(target_nodes)
         assert Counter(profiling._target_nodes) == Counter(target_nodes)
 
-        source, sink = [a1, a2], [s2]
+        sources, sinks = [a1, a2], [s2]
         target_nodes = [a1, a2, p1, s2]
-        profiling = NodeProfiler(target_nodes, source=source, sink=sink)
+        profiling = NodeProfiler(target_nodes, sources=sources, sinks=sinks)
 
     def check_inputs_taint(self, node: FunctionNode):
         return any(inp.tainted for inp in node.inputs)
@@ -263,8 +263,8 @@ class TestFrameworkProfiler:
         assert Counter(profiling._target_nodes) == Counter(target_nodes)
         assert profiling._n_runs == 123
 
-        source, sink = [a1, a2], [s3]
-        profiling = FrameworkProfiler(source=source, sink=sink)
+        sources, sinks = [a1, a2], [s3]
+        profiling = FrameworkProfiler(sources=sources, sinks=sinks)
         profiling.estimate_framework_time(append_results=True)
         profiling.print_report()
         assert Counter(profiling._target_nodes) == Counter(target_nodes)
@@ -273,16 +273,16 @@ class TestFrameworkProfiler:
         _, nodes = graph_0()
         a0, a1, a2, a3, p0, p1, s0, s1, s2, s3, l_matrix, mdvdt = nodes
 
-        source, sink = [a0, a1, a2, a3, l_matrix], [mdvdt, s3]
+        sources, sinks = [a0, a1, a2, a3, l_matrix], [mdvdt, s3]
         profiling = FrameworkProfiler(nodes)
-        assert Counter(profiling._source) == Counter(source)
-        assert Counter(profiling._sink) == Counter(sink)
+        assert Counter(profiling._sources) == Counter(sources)
+        assert Counter(profiling._sinks) == Counter(sinks)
 
         target_nodes = [s1, s2, mdvdt, s3]
-        source, sink = [s1, s2], [mdvdt, s3]
+        sources, sinks = [s1, s2], [mdvdt, s3]
         profiling = FrameworkProfiler(target_nodes)
-        assert Counter(profiling._source) == Counter(source)
-        assert Counter(profiling._sink) == Counter(sink)
+        assert Counter(profiling._sources) == Counter(sources)
+        assert Counter(profiling._sinks) == Counter(sinks)
 
     def test__taint_nodes_g0(self):
         _, nodes = graph_0()
