@@ -7,7 +7,7 @@ from types import MethodType
 
 from pandas import DataFrame, concat
 
-from .profiling import Profiling
+from .profiler import Profiler
 from dagflow.nodes import FunctionNode
 
 SOURCE_COL_WIDTH = 32
@@ -20,8 +20,8 @@ _ALLOWED_GROUPBY = (
     "sink nodes",
 )
 
-class FrameworkProfiling(Profiling):
-    """Profiling class that used to estimate
+class FrameworkProfiler(Profiler):
+    """Profiler class that used to estimate
     the interaction time between nodes (framework time)"""
     __slots__ = ()
 
@@ -66,7 +66,7 @@ class FrameworkProfiling(Profiling):
         return results
 
     def estimate_framework_time(self,
-                                append_results: bool=False) -> FrameworkProfiling:
+                                append_results: bool=False) -> FrameworkProfiler:
         results = self._estimate_framework_time()
         df = DataFrame(results, columns=["time"])
         sink_names = str([n.name for n in self._sink])

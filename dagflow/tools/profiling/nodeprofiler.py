@@ -6,7 +6,7 @@ from collections.abc import Sequence
 
 from pandas import DataFrame
 
-from .profiling import Profiling
+from .profiler import Profiler
 if TYPE_CHECKING:
     from dagflow.nodes import FunctionNode
 
@@ -14,7 +14,7 @@ DEFAULT_RUNS = 10000
 _TABLE_COLUMNS = ("node", "type", "name", "time")
 _ALLOWED_GROUPBY = ("node", "type", "name")
 
-class IndividualProfiling(Profiling):
+class NodeProfiler(Profiler):
     """Profiling class for estimating the time of individual nodes"""
     __slots__ = ()
 
@@ -33,7 +33,7 @@ class IndividualProfiling(Profiling):
             input.touch()
         return timeit(stmt=node.fcn, number=n_runs)
 
-    def estimate_target_nodes(self) -> IndividualProfiling:
+    def estimate_target_nodes(self) -> NodeProfiler:
         records = {col: [] for col in _TABLE_COLUMNS}
         for node in self._target_nodes:
             estimations = self.estimate_node(node, self._n_runs)
