@@ -49,8 +49,8 @@ _DEFAULT_AGG_FUNCS = ("count", "single", "sum", "%_of_total")
 class Profiler(metaclass=ABCMeta):
     __slots__ = (
         "_target_nodes",
-        "_source",
-        "_sink",
+        "_sources",
+        "_sinks",
         "_n_runs",
         "_estimations_table",
         "_ALLOWED_GROUPBY",
@@ -58,8 +58,8 @@ class Profiler(metaclass=ABCMeta):
         "_DEFAULT_AGG_FUNCS"
     )
     _target_nodes: Sequence[FunctionNode]
-    _source: Sequence[FunctionNode]
-    _sink: Sequence[FunctionNode]
+    _sources: Sequence[FunctionNode]
+    _sinks: Sequence[FunctionNode]
     _n_runs: int
     _estimations_table: DataFrame
     _ALLOWED_GROUPBY: tuple[list[str] | str, ...]
@@ -68,21 +68,21 @@ class Profiler(metaclass=ABCMeta):
 
     def __init__(self,
                  target_nodes: Sequence[FunctionNode]=[],
-                 source: Sequence[FunctionNode]=[],
-                 sink: Sequence[FunctionNode]=[],
+                 sources: Sequence[FunctionNode]=[],
+                 sinks: Sequence[FunctionNode]=[],
                  n_runs: int=100):
         self._ALLOWED_AGG_FUNCS = _ALLOWED_AGG_FUNCS
         self._DEFAULT_AGG_FUNCS = _DEFAULT_AGG_FUNCS
-        self._source = source
-        self._sink = sink
+        self._sources = sources
+        self._sinks = sinks
         self._n_runs = n_runs
         if target_nodes:
             self._target_nodes = target_nodes
-        elif source and sink:
+        elif sources and sinks:
             self._target_nodes = list(self._gather_related_nodes())
         else:
             raise ValueError("You shoud provide profiler with `target_nodes` "
-                             "or provide `source` and `sink` arguments"
+                             "or provide `sources` and `sinks` arguments"
                              "to automatically find the target nodes")
 
     def __child_nodes_gen(self, node: FunctionNode) -> Generator[FunctionNode, None, None]:
@@ -95,9 +95,9 @@ class Profiler(metaclass=ABCMeta):
             yield input.parent_node
 
     def __check_reachable(self, nodes_gathered):
-        if any(s not in nodes_gathered for s in self._sink):
-            raise ValueError("Some of the `sink` nodes are unreachable "
-                             "(no paths from source)")
+        if any(s not in nodes_gathered for s in self._sinks):
+            raise ValueError("Some of the `sinks` nodes are unreachable "
+                             "(no paths from sources)")
 
     def _gather_related_nodes(self) -> set[FunctionNode]:
         """Find all nodes that lie on all possible paths
@@ -105,15 +105,15 @@ class Profiler(metaclass=ABCMeta):
         """
         nodes_stack = deque()
         iters_stack = deque()
-        related_nodes = set(self._source)
-        for start_node in self._source:
+        related_nodes = set(self._sources)
+        for start_node in self._sources:
             current_iterator = self.__child_nodes_gen(start_node)
             while True:
                 try:
                     node = next(current_iterator)
                     nodes_stack.append(node)
                     iters_stack.append(current_iterator)
-                    if node in self._sink:
+                    if node in self._sinks:
                         related_nodes.update(nodes_stack)
                         nodes_stack.pop()
                         current_iterator = iters_stack.pop()
@@ -128,8 +128,8 @@ class Profiler(metaclass=ABCMeta):
         return related_nodes
 
     def _reveal_source_sink(self):
-        source = []
-        sink = []
+        sources = []
+        sinks = []
         for node in self._target_nodes:
             have_parents = any(n in self._target_nodes
                             for n in self.__parent_nodes_gen(node))
@@ -138,11 +138,11 @@ class Profiler(metaclass=ABCMeta):
             if have_parents and have_childs:
                 continue
             elif have_parents:
-                sink.append(node)
+                sinks.append(node)
             else:
-                source.append(node)
-        self._source = source
-        self._sink = sink
+                sources.append(node)
+        self._sources = sources
+        self._sinks = sinks
 
     def __anything_from_alias(self, alias, alias_table: dict) -> str | list[str]:
         def get_orig(val):

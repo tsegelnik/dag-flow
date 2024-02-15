@@ -21,11 +21,11 @@ class NodeProfiler(Profiler):
     def __init__(self,
                  target_nodes: Sequence[FunctionNode]=[],
                  *,
-                 source: Sequence[FunctionNode]=[],
-                 sink: Sequence[FunctionNode]=[],
+                 sources: Sequence[FunctionNode]=[],
+                 sinks: Sequence[FunctionNode]=[],
                  n_runs: int=DEFAULT_RUNS):
         self._ALLOWED_GROUPBY = _ALLOWED_GROUPBY
-        super().__init__(target_nodes, source, sink, n_runs)
+        super().__init__(target_nodes, sources, sinks, n_runs)
 
     @classmethod
     def estimate_node(cls, node: FunctionNode, n_runs: int=DEFAULT_RUNS):
