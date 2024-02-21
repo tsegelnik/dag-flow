@@ -47,6 +47,7 @@ _DEFAULT_AGG_FUNCS = ("count", "single", "sum", "%_of_total")
 
 
 class Profiler(metaclass=ABCMeta):
+    """Base Profiler Class."""
     __slots__ = (
         "_target_nodes",
         "_sources",
@@ -85,12 +86,14 @@ class Profiler(metaclass=ABCMeta):
                              "or provide `sources` and `sinks` arguments"
                              "to automatically find the target nodes")
 
-    def __child_nodes_gen(self, node: FunctionNode) -> Generator[FunctionNode, None, None]:
+    def __child_nodes_gen(self, node: FunctionNode) \
+                            -> Generator[FunctionNode, None, None]:
         for output in node.outputs.iter_all():
             for child_input in output.child_inputs:
                 yield child_input.node
 
-    def __parent_nodes_gen(self, node: FunctionNode) -> Generator[FunctionNode, None, None]:
+    def __parent_nodes_gen(self, node: FunctionNode) \
+                            -> Generator[FunctionNode, None, None]:
         for input in node.inputs.iter_all():
             yield input.parent_node
 
@@ -101,7 +104,7 @@ class Profiler(metaclass=ABCMeta):
 
     def _gather_related_nodes(self) -> set[FunctionNode]:
         """Find all nodes that lie on all possible paths
-        between `self._source` and `self._sink`
+        between `self._sources` and `self._sinks`
         """
         nodes_stack = deque()
         iters_stack = deque()
@@ -128,6 +131,7 @@ class Profiler(metaclass=ABCMeta):
         return related_nodes
 
     def _reveal_source_sink(self):
+        """Find sources and sinks for self._target_nodes"""
         sources = []
         sinks = []
         for node in self._target_nodes:
@@ -145,6 +149,9 @@ class Profiler(metaclass=ABCMeta):
         self._sinks = sinks
 
     def __anything_from_alias(self, alias, alias_table: dict) -> str | list[str]:
+        """Return original name(s) from table of aliases if alias exists,
+        otherwise return the same string(s)
+        """
         def get_orig(val):
             try:
                 return alias_table.get(val, val)
@@ -167,6 +174,10 @@ class Profiler(metaclass=ABCMeta):
         return self.__anything_from_alias(alias, _AGG_ALIASES)
 
     def _pd_funcs_agg_df(self, grouped_df, grouped_by, agg_funcs) -> DataFrame:
+        """Apply standard Pandas aggregate
+        functions (`"min"`, `"max"`, etc.)
+        to the given grouped `DataFrame`.
+        """
         df = grouped_df.agg({'time': agg_funcs})
         # grouped_by can be ["col1", "col2", ...] or "col"
         if isinstance(grouped_by, list):
@@ -179,6 +190,9 @@ class Profiler(metaclass=ABCMeta):
         return df
 
     def __get_index_and_pop(self, array: list, value):
+        """Return index of the `value` in given `array`.\n
+        Return `-1` if index not exists.
+        """
         try:
             idx = array.index(value)
             array.pop(idx)
@@ -187,6 +201,10 @@ class Profiler(metaclass=ABCMeta):
             return -1
 
     def _aggregate_df(self, grouped_df, grouped_by, agg_funcs) -> DataFrame:
+        """Apply the aggregate Pandas functions
+        and calculate the percentage `"%_of_total"`
+        if it is specified as an aggregate function
+        """
         tmp_aggs = self._aggs_from_alias(agg_funcs)
         p_index = self.__get_index_and_pop(tmp_aggs, '%_of_total')
         if p_index != -1 and 'sum' not in tmp_aggs:
@@ -202,6 +220,8 @@ class Profiler(metaclass=ABCMeta):
         return df
 
     def _check_report_consistency(self, group_by, agg_funcs):
+        """Check if it is possible to create report table
+        """
         if not hasattr(self, "_estimations_table"):
             raise AttributeError("No estimations found!\n"
                                  "Note: first esimate your nodes "
@@ -218,6 +238,10 @@ class Profiler(metaclass=ABCMeta):
 
     @abstractmethod
     def make_report(self, group_by, agg_funcs, sort_by) -> DataFrame:
+        """Make report table. \n
+        Hint: Since the report table is just a `Pandas.DataFrame`,
+        you can call Pandas methods like `.to_csv()` or `to_excel()`
+        """
         if agg_funcs is None or agg_funcs == []:
             agg_funcs = self._DEFAULT_AGG_FUNCS
         self._check_report_consistency(group_by, agg_funcs)
@@ -236,6 +260,7 @@ class Profiler(metaclass=ABCMeta):
         return report
 
     def _normalize(self, df: DataFrame) -> DataFrame:
+        """Normilize time by `self._n_runs`"""
         for c in df.columns:
             if c.startswith('t_') or c == 'time':
                 df[c] /= self._n_runs
@@ -245,7 +270,11 @@ class Profiler(metaclass=ABCMeta):
         print(tabulate(df.head(rows), headers='keys', tablefmt='psql'))
 
     @abstractmethod
-    def print_report(self, rows, *args, **kwargs):
+    def print_report(self, rows, *args, **kwargs) -> DataFrame:
+        """Make report and print it. \n
+        Return `Pands.DataPrame` as report
+        ( See: `self.make_report()` )
+        """
         report = self.make_report(*args, **kwargs)
         self._print_table(report, rows)
         raise NotImplementedError
