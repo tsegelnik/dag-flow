@@ -78,8 +78,8 @@ class FrameworkProfiler(Profiler):
         df = DataFrame(results, columns=["time"])
         sinks_short = self.short_node_names(self._sinks, SINK_COL_WIDTH)
         sources_short = self.short_node_names(self._sinks, SOURCE_COL_WIDTH)
-        df.insert(0, "sinks nodes", sinks_short)
-        df.insert(0, "sources nodes", sources_short)
+        df.insert(0, "sink nodes", sinks_short)
+        df.insert(0, "source nodes", sources_short)
         if append_results and hasattr(self, "_estimations_table"):
             self._estimations_table = concat([self._estimations_table, df])
         else:
