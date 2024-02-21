@@ -56,11 +56,10 @@ class FrameworkProfiler(Profiler):
 
     def _estimate_framework_time(self) -> list[float]:
         self._make_fcns_empty()
-        setup = lambda: self._taint_nodes()
         def repeat_stmt():
             for sink_node in self._sinks:
                 sink_node.eval()
-        results = repeat(stmt=repeat_stmt, setup=setup,
+        results = repeat(stmt=repeat_stmt, setup=self._taint_nodes,
                          repeat=self._n_runs, number=1)
         self._restore_fcns()
         return results
@@ -97,7 +96,7 @@ class FrameworkProfiler(Profiler):
                      rows: int | None=10,
                      group_by=["source nodes", "sink nodes"],
                      agg_funcs: Sequence[str] | None=None,
-                     sort_by: str | None=None):
+                     sort_by: str | None=None) -> DataFrame:
         report = self.make_report(group_by, agg_funcs, sort_by)
         print(f"\nFramework Profling {hex(id(self))}, "
               f"n_runs for given subgraph: {self._n_runs}, "
@@ -105,3 +104,4 @@ class FrameworkProfiler(Profiler):
               f"sort by: `{sort_by or 'default sorting'}`, "
               f"max rows displayed: {rows}")
         super()._print_table(report, rows)
+        return report

@@ -64,7 +64,7 @@ class NodeProfiler(Profiler):
                      rows: int | None=10,
                      group_by: str | None="type",
                      agg_funcs: Sequence[str] | None=None,
-                     sort_by: str | None=None):
+                     sort_by: str | None=None) -> DataFrame:
         report = self.make_report(group_by, agg_funcs, sort_by)
         print(f"\nIndividual Profilng {hex(id(self))}, "
               f"n_runs for each node: {self._n_runs}\n"
@@ -72,3 +72,4 @@ class NodeProfiler(Profiler):
               f"max rows displayed: {rows}")
         super()._print_table(report, rows)
         self._print_total_time()
+        return report
