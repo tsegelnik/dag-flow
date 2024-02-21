@@ -3,7 +3,6 @@ from __future__ import annotations
 from timeit import repeat
 from collections.abc import Sequence
 from textwrap import shorten
-from types import MethodType
 
 from pandas import DataFrame, concat
 
@@ -48,7 +47,8 @@ class FrameworkProfiler(Profiler):
     def _make_fcns_empty(self):
         for node in self._target_nodes:
             node._stash_fcn()
-            node.fcn = MethodType(self.fcn_no_computation, node)
+            # __get__ - the way to bound method to an instance
+            node.fcn = self.fcn_no_computation.__get__(node)
 
     def _restore_fcns(self):
         for node in self._target_nodes:
