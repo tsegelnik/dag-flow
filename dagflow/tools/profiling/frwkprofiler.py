@@ -65,14 +65,22 @@ class FrameworkProfiler(Profiler):
         self._restore_fcns()
         return results
 
+    def short_node_names(self, nodes, max_length):
+        cur_name_length = 0
+        for index, snk in enumerate(self._sinks):
+            if cur_name_length > max_length:
+                break
+            cur_name_length += len(snk.name)
+        return shorten( str(nodes[:index]) , max_length)
+
     def estimate_framework_time(self,
                                 append_results: bool=False) -> FrameworkProfiler:
         results = self._estimate_framework_time()
         df = DataFrame(results, columns=["time"])
-        sink_names = str([n.name for n in self._sinks])
-        source_names = str([n.name for n in self._sources])
-        df.insert(0, "sink nodes", shorten(sink_names, width=SINK_COL_WIDTH))
-        df.insert(0, "source nodes", shorten(source_names, width=SOURCE_COL_WIDTH))
+        sinks_short = self.short_node_names(self._sinks, SINK_COL_WIDTH)
+        sources_short = self.short_node_names(self._sinks, SOURCE_COL_WIDTH)
+        df.insert(0, "sinks nodes", sinks_short)
+        df.insert(0, "sources nodes", sources_short)
         if append_results and hasattr(self, "_estimations_table"):
             self._estimations_table = concat([self._estimations_table, df])
         else:
