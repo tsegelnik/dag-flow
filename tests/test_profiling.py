@@ -8,8 +8,8 @@ import pytest
 
 from dagflow.nodes import FunctionNode
 from dagflow.graph import Graph
-from dagflow.lib.Array import Array
-from dagflow.lib.MatrixProductDVDt import MatrixProductDVDt
+from dagflow.lib import Array
+from dagflow.lib import MatrixProductDVDt
 from dagflow.lib import Sum, Product
 from dagflow.graphviz import GraphDot
 
@@ -241,7 +241,7 @@ class TestNodeProfiler:
         profiling.print_report(agg_funcs=['single', 'count', 'sum', 'percentage'],
                                sort_by='single')
 
-    def test_print_report_g1_1(self):
+    def test_print_report_g1_2(self):
         g, _ = graph_1()
         target_nodes = g._nodes
 

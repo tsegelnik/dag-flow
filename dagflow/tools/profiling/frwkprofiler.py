@@ -47,7 +47,7 @@ class FrameworkProfiler(Profiler):
     def _make_fcns_empty(self):
         for node in self._target_nodes:
             node._stash_fcn()
-            # __get__ - the way to bound method to an instance
+            # __get__ - the way to bind method to an instance
             node.fcn = self.fcn_no_computation.__get__(node)
 
     def _restore_fcns(self):
@@ -65,19 +65,21 @@ class FrameworkProfiler(Profiler):
         return results
 
     def short_node_names(self, nodes, max_length):
-        cur_name_length = 0
-        for index, snk in enumerate(self._sinks):
-            if cur_name_length > max_length:
+        names = []
+        names_sum_length = 0
+        for node in nodes:
+            if names_sum_length > max_length:
                 break
-            cur_name_length += len(snk.name)
-        return shorten( str(nodes[:index]) , max_length)
+            names.append(node.name)
+            names_sum_length += len(node.name)
+        return shorten( ", ".join(names) , max_length)
 
     def estimate_framework_time(self,
                                 append_results: bool=False) -> FrameworkProfiler:
         results = self._estimate_framework_time()
         df = DataFrame(results, columns=["time"])
         sinks_short = self.short_node_names(self._sinks, SINK_COL_WIDTH)
-        sources_short = self.short_node_names(self._sinks, SOURCE_COL_WIDTH)
+        sources_short = self.short_node_names(self._sources, SOURCE_COL_WIDTH)
         df.insert(0, "sink nodes", sinks_short)
         df.insert(0, "source nodes", sources_short)
         if append_results and hasattr(self, "_estimations_table"):
