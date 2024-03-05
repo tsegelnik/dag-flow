@@ -106,7 +106,7 @@ class GaussianParameter(Parameter):
 
     @property
     def central(self) -> float:
-        return self._central_output.data[0]
+        return self._central_output.data[self._idx]
 
     @central.setter
     def central(self, central: float):
@@ -114,7 +114,7 @@ class GaussianParameter(Parameter):
 
     @property
     def sigma(self) -> float:
-        return self._sigma_output.data[0]
+        return self._sigma_output.data[self._idx]
 
     @sigma.setter
     def sigma(self, sigma: float):
@@ -138,7 +138,7 @@ class GaussianParameter(Parameter):
 
     @property
     def normvalue(self) -> float:
-        return self._normvalue_output.data[0]
+        return self._normvalue_output.data[self._idx]
 
     @normvalue.setter
     def normvalue(self, normvalue: float):
