@@ -730,6 +730,7 @@ else:
                     right.append(str(data).replace("\n", "\\l") + "\\l")
 
             if getattr(node, "exception", None) is not None:
+                logger.log(INFO1, f"Exception: {node.exception}")
                 right.append(node.exception)
 
             return self._combine_labels((left, right))
