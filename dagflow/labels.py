@@ -308,12 +308,15 @@ class Labels:
         for _key in inherit:
             label = getattr(source, _key, None)
             if label is None: continue
-            if isinstance(label, str):
-                newv = fmtshort(label) if _key in kshort else fmtlong(label)
-                if newv is not None:
-                    self[_key] = newv
-            else:
-                self[_key] = label
+            match label:
+                case str():
+                    newv = fmtshort(label) if _key in kshort else fmtlong(label)
+                    if newv is not None:
+                        self[_key] = newv
+                case tuple() | dict() | list():
+                    self[_key] = type(label)(label)
+                case _:
+                    self[_key] = label
 
 def inherit_labels(
         source: dict,
