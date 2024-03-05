@@ -4,6 +4,7 @@ from collections.abc import Callable, Mapping
 from pathlib import Path
 from typing import TYPE_CHECKING
 
+from numpy import asfarray
 from schema import And
 from schema import Optional as SchemaOptional
 from schema import Or, Schema, Use
@@ -32,6 +33,7 @@ _schema_cfg = Schema(
         SchemaOptional("name", default=()): And(str, Use(lambda s: (s,))),
         "filenames": And(IsFilenameSeqOrFilename, AllFileswithExt(*file_readers.keys())),
         "columns": Or([str], (str,), And(str, lambda s: (s,))),
+        SchemaOptional("dtype", default=None): Or("d", "f"),
         SchemaOptional("replicate", default=((),)): Or((IsStrSeqOrStr,), [IsStrSeqOrStr]),
         SchemaOptional("replicate_files", default=((),)): Or((IsStrSeqOrStr,), [IsStrSeqOrStr]),
         SchemaOptional("skip", default=None): And(
@@ -74,6 +76,7 @@ def _load_record_data(
     objectname = cfg["objects"]
     skip = cfg["skip"]
     key_order = cfg["key_order"]
+    dtype = cfg["dtype"]
     columns = cfg["columns"]
 
     data: dict[TupleKey, NDArray] = {}
@@ -86,7 +89,8 @@ def _load_record_data(
         record = FileReader.record[filename, objectname(skey, key)]
         for column in columns:
             fullkey = reorder_key((column,) + key, key_order)
-            data[fullkey] = record[column][:]
+            rec = record[column][:]
+            data[fullkey] = asfarray(rec, dtype)
 
     return name, data
 

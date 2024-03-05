@@ -4,7 +4,7 @@ from collections.abc import Callable, Mapping
 from pathlib import Path
 from typing import TYPE_CHECKING
 
-from numpy import allclose
+from numpy import allclose, asfarray
 from schema import And
 from schema import Optional as SchemaOptional
 from schema import Or, Schema, Use
@@ -35,6 +35,7 @@ _schema_cfg = Schema(
         SchemaOptional("merge_x", default=False): bool,
         SchemaOptional("x", default="x"): str,
         SchemaOptional("y", default="y"): str,
+        SchemaOptional("dtype", default=None): Or("d", "f"),
         SchemaOptional("replicate", default=((),)): Or((IsStrSeqOrStr,), [IsStrSeqOrStr]),
         SchemaOptional("replicate_files", default=((),)): Or((IsStrSeqOrStr,), [IsStrSeqOrStr]),
         SchemaOptional("skip", default=None): And(
@@ -77,6 +78,7 @@ def _load_graph_data(
     objectname = cfg["objects"]
     skip = cfg["skip"]
     key_order = cfg["key_order"]
+    dtype = cfg["dtype"]
 
     xname = name, cfg["x"]
     yname = name, cfg["y"]
@@ -90,6 +92,8 @@ def _load_graph_data(
         logger.log(INFO3, f"Process {skey}")
 
         x, y = FileReader.graph[filename, objectname(skey, key)]
+        x = asfarray(x, dtype)
+        y = asfarray(y, dtype)
 
         data[key] = x, y
         meshes_list.append(x)

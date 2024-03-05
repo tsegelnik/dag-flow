@@ -1,6 +1,7 @@
 from collections.abc import Callable, Mapping
 from pathlib import Path
 
+from numpy import asfarray
 from schema import And
 from schema import Optional as SchemaOptional
 from schema import Or, Schema, Use
@@ -23,6 +24,7 @@ _schema_cfg = Schema(
     {
         "name": str,
         "filenames": And(IsFilenameSeqOrFilename, AllFileswithExt(*file_readers.keys())),
+        SchemaOptional("dtype", default=None): Or("d", "f"),
         SchemaOptional("replicate", default=((),)): Or((IsStrSeqOrStr,), [IsStrSeqOrStr]),
         SchemaOptional("replicate_files", default=((),)): Or((IsStrSeqOrStr,), [IsStrSeqOrStr]),
         SchemaOptional("skip", default=None): And(
@@ -63,6 +65,7 @@ def load_array(acfg: Mapping | None = None, **kwargs) -> NodeStorage:
     objectname = cfg["objects"]
     skip = cfg["skip"]
     key_order = cfg["key_order"]
+    dtype = cfg["dtype"]
 
     data = {}
     for _, filename, _, key in iterate_filenames_and_objectnames(
@@ -71,7 +74,8 @@ def load_array(acfg: Mapping | None = None, **kwargs) -> NodeStorage:
         skey = strkey(key)
         logger.log(INFO3, f"Process {skey}")
 
-        data[key] = FileReader.array[filename, objectname(skey, key)]
+        array = FileReader.array[filename, objectname(skey, key)]
+        data[key] = asfarray(array, dtype)
 
     storage = NodeStorage(default_containers=True)
     with storage:

@@ -4,7 +4,7 @@ from collections.abc import Callable, Mapping
 from pathlib import Path
 from typing import TYPE_CHECKING
 
-from numpy import allclose
+from numpy import allclose, asfarray
 from schema import And
 from schema import Optional as SchemaOptional
 from schema import Or, Schema, Use
@@ -36,6 +36,7 @@ _schema_cfg = Schema(
         SchemaOptional("x", default="x"): str,
         SchemaOptional("y", default="y"): str,
         SchemaOptional("normalize", default=False): bool,
+        SchemaOptional("dtype", default=None): Or("d", "f"),
         SchemaOptional("replicate", default=((),)): Or((IsStrSeqOrStr,), [IsStrSeqOrStr]),
         SchemaOptional("replicate_files", default=((),)): Or((IsStrSeqOrStr,), [IsStrSeqOrStr]),
         SchemaOptional("skip", default=None): Or(
@@ -82,6 +83,7 @@ def _load_hist_data(
     skip = cfg["skip"]
     key_order = cfg["key_order"]
     normalize = cfg["normalize"]
+    dtype = cfg["dtype"]
 
     xname = name, cfg["x"]
     yname = name, cfg["y"]
@@ -95,6 +97,8 @@ def _load_hist_data(
         logger.log(INFO3, f"Process {skey}")
 
         x, y = FileReader.hist[filename, objectname(skey, key)]
+        x = asfarray(x, dtype)
+        y = asfarray(y, dtype)
         if normalize and (ysum := y.sum()) != 0.0:
             y /= ysum
             logger.log(INFO3, "[normalize]")
