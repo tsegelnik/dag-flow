@@ -1,11 +1,7 @@
-from collections.abc import Generator
-from collections.abc import Sequence
+from collections.abc import Generator, Sequence
 
-from numpy import array
-from numpy import ndarray
-from numpy import zeros_like
-from numpy.typing import ArrayLike
-from numpy.typing import DTypeLike
+from numpy import array, ndarray, zeros_like
+from numpy.typing import ArrayLike, DTypeLike
 
 from .exception import InitializationError
 from .labels import inherit_labels
@@ -13,14 +9,14 @@ from .lib.Array import Array
 from .lib.Cholesky import Cholesky
 from .lib.CovmatrixFromCormatrix import CovmatrixFromCormatrix
 from .lib.NormalizeCorrelatedVars2 import NormalizeCorrelatedVars2
-from .node import Node
-from .node import Output
+from .node import Node, Output
 
 
 class Parameter:
-    __slots__ = ("_idx", "_parent", "_value_output", "_connectible", "_labelfmt")
+    __slots__ = ("_idx", "_parent", "_common_output", "_value_output", "_connectible", "_labelfmt")
     _parent: "Parameters"
     _idx: int
+    _common_output: Output
     _value_output: Output
     _connectible: Output
     _labelfmt: str
@@ -28,15 +24,20 @@ class Parameter:
     def __init__(
         self,
         value_output: Output,
-        idx: int = 0,
+        idx: int | None = None,
         *,
         parent: "Parameters",
         connectible: Output | None = None,
         labelfmt: str = "{}",
     ):
-        self._idx = idx
         self._parent = parent
-        self._value_output = value_output
+        self._common_output = value_output
+        if idx is None:
+            self._idx = 0 
+            self._value_output = value_output
+        else:
+            self._idx = idx
+            self._value_output = value_output
         self._labelfmt = labelfmt
         self._connectible = value_output if connectible is None else connectible
 
@@ -146,13 +147,11 @@ class GaussianParameter(Parameter):
 
     def to_dict(self, **kwargs) -> dict:
         dct = super().to_dict(**kwargs)
-        dct.update(
-            {
-                "central": self.central,
-                "sigma": self.sigma,
-                # 'normvalue': self.normvalue,
-            }
-        )
+        dct.update({
+            "central": self.central,
+            "sigma": self.sigma,
+            # 'normvalue': self.normvalue,
+        })
         if self.is_correlated:
             dct["flags"] += "C"
         return dct
@@ -169,12 +168,10 @@ class NormalizedGaussianParameter(Parameter):
 
     def to_dict(self, **kwargs) -> dict:
         dct = super().to_dict(**kwargs)
-        dct.update(
-            {
-                "central": 0.0,
-                "sigma": 1.0,
-            }
-        )
+        dct.update({
+            "central": 0.0,
+            "sigma": 1.0,
+        })
         return dct
 
 
@@ -242,9 +239,13 @@ class Parameters:
         if close:
             self._close()
 
-            self._pars.extend(
-                Parameter(self.value, i, parent=self) for i in range(self.value._data.size)
-            )
+            npars = self.value._data.size
+            if npars > 1:
+                self._pars.extend(Parameter(self.value, i, parent=self) for i in range(npars))
+            elif npars == 1:
+                self._pars.append(Parameter(self.value, parent=self))
+            else:
+                raise RuntimeError("Do not know how to handle 0 parameters")
 
     def _close(self) -> None:
         self._value_node.close(recursive=True)
