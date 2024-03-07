@@ -78,6 +78,10 @@ class Parameter:
             if idxtuple:
                 self._view.labels.index_values.extend(idxtuple)
             self._value_output = self._view.outputs[0]
+            self._connectible_output = self._value_output
+        else:
+            self._view = None
+            self._connectible_output = None
 
     def __str__(self):
         return f"par v={self.value}"
