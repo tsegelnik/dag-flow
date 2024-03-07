@@ -21,9 +21,7 @@ class InterpolatorGroup(MetaNode):
             return
 
         self._init_indexer("indexer", label=labels.get("indexer", {}))
-        self._add_interpolator(
-            "interpolator", label=labels.get("interpolator", {}), **kwargs
-        )
+        self._add_interpolator("interpolator", label=labels.get("interpolator", {}), **kwargs)
 
     def _init_indexer(self, name: str, *, label={}):
         self._indexer = SegmentIndex(name, label=label)
@@ -71,8 +69,10 @@ class InterpolatorGroup(MetaNode):
     def replicate(
         cls,
         method: Literal["linear", "log", "logx", "exp"] = "linear",
-        name_indexer: str = "indexer",
-        name_interpolator: str = "interpolator",
+        names: Mapping[str, str] = {
+            "indexer": "indexer",
+            "interpolator": "interpolator",
+        },
         labels: Mapping = {},
         *,
         replicate: tuple[KeyLike, ...] = ((),),
@@ -85,23 +85,21 @@ class InterpolatorGroup(MetaNode):
 
         interpolators = cls(bare=True)
 
-        interpolators._init_indexer(name_indexer, label=labels.get("indexer", {}))
+        interpolators._init_indexer(names["indexer"], label=labels.get("indexer", {}))
         label_int = labels.get("interpolator", {})
         for key in replicate:
             if isinstance(key, str):
                 key = (key,)
-            name = ".".join((name_interpolator,) + key)
+            name = ".".join((names["interpolator"],) + key)
             interpolator = interpolators._add_interpolator(
                 name, method, label=label_int, positionals=False, **kwargs
             )
             nodes[name] = interpolator
-            inputs.child(name_interpolator)[("ycoarse",) + key] = interpolator.inputs[
-                "y"
-            ]
+            inputs.child(names["interpolator"])[("ycoarse",) + key] = interpolator.inputs["y"]
             outputs[name] = interpolator.outputs[0]
 
-        inputs.child(name_interpolator)["xcoarse"] = interpolators.inputs["coarse"]
-        inputs.child(name_interpolator)["xfine"] = interpolators.inputs["fine"]
+        inputs.child(names["interpolator"])["xcoarse"] = interpolators.inputs["coarse"]
+        inputs.child(names["interpolator"])["xfine"] = interpolators.inputs["fine"]
 
         NodeStorage.update_current(storage, strict=True)
 

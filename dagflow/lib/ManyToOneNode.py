@@ -63,8 +63,8 @@ class ManyToOneNode(FunctionNode):
     @classmethod
     def replicate(
         cls,
-        name: str,
         *args: NodeStorage | Any,
+        name: str,
         replicate: Sequence[KeyLike] = ((),),
         replicate_inputs: Sequence[KeyLike] | None = None,
         **kwargs,
