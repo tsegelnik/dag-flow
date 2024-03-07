@@ -1,16 +1,15 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, overload
 from collections import deque
-from collections.abc import Generator, Sequence
 from abc import ABCMeta, abstractmethod
 
-from pandas import DataFrame
+from pandas import DataFrame, Index
 from tabulate import tabulate
 
-from dagflow.iter import IsIterable
 if TYPE_CHECKING:
     from dagflow.nodes import FunctionNode
+    from collections.abc import Generator, Sequence, Iterable
 
 
 # prefix `t_` - time notation
@@ -148,30 +147,35 @@ class Profiler(metaclass=ABCMeta):
         self._sources = sources
         self._sinks = sinks
 
-    def __anything_from_alias(self, alias, alias_table: dict) -> str | list[str]:
-        """Return original name(s) from table of aliases if alias exists,
-        otherwise return the same string(s)
+    def _cols_from_aliases(self, aliases: Iterable[str]) -> list[str]:
+        """Return the column names if aliases exists,
+        otherwise return the same strings.
         """
-        def get_orig(val):
-            try:
-                return alias_table.get(val, val)
-            except TypeError:   # protect from unhashable types like `list`
-                return val
-        if IsIterable(alias):
-            return [get_orig(a) for a in alias]
-        return get_orig(alias)
+        return [_COLUMN_ALIASES.get(al, al) for al in aliases]
+    
+    @overload
+    def _col_from_alias(self, alias: None) -> None: ...
 
-    def _cols_from_alias(self, alias: list | str | None) -> str | list[str]:
-        """Return the column name(s) if an alias(es) exists,
-        otherwise return the same string(s)
+    @overload
+    def _col_from_alias(self, alias: str) -> str: ...
+    
+    def _col_from_alias(self, alias: str | None) -> str | None:
+        """Return the column name if an alias exists,
+        otherwise return the same string.
         """
-        return self.__anything_from_alias(alias, _COLUMN_ALIASES)
-
-    def _aggs_from_alias(self, alias: str | None) -> str | list[str]:
-        """Return aggregate function name(s) if an alias(es) exists,
-        otherwise return the same string(s)
+        return _COLUMN_ALIASES.get(alias, alias)
+    
+    def _aggs_from_aliases(self, aliases: Iterable[str]) -> list[str]:
+        """Return aggregate function names if aliases exists,
+        otherwise return the same strings.
         """
-        return self.__anything_from_alias(alias, _AGG_ALIASES)
+        return [_AGG_ALIASES.get(al, al) for al in aliases]
+    
+    def _agg_from_alias(self, alias: str | None) -> str | None:
+        """Return aggregate function name if an alias exists,
+        otherwise return the same string.
+        """
+        return _AGG_ALIASES.get(alias, alias)
 
     def _pd_funcs_agg_df(self, grouped_df, grouped_by, agg_funcs) -> DataFrame:
         """Apply standard Pandas aggregate
@@ -185,12 +189,12 @@ class Profiler(metaclass=ABCMeta):
         else:
             new_columns = [grouped_by]
         # get rid of multiindex
-        new_columns += [self._cols_from_alias(c) for c in agg_funcs]
-        df.columns = new_columns
+        new_columns += self._cols_from_aliases(agg_funcs)
+        df.columns = Index(new_columns)
         return df
 
     def __get_index_and_pop(self, array: list, value):
-        """Return index of the `value` in given `array`.\n
+        """Return index of the `value` in given `array` and pop it.\n
         Return `-1` if index not exists.
         """
         try:
@@ -205,7 +209,7 @@ class Profiler(metaclass=ABCMeta):
         and calculate the percentage `"%_of_total"`
         if it is specified as an aggregate function
         """
-        tmp_aggs = self._aggs_from_alias(agg_funcs)
+        tmp_aggs = self._aggs_from_aliases(agg_funcs)
         p_index = self.__get_index_and_pop(tmp_aggs, '%_of_total')
         if p_index != -1 and 'sum' not in tmp_aggs:
             tmp_aggs = tmp_aggs + ['sum']
@@ -216,7 +220,7 @@ class Profiler(metaclass=ABCMeta):
                       '%_of_total', df['t_sum'] * 100 / total_time)
         if p_index != -1 and 'sum' not in agg_funcs:
             df.drop('t_sum', inplace=True, axis=1)
-        df.columns = self._cols_from_alias(df.columns)
+        df.columns = Index(self._cols_from_aliases(df.columns))
         return df
 
     def _check_report_consistency(self, group_by, agg_funcs):
@@ -230,14 +234,17 @@ class Profiler(metaclass=ABCMeta):
                                  group_by not in self._ALLOWED_GROUPBY):
             raise ValueError(f"Invalid `group_by` name \"{group_by}\"."
                              f"You must use one of these: {self._ALLOWED_GROUPBY}")
-        if any(self._aggs_from_alias(a) not in self._ALLOWED_AGG_FUNCS
+        if any(self._agg_from_alias(a) not in self._ALLOWED_AGG_FUNCS
                for a in agg_funcs):
             raise ValueError("Invalid aggregate function"
                              "You should use one of these:"
                              f"{self._ALLOWED_AGG_FUNCS}")
 
     @abstractmethod
-    def make_report(self, group_by, agg_funcs, sort_by) -> DataFrame:
+    def make_report(self,
+                    group_by: str | tuple[str] | None,
+                    agg_funcs: Sequence[str] | None,
+                    sort_by: str | None) -> DataFrame:
         """Make report table. \n
         Hint: Since the report table is just a `Pandas.DataFrame`,
         you can call Pandas methods like `.to_csv()` or `to_excel()`
@@ -245,7 +252,7 @@ class Profiler(metaclass=ABCMeta):
         if agg_funcs is None or agg_funcs == []:
             agg_funcs = self._DEFAULT_AGG_FUNCS
         self._check_report_consistency(group_by, agg_funcs)
-        sort_by = self._cols_from_alias(sort_by)
+        sort_by = self._col_from_alias(sort_by)
         report = self._estimations_table.copy()
         if group_by is None:
             report.sort_values(sort_by or 'time', ascending=False,
@@ -254,7 +261,7 @@ class Profiler(metaclass=ABCMeta):
             grouped = report.groupby(group_by, as_index=False)
             report = self._aggregate_df(grouped, group_by, agg_funcs)
             if sort_by is None:
-                sort_by = self._cols_from_alias(agg_funcs[0])
+                sort_by = self._col_from_alias( agg_funcs[0] )
             report.sort_values(sort_by, ascending=False,
                                ignore_index=True, inplace=True)
         return report
@@ -270,12 +277,16 @@ class Profiler(metaclass=ABCMeta):
         print(tabulate(df.head(rows), headers='keys', tablefmt='psql'))
 
     @abstractmethod
-    def print_report(self, rows, *args, **kwargs) -> DataFrame:
+    def print_report(self,
+                     rows: int | None,
+                     group_by: str | None,
+                     agg_funcs: Sequence[str] | None,
+                     sort_by) -> DataFrame:
         """Make report and print it. \n
         Return `Pands.DataPrame` as report
         ( See: `self.make_report()` )
         """
-        report = self.make_report(*args, **kwargs)
+        report = self.make_report(group_by, agg_funcs, sort_by)
         self._print_table(report, rows)
         raise NotImplementedError
 
