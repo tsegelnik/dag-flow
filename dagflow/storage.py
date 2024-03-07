@@ -1,22 +1,14 @@
-from collections.abc import Mapping
-from collections.abc import MutableSet
-from collections.abc import Sequence
-from typing import Any
-from typing import Optional
-from typing import TYPE_CHECKING
+from collections.abc import Mapping, MutableSet, Sequence
+from typing import TYPE_CHECKING, Any, Optional
 
-from multikeydict.nestedmkdict import NestedMKDict
-from multikeydict.typing import Key
-from multikeydict.typing import KeyLike
-from multikeydict.typing import TupleKey
-from multikeydict.visitor import NestedMKDictVisitor
 from orderedset import OrderedSet
 
+from multikeydict.nestedmkdict import NestedMKDict
+from multikeydict.typing import Key, KeyLike, TupleKey
+from multikeydict.visitor import NestedMKDictVisitor
+
 from .input import Input
-from .logger import DEBUG
-from .logger import INFO1
-from .logger import INFO3
-from .logger import logger
+from .logger import DEBUG, INFO1, INFO3, logger
 from .node import Node
 from .output import Output
 
@@ -91,8 +83,8 @@ class NodeStorage(NestedMKDict):
         if not isinstance(other, NestedMKDict):
             raise RuntimeError("Operator >> RHS should be NestedMKDict")
 
-        from multikeydict.match import match_keys
         from multikeydict.nestedmkdict import walkkeys
+        from multikeydict.tools import match_keys
 
         keys_left = list(walkkeys(self))
         keys_right = walkkeys(other)

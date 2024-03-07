@@ -1,11 +1,7 @@
-from collections.abc import Generator
-from collections.abc import Sequence
+from collections.abc import Generator, Sequence
 
-from numpy import array
-from numpy import ndarray
-from numpy import zeros_like
-from numpy.typing import ArrayLike
-from numpy.typing import DTypeLike
+from numpy import array, ndarray, zeros_like
+from numpy.typing import ArrayLike, DTypeLike
 
 from .exception import InitializationError
 from .labels import inherit_labels
@@ -13,43 +9,86 @@ from .lib.Array import Array
 from .lib.Cholesky import Cholesky
 from .lib.CovmatrixFromCormatrix import CovmatrixFromCormatrix
 from .lib.NormalizeCorrelatedVars2 import NormalizeCorrelatedVars2
-from .node import Node
-from .node import Output
+from .lib.View import View
+from .node import Node, Output
 
 
 class Parameter:
-    __slots__ = ("_idx", "_parent", "_value_output", "_connectible", "_labelfmt")
+    __slots__ = (
+        "_idx",
+        "_parent",
+        "_common_output",
+        "_value_output",
+        "_view",
+        "_common_connectible_output",
+        "_connectible_output",
+        "_labelfmt",
+    )
     _parent: "Parameters"
     _idx: int
+    _common_output: Output
     _value_output: Output
-    _connectible: Output
+    _view: Node | None
+    _common_connectible_output: Output
+    _connectible_output: Output
     _labelfmt: str
 
     def __init__(
         self,
         value_output: Output,
-        idx: int = 0,
+        idx: int | None = None,
         *,
         parent: "Parameters",
         connectible: Output | None = None,
         labelfmt: str = "{}",
+        make_view: bool = True,
     ):
-        self._idx = idx
         self._parent = parent
-        self._value_output = value_output
+        self._common_output = value_output
         self._labelfmt = labelfmt
-        self._connectible = value_output if connectible is None else connectible
+
+        if connectible is not None:
+            self._common_connectible_output = connectible
+        else:
+            self._common_connectible_output = value_output
+
+        if idx is None:
+            self._idx = 0
+            self._value_output = self._common_connectible_output
+            self._connectible_output = self._common_connectible_output
+            self._view = None
+        elif make_view:
+            self._idx = idx
+            try:
+                idxtuple = parent._names[idx]
+                idxname = ".".join(idxtuple)
+            except ValueError:
+                idxname = "???"
+                idxtuple = None
+            self._view = View(
+                f"{self._common_output.node.name}.{idxname}",
+                self._common_connectible_output,
+                start=idx,
+                length=1,
+            )
+            self._view.labels.inherit(
+                self._common_output.node.labels,
+                fmtlong=f"{{}} {idxname} [{idx}]",
+            )
+            if idxtuple:
+                self._view.labels.index_values.extend(idxtuple)
+            self._value_output = self._view.outputs[0]
 
     def __str__(self):
         return f"par v={self.value}"
 
     @property
     def value(self) -> float:
-        return self._value_output.data[self._idx]
+        return self._common_output.data[self._idx]
 
     @value.setter
     def value(self, value: float):
-        return self._value_output.seti(self._idx, value)
+        return self._common_output.seti(self._idx, value)
 
     @property
     def output(self) -> Output:
@@ -61,7 +100,7 @@ class Parameter:
 
     @property
     def connectible(self) -> Output:
-        return self._connectible
+        return self._connectible_output
 
     def label(self, source: str = "text") -> str:
         return self._labelfmt.format(self._value_output.node.labels[source])
@@ -70,7 +109,7 @@ class Parameter:
         return {"value": self.value, "label": self.label(label_from), "flags": ""}
 
     def __rshift__(self, other):
-        self._connectible >> other
+        self._connectible_output >> other
 
 
 class GaussianParameter(Parameter):
@@ -84,7 +123,7 @@ class GaussianParameter(Parameter):
         value_output: Output,
         central_output: Output,
         sigma_output: Output,
-        idx: int = 0,
+        idx: int | None = None,
         *,
         normvalue_output: Output,
         **kwargs,
@@ -106,7 +145,7 @@ class GaussianParameter(Parameter):
 
     @property
     def central(self) -> float:
-        return self._central_output.data[0]
+        return self._central_output.data[self._idx]
 
     @central.setter
     def central(self, central: float):
@@ -114,7 +153,7 @@ class GaussianParameter(Parameter):
 
     @property
     def sigma(self) -> float:
-        return self._sigma_output.data[0]
+        return self._sigma_output.data[self._idx]
 
     @sigma.setter
     def sigma(self, sigma: float):
@@ -138,7 +177,7 @@ class GaussianParameter(Parameter):
 
     @property
     def normvalue(self) -> float:
-        return self._normvalue_output.data[0]
+        return self._normvalue_output.data[self._idx]
 
     @normvalue.setter
     def normvalue(self, normvalue: float):
@@ -146,19 +185,22 @@ class GaussianParameter(Parameter):
 
     def to_dict(self, **kwargs) -> dict:
         dct = super().to_dict(**kwargs)
-        dct.update(
-            {
-                "central": self.central,
-                "sigma": self.sigma,
-                # 'normvalue': self.normvalue,
-            }
-        )
+        dct.update({
+            "central": self.central,
+            "sigma": self.sigma,
+            # 'normvalue': self.normvalue,
+        })
         if self.is_correlated:
             dct["flags"] += "C"
         return dct
 
 
 class NormalizedGaussianParameter(Parameter):
+    __slots__ = ()
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, make_view=False, **kwargs)
+
     @property
     def central(self) -> float:
         return 0.0
@@ -169,12 +211,10 @@ class NormalizedGaussianParameter(Parameter):
 
     def to_dict(self, **kwargs) -> dict:
         dct = super().to_dict(**kwargs)
-        dct.update(
-            {
-                "central": 0.0,
-                "sigma": 1.0,
-            }
-        )
+        dct.update({
+            "central": 0.0,
+            "sigma": 1.0,
+        })
         return dct
 
 
@@ -242,9 +282,13 @@ class Parameters:
         if close:
             self._close()
 
-            self._pars.extend(
-                Parameter(self.value, i, parent=self) for i in range(self.value._data.size)
-            )
+            npars = self.value._data.size
+            if npars > 1:
+                self._pars.extend(Parameter(self.value, i, parent=self) for i in range(npars))
+            elif npars == 1:
+                self._pars.append(Parameter(self.value, parent=self))
+            else:
+                raise RuntimeError("Do not know how to handle 0 parameters")
 
     def _close(self) -> None:
         self._value_node.close(recursive=True)
@@ -497,20 +541,22 @@ class GaussianConstraint(Constraint):
 
         value_output = self._pars.value
         self._pars._reset_pars()
-        for i in range(value_output._data.size):
+        npars = value_output._data.size
+        for i in range(npars):
+            ci = None if npars == 1 else i
             self._pars._pars.append(
                 GaussianParameter(
                     value_output,
                     self.central,
                     self.sigma_total,
-                    i,
+                    ci,
                     normvalue_output=self.normvalue,
                     connectible=self._norm_node.outputs[0],
                     parent=parameters,
                 )
             )
             self._pars._norm_pars.append(
-                NormalizedGaussianParameter(self.normvalue, i, parent=parameters, labelfmt="{}")
+                NormalizedGaussianParameter(self.normvalue, ci, parent=parameters, labelfmt="{}")
             )
 
     @property

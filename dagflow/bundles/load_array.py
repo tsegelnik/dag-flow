@@ -1,6 +1,7 @@
 from collections.abc import Callable, Mapping
 from pathlib import Path
 
+from numpy import asfarray
 from schema import And
 from schema import Optional as SchemaOptional
 from schema import Or, Schema, Use
@@ -23,11 +24,13 @@ _schema_cfg = Schema(
     {
         "name": str,
         "filenames": And(IsFilenameSeqOrFilename, AllFileswithExt(*file_readers.keys())),
+        SchemaOptional("dtype", default=None): Or("d", "f"),
         SchemaOptional("replicate", default=((),)): Or((IsStrSeqOrStr,), [IsStrSeqOrStr]),
         SchemaOptional("replicate_files", default=((),)): Or((IsStrSeqOrStr,), [IsStrSeqOrStr]),
         SchemaOptional("skip", default=None): And(
             Or(((str,),), [[str]]), Use(lambda l: tuple(set(k) for k in l))
         ),
+        SchemaOptional("key_order", default=None): Or((int,), [int]),
         SchemaOptional("objects", default=lambda: lambda st, tpl: st): Or(
             Callable, And({str: str}, Use(lambda dct: lambda st, tpl: dct.get(st, st)))
         ),
@@ -51,7 +54,7 @@ def _validate_cfg(cfg):
         return _schema_cfg.validate(cfg)
 
 
-def load_array(acfg: Mapping | None = None, **kwargs):
+def load_array(acfg: Mapping | None = None, **kwargs) -> NodeStorage:
     acfg = dict(acfg or {}, **kwargs)
     cfg = _validate_cfg(acfg)
 
@@ -61,15 +64,19 @@ def load_array(acfg: Mapping | None = None, **kwargs):
     file_keys = cfg["replicate_files"]
     objectname = cfg["objects"]
     skip = cfg["skip"]
+    key_order = cfg["key_order"]
+    dtype = cfg["dtype"]
 
     data = {}
     for _, filename, _, key in iterate_filenames_and_objectnames(
-        filenames, file_keys, keys, skip=skip
+        filenames, file_keys, keys, skip=skip, key_order=key_order
     ):
         skey = strkey(key)
         logger.log(INFO3, f"Process {skey}")
 
-        data[key] = FileReader.array[filename, objectname(skey, key)]
+        array = FileReader.array[filename, objectname(skey, key)]
+        data[key] = asfarray(array, dtype)
+
     storage = NodeStorage(default_containers=True)
     with storage:
         for key, array in data.items():

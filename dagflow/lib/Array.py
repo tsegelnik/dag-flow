@@ -28,11 +28,12 @@ class Array(FunctionNode):
 
     def __init__(
         self,
-        name,
-        arr,
+        name: str,
+        arr: NDArray,
         *,
         mode: str = "store",
-        outname="array",
+        outname: str="array",
+        dtype: DTypeLike=None,
         mark: str | None = None,
         edges: Output | Sequence[Output] | Node | None = None,
         meshes: Output | Sequence[Output] | Node | None = None,
@@ -42,7 +43,7 @@ class Array(FunctionNode):
         self._mode = mode
         if mark is not None:
             self._labels.setdefault("mark", mark)
-        self._data = array(arr, copy=True)
+        self._data = array(arr, copy=True, dtype=dtype)
 
         if mode == "store":
             self._output = self._add_output(outname, data=self._data)

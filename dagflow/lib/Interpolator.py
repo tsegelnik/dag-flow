@@ -1,27 +1,22 @@
-from enum import IntEnum
 from collections.abc import Callable
-from typing import Literal
-from typing import TYPE_CHECKING
+from enum import IntEnum
+from typing import TYPE_CHECKING, Literal
 
-from numba import float64
-from numba import int32
-from numba import njit
-from numba import void
+from numba import float64, int32, njit, void
 from numba.core.types import FunctionType
-from numpy import exp
-from numpy import float_
-from numpy import integer
-from numpy import log
+from numpy import exp, float_, integer, log
 from numpy.typing import NDArray
 
 from ..exception import InitializationError
 from ..nodes import FunctionNode
-from ..typefunctions import assign_output_axes_from_inputs
-from ..typefunctions import check_has_inputs
-from ..typefunctions import check_input_dtype
-from ..typefunctions import check_input_shape
-from ..typefunctions import check_inputs_number
-from ..typefunctions import copy_from_input_to_output
+from ..typefunctions import (
+    assign_output_axes_from_inputs,
+    check_has_inputs,
+    check_input_dtype,
+    check_input_shape,
+    check_inputs_number,
+    copy_from_input_to_output,
+)
 
 if TYPE_CHECKING:
     from ..input import Input
@@ -92,9 +87,7 @@ class Interpolator(FunctionNode):
         fillvalue: float = 0.0,
         **kwargs,
     ) -> None:
-        super().__init__(
-            *args, **kwargs, allowed_kw_inputs=("y", "coarse", "fine", "indices")
-        )
+        super().__init__(*args, **kwargs, allowed_kw_inputs=("y", "coarse", "fine", "indices"))
         self._methods = {
             "linear": _linear_interpolation,
             "log": _log_interpolation,
@@ -268,16 +261,7 @@ def _interpolation(
             result[i] = method(coarse[j - 1], coarse[j], yc[j - 1], yc[j], fine[i])
 
 
-@njit(
-    float64(
-        float64,
-        float64,
-        float64,
-        float64,
-        float64,
-    ),
-    cache=True,
-)
+@njit(cache=True)
 def _linear_interpolation(
     coarse0: float,
     coarse1: float,
@@ -288,16 +272,7 @@ def _linear_interpolation(
     return yc0 + (fine - coarse0) * (yc1 - yc0) / (coarse1 - coarse0)
 
 
-@njit(
-    float64(
-        float64,
-        float64,
-        float64,
-        float64,
-        float64,
-    ),
-    cache=True,
-)
+@njit(cache=True)
 def _log_interpolation(
     coarse0: float,
     coarse1: float,
@@ -305,21 +280,10 @@ def _log_interpolation(
     yc1: float,
     fine: float,
 ) -> float:
-    return log(
-        exp(yc0) + (fine - coarse0) * (exp(yc1) - exp(yc0)) / (coarse1 - coarse0)
-    )
+    return log(exp(yc0) + (fine - coarse0) * (exp(yc1) - exp(yc0)) / (coarse1 - coarse0))
 
 
-@njit(
-    float64(
-        float64,
-        float64,
-        float64,
-        float64,
-        float64,
-    ),
-    cache=True,
-)
+@njit(cache=True)
 def _logx_interpolation(
     coarse0: float,
     coarse1: float,
@@ -330,16 +294,7 @@ def _logx_interpolation(
     return yc0 + log(fine / coarse0) * (yc1 - yc0) / log(coarse1 / coarse0)
 
 
-@njit(
-    float64(
-        float64,
-        float64,
-        float64,
-        float64,
-        float64,
-    ),
-    cache=True,
-)
+@njit(cache=True)
 def _exp_interpolation(
     coarse0: float,
     coarse1: float,
