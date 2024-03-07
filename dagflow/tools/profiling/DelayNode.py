@@ -7,7 +7,7 @@ from dagflow.exception import InitializationError
 if TYPE_CHECKING:
     from dagflow.output import Output
 
-class SleepingNode(FunctionNode):
+class DelayNode(FunctionNode):
     """
     A node that sleeps for a certain time.
     Used for profiler debugging and testing.
