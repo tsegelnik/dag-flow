@@ -1,17 +1,14 @@
 from __future__ import annotations
 
-from collections.abc import Mapping
-from collections.abc import Sequence
+from collections.abc import Mapping, Sequence
 from contextlib import suppress
 from typing import Literal
 
-from numpy import printoptions
-from numpy import square
+from numpy import printoptions, square
 
 from .graph import Graph
 from .input import Input
-from .logger import INFO1
-from .logger import logger
+from .logger import INFO1, logger
 from .node import Node
 from .output import Output
 
@@ -719,15 +716,10 @@ else:
                     right.append(block)
 
                 if show_data_part:
-                    with printoptions(
-                        threshold=17,
-                        precision=2,
-                        # formatter={'float': '{:.2g}'.format}
-                    ):
-                        right.append(str(data).replace("\n", "\\l") + "\\l")
+                    right.append(_format_data(data, part=True))
 
                 if show_data:
-                    right.append(str(data).replace("\n", "\\l") + "\\l")
+                    right.append(_format_data(data))
 
             if getattr(node, "exception", None) is not None:
                 logger.log(INFO1, f"Exception: {node.exception}")
@@ -749,3 +741,16 @@ def num_in_range(num: int, minnum: int | None, maxnum: int | None = None) -> boo
     if maxnum is not None and num > maxnum:
         return False
     return True
+
+
+def _format_data(data: NDArray, part: bool = False) -> str:
+    if part:
+        if data.size < 5:
+            with printoptions(precision=6):
+                datastr = str(data)
+        else:
+            with printoptions(threshold=17, precision=2):
+                datastr = str(data)
+    else:
+        datastr = str(data)
+    return datastr.replace("\n", "\\l") + "\\l"
