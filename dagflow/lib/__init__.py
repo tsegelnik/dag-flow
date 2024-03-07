@@ -1,5 +1,6 @@
 from .arithmetic import Division, Product, Sum
 from .Array import Array
+from .ArraySum import ArraySum
 from .BinCenter import BinCenter
 from .BlockToOneNode import BlockToOneNode
 from .Cholesky import Cholesky
@@ -36,6 +37,7 @@ __all__ = [
     "ArcSin",
     "ArcTan",
     "Array",
+    "ArraySum",
     "BinCenter",
     "BlockToOneNode",
     "Cholesky",
