@@ -1,4 +1,5 @@
-from collections.abc import Generator, Sequence
+from __future__ import annotations
+
 from contextlib import suppress
 from os import listdir
 from pathlib import Path
@@ -15,6 +16,7 @@ from ..logger import INFO1, INFO2, INFO3, logger
 if TYPE_CHECKING:
     import ROOT
 
+from collections.abc import Generator, Sequence
 
 file_readers = {}
 

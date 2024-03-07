@@ -1,7 +1,5 @@
 from typing import TYPE_CHECKING, Optional
 
-from numpy.typing import NDArray
-
 from ..nodes import FunctionNode
 from ..typefunctions import copy_from_input_to_output
 
