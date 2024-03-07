@@ -15,7 +15,7 @@ from dagflow.graphviz import GraphDot
 
 from dagflow.tools.profiling.profiler import Profiler
 from dagflow.tools.profiling import NodeProfiler, FrameworkProfiler
-from dagflow.tools.profiling import SleepingNode
+from dagflow.tools.profiling import DelayNode
 
 def graph_0() -> tuple[Graph, list[FunctionNode]]:
     with Graph(close=True) as graph:
@@ -355,7 +355,7 @@ class TestEstimationsTime:
     "Hint: use `pytest -s` to see estimations results"
     def test_one_sleepy_node(self):
         with Graph(close=True) as graph:
-            sl = SleepingNode("SL0", sleep_time=0.25)
+            sl = DelayNode("SL0", sleep_time=0.25)
         sl['result'].data
 
         profiling = NodeProfiler(graph._nodes, n_runs=4)
@@ -366,9 +366,9 @@ class TestEstimationsTime:
 
     def _gen_graph(self, sleep_time: float):
         with Graph(close=True) as graph:
-            sl0 = SleepingNode("SL0", sleep_time=sleep_time)
-            sl1 = SleepingNode("SL1", sleep_time=sleep_time)
-            sl2 = SleepingNode("SL2", sleep_time=sleep_time)
+            sl0 = DelayNode("SL0", sleep_time=sleep_time)
+            sl1 = DelayNode("SL1", sleep_time=sleep_time)
+            sl2 = DelayNode("SL2", sleep_time=sleep_time)
             (sl0, sl1) >> sl2
         sl2['result'].data
         return graph, [sl0, sl1, sl2]

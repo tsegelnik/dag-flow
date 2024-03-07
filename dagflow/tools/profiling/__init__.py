@@ -1,9 +1,9 @@
 from .nodeprofiler import NodeProfiler
-from .frwkprofiler import FrameworkProfiler
-from .SleepingNode import SleepingNode
+from .frameworkprofiler import FrameworkProfiler
+from .DelayNode import DelayNode
 
 __all__ = [
     "NodeProfiler",
     "FrameworkProfiler",
-    "SleepingNode"
+    "DelayNode"
 ]
