@@ -45,10 +45,10 @@ class NodeProfiler(Profiler):
         return self
 
     def make_report(self,
-                    group_by: str | None="type",
+                    group_by: str | tuple[str] | None="type",
                     agg_funcs: Sequence[str] | None=None,
                     sort_by: str | None=None,
-                    normilize=True):
+                    normilize: bool=True):
         report = super().make_report(group_by, agg_funcs, sort_by)
         if normilize:
             return self._normalize(report)
