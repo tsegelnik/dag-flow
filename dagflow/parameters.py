@@ -156,6 +156,10 @@ class GaussianParameter(Parameter):
         self._central_output.seti(self._idx, central)
 
     @property
+    def central_output(self) -> Output:
+        return self._central_output
+
+    @property
     def sigma(self) -> float:
         return self._sigma_output.data[self._idx]
 
