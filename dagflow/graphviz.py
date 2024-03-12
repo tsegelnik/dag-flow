@@ -6,6 +6,7 @@ from typing import Literal
 
 from numpy import printoptions, square
 
+from .exception import UnclosedGraphError
 from .graph import Graph
 from .input import Input
 from .logger import INFO1, logger
@@ -695,6 +696,8 @@ else:
                 tainted = out0.tainted and "tainted" or "updated"
                 try:
                     data = out0.data
+                except UnclosedGraphError:
+                    data = out0._data
                 except Exception:
                     right.append("cought exception")
                     data = out0._data
@@ -722,7 +725,8 @@ else:
                     right.append(_format_data(data))
 
             if getattr(node, "exception", None) is not None:
-                logger.log(INFO1, f"Exception: {node.exception}")
+                if node.closed:
+                    logger.log(INFO1, f"Exception: {node.exception}")
                 right.append(node.exception)
 
             return self._combine_labels((left, right))
@@ -743,7 +747,9 @@ def num_in_range(num: int, minnum: int | None, maxnum: int | None = None) -> boo
     return True
 
 
-def _format_data(data: NDArray, part: bool = False) -> str:
+def _format_data(data: NDArray | None, part: bool = False) -> str:
+    if data is None:
+        return "None"
     if part:
         if data.size < 5:
             with printoptions(precision=6):
