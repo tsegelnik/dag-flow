@@ -751,12 +751,23 @@ def _format_data(data: NDArray | None, part: bool = False) -> str:
     if data is None:
         return "None"
     if part:
-        if data.size < 5:
+        if data.size < 12:
             with printoptions(precision=6):
+                datastr = str(data)
+        elif data.ndim>1:
+            with printoptions(threshold=17, precision=2):
                 datastr = str(data)
         else:
             with printoptions(threshold=17, precision=2):
-                datastr = str(data)
+                lead = data[:3]
+                nmid = (len(data)-1)//2-1
+                mid = data[nmid:nmid+3]
+                tail = data[-3:]
+                
+                leadstr=str(lead)[:-1]
+                midstr=str(mid)[1:-1]
+                tailstr=str(tail)[1:]
+                datastr = f"{leadstr} ... {midstr} ... {tailstr}"
     else:
         datastr = str(data)
     return datastr.replace("\n", "\\l") + "\\l"
