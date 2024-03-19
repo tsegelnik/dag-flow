@@ -35,8 +35,8 @@ class OneToOneNode(FunctionNode):
     @classmethod
     def replicate(
         cls,
-        name: str,
         *args: NodeStorage | Any,
+        name: str,
         replicate: Sequence[KeyLike] | None = None,
         **kwargs,
     ) -> tuple[Node | None, NodeStorage]:

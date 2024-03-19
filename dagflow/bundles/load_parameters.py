@@ -265,6 +265,7 @@ def load_parameters(
                 "all": {},
                 "constant": {},
                 "free": {},
+                "central": {},
                 "constrained": {},
                 "normalized": {},
             },
@@ -381,10 +382,12 @@ def load_parameters(
         ret[("parameter_node", "all") + pathkey] = par
 
         ptarget = ("parameter",) + targetkey
-        atarget = ("parameter", "all") + pathkey
+        target_all = ("parameter", "all") + pathkey
         for subname, subpar in par.iteritems():
             ret[ptarget + subname] = subpar
-            ret[atarget + subname] = subpar
+            ret[target_all + subname] = subpar
+            if par.is_constrained:
+                ret[("parameter", "central") + pathkey] = subpar.central_output
 
         if constraint := par.constraint:
             normpars_i = normpars.setdefault(key[0], [])

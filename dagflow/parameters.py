@@ -78,6 +78,10 @@ class Parameter:
             if idxtuple:
                 self._view.labels.index_values.extend(idxtuple)
             self._value_output = self._view.outputs[0]
+            self._connectible_output = self._value_output
+        else:
+            self._view = None
+            self._connectible_output = None
 
     def __str__(self):
         return f"par v={self.value}"
@@ -150,6 +154,10 @@ class GaussianParameter(Parameter):
     @central.setter
     def central(self, central: float):
         self._central_output.seti(self._idx, central)
+
+    @property
+    def central_output(self) -> Output:
+        return self._central_output
 
     @property
     def sigma(self) -> float:

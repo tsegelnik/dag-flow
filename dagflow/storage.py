@@ -1,5 +1,7 @@
+from __future__ import annotations
+
 from collections.abc import Mapping, MutableSet, Sequence
-from typing import TYPE_CHECKING, Any, Optional
+from typing import TYPE_CHECKING, Any, Literal
 
 from orderedset import OrderedSet
 
@@ -230,7 +232,7 @@ class NodeStorage(NestedMKDict):
         for key, dct in tuple(source.walkdicts()):
             if not dct:
                 source.delete_with_parents(key)
-                
+
 
     #
     # Converters
@@ -273,16 +275,27 @@ class NodeStorage(NestedMKDict):
         return df.to_str(**kwargs)
 
     def to_table(
-        self, *, df_kwargs: Mapping = {}, truncate: int | bool = False, **kwargs
+        self, *, df_kwargs: Mapping = {}, truncate: int | bool | Literal["auto"] = False, **kwargs
     ) -> str:
         df = self.to_df(**df_kwargs)
         kwargs.setdefault("headers", df.columns)
         ret = tabulate(df, **kwargs)
 
-        if truncate:
-            if isinstance(truncate, bool):
+        match truncate:
+            case True:
                 truncate = get_terminal_size().columns
+            case False | int():
+                pass
+            case "auto":
+                from sys import stdout
+                if stdout.isatty():
+                    truncate = get_terminal_size().columns
+                else:
+                    truncate = False
+            case _:
+                raise RuntimeError(f"Invalid {truncate=} value")
 
+        if truncate:
             return trunc(ret, width=truncate)
 
         return ret
@@ -319,7 +332,7 @@ class NodeStorage(NestedMKDict):
     # Current storage, context
     #
     @staticmethod
-    def current() -> Optional["NodeStorage"]:
+    def current() -> NodeStorage | None:
         return _context_storage[-1] if _context_storage else None
 
     def __enter__(self) -> "NodeStorage":

@@ -149,6 +149,7 @@ class Node(NodeBase):
     @classmethod
     def replicate(
         cls,
+        *,
         name: str,
         replicate: tuple[KeyLike, ...] = ((),),
         **kwargs,

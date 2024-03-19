@@ -75,12 +75,14 @@ class IntegratorGroup(MetaNode):
     def replicate(
         cls,
         mode: ModeType,
-        name_sampler: str = "sampler",
-        name_integrator: str = "integrator",
-        labels: Mapping = {},
         *,
-        name_x: str = "mesh_x",
-        name_y: str = "mesh_y",
+        names: Mapping[str, str] = {
+            "sampler": "sampler",
+            "integrator": "integrator",
+            "x": "mesh_x",
+            "y": "mesh_y",
+        },
+        labels: Mapping = {},
         replicate: tuple[KeyLike, ...] = ((),),
         dropdim: bool = True,
     ) -> tuple["IntegratorGroup", "NodeStorage"]:
@@ -90,12 +92,12 @@ class IntegratorGroup(MetaNode):
         outputs = storage("outputs")
 
         integrators = cls(mode, bare=True)
-        key_integrator = (name_integrator,)
-        key_sampler = (name_sampler,)
+        key_integrator = (names["integrator"],)
+        key_sampler = (names["sampler"],)
 
-        integrators._init_sampler(mode, name_sampler, labels.get("sampler", {}))
-        outputs[key_sampler + (name_x,)] = integrators._sampler.outputs["x"]
-        outputs[key_sampler + (name_y,)] = integrators._sampler.outputs["y"]
+        integrators._init_sampler(mode, names["sampler"], labels.get("sampler", {}))
+        outputs[key_sampler + (names["x"],)] = integrators._sampler.outputs["x"]
+        outputs[key_sampler + (names["y"],)] = integrators._sampler.outputs["y"]
 
         label_int = labels.get("integrator", {})
         for key in replicate:
