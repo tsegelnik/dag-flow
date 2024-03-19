@@ -2,11 +2,8 @@
 from numpy import allclose
 from numpy import arange
 from numpy import finfo
-from numpy import linspace
 from pytest import mark
-from pytest import raises
 
-from dagflow.exception import TypeFunctionError
 from dagflow.graph import Graph
 from dagflow.graphviz import savegraph
 from dagflow.lib import Array

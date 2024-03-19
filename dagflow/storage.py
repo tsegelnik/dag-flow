@@ -1,5 +1,7 @@
+from __future__ import annotations
+
 from collections.abc import Mapping, MutableSet, Sequence
-from typing import TYPE_CHECKING, Any, Literal, Optional
+from typing import TYPE_CHECKING, Any, Literal
 
 from orderedset import OrderedSet
 
@@ -230,7 +232,7 @@ class NodeStorage(NestedMKDict):
         for key, dct in tuple(source.walkdicts()):
             if not dct:
                 source.delete_with_parents(key)
-                
+
 
     #
     # Converters
@@ -330,7 +332,7 @@ class NodeStorage(NestedMKDict):
     # Current storage, context
     #
     @staticmethod
-    def current() -> Optional["NodeStorage"]:
+    def current() -> NodeStorage | None:
         return _context_storage[-1] if _context_storage else None
 
     def __enter__(self) -> "NodeStorage":

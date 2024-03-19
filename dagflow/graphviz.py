@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from collections.abc import Mapping, Sequence
 from contextlib import suppress
-from typing import Literal
+from typing import Literal, TYPE_CHECKING
 
 from numpy import printoptions, square
 
@@ -12,6 +12,9 @@ from .input import Input
 from .logger import INFO1, logger
 from .node import Node
 from .output import Output
+
+if TYPE_CHECKING:
+    from numpy.typing import NDArray
 
 try:
     import pygraphviz as G
@@ -50,8 +53,8 @@ else:
         )
         _graph: G.AGraph
         _node_id_map: dict
-        _nodes_map_dag: Dict[Node, G.agraph.Node]
-        _filter: Dict[str, list[str | int]]
+        _nodes_map_dag: dict[Node, G.agraph.Node]
+        _filter: dict[str, list[str | int]]
         _filtered_nodes: set
 
         _show: set[
@@ -122,7 +125,7 @@ else:
             self._nodes_map_dag = {}
             self._nodes_open_input = {}
             self._nodes_open_output = {}
-            self._edges: Dict[str, EdgeDef] = {}
+            self._edges: dict[str, EdgeDef] = {}
             self._graph = G.AGraph(directed=True, strict=False, **kwargs)
 
             if graphattr:
@@ -742,9 +745,7 @@ else:
 def num_in_range(num: int, minnum: int | None, maxnum: int | None = None) -> bool:
     if minnum is not None and num < minnum:
         return False
-    if maxnum is not None and num > maxnum:
-        return False
-    return True
+    return maxnum is None or num <= maxnum
 
 
 def _format_data(data: NDArray | None, part: bool = False) -> str:
@@ -754,19 +755,19 @@ def _format_data(data: NDArray | None, part: bool = False) -> str:
         if data.size < 12:
             with printoptions(precision=6):
                 datastr = str(data)
-        elif data.ndim>1:
+        elif data.ndim > 1:
             with printoptions(threshold=17, precision=2):
                 datastr = str(data)
         else:
             with printoptions(threshold=17, precision=2):
                 lead = data[:3]
-                nmid = (len(data)-1)//2-1
-                mid = data[nmid:nmid+3]
+                nmid = (len(data) - 1) // 2 - 1
+                mid = data[nmid : nmid + 3]
                 tail = data[-3:]
-                
-                leadstr=str(lead)[:-1]
-                midstr=str(mid)[1:-1]
-                tailstr=str(tail)[1:]
+
+                leadstr = str(lead)[:-1]
+                midstr = str(mid)[1:-1]
+                tailstr = str(tail)[1:]
                 datastr = f"{leadstr} ... {midstr} ... {tailstr}"
     else:
         datastr = str(data)

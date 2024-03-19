@@ -7,7 +7,7 @@ class ArraySum(OneToOneNode):
     """
     inputs:
         `array`: array to sum
-        `array`: array to sum
+        `array_1`: array to sum
         `...`: ...
 
     outputs:
