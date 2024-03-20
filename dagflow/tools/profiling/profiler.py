@@ -152,13 +152,7 @@ class Profiler(metaclass=ABCMeta):
         otherwise return the same strings.
         """
         return [_COLUMN_ALIASES.get(al, al) for al in aliases]
-    
-    @overload
-    def _col_from_alias(self, alias: None) -> None: ...
-
-    @overload
-    def _col_from_alias(self, alias: str) -> str: ...
-    
+        
     def _col_from_alias(self, alias: str | None) -> str | None:
         """Return the column name if an alias exists,
         otherwise return the same string.
@@ -194,8 +188,9 @@ class Profiler(metaclass=ABCMeta):
         return df
 
     def __get_index_and_pop(self, array: list, value):
-        """Return index of the `value` in given `array` and pop it.\n
-        Return `-1` if index not exists.
+        """Return index of the `value` in given `array` and pop it.
+        Return `-1` if index not exists. \n
+        Helper function for `_aggregate_df`
         """
         try:
             idx = array.index(value)
@@ -206,7 +201,7 @@ class Profiler(metaclass=ABCMeta):
 
     def _aggregate_df(self, grouped_df, grouped_by, agg_funcs) -> DataFrame:
         """Apply the aggregate Pandas functions
-        and calculate the percentage `"%_of_total"`
+        and calculate the percentage `"%_of_total"` separately
         if it is specified as an aggregate function
         """
         tmp_aggs = self._aggs_from_aliases(agg_funcs)
@@ -246,7 +241,7 @@ class Profiler(metaclass=ABCMeta):
                     agg_funcs: Sequence[str] | None,
                     sort_by: str | None) -> DataFrame:
         """Make report table. \n
-        Hint: Since the report table is just a `Pandas.DataFrame`,
+        Note: Since the report table is just a `Pandas.DataFrame`,
         you can call Pandas methods like `.to_csv()` or `to_excel()`
         """
         if agg_funcs is None or agg_funcs == []:
@@ -283,10 +278,12 @@ class Profiler(metaclass=ABCMeta):
                      agg_funcs: Sequence[str] | None,
                      sort_by) -> DataFrame:
         """Make report and print it. \n
-        Return `Pands.DataPrame` as report
+        Return `Pandas.DataPrame` as report
         ( See: `self.make_report()` )
         """
         report = self.make_report(group_by, agg_funcs, sort_by)
         self._print_table(report, rows)
-        raise NotImplementedError
+        raise NotImplementedError(
+            "You must override `print_report` in subclass"
+        )
 
