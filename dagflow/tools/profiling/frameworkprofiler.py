@@ -62,6 +62,7 @@ class FrameworkProfiler(Profiler):
         results = repeat(stmt=repeat_stmt, setup=self._taint_nodes,
                          repeat=self._n_runs, number=1)
         self._restore_fcns()
+        self._taint_nodes()
         return results
 
     def _shorten_names(self, nodes, max_length):
