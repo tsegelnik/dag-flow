@@ -59,6 +59,7 @@ class FrameworkProfiler(Profiler):
         def repeat_stmt():
             for sink_node in self._sinks:
                 sink_node.eval()
+        repeat_stmt()   # touch all dependent nodes before estimations
         results = repeat(stmt=repeat_stmt, setup=self._taint_nodes,
                          repeat=self._n_runs, number=1)
         self._restore_fcns()

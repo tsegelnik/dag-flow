@@ -219,7 +219,7 @@ class Profiler(metaclass=ABCMeta):
         return df
 
     def _check_report_consistency(self, group_by, agg_funcs):
-        """Check if it is possible to create report table
+        """Check if it is possible to create a report table
         """
         if not hasattr(self, "_estimations_table"):
             raise AttributeError("No estimations found!\n"
@@ -240,7 +240,7 @@ class Profiler(metaclass=ABCMeta):
                     group_by: str | tuple[str] | None,
                     agg_funcs: Sequence[str] | None,
                     sort_by: str | None) -> DataFrame:
-        """Make report table. \n
+        """Make a report table. \n
         Note: Since the report table is just a `Pandas.DataFrame`,
         you can call Pandas methods like `.to_csv()` or `to_excel()`
         """
@@ -262,7 +262,7 @@ class Profiler(metaclass=ABCMeta):
         return report
 
     def _normalize(self, df: DataFrame) -> DataFrame:
-        """Normilize time by `self._n_runs`"""
+        """Normalize time by `self._n_runs`"""
         for c in df.columns:
             if c.startswith('t_') or c == 'time':
                 df[c] /= self._n_runs
