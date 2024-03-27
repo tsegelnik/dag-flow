@@ -388,10 +388,12 @@ else:
         def _add_edges(self, nodedag):
             if self._node_is_filtered(nodedag):
                 return
-            for output in nodedag.outputs.iter_all():
+            for iout, output in enumerate(nodedag.outputs.iter_all()):
                 if output.connected():
                     if len(output.child_inputs) > 1:
-                        self._add_edges_multi(nodedag, output)
+                        self._add_edges_multi_alot(nodedag, output)
+                    # elif len(output.child_inputs) > 1:
+                    #     self._add_edges_multi_few(iout, nodedag, output)
                     else:
                         self._add_edge(nodedag, output, output.child_inputs[0])
                 else:
@@ -402,7 +404,7 @@ else:
                 if output.dd.axes_meshes:
                     self._add_mesh(output)
 
-        def _add_edges_multi(self, nodedag, output):
+        def _add_edges_multi_alot(self, nodedag, output):
             if self._node_is_filtered(nodedag):
                 return
             vnode = self.get_id(output, "_mid")
@@ -413,6 +415,14 @@ else:
             self._add_edge(nodedag, output, firstinput, vtarget=vnode)
             for input in output.child_inputs:
                 self._add_edge(nodedag, output, input, vsource=vnode)
+
+        def _add_edges_multi_few(self, iout: int, nodedag, output):
+            if self._node_is_filtered(nodedag):
+                return
+            style = {"sametail": str(iout), "weight": 5}
+            for input in output.child_inputs:
+                self._add_edge(nodedag, output, input, style=style)
+                style["taillabel"] = ""
 
         def _add_edge_hist(self, output: Output) -> None:
             if self._node_is_filtered(output.node):
