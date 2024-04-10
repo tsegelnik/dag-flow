@@ -11,9 +11,9 @@ from dagflow.graphviz import GraphDot
 def graph_0() -> tuple[Graph, list[FunctionNode]]:
     with Graph(close=True) as graph:
         a0 = Array("A0", [8, 7, 13])
-        a1 = Array("A1", [1, 2, 4])
+        a1 = Array("A1", [1, 2, 4], mode='store_weak')
         a2 = Array("A2", [12, 22, 121])
-        a3 = Array("A3", [4, 3, 3])
+        a3 = Array("A3", [4, 3, 3], mode='fill')
 
         p0 = Product("P0")
         p1 = Product("P1")
@@ -50,7 +50,7 @@ def graph_1() -> tuple[Graph, list[FunctionNode]]:
         array_nodes[:3] >> s1
 
         s2 = Sum("S2")
-        (array_nodes[2: 4]) >> s2 # array_3, array_4 >> sum_2
+        (array_nodes[2: 4]) >> s2 # ("A2", "A3") >> s2
 
         p1 = Product("p1")
         (array_nodes[4], s1) >> p1
