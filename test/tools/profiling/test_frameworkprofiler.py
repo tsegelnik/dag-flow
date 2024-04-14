@@ -18,7 +18,7 @@ def test_init_g0():
 
     sources, sinks = [a1, a2], [s3]
     profiling = FrameworkProfiler(sources=sources, sinks=sinks)
-    profiling.estimate_framework_time(append_results=True)
+    profiling.estimate_framework_time()
     profiling.print_report()
     assert Counter(profiling._target_nodes) == Counter(target_nodes)
 
@@ -80,8 +80,8 @@ def test_estimate_framework_time_g0():
     FrameworkProfiler(nodes).estimate_framework_time()
 
     profiling = FrameworkProfiler(nodes)
-    profiling.estimate_framework_time(append_results=True)
-    profiling.estimate_framework_time(append_results=True)
+    profiling.estimate_framework_time()
+    profiling.estimate_framework_time()
     profiling.estimate_framework_time()
 
 def test_print_report_g0():
@@ -89,7 +89,6 @@ def test_print_report_g0():
 
     profiling = FrameworkProfiler(nodes, n_runs=1000)
     profiling.estimate_framework_time().print_report()
-    profiling.estimate_framework_time(append_results=True)
     profiling.print_report()
 
     profiling.print_report(group_by=None)
