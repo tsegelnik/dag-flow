@@ -162,7 +162,7 @@ class Profiler(metaclass=ABCMeta):
         for using it on a grouped data.
         
         Note: The function is called for each group
-        in the groupped DataFrame separately 
+        in the grouped DataFrame separately 
         """
         for al in aliases:
             self._agg_aliases[al] = func
@@ -195,21 +195,21 @@ class Profiler(metaclass=ABCMeta):
         """
         return self._agg_aliases.get(alias, alias)
 
-    def _pd_funcs_agg_df(self, grouped_df, grouped_by, agg_funcs) -> DataFrame:
-        """Apply standard and user defined Pandas aggregate
-        functions (`"min"`, `"max"`, etc.)
-        to the given grouped `DataFrame`.
-        """
-        df = grouped_df.agg({'time': agg_funcs})
-        # grouped_by can be ["col1", "col2", ...] or "col"
-        if isinstance(grouped_by, list):
-            new_columns = grouped_by.copy()
-        else:
-            new_columns = [grouped_by]
-        # get rid of multiindex
-        new_columns += self._cols_from_aliases(agg_funcs)
-        df.columns = Index(new_columns)
-        return df
+    # def _pd_funcs_agg_df(self, grouped_df, grouped_by, agg_funcs) -> DataFrame:
+    #     """Apply standard and user defined Pandas aggregate
+    #     functions (`"min"`, `"max"`, etc.)
+    #     to the given grouped `DataFrame`.
+    #     """
+    #     df = grouped_df.agg({'time': agg_funcs})
+    #     # grouped_by can be ["col1", "col2", ...] or "col"
+    #     if isinstance(grouped_by, list):
+    #         new_columns = grouped_by.copy()
+    #     else:
+    #         new_columns = [grouped_by]
+    #     # get rid of multiindex
+    #     new_columns += self._cols_from_aliases(agg_funcs)
+    #     df.columns = Index(new_columns)
+    #     return df
 
     def _total_estimations_time(self):
         return self._estimations_table['time'].sum()
@@ -223,17 +223,25 @@ class Profiler(metaclass=ABCMeta):
         return Series({'%_of_total': numpy.sum(_s) * 100 / total})
 
     def _aggregate_df(self, grouped_df, grouped_by, agg_funcs) -> DataFrame:
-        """Apply the aggregate Pandas functions
-        and calculate the percentage `"%_of_total"` separately
-        if it is specified as an aggregate function.
+        """Apply pandas built-in (given as `str`) 
+        and user-defined (given as `Callable`) functions
+        to the `'time'` column of the grouped data (`DataFrameGroupBy` object)
         """
-        tmp_aggs = self._aggs_from_aliases(agg_funcs)
-        df = self._pd_funcs_agg_df(grouped_df, grouped_by, tmp_aggs)
+        agg_funcs = self._aggs_from_aliases(agg_funcs)
+        df = grouped_df.agg({'time': agg_funcs})
+        # grouped_by can be ["col1", "col2", ...] or "col"
+        if isinstance(grouped_by, list):
+            new_columns = grouped_by.copy()
+        else:
+            new_columns = [grouped_by]
+        # get rid of multiindex
+        new_columns += self._cols_from_aliases(agg_funcs)
+        df.columns = Index(new_columns)
         return df
     
     def __possible_agg_values(self):
-        """Return all possible values for `agg_funcs` argument
-        of `make_report` and `print_report`.
+        """Return set of all possible values for `agg_funcs` argument
+        of `make_report` and `print_report` methods.
 
         Helper function for `_check_report_consistency`
         """
