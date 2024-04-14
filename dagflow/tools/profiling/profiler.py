@@ -17,7 +17,7 @@ from collections.abc import Callable
 
 # prefix `t_` - time notation
 # columnt aliases for aggrigate functions
-_COLUMN_ALIASES: dict[str, str] = {
+_COLUMN_ALIASES: dict[str | Callable, str] = {
     "mean": "t_single",
     "single": "t_single",
     "t_mean": "t_single",
@@ -30,7 +30,7 @@ _COLUMN_ALIASES: dict[str, str] = {
     "var": "t_var",
     "cumsum": "t_cumsum",
 }
-_AGG_ALIASES: dict[str, str] = {
+_AGG_ALIASES: dict[str, str | Callable] = {
     "single": "mean",
     "t_single": "mean",
     "t_mean": "mean",
@@ -67,8 +67,8 @@ class Profiler(metaclass=ABCMeta):
     _estimations_table: DataFrame
     _allowed_groupby: tuple[list[str] | str, ...]
     _default_agg_funcs: tuple[str | Callable, ...]
-    _column_aliases: dict
-    _agg_aliases: dict
+    _column_aliases: dict[str | Callable, str]
+    _agg_aliases: dict[str, str | Callable]
 
     def __init__(self,
                  target_nodes: Sequence[FunctionNode]=[],
@@ -158,32 +158,40 @@ class Profiler(metaclass=ABCMeta):
         self._sinks = sinks
 
     def register_agg_func(self, func, aliases, column_name):
+        """Add user-defined function for the Profiler
+        for using it on a grouped data.
+        
+        Note: The function is called for each group
+        in the groupped DataFrame separately 
+        """
         for al in aliases:
             self._agg_aliases[al] = func
             self._column_aliases[al] = column_name
         self._column_aliases[func] = column_name
 
-    def _cols_from_aliases(self, aliases: Iterable[str]) -> list[str]:
+    def _cols_from_aliases(self, aliases: Iterable[str | Callable]) -> list[str]:
         """Return the column names if aliases exists,
         otherwise return the same strings.
         """
         return [self._column_aliases.get(al, al) for al in aliases]
         
-    def _col_from_alias(self, alias: str | None) -> str | None:
+    def _col_from_alias(self, alias: str | Callable | None) -> str | None:
         """Return the column name if an alias exists,
-        otherwise return the same string.
+        otherwise return the same object.
         """
         return self._column_aliases.get(alias, alias)
     
-    def _aggs_from_aliases(self, aliases: Iterable[str]) -> list[str]:
+    def _aggs_from_aliases(self, aliases: Iterable[str | Callable]) \
+                                                -> list[str | Callable]:
         """Return aggregate function names if aliases exists,
-        otherwise return the same strings.
+        otherwise return the same object.
         """
         return [self._agg_aliases.get(al, al) for al in aliases]
     
-    def _agg_from_alias(self, alias: str | None) -> str | None:
+    def _agg_from_alias(self, alias: str | Callable | None) \
+                                            -> str | Callable | None:
         """Return aggregate function name if an alias exists,
-        otherwise return the same string.
+        otherwise return the same object.
         """
         return self._agg_aliases.get(alias, alias)
 
