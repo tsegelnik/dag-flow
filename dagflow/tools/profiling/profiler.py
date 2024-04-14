@@ -195,22 +195,6 @@ class Profiler(metaclass=ABCMeta):
         """
         return self._agg_aliases.get(alias, alias)
 
-    # def _pd_funcs_agg_df(self, grouped_df, grouped_by, agg_funcs) -> DataFrame:
-    #     """Apply standard and user defined Pandas aggregate
-    #     functions (`"min"`, `"max"`, etc.)
-    #     to the given grouped `DataFrame`.
-    #     """
-    #     df = grouped_df.agg({'time': agg_funcs})
-    #     # grouped_by can be ["col1", "col2", ...] or "col"
-    #     if isinstance(grouped_by, list):
-    #         new_columns = grouped_by.copy()
-    #     else:
-    #         new_columns = [grouped_by]
-    #     # get rid of multiindex
-    #     new_columns += self._cols_from_aliases(agg_funcs)
-    #     df.columns = Index(new_columns)
-    #     return df
-
     def _total_estimations_time(self):
         return self._estimations_table['time'].sum()
         
