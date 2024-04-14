@@ -4,15 +4,19 @@ from typing import TYPE_CHECKING, overload
 from collections import deque
 from abc import ABCMeta, abstractmethod
 
-from pandas import DataFrame, Index
+from pandas import DataFrame, Series, Index
+import numpy
 from tabulate import tabulate
 
 if TYPE_CHECKING:
     from dagflow.nodes import FunctionNode
     from collections.abc import Generator, Sequence, Iterable
 
+from collections.abc import Callable
+
 
 # prefix `t_` - time notation
+# columnt aliases for aggrigate functions
 _COLUMN_ALIASES: dict[str, str] = {
     "mean": "t_single",
     "single": "t_single",
@@ -22,9 +26,9 @@ _COLUMN_ALIASES: dict[str, str] = {
     "std": "t_std",
     "t_count": "count",
     "min": "t_min",
+    "max": "t_max",
     "var": "t_var",
-    "t_percentage": "%_of_total",
-    "percentage": "%_of_total",
+    "cumsum": "t_cumsum",
 }
 _AGG_ALIASES: dict[str, str] = {
     "single": "mean",
@@ -35,13 +39,11 @@ _AGG_ALIASES: dict[str, str] = {
     "t_std": "std",
     "t_count": "count",
     "t_min": "min",
+    "t_max": "max",
     "t_var": "var",
-    "t_percentage": "%_of_total",
-    "percentage": "%_of_total"
+    "t_cumsum": "cumsum",
 }
 
-_ALLOWED_AGG_FUNCS = ("count", "mean", "median", "std", "min", "max", "sum",
-                      "var", "%_of_total")
 _DEFAULT_AGG_FUNCS = ("count", "single", "sum", "%_of_total")
 
 
@@ -53,26 +55,34 @@ class Profiler(metaclass=ABCMeta):
         "_sinks",
         "_n_runs",
         "_estimations_table",
-        "_ALLOWED_GROUPBY",
-        "_ALLOWED_AGG_FUNCS",
-        "_DEFAULT_AGG_FUNCS"
+        "_allowed_groupby",
+        "_default_agg_funcs",
+        "_agg_aliases",
+        "_column_aliases"
     )
     _target_nodes: Sequence[FunctionNode]
     _sources: Sequence[FunctionNode]
     _sinks: Sequence[FunctionNode]
     _n_runs: int
     _estimations_table: DataFrame
-    _ALLOWED_GROUPBY: tuple[list[str] | str, ...]
-    _ALLOWED_AGG_FUNCS: tuple[str, ...]
-    _DEFAULT_AGG_FUNCS: tuple[str, ...]
+    _allowed_groupby: tuple[list[str] | str, ...]
+    _default_agg_funcs: tuple[str | Callable, ...]
+    _column_aliases: dict
+    _agg_aliases: dict
 
     def __init__(self,
                  target_nodes: Sequence[FunctionNode]=[],
                  sources: Sequence[FunctionNode]=[],
                  sinks: Sequence[FunctionNode]=[],
                  n_runs: int=100):
-        self._ALLOWED_AGG_FUNCS = _ALLOWED_AGG_FUNCS
-        self._DEFAULT_AGG_FUNCS = _DEFAULT_AGG_FUNCS
+        self._default_agg_funcs = _DEFAULT_AGG_FUNCS
+        self._column_aliases = _COLUMN_ALIASES.copy()
+        self._agg_aliases = _AGG_ALIASES.copy()
+        self.register_agg_func(
+            func=self._t_presentage, 
+            aliases=['%_of_total', 'percentage', 't_percentage'],
+            column_name='%_of_total'
+            )
         self._sources = sources
         self._sinks = sinks
         self._n_runs = n_runs
@@ -147,32 +157,38 @@ class Profiler(metaclass=ABCMeta):
         self._sources = sources
         self._sinks = sinks
 
+    def register_agg_func(self, func, aliases, column_name):
+        for al in aliases:
+            self._agg_aliases[al] = func
+            self._column_aliases[al] = column_name
+        self._column_aliases[func] = column_name
+
     def _cols_from_aliases(self, aliases: Iterable[str]) -> list[str]:
         """Return the column names if aliases exists,
         otherwise return the same strings.
         """
-        return [_COLUMN_ALIASES.get(al, al) for al in aliases]
+        return [self._column_aliases.get(al, al) for al in aliases]
         
     def _col_from_alias(self, alias: str | None) -> str | None:
         """Return the column name if an alias exists,
         otherwise return the same string.
         """
-        return _COLUMN_ALIASES.get(alias, alias)
+        return self._column_aliases.get(alias, alias)
     
     def _aggs_from_aliases(self, aliases: Iterable[str]) -> list[str]:
         """Return aggregate function names if aliases exists,
         otherwise return the same strings.
         """
-        return [_AGG_ALIASES.get(al, al) for al in aliases]
+        return [self._agg_aliases.get(al, al) for al in aliases]
     
     def _agg_from_alias(self, alias: str | None) -> str | None:
         """Return aggregate function name if an alias exists,
         otherwise return the same string.
         """
-        return _AGG_ALIASES.get(alias, alias)
+        return self._agg_aliases.get(alias, alias)
 
     def _pd_funcs_agg_df(self, grouped_df, grouped_by, agg_funcs) -> DataFrame:
-        """Apply standard Pandas aggregate
+        """Apply standard and user defined Pandas aggregate
         functions (`"min"`, `"max"`, etc.)
         to the given grouped `DataFrame`.
         """
@@ -187,36 +203,37 @@ class Profiler(metaclass=ABCMeta):
         df.columns = Index(new_columns)
         return df
 
-    def __get_index_and_pop(self, array: list, value):
-        """Return index of the `value` in given `array` and pop it.
-        Return `-1` if index not exists. \n
-        Helper function for `_aggregate_df`
+    def _total_estimations_time(self):
+        return self._estimations_table['time'].sum()
+        
+    def _t_presentage(self, _s: Series) -> Series:
+        """User-defined aggregate function
+        to calculate the percentage
+        of group given as `pandas.Series`.
         """
-        try:
-            idx = array.index(value)
-            array.pop(idx)
-            return idx
-        except ValueError:
-            return -1
+        total = self._total_estimations_time()
+        return Series({'%_of_total': numpy.sum(_s) * 100 / total})
 
     def _aggregate_df(self, grouped_df, grouped_by, agg_funcs) -> DataFrame:
         """Apply the aggregate Pandas functions
         and calculate the percentage `"%_of_total"` separately
-        if it is specified as an aggregate function
+        if it is specified as an aggregate function.
         """
         tmp_aggs = self._aggs_from_aliases(agg_funcs)
-        p_index = self.__get_index_and_pop(tmp_aggs, '%_of_total')
-        if p_index != -1 and 'sum' not in tmp_aggs:
-            tmp_aggs = tmp_aggs + ['sum']
         df = self._pd_funcs_agg_df(grouped_df, grouped_by, tmp_aggs)
-        if p_index != -1:
-            total_time = df['t_sum'].sum()
-            df.insert(len(df.columns) - len(agg_funcs) + p_index,
-                      '%_of_total', df['t_sum'] * 100 / total_time)
-        if p_index != -1 and 'sum' not in agg_funcs:
-            df.drop('t_sum', inplace=True, axis=1)
-        df.columns = Index(self._cols_from_aliases(df.columns))
         return df
+    
+    def __possible_agg_values(self):
+        """Return all possible values for `agg_funcs` argument
+        of `make_report` and `print_report`.
+
+        Helper function for `_check_report_consistency`
+        """
+        values = set(self._agg_aliases.keys())
+        for agg_name in self._agg_aliases.values():
+            if isinstance(agg_name, str):
+                values.add(agg_name)
+        return values
 
     def _check_report_consistency(self, group_by, agg_funcs):
         """Check if it is possible to create a report table
@@ -225,15 +242,15 @@ class Profiler(metaclass=ABCMeta):
             raise AttributeError("No estimations found!\n"
                                  "Note: first esimate your nodes "
                                  "with methods like `estimate_*`")
-        if group_by != None and (hasattr(self, "_ALLOWED_GROUPBY") and
-                                 group_by not in self._ALLOWED_GROUPBY):
+        if group_by != None and (hasattr(self, "_allowed_groupby") and
+                                 group_by not in self._allowed_groupby):
             raise ValueError(f"Invalid `group_by` name \"{group_by}\"."
-                             f"You must use one of these: {self._ALLOWED_GROUPBY}")
-        if any(self._agg_from_alias(a) not in self._ALLOWED_AGG_FUNCS
-               for a in agg_funcs):
-            raise ValueError("Invalid aggregate function"
-                             "You should use one of these:"
-                             f"{self._ALLOWED_AGG_FUNCS}")
+                             f"You must use one of these: {self._allowed_groupby}")
+        for a in self._aggs_from_aliases(agg_funcs):
+            if a not in self._agg_aliases.values():
+                raise ValueError(f"Invalid aggregate function `{a}`. "
+                                 "You should use one of these: "
+                                 f"{self.__possible_agg_values()}")
 
     @abstractmethod
     def make_report(self,
@@ -243,9 +260,10 @@ class Profiler(metaclass=ABCMeta):
         """Make a report table. \n
         Note: Since the report table is just a `Pandas.DataFrame`,
         you can call Pandas methods like `.to_csv()` or `to_excel()`
+        to export your data in appropriate format.
         """
         if agg_funcs is None or agg_funcs == []:
-            agg_funcs = self._DEFAULT_AGG_FUNCS
+            agg_funcs = self._default_agg_funcs
         self._check_report_consistency(group_by, agg_funcs)
         sort_by = self._col_from_alias(sort_by)
         report = self._estimations_table.copy()
