@@ -24,7 +24,7 @@ class NodeProfiler(Profiler):
                  sources: Sequence[FunctionNode]=[],
                  sinks: Sequence[FunctionNode]=[],
                  n_runs: int=DEFAULT_RUNS):
-        self._ALLOWED_GROUPBY = _ALLOWED_GROUPBY
+        self._allowed_groupby = _ALLOWED_GROUPBY
         super().__init__(target_nodes, sources, sinks, n_runs)
 
     @classmethod
@@ -55,7 +55,7 @@ class NodeProfiler(Profiler):
         return report
 
     def _print_total_time(self):
-        total = self._estimations_table['time'].sum()
+        total = self._total_estimations_time()
         print("total estimations time"
               " / n_runs: %.9f sec." % (total / self._n_runs))
         print("total estimations time: %.6f sec." % total)
