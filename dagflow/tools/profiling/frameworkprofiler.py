@@ -4,7 +4,8 @@ from timeit import repeat
 from collections.abc import Sequence
 from textwrap import shorten
 
-from pandas import DataFrame, concat
+from pandas import DataFrame, Series, concat
+import numpy
 
 from .profiler import Profiler
 from dagflow.nodes import FunctionNode
@@ -30,10 +31,22 @@ class FrameworkProfiler(Profiler):
                  sources: Sequence[FunctionNode]=[],
                  sinks: Sequence[FunctionNode]=[],
                  n_runs = 100) -> None:
-        self._ALLOWED_GROUPBY = _ALLOWED_GROUPBY
         super().__init__(target_nodes, sources, sinks, n_runs)
+        self._allowed_groupby = _ALLOWED_GROUPBY
+        self.register_agg_func(
+            func=self._t_single_node,
+            aliases=['t_single_by_node', 'single_by_node',
+                     'mean_by_node', 't_mean_by_node'],
+            column_name='t_single_by_node')
         if not (self._sources and self._sinks):
             self._reveal_source_sink()
+
+    def _t_single_node(self, _s: Series) -> Series:
+        """Return mean framework time normilized by one node.
+        This as also an example of user-defined aggregate function
+        """
+        nodes_count = len(self._target_nodes)
+        return Series({'t_single_by_node': numpy.mean(_s) / nodes_count})
 
     def _taint_nodes(self):
         for node in self._target_nodes:
