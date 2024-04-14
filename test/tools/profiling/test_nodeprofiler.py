@@ -89,11 +89,15 @@ def test_make_report_g1():
         profiling.make_report(agg_funcs=['bad_function'])
     assert 'Invalid aggregate function' in str(excinfo.value)
 
-    profiling.make_report(agg_funcs=['count', 'single', 'min'], sort_by='min')
-    profiling.make_report(agg_funcs=['single', 'count', 'min'], sort_by='t_single')
-    profiling.make_report(agg_funcs=['single', 'count', 'min'], sort_by='count')
-    profiling.make_report(agg_funcs=['min', 'count', 'single'], sort_by=None)
-
+    profiling.make_report(agg_funcs=['count', 'single', 'min'],
+                          sort_by='min')
+    profiling.make_report(agg_funcs=['single', 'count', 'min'],
+                          sort_by='t_single')
+    profiling.make_report(agg_funcs=['single', 'count', 'min'],
+                          sort_by='count')
+    profiling.make_report(agg_funcs=['min', 'count', 'single'],
+                          sort_by=None)
+    
 def test_print_report_g1_1():
     g, _ = graph_1()
     target_nodes = g._nodes
@@ -104,8 +108,9 @@ def test_print_report_g1_1():
     profiling.print_report(agg_funcs=['min'], rows=1)
     profiling.print_report(group_by=None, rows=2)
     profiling.print_report(group_by=None, rows=20)
-    profiling.print_report(agg_funcs=['single', 'count', 'sum', 'percentage'],
-                            sort_by='single')
+    profiling.print_report(agg_funcs=['single', 'count',
+                                      'sum', 'percentage'],
+                           sort_by='single')
 
 def test_print_report_g1_2():
     g, _ = graph_1()
@@ -117,4 +122,15 @@ def test_print_report_g1_2():
         profiling.estimate_target_nodes()
         profiling.print_report(agg_funcs=['single', 'count',
                                           'sum', 'percentage'])
+        
+def test_print_report_g1_2():
+    g, _ = graph_1()
+    target_nodes = g._nodes
+    profiling = NodeProfiler(target_nodes, n_runs=n_runs)
+    profiling.estimate_target_nodes()
+
+    profiling.print_report(agg_funcs=['single', 'percentage', 'count'])
+    profiling.print_report(agg_funcs=['count', 't_percentage'])
+    profiling.make_report(agg_funcs=['t_percentage', 'count'])
+
 

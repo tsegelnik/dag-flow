@@ -102,3 +102,13 @@ def test_print_report_g1():
     profiling.estimate_framework_time()
     profiling.print_report(agg_funcs=['single', 'sum', 'count'])
 
+def test_single_by_node_g0():
+    _, nodes = graph_0()
+
+    profiling = FrameworkProfiler(nodes, n_runs=1500)
+    profiling.estimate_framework_time()
+    profiling.print_report(agg_funcs=['count', 't_single', 'single_by_node'])
+    profiling.print_report(agg_funcs=['count', 'single', 't_mean_by_node'])
+
+
+
