@@ -58,4 +58,4 @@ class FunctionNode(Node):
         pass
 
     def _eval(self):
-        return self.fcn()
+        self.fcn()

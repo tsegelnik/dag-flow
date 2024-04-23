@@ -528,11 +528,10 @@ class Node(NodeBase):
             return
         if not self.tainted and not force:
             return
-        ret = self.eval()
+        self.eval()
         self.fd.tainted = False  # self._always_tainted
         if self._auto_freeze:
             self.fd.frozen = True
-        return ret
 
     def _eval(self):
         raise CriticalError("Unimplemented method: use FunctionNode, StaticNode or MemberNode")
@@ -541,12 +540,8 @@ class Node(NodeBase):
         if not self.closed:
             raise UnclosedGraphError("Cannot evaluate the node!", node=self)
         self.fd.being_evaluated = True
-        try:
-            ret = self._eval()
-        except Exception as exc:
-            raise exc
+        self._eval()
         self.fd.being_evaluated = False
-        return ret
 
     def freeze(self):
         if self.frozen:
@@ -572,9 +567,9 @@ class Node(NodeBase):
             return
         self.fd.tainted = True
         self._on_taint(caller)
-        ret = self.touch() if (self._immediate or force) else None
+        if self._immediate or force:
+            self.touch()
         self.taint_children(force=force)
-        return ret
 
     def taint_children(self, **kwargs):
         self.fd.taint_children(**kwargs)
