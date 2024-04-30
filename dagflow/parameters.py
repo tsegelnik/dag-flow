@@ -2,6 +2,7 @@ from collections.abc import Generator, Sequence
 
 from numpy import array, ndarray, zeros_like
 from numpy.typing import ArrayLike, DTypeLike
+from contextlib import suppress
 
 from .exception import InitializationError
 from .labels import inherit_labels
@@ -23,6 +24,7 @@ class Parameter:
         "_common_connectible_output",
         "_connectible_output",
         "_labelfmt",
+        "_stack",
     )
     _parent: "Parameters"
     _idx: int
@@ -32,6 +34,7 @@ class Parameter:
     _common_connectible_output: Output
     _connectible_output: Output
     _labelfmt: str
+    _stack: list[float]
 
     def __init__(
         self,
@@ -82,6 +85,7 @@ class Parameter:
         else:
             self._view = None
             self._connectible_output = None
+        self._stack = []
 
     def __str__(self):
         return f"par v={self.value}"
@@ -114,6 +118,27 @@ class Parameter:
 
     def __rshift__(self, other):
         self._connectible_output >> other
+
+    def push(self, other: float | None = None):
+        self._stack.append(self.value)
+        if other is not None:
+            if not isinstance(other, float):
+                raise RuntimeError(
+                    f"`other` must be float or None, but given {other=}, {type(other)=}"
+                )
+            self.value = other
+        return self.value
+
+    def pop(self):
+        with suppress(IndexError):
+            self.value = self._stack.pop()
+        return self.value
+
+    def __enter__(self) -> float:
+        return self.push()
+
+    def __exit__(self, exc_type, exc_val, exc_tb) -> float:
+        return self.pop()
 
 
 class GaussianParameter(Parameter):
@@ -193,11 +218,13 @@ class GaussianParameter(Parameter):
 
     def to_dict(self, **kwargs) -> dict:
         dct = super().to_dict(**kwargs)
-        dct.update({
-            "central": self.central,
-            "sigma": self.sigma,
-            # 'normvalue': self.normvalue,
-        })
+        dct.update(
+            {
+                "central": self.central,
+                "sigma": self.sigma,
+                # 'normvalue': self.normvalue,
+            }
+        )
         if self.is_correlated:
             dct["flags"] += "C"
         return dct
@@ -219,10 +246,12 @@ class NormalizedGaussianParameter(Parameter):
 
     def to_dict(self, **kwargs) -> dict:
         dct = super().to_dict(**kwargs)
-        dct.update({
-            "central": 0.0,
-            "sigma": 1.0,
-        })
+        dct.update(
+            {
+                "central": 0.0,
+                "sigma": 1.0,
+            }
+        )
         return dct
 
 
