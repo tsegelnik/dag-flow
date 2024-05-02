@@ -113,6 +113,7 @@ def test_parameters_01():
     vals_pop = [2.0, 1.0, val_init]
     for val in vals_pop:
         assert par.pop() == val
+
     with par:
         par.value = 2.0
         assert par.value == 2.0

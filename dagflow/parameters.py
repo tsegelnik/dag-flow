@@ -1,8 +1,8 @@
 from collections.abc import Generator, Sequence
+from contextlib import suppress
 
 from numpy import array, ndarray, zeros_like
 from numpy.typing import ArrayLike, DTypeLike
-from contextlib import suppress
 
 from .exception import InitializationError
 from .labels import inherit_labels
@@ -120,6 +120,7 @@ class Parameter:
         self._connectible_output >> other
 
     def push(self, other: float | None = None):
+        # TODO: NDArray?
         self._stack.append(self.value)
         if other is not None:
             if not isinstance(other, float):
