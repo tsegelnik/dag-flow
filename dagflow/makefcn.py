@@ -14,7 +14,7 @@ def _return_data(node: Node, copy: bool):
 
 
 def makefcn(node: Node, storage: NodeStorage, safe: bool = True):
-    # TODO: search certain parameter by name
+    # TODO: update search of parameters
     def fcn_safe(**kwargs):
         parameters = storage("parameter.all")
         pars = []
@@ -22,7 +22,6 @@ def makefcn(node: Node, storage: NodeStorage, safe: bool = True):
             par = parameters[name]
             if not isinstance(par, Parameter):
                 raise RuntimeError(f"Cannot find a patameter with {name=} in the {storage=}")
-            # TODO: push or set?
             par.push(val)
             pars.append(par)
         node._eval()
@@ -30,10 +29,10 @@ def makefcn(node: Node, storage: NodeStorage, safe: bool = True):
         for par in pars:
             par.pop()
         node._eval()
-        # TODO: eval one more time?
         return res
 
     def fcn_nonsafe(**kwargs):
+        # TODO: update search of parameters
         parameters = storage("parameter.all")
         for name, val in kwargs.items():
             par = parameters[name]
