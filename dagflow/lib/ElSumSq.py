@@ -1,3 +1,7 @@
+from __future__ import annotations
+
+from typing import TYPE_CHECKING
+
 from numba import njit
 from numpy.typing import NDArray
 
@@ -8,6 +12,8 @@ from ..typefunctions import check_has_inputs
 from ..typefunctions import check_inputs_same_dtype
 from ..typefunctions import eval_output_dtype
 
+if TYPE_CHECKING:
+    from ..output import Output
 
 @njit(cache=True)
 def _sumsq(data: NDArray, out: NDArray):
@@ -19,14 +25,17 @@ def _sumsq(data: NDArray, out: NDArray):
 
 class ElSumSq(FunctionNode):
     """Sum of the squared of all the inputs"""
+    __slots__ = ("_result_output",)
+    _result_output: Output
 
     def __init__(self, *args, **kwargs):
         kwargs.setdefault("missing_input_handler", MissingInputAddOne(output_fmt="result"))
         super().__init__(*args, **kwargs)
         self._labels.setdefault("mark", "Σa²")
 
+
     def _fcn(self):
-        out = self.outputs["result"].data
+        out = self._result_output.data
         out[0] = 0.0
         for _input in self.inputs.iter_data():
             _sumsq(_input, out)
@@ -37,3 +46,4 @@ class ElSumSq(FunctionNode):
         check_inputs_same_dtype(self)
         eval_output_dtype(self, AllPositionals, "result")
         self.outputs[0].dd.shape = (1,)
+        self._result_output = self.outputs["result"]

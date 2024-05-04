@@ -1,3 +1,6 @@
+from __future__ import annotations
+from typing import TYPE_CHECKING
+
 from numba import njit
 from numpy import add
 from numpy import copyto
@@ -11,6 +14,9 @@ from ..typefunctions import check_inputs_consistent_square_or_diag
 from ..typefunctions import check_inputs_same_dtype
 from ..typefunctions import copy_input_shape_to_outputs
 from ..typefunctions import eval_output_dtype
+
+if TYPE_CHECKING:
+    from ..output import Output
 
 
 @njit(cache=True)
@@ -28,7 +34,8 @@ def _addtodiag(inarray: NDArray, outmatrix: NDArray):
 class SumMatOrDiag(FunctionNode):
     """Sum of all the inputs together. Inputs are square matrices or diagonals of square matrices"""
 
-    __slots__ = ("_ndim",)
+    __slots__ = ("_ndim", "_result_output")
+    _result_output: Output
     _ndim: int
 
     def __init__(self, *args, **kwargs):
@@ -37,7 +44,7 @@ class SumMatOrDiag(FunctionNode):
         self._functions.update({2: self._fcn2d, 1: self._fcn1d})
 
     def _fcn2d(self):
-        out = self.outputs["result"].data
+        out = self._result_output.data
         inp = self.inputs[0].data
         if len(inp.shape) == 1:
             _settodiag1(inp, out)
@@ -51,7 +58,7 @@ class SumMatOrDiag(FunctionNode):
                     add(_input.data, out, out=out)
 
     def _fcn1d(self):
-        out = self.outputs["result"].data
+        out = self._result_output.data
         copyto(out, self.inputs[0].data)
         if len(self.inputs) > 1:
             for _input in self.inputs[1:]:
@@ -66,11 +73,11 @@ class SumMatOrDiag(FunctionNode):
         eval_output_dtype(self, AllPositionals, "result")
 
         size = self.inputs[0].dd.shape[0]
-        output = self.outputs[0]
+        self._result_output = self.outputs["result"]
         if self._ndim == 2:
-            output.dd.shape = size, size
+            self._result_output.dd.shape = size, size
         elif self._ndim == 1:
-            output.dd.shape = (size,)
+            self._result_output.dd.shape = (size,)
         else:
             assert False
 
