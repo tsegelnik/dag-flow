@@ -66,7 +66,7 @@ class NodeProfiler(Profiler):
                      agg_funcs: Sequence[str] | None=None,
                      sort_by: str | None=None) -> DataFrame:
         report = self.make_report(group_by, agg_funcs, sort_by)
-        print(f"\nIndividual Profilng {hex(id(self))}, "
+        print(f"\nNode Profilng {hex(id(self))}, "
               f"n_runs for each node: {self._n_runs}\n"
               f"sort by: {sort_by or 'default sorting'}, "
               f"max rows displayed: {rows}")
