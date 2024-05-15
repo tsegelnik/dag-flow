@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from collections.abc import Mapping, Sequence
 from contextlib import suppress
-from typing import Literal, TYPE_CHECKING
+from typing import TYPE_CHECKING, Literal
 
 from numpy import printoptions, square
 
@@ -165,6 +165,18 @@ else:
             self.update_style()
 
         @classmethod
+        def from_object(cls, object: Output | Node | Graph, *args, **kwargs) -> GraphDot:
+            match object:
+                case Output():
+                    return cls.from_output(object, *args, **kwargs)
+                case Node():
+                    return cls.from_node(object, *args, **kwargs)
+                case Graph():
+                    return cls.from_graph(object, *args, **kwargs)
+
+            raise RuntimeError("Invalid object")
+
+        @classmethod
         def from_output(cls, output: Output, *args, **kwargs) -> GraphDot:
             return cls.from_node(output.node, *args, **kwargs)
 
@@ -176,7 +188,8 @@ else:
             mindepth: int | None = None,
             maxdepth: int | None = None,
             minsize: int | None = None,
-            **kwargs,
+            keep_direction: bool = False,
+            **kwargs
         ) -> GraphDot:
             gd = cls(None, *args, **kwargs)
             label = [node.name]
@@ -187,36 +200,50 @@ else:
             if minsize is not None:
                 label.append(f"{minsize=:d}")
             gd.set_label(", ".join(label))
-            gd._transform_from_node(node, mindepth=mindepth, maxdepth=maxdepth, minsize=minsize)
-            return gd
-
-        def _transform_from_node(
-            self,
-            node: Node,
-            mindepth: int | None = None,
-            maxdepth: int | None = None,
-            minsize: int | None = None,
-            no_forward: bool = False,
-            no_backward: bool = False,
-        ) -> None:
-            if self._node_is_filtered(node):
-                return
-
-            self._add_nodes_backward_recursive(
+            gd._transform_from_node(
                 node,
-                including_self=True,
                 mindepth=mindepth,
                 maxdepth=maxdepth,
                 minsize=minsize,
-                no_forward=no_forward,
-                no_backward=no_backward,
+                keep_direction=keep_direction
             )
+            return gd
+
+        def _transform_from_node(self, node: Node, **kwargs) -> None:
+            logger.debug(f"Start building graph from node {node.labels.path or node.name}, {kwargs=}")
+            if self._node_is_filtered(node):
+                logger.debug("filtered")
+                return
+
+            self._add_nodes_backward_recursive(node, including_self=True, **kwargs)
+            self._add_nodes_forward_recursive(node, including_self=False, **kwargs)
 
             for nodedag in self._nodes_map_dag:
                 self._add_open_inputs(nodedag)
                 self._add_edges(nodedag)
 
             self.update_style()
+
+        def _add_node_only(
+                self,
+                node: Node,
+                *,
+                mindepth: int | None = None,
+                maxdepth: int | None = None,
+                depth: int = 0,
+                minsize: int | None = None,
+        ) -> bool:
+            if node in self._nodes_map_dag:
+                return False
+            if not num_in_range(depth, mindepth, maxdepth):
+                return False
+
+            if depth > 0 or num_in_range(node.outputs[0].dd.size, minsize):
+                logger.debug("add self")
+                self._add_node(node, depth=depth)
+                return True
+
+            return False
 
         def _add_nodes_backward_recursive(
             self,
@@ -226,29 +253,30 @@ else:
             mindepth: int | None = None,
             maxdepth: int | None = None,
             minsize: int | None = None,
-            no_forward: bool = False,
-            no_backward: bool = False,
+            keep_direction: bool = False,
             depth: int = 0,
             visited_nodes: set[Node] = set(),
         ) -> None:
-            if no_forward and no_backward:
-                raise RuntimeError("May not set no_forward and no_backward simultaneously")
             if self._node_is_filtered(node):
+                logger.debug("filtered")
                 return
             if node not in visited_nodes:
+                logger.debug("visit")
                 visited_nodes.add(node)
 
             if including_self:
-                if node in self._nodes_map_dag:
+                if not self._add_node_only(
+                    node,
+                    mindepth=mindepth,
+                    maxdepth=maxdepth,
+                    depth=depth,
+                    minsize=minsize
+                ):
                     return
-                if not num_in_range(depth, mindepth, maxdepth):
-                    return
-                if depth > 0 or num_in_range(node.outputs[0].dd.size, minsize):
-                    self._add_node(node, depth=depth)
-                else:
-                    return
+
             depth -= 1
-            if not no_backward:
+            logger.debug(f"{depth=}")
+            if depth<=0 or not keep_direction:
                 for input in node.inputs.iter_all():
                     try:
                         parent_node = input.parent_node
@@ -261,19 +289,19 @@ else:
                         mindepth=mindepth,
                         maxdepth=maxdepth,
                         minsize=minsize,
-                        no_forward=no_forward,
+                        keep_direction=keep_direction,
                         visited_nodes=visited_nodes,
                     )
 
-            if not no_forward:
+            if depth>=0 or not keep_direction:
                 self._add_nodes_forward_recursive(
                     node,
                     including_self=False,
                     depth=depth + 1,
-                    no_backward=no_backward,
                     mindepth=mindepth,
                     maxdepth=maxdepth,
                     minsize=minsize,
+                    keep_direction=keep_direction,
                     ignore_visit=True,
                     visited_nodes=visited_nodes,
                 )
@@ -286,10 +314,10 @@ else:
             mindepth: int | None = None,
             maxdepth: int | None = None,
             minsize: int | None = None,
-            no_backward: bool = False,
+            keep_direction: bool = False,
             depth: int = 0,
             visited_nodes: set[Node] = set(),
-            ignore_visit: bool = False,
+            ignore_visit: bool = False
         ) -> None:
             if self._node_is_filtered(node):
                 return
@@ -297,38 +325,41 @@ else:
                 return
             visited_nodes.add(node)
             if including_self:
-                if node in self._nodes_map_dag:
+                if not self._add_node_only(
+                    node,
+                    mindepth=mindepth,
+                    maxdepth=maxdepth,
+                    depth=depth,
+                    minsize=minsize
+                ):
                     return
-                if not num_in_range(depth, mindepth, maxdepth):
-                    return
-                if depth > 0 or num_in_range(node.outputs[0].dd.size, minsize):
-                    self._add_node(node, depth=depth)
-                else:
-                    return
+
             depth += 1
             for output in node.outputs.iter_all():
                 for child_input in output.child_inputs:
-                    if not no_backward:
+                    if depth>=0 or not keep_direction:
                         self._add_nodes_backward_recursive(
                             child_input.node,
                             including_self=True,
                             depth=depth,
+                            keep_direction=keep_direction,
                             mindepth=mindepth,
                             maxdepth=maxdepth,
                             minsize=minsize,
                             visited_nodes=visited_nodes,
                         )
-                    self._add_nodes_forward_recursive(
-                        child_input.node,
-                        including_self=no_backward,
-                        depth=depth,
-                        no_backward=no_backward,
-                        mindepth=mindepth,
-                        maxdepth=maxdepth,
-                        minsize=minsize,
-                        visited_nodes=visited_nodes,
-                        ignore_visit=True,
-                    )
+
+                    if depth<=0 or not keep_direction:
+                        self._add_nodes_forward_recursive(
+                            child_input.node,
+                            depth=depth,
+                            keep_direction=keep_direction,
+                            mindepth=mindepth,
+                            maxdepth=maxdepth,
+                            minsize=minsize,
+                            visited_nodes=visited_nodes,
+                            ignore_visit=True,
+                        )
 
         def _add_node(self, nodedag: Node, *, depth: int | None = None) -> None:
             if nodedag in self._nodes_map_dag or self._node_is_filtered(nodedag):

@@ -231,6 +231,13 @@ class Labels:
         self._mark = value
 
     @property
+    def path(self) -> str | None:
+        try:
+            return self._paths[0]
+        except IndexError:
+            return None
+
+    @property
     def paths(self) -> list[str]:
         return self._paths
 
