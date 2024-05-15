@@ -1,14 +1,17 @@
-from logging import addLevelName
-from logging import DEBUG
-from logging import FileHandler
-from logging import Formatter
-from logging import getLogger
-from logging import INFO
-from logging import Logger
-from logging import StreamHandler
+from logging import (
+    DEBUG,
+    INFO,
+    FileHandler,
+    Formatter,
+    Logger,
+    StreamHandler,
+    addLevelName,
+    getLogger,
+)
 
 # To avoid a creation of duplicates save an instance
 _loggers = {}
+
 
 def get_logger(
     name="dagflow",
@@ -39,11 +42,13 @@ def get_logger(
     _loggers[name] = logger
     return logger
 
+
 def set_level(level, name="dagflow"):
     logger = _loggers[name]
     for handler in logger.handlers:
         handler.setLevel(level)
     logger.setLevel(level)
+
 
 INFO1 = INFO - 1
 INFO2 = INFO - 2
