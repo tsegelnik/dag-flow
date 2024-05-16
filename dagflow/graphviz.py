@@ -433,7 +433,13 @@ else:
                 return
             vnode = self.get_id(output, "_mid")
             self._graph.add_node(
-                vnode, label="", shape="none", width=0, height=0, penwidth=0, weight=10
+                vnode,
+                label="",
+                shape="cds",
+                width=.1,
+                height=.1,
+                color="forestgreen",
+                weight=10
             )
             for input in output.child_inputs:
                 if self._add_edge(nodedag, output, input, vtarget=vnode):
@@ -749,9 +755,11 @@ else:
                     sm2 = square(data).sum()
                     mn = data.min()
                     mx = data.max()
+                    avg = data.mean()
                     block = [
                         f"Σ={sm:.2g}",
                         f"Σ²={sm2:.2g}",
+                        f"avg={avg:.2g}",
                         f"min={mn:.2g}",
                         f"max={mx:.2g}",
                         f"{tainted}",
