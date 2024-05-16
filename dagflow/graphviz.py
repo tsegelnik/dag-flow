@@ -257,8 +257,7 @@ else:
         ) -> None:
             if self._node_is_filtered(node):
                 return
-            if node not in visited_nodes:
-                visited_nodes.add(node)
+            visited_nodes.add(node)
 
             if including_self:
                 if not self._add_node_only(
@@ -270,8 +269,8 @@ else:
                 ):
                     return
 
-            depth -= 1
-            if depth<=0 or not keep_direction:
+            newdepth = depth - 1
+            if newdepth<0 or not keep_direction:
                 for input in node.inputs.iter_all():
                     try:
                         parent_node = input.parent_node
@@ -280,7 +279,7 @@ else:
                     self._add_nodes_backward_recursive(
                         parent_node,
                         including_self=True,
-                        depth=depth,
+                        depth=newdepth,
                         mindepth=mindepth,
                         maxdepth=maxdepth,
                         minsize=minsize,
@@ -288,11 +287,11 @@ else:
                         visited_nodes=visited_nodes,
                     )
 
-            if depth>=0 or not keep_direction:
+            if not keep_direction:
                 self._add_nodes_forward_recursive(
                     node,
                     including_self=False,
-                    depth=depth + 1,
+                    depth=depth,
                     mindepth=mindepth,
                     maxdepth=maxdepth,
                     minsize=minsize,
@@ -329,25 +328,24 @@ else:
                 ):
                     return
 
-            depth += 1
+            newdepth = depth + 1
             for output in node.outputs.iter_all():
                 for child_input in output.child_inputs:
-                    if depth>=0 or not keep_direction:
-                        self._add_nodes_backward_recursive(
-                            child_input.node,
-                            including_self=True,
-                            depth=depth,
-                            keep_direction=keep_direction,
-                            mindepth=mindepth,
-                            maxdepth=maxdepth,
-                            minsize=minsize,
-                            visited_nodes=visited_nodes,
-                        )
+                    self._add_nodes_backward_recursive(
+                        child_input.node,
+                        including_self=True,
+                        depth=newdepth,
+                        keep_direction=keep_direction,
+                        mindepth=mindepth,
+                        maxdepth=maxdepth,
+                        minsize=minsize,
+                        visited_nodes=visited_nodes,
+                    )
 
-                    if depth<=0 or not keep_direction:
+                    if newdepth>0 or not keep_direction:
                         self._add_nodes_forward_recursive(
                             child_input.node,
-                            depth=depth,
+                            depth=newdepth,
                             keep_direction=keep_direction,
                             mindepth=mindepth,
                             maxdepth=maxdepth,
@@ -372,7 +370,7 @@ else:
             if self._node_is_filtered(nodedag):
                 return
             for input in nodedag.inputs.iter_all():
-                if not input.connected() or self._node_is_filtered(input.parent_node):
+                if not input.connected() or self._node_is_filtered(input.parent_node) or self._node_is_missing(input.parent_node):
                     self._add_open_input(input, nodedag)
 
         def _add_open_input(self, input, nodedag):
@@ -437,8 +435,9 @@ else:
             self._graph.add_node(
                 vnode, label="", shape="none", width=0, height=0, penwidth=0, weight=10
             )
-            firstinput = output.child_inputs[0]
-            self._add_edge(nodedag, output, firstinput, vtarget=vnode)
+            for input in output.child_inputs:
+                if self._add_edge(nodedag, output, input, vtarget=vnode):
+                    break
             for input in output.child_inputs:
                 self._add_edge(nodedag, output, input, vsource=vnode)
 
@@ -509,12 +508,11 @@ else:
             vsource: str | None = None,
             vtarget: str | None = None,
             style: dict | None = None,
-        ) -> None:
-            if self._node_is_missing(nodedag):
-                return
+        ) -> bool:
             if self._node_is_missing(input.node):
-                # self._add_open_output()
-                return
+                return False
+            if self._node_is_missing(nodedag):
+                return False
             styledict = style or {}
 
             if vsource is not None:
@@ -542,6 +540,8 @@ else:
                 self._edges[input] = EdgeDef(nodein, None, nodeout, edge)
             else:
                 edgedef.append(edge)
+
+            return True
 
         def _node_is_missing(self, node: Node) -> bool:
             return node not in self._nodes_map_dag
