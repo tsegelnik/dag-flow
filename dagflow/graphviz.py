@@ -212,7 +212,6 @@ else:
         def _transform_from_node(self, node: Node, **kwargs) -> None:
             logger.debug(f"Start building graph from node {node.labels.path or node.name}, {kwargs=}")
             if self._node_is_filtered(node):
-                logger.debug("filtered")
                 return
 
             self._add_nodes_backward_recursive(node, including_self=True, **kwargs)
@@ -239,7 +238,6 @@ else:
                 return False
 
             if depth > 0 or num_in_range(node.outputs[0].dd.size, minsize):
-                logger.debug("add self")
                 self._add_node(node, depth=depth)
                 return True
 
@@ -258,10 +256,8 @@ else:
             visited_nodes: set[Node] = set(),
         ) -> None:
             if self._node_is_filtered(node):
-                logger.debug("filtered")
                 return
             if node not in visited_nodes:
-                logger.debug("visit")
                 visited_nodes.add(node)
 
             if including_self:
@@ -275,7 +271,6 @@ else:
                     return
 
             depth -= 1
-            logger.debug(f"{depth=}")
             if depth<=0 or not keep_direction:
                 for input in node.inputs.iter_all():
                     try:
@@ -515,9 +510,9 @@ else:
             vtarget: str | None = None,
             style: dict | None = None,
         ) -> None:
-            if self._node_is_filtered(nodedag):
+            if self._node_is_missing(nodedag):
                 return
-            if self._node_is_filtered(input.node):
+            if self._node_is_missing(input.node):
                 # self._add_open_output()
                 return
             styledict = style or {}
@@ -547,6 +542,9 @@ else:
                 self._edges[input] = EdgeDef(nodein, None, nodeout, edge)
             else:
                 edgedef.append(edge)
+
+        def _node_is_missing(self, node: Node) -> bool:
+            return node not in self._nodes_map_dag
 
         def _node_is_filtered(self, node: Node) -> bool:
             if node in self._filtered_nodes:
