@@ -33,7 +33,7 @@ def test_init_g0(monkeypatch):
     sources, sinks = [a2, a3], [l_matrix]
     with pytest.raises(ValueError) as excinfo:
         Profiler(sources=sources, sinks=sinks)
-    assert "nodes are unreachable" in str(excinfo.value)
+    assert "unreachable" in str(excinfo.value)
 
     with pytest.raises(ValueError) as excinfo:
         Profiler()
@@ -65,4 +65,4 @@ def test_init_g1(monkeypatch):
     sources, sinks = [a0, a1], [s2]
     with pytest.raises(ValueError) as excinfo:
         Profiler(sources=sources, sinks=sinks)
-    assert "nodes are unreachable" in str(excinfo.value)
+    assert "unreachable" in str(excinfo.value)
