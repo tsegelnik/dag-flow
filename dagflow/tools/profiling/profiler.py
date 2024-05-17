@@ -107,35 +107,48 @@ class Profiler(metaclass=ABCMeta):
             yield input.parent_node
 
     def __check_reachable(self, nodes_gathered):
-        if any(s not in nodes_gathered for s in self._sinks):
-            raise ValueError("Some of the `sinks` nodes are unreachable "
-                             "(no paths from sources)")
+        for sink in self._sinks:
+            if sink not in nodes_gathered:
+                raise ValueError("One of the `sinks` nodes is unreachable:"
+                                 f" {sink} "
+                                 "(no paths from sources)")
 
     def _gather_related_nodes(self) -> set[FunctionNode]:
         """Find all nodes that lie on all possible paths
         between `self._sources` and `self._sinks`
+
+        Modified Depth-first search (DFS) algorithm
+        for multiple sources and sinks
         """
-        nodes_stack = deque()
-        iters_stack = deque()
         related_nodes = set(self._sources)
+        # Deque works well as Stack
+        stack = deque()
+        visited = set()
         for start_node in self._sources:
-            current_iterator = self.__child_nodes_gen(start_node)
+            cur_node = start_node
             while True:
-                try:
-                    node = next(current_iterator)
-                    nodes_stack.append(node)
-                    iters_stack.append(current_iterator)
-                    if node in self._sinks:
-                        related_nodes.update(nodes_stack)
-                        nodes_stack.pop()
-                        current_iterator = iters_stack.pop()
-                    else:
-                        current_iterator = self.__child_nodes_gen(node)
-                except StopIteration:
-                    if len(nodes_stack) == 0:
+                last_in_path = True
+                for ch in self.__child_nodes_gen(cur_node):
+                    in_related = False
+                    if ch in self._sinks:
+                        related_nodes.add(ch)
+                    # if child node in `_sinks` it would be in `related_nodes` already
+                    if ch in related_nodes:
+                        related_nodes.update(stack)
+                        related_nodes.add(cur_node)
+                        in_related = True
+                    if ch not in visited and not in_related:
+                        stack.append(cur_node)
+                        cur_node = ch
+                        last_in_path = False
                         break
-                    nodes_stack.pop()
-                    current_iterator = iters_stack.pop()
+                # no unvisited childs found (`for` loop did not encounter a `break`)
+                else:
+                    visited.add(cur_node)
+                if len(stack) == 0:
+                    break
+                if last_in_path:
+                    cur_node = stack.pop()
         self.__check_reachable(related_nodes)
         return related_nodes
 
