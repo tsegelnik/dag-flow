@@ -43,6 +43,8 @@ class Array(FunctionNode):
         self._mode = mode
         if mark is not None:
             self._labels.setdefault("mark", mark)
+        else:
+            self._labels.setdefault("mark", edges is not None and "h⃗" or meshes is not None and "y⃗" or "a⃗")
         self._data = array(arr, copy=True, dtype=dtype)
 
         if mode == "store":

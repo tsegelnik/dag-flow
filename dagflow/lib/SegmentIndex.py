@@ -44,6 +44,7 @@ class SegmentIndex(FunctionNode):
         **kwargs,
     ) -> None:
         super().__init__(*args, **kwargs, allowed_kw_inputs=("coarse", "fine"))
+        self._labels.setdefault("mark", "[i]")
         if mode not in {"left", "right"}:
             raise InitializationError(
                 f"Argument `mode` must be 'left' or 'right', but given '{mode}'!",

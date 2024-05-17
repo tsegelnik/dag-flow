@@ -20,6 +20,7 @@ class ArraySum(OneToOneNode):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+        self._labels.setdefault("mark", "Σᵢ")
 
     def _typefunc(self) -> None:
         from ..typefunctions import (

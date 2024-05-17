@@ -88,6 +88,7 @@ class Interpolator(FunctionNode):
         **kwargs,
     ) -> None:
         super().__init__(*args, **kwargs, allowed_kw_inputs=("y", "coarse", "fine", "indices"))
+        self._labels.setdefault("mark", "~")
         self._methods = {
             "linear": _linear_interpolation,
             "log": _log_interpolation,
