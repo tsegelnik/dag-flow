@@ -34,7 +34,7 @@ class Parameter:
     _common_connectible_output: Output
     _connectible_output: Output
     _labelfmt: str
-    _stack: list[float]
+    _stack: list[float] | list[int]
 
     def __init__(
         self,
@@ -87,15 +87,15 @@ class Parameter:
             self._connectible_output = None
         self._stack = []
 
-    def __str__(self):
+    def __str__(self) -> str:
         return f"par v={self.value}"
 
     @property
-    def value(self) -> float:
+    def value(self) -> float | int:
         return self._common_output.data[self._idx]
 
     @value.setter
-    def value(self, value: float):
+    def value(self, value: float | int):
         return self._common_output.seti(self._idx, value)
 
     @property
@@ -119,26 +119,25 @@ class Parameter:
     def __rshift__(self, other):
         self._connectible_output >> other
 
-    def push(self, other: float | None = None):
-        # TODO: NDArray?
+    def push(self, other: float | int | None = None) -> float | int:
         self._stack.append(self.value)
         if other is not None:
-            if not isinstance(other, float):
+            if not isinstance(other, (float, int)):
                 raise RuntimeError(
-                    f"`other` must be float or None, but given {other=}, {type(other)=}"
+                    f"`other` must be float|int|None, but given {other=}, {type(other)=}"
                 )
             self.value = other
         return self.value
 
-    def pop(self):
+    def pop(self) -> float | int:
         with suppress(IndexError):
             self.value = self._stack.pop()
         return self.value
 
-    def __enter__(self) -> float:
+    def __enter__(self) -> float | int:
         return self.push()
 
-    def __exit__(self, exc_type, exc_val, exc_tb) -> float:
+    def __exit__(self, exc_type, exc_val, exc_tb) -> float | int:
         return self.pop()
 
 
@@ -163,7 +162,7 @@ class GaussianParameter(Parameter):
         self._sigma_output = sigma_output
         self._normvalue_output = normvalue_output
 
-    def __str__(self):
+    def __str__(self) -> str:
         self.central
         if self.central != 0:
             return (

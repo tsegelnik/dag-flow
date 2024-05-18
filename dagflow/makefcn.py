@@ -28,7 +28,7 @@ def makefcn(node: Node, storage: NodeStorage, safe: bool = True):
         res = _return_data(node, copy=True)
         for par in pars:
             par.pop()
-        node._eval()
+        node.touch()
         return res
 
     def fcn_nonsafe(**kwargs):
@@ -38,9 +38,8 @@ def makefcn(node: Node, storage: NodeStorage, safe: bool = True):
             par = parameters[name]
             if not isinstance(par, Parameter):
                 raise RuntimeError(f"Cannot find a patameter with {name=} in the {storage=}")
-            # TODO: push or set?
-            par.push(val)
-        node._eval()
+            par.value = val
+        node.touch()
         return _return_data(node, copy=False)
 
     return fcn_safe if safe else fcn_nonsafe

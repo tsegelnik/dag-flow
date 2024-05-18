@@ -28,13 +28,15 @@ def test_makefcn_safe(testname):
     res0 = f.outputs[0].data
     LF = makefcn(f, storage, safe=True)
     res1 = LF(a=vals_new[0], b=vals_new[1])
+    res2 = LF()
 
     # pars equal inital values
     assert A.value == vals_in[0]
     assert B.value == vals_in[1]
     # new result differs from the result of LF
-    assert all(res1 == vals_new[0] * x + vals_new[1])
-    assert all(res0 == vals_in[0] * x + vals_in[1])
+    assert all(res1 == (vals_new[0] * x + vals_new[1]))
+    assert all(res0 == (vals_in[0] * x + vals_in[1]))
+    assert all(res2 == res0)
 
     savegraph(graph, f"output/{testname}.png")
 
@@ -59,13 +61,15 @@ def test_makefcn_nonsafe(testname):
     res0c = res0.copy()
     LF = makefcn(f, storage, safe=False)
     res1 = LF(a=vals_new[0], b=vals_new[1])
+    res2 = LF()
 
     # pars equal new values
     assert A.value == vals_new[0]
     assert B.value == vals_new[1]
     # new result is the same as the result of LF
-    assert all(res0c == vals_in[0] * x + vals_in[1])
-    assert all(res1 == vals_new[0] * x + vals_new[1])
+    assert all(res0c == (vals_in[0] * x + vals_in[1]))
+    assert all(res1 == (vals_new[0] * x + vals_new[1]))
     assert all(res1 == res0)
+    assert all(res1 == res2)
 
     savegraph(graph, f"output/{testname}.png")
