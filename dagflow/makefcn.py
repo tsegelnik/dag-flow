@@ -24,7 +24,7 @@ def makefcn(node: Node, storage: NodeStorage, safe: bool = True):
                 raise RuntimeError(f"Cannot find a patameter with {name=} in the {storage=}")
             par.push(val)
             pars.append(par)
-        node._eval()
+        node.touch()
         res = _return_data(node, copy=True)
         for par in pars:
             par.pop()
