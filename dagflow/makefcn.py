@@ -1,4 +1,4 @@
-from collections.abc import Callable
+from collections.abc import Callable, KeysView
 
 from dagflow.node import Node
 from dagflow.parameters import Parameter
@@ -28,7 +28,7 @@ def _find_par(storage: NodeStorage | NestedMKDict, name: str) -> Parameter | Non
 
 
 def _find_pars(
-    storage: NodeStorage | NestedMKDict, par_names: list[str] | tuple[str, ...]
+    storage: NodeStorage | NestedMKDict, par_names: list[str] | tuple[str, ...] | KeysView
 ) -> dict[str, Parameter]:
     res = {}
     for name in par_names:
@@ -46,7 +46,7 @@ def makefcn(
     par_names: list[str] | tuple[str, ...] | None = None,
 ) -> Callable:
     """
-    Retruns a function, which takes the parameters values as arguments
+    Retruns a function, which takes the parameter values as arguments
     and retruns the result of the node evaluation.
 
     :param node: A node, depending (explicitly or implicitly) on the parameters
@@ -86,7 +86,7 @@ def makefcn(
         return _return_data(node, copy=False)
 
     def fcn_safe_with_search(**kwargs):
-        parameters = _find_pars(storage, tuple(kwargs.keys()))
+        parameters = _find_pars(storage, kwargs.keys())
         for name, val in kwargs.items():
             par = parameters[name]
             par.push(val)
@@ -98,7 +98,7 @@ def makefcn(
         return res
 
     def fcn_nonsafe_with_search(**kwargs):
-        parameters = _find_pars(storage, tuple(kwargs.keys()))
+        parameters = _find_pars(storage, kwargs.keys())
         for name, val in kwargs.items():
             par = parameters[name]
             par.value = val
