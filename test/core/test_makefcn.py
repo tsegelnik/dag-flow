@@ -1,4 +1,5 @@
 from numpy import arange
+from pytest import mark
 
 from dagflow.graph import Graph
 from dagflow.graphviz import savegraph
@@ -9,7 +10,8 @@ from dagflow.parameters import Parameters
 from dagflow.storage import NodeStorage
 
 
-def test_makefcn_safe(testname):
+@mark.parametrize("pass_params", (False, True))
+def test_makefcn_safe(testname, pass_params):
     n = 10
     x = arange(n, dtype="d")
     vals_in = [1.0, 2.0]
@@ -26,7 +28,7 @@ def test_makefcn_safe(testname):
         Array("x", x) >> f
 
     res0 = f.outputs[0].data
-    LF = makefcn(f, storage, safe=True)
+    LF = makefcn(f, storage, safe=True, par_names=names if pass_params else None)
     res1 = LF(a=vals_new[0], b=vals_new[1])
     res2 = LF()
 
@@ -41,7 +43,8 @@ def test_makefcn_safe(testname):
     savegraph(graph, f"output/{testname}.png")
 
 
-def test_makefcn_nonsafe(testname):
+@mark.parametrize("pass_params", (False, True))
+def test_makefcn_nonsafe(testname, pass_params):
     n = 10
     x = arange(n, dtype="d")
     vals_in = [1.0, 2.0]
@@ -59,7 +62,7 @@ def test_makefcn_nonsafe(testname):
 
     res0 = f.outputs[0].data
     res0c = res0.copy()
-    LF = makefcn(f, storage, safe=False)
+    LF = makefcn(f, storage, safe=False, par_names=names if pass_params else None)
     res1 = LF(a=vals_new[0], b=vals_new[1])
     res2 = LF()
 
