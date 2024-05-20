@@ -15,28 +15,17 @@ def _return_data(node: Node, copy: bool):
         return (out.data.copy() for out in outputs) if copy else (out.data for out in outputs)
 
 
-def _find_par(storage: NodeStorage | NestedMKDict, name: str) -> Parameter | None:
-    par = None
-    try:
-        par = storage[name]
-    except KeyError:
-        for subkey in storage.keys():
-            par = _find_par(storage.child(subkey), name)
-            if isinstance(par, Parameter):
-                return par
-    return par
+def _find_par_permissive(storage: NodeStorage | NestedMKDict, name: str) -> Parameter:
+    for key, par in storage.walkitems():
+        if key[-1] == name and isinstance(par, Parameter):
+            return par
+    raise RuntimeError(f"Cannot find the parameter '{name}' in the {storage=}!")
 
 
-def _find_pars(
+def _collect_pars_permissive(
     storage: NodeStorage | NestedMKDict, par_names: list[str] | tuple[str, ...] | KeysView
 ) -> dict[str, Parameter]:
-    res = {}
-    for name in par_names:
-        par = _find_par(storage, name)
-        if not isinstance(par, Parameter):
-            raise RuntimeError(f"Cannot find the parameter '{name}' in the {storage=}!")
-        res[name] = par
-    return res
+    return {name: _find_par_permissive(storage, name) for name in par_names}
 
 
 def makefcn(
@@ -64,12 +53,17 @@ def makefcn(
         raise ValueError(
             f"storage must be NodeStorage | NestedMKDict, but given {storage}, {type(storage)=}!"
         )
-    parsdict = _find_pars(storage, par_names) if par_names else {}
+    parsdict = _collect_pars_permissive(storage, par_names) if par_names else {}
 
     def fcn_safe(**kwargs):
         pars = []
         for name, val in kwargs.items():
-            par = parsdict[name]
+            try:
+                par = parsdict[name]
+            except KeyError:
+                raise RuntimeError(
+                    f"There is no parameter '{name}'! Allowed parameters are {parsdict.keys()}"
+                )
             par.push(val)
             pars.append(par)
         node.touch()
@@ -81,12 +75,18 @@ def makefcn(
 
     def fcn_nonsafe(**kwargs):
         for name, val in kwargs.items():
-            parsdict[name].value = val
+            try:
+                par = parsdict[name]
+            except KeyError:
+                raise RuntimeError(
+                    f"There is no parameter '{name}'! Allowed parameters are {parsdict.keys()}"
+                )
+            par.value = val
         node.touch()
         return _return_data(node, copy=False)
 
     def fcn_safe_with_search(**kwargs):
-        parameters = _find_pars(storage, kwargs.keys())
+        parameters = _collect_pars_permissive(storage, kwargs.keys())
         for name, val in kwargs.items():
             par = parameters[name]
             par.push(val)
@@ -98,7 +98,7 @@ def makefcn(
         return res
 
     def fcn_nonsafe_with_search(**kwargs):
-        parameters = _find_pars(storage, kwargs.keys())
+        parameters = _collect_pars_permissive(storage, kwargs.keys())
         for name, val in kwargs.items():
             par = parameters[name]
             par.value = val
