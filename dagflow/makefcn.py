@@ -76,25 +76,32 @@ def makefcn(
     # the dict with parameters found from the presearch
     _parsdict = _collect_pars_permissive(storage, par_names) if par_names else {}
 
-    def fcn_safe_presearch(**kwargs):
-        pars = []
-        for name, val in kwargs.items():
-            par = _get_parameter(name, _parsdict, storage)
-            par.push(val)
-            pars.append(par)
-        node.touch()
-        res = _return_data(node, copy=True)
-        for par in pars:
-            par.pop()
-        node.touch()
-        return res
+    if _parsdict:
 
-    def fcn_nonsafe_presearch(**kwargs):
-        for name, val in kwargs.items():
-            par = _get_parameter(name, _parsdict, storage)
-            par.value = val
-        node.touch()
-        return _return_data(node, copy=False)
+        def fcn_safe_presearch(**kwargs):
+            pars = []
+            for name, val in kwargs.items():
+                par = _get_parameter(name, _parsdict, storage)
+                par.push(val)
+                pars.append(par)
+            node.touch()
+            res = _return_data(node, copy=True)
+            for par in pars:
+                par.pop()
+            node.touch()
+            return res
+
+        def fcn_nonsafe_presearch(**kwargs):
+            for name, val in kwargs.items():
+                par = _get_parameter(name, _parsdict, storage)
+                par.value = val
+            node.touch()
+            return _return_data(node, copy=False)
+
+        return fcn_safe_presearch if safe else fcn_nonsafe_presearch
+
+    # elif not _parsdict
+    # the comment is given just for some clarity between two parts of code
 
     def fcn_safe_runtime_search(**kwargs):
         parameters = _collect_pars_permissive(storage, kwargs.keys())
@@ -118,6 +125,4 @@ def makefcn(
         node.touch()
         return _return_data(node, copy=False)
 
-    if _parsdict:
-        return fcn_safe_presearch if safe else fcn_nonsafe_presearch
     return fcn_safe_runtime_search if safe else fcn_nonsafe_runtime_search
