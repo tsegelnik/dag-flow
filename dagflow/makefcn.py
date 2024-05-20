@@ -19,18 +19,21 @@ def _find_par_permissive(storage: NodeStorage | NestedMKDict, name: str) -> Para
     for key, par in storage.walkitems():
         if key[-1] == name and isinstance(par, Parameter):
             return par
-    raise RuntimeError(f"Cannot find the parameter '{name}' in the {storage=}!")
 
 
 def _collect_pars_permissive(
     storage: NodeStorage | NestedMKDict, par_names: list[str] | tuple[str, ...] | KeysView
 ) -> dict[str, Parameter]:
-    return {name: _find_par_permissive(storage, name) for name in par_names}
+    res = {}
+    for name in par_names:
+        if (par := _find_par_permissive(storage, name)) is not None:
+            res[name] = par
+    return res
 
 
 def makefcn(
     node: Node,
-    storage: NodeStorage | NodeStorage,
+    storage: NodeStorage | NestedMKDict,
     safe: bool = True,
     par_names: list[str] | tuple[str, ...] | None = None,
 ) -> Callable:
@@ -45,7 +48,7 @@ def makefcn(
     :param safe: If `safe=True`, the parameters will be resetted to old values after evaluation.
     If `safe=False`, the parameters will be setted to the new values
     :type safe: bool
-    :param par_names: The names of parameters for changing
+    :param par_names: The short names of the set of parameters for presearch
     :type par_names: list[str] | tuple[str] | None
     :rtype: function
     """
@@ -53,17 +56,31 @@ def makefcn(
         raise ValueError(
             f"storage must be NodeStorage | NestedMKDict, but given {storage}, {type(storage)=}!"
         )
-    parsdict = _collect_pars_permissive(storage, par_names) if par_names else {}
+    # the dict with parameters found from the presearch
+    _parsdict = _collect_pars_permissive(storage, par_names) if par_names else {}
 
-    def fcn_safe(**kwargs):
+    def _get_parameter(
+        name: str, parsdict: dict[str, Parameter], storage: NodeStorage | NestedMKDict
+    ):
+        """
+        Gets a parameter from the parameters dict,
+        which stores the parameters found from the "fuzzy" search,
+        or try to get the parameter from the storage,
+        supposing that the name is the precise key in the storage
+        """
+        try:
+            par = parsdict[name]
+        except KeyError:
+            try:
+                par = storage[name]
+            except KeyError:
+                raise RuntimeError(f"There is no parameter '{name}' in the {storage=}!")
+        return par
+
+    def fcn_safe_presearch(**kwargs):
         pars = []
         for name, val in kwargs.items():
-            try:
-                par = parsdict[name]
-            except KeyError:
-                raise RuntimeError(
-                    f"There is no parameter '{name}'! Allowed parameters are {parsdict.keys()}"
-                )
+            par = _get_parameter(name, _parsdict, storage)
             par.push(val)
             pars.append(par)
         node.touch()
@@ -73,38 +90,35 @@ def makefcn(
         node.touch()
         return res
 
-    def fcn_nonsafe(**kwargs):
+    def fcn_nonsafe_presearch(**kwargs):
         for name, val in kwargs.items():
-            try:
-                par = parsdict[name]
-            except KeyError:
-                raise RuntimeError(
-                    f"There is no parameter '{name}'! Allowed parameters are {parsdict.keys()}"
-                )
+            par = _get_parameter(name, _parsdict, storage)
             par.value = val
         node.touch()
         return _return_data(node, copy=False)
 
-    def fcn_safe_with_search(**kwargs):
+    def fcn_safe_runtime_search(**kwargs):
         parameters = _collect_pars_permissive(storage, kwargs.keys())
+        pars = []
         for name, val in kwargs.items():
-            par = parameters[name]
+            par = _get_parameter(name, parameters, storage)
             par.push(val)
+            pars.append(par)
         node.touch()
         res = _return_data(node, copy=True)
-        for par in parameters.values():
+        for par in pars:
             par.pop()
         node.touch()
         return res
 
-    def fcn_nonsafe_with_search(**kwargs):
+    def fcn_nonsafe_runtime_search(**kwargs):
         parameters = _collect_pars_permissive(storage, kwargs.keys())
         for name, val in kwargs.items():
-            par = parameters[name]
+            par = _get_parameter(name, parameters, storage)
             par.value = val
         node.touch()
         return _return_data(node, copy=False)
 
-    if parsdict:
-        return fcn_safe if safe else fcn_nonsafe
-    return fcn_safe_with_search if safe else fcn_nonsafe_with_search
+    if _parsdict:
+        return fcn_safe_presearch if safe else fcn_nonsafe_presearch
+    return fcn_safe_runtime_search if safe else fcn_nonsafe_runtime_search

@@ -20,7 +20,9 @@ def test_makefcn_safe(testname, pass_params):
 
     with Graph(close=True) as graph:
         pars = Parameters.from_numbers(value=vals_in, names=names)
-        storage = NodeStorage({"parameter": {"all": dict(zip(names, pars._pars))}})
+        storage = NodeStorage(
+            {"parameters": {"all": {"a": pars._pars[0], "b": {"IDX1": pars._pars[1]}}}}
+        )
         f = LinearFunction("ax+b")
         A, B = pars._pars
         A >> f("a")
@@ -28,8 +30,8 @@ def test_makefcn_safe(testname, pass_params):
         Array("x", x) >> f
 
     res0 = f.outputs[0].data
-    LF = makefcn(f, storage, safe=True, par_names=names if pass_params else None)
-    res1 = LF(a=vals_new[0], b=vals_new[1])
+    LF = makefcn(f, storage, safe=True, par_names=("a",) if pass_params else None)
+    res1 = LF(a=vals_new[0], **{"parameters.all.b.IDX1": vals_new[1]})
     res2 = LF()
 
     # pars equal inital values
@@ -49,11 +51,13 @@ def test_makefcn_nonsafe(testname, pass_params):
     x = arange(n, dtype="d")
     vals_in = [1.0, 2.0]
     vals_new = [3.0, 4.0]
-    names = ("a", "b")
+    names = ("a", "b.IDX1")
 
     with Graph(close=True) as graph:
         pars = Parameters.from_numbers(value=vals_in, names=names)
-        storage = NodeStorage({"parameter": {"all": dict(zip(names, pars._pars))}})
+        storage = NodeStorage(
+            {"parameters": {"all": {"a": pars._pars[0], "b": {"IDX1": pars._pars[1]}}}}
+        )
         f = LinearFunction("ax+b")
         A, B = pars._pars
         A >> f("a")
@@ -62,8 +66,8 @@ def test_makefcn_nonsafe(testname, pass_params):
 
     res0 = f.outputs[0].data
     res0c = res0.copy()
-    LF = makefcn(f, storage, safe=False, par_names=names if pass_params else None)
-    res1 = LF(a=vals_new[0], b=vals_new[1])
+    LF = makefcn(f, storage, safe=False, par_names=("a",) if pass_params else None)
+    res1 = LF(a=vals_new[0], **{"parameters.all.b.IDX1": vals_new[1]})
     res2 = LF()
 
     # pars equal new values
