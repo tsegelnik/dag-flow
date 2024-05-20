@@ -77,11 +77,45 @@ def makefcn(
     _parsdict = _collect_pars_permissive(storage, par_names) if par_names else {}
 
     if _parsdict:
+        if safe:
 
-        def fcn_safe_presearch(**kwargs):
-            pars = []
+            def fcn_safe_presearch(**kwargs):
+                pars = []
+                for name, val in kwargs.items():
+                    par = _get_parameter(name, _parsdict, storage)
+                    par.push(val)
+                    pars.append(par)
+                node.touch()
+                res = _return_data(node, copy=True)
+                for par in pars:
+                    par.pop()
+                node.touch()
+                return res
+
+            return fcn_safe_presearch
+
+        # elif not safe
+        # the comment is given just for some clarity between two conditions
+
+        def fcn_nonsafe_presearch(**kwargs):
             for name, val in kwargs.items():
                 par = _get_parameter(name, _parsdict, storage)
+                par.value = val
+            node.touch()
+            return _return_data(node, copy=False)
+
+        return fcn_nonsafe_presearch
+
+    # elif not _parsdict
+    # the comment is given just for some clarity between two parts of code
+
+    if safe:
+
+        def fcn_safe_runtime_search(**kwargs):
+            parameters = _collect_pars_permissive(storage, kwargs.keys())
+            pars = []
+            for name, val in kwargs.items():
+                par = _get_parameter(name, parameters, storage)
                 par.push(val)
                 pars.append(par)
             node.touch()
@@ -91,31 +125,10 @@ def makefcn(
             node.touch()
             return res
 
-        def fcn_nonsafe_presearch(**kwargs):
-            for name, val in kwargs.items():
-                par = _get_parameter(name, _parsdict, storage)
-                par.value = val
-            node.touch()
-            return _return_data(node, copy=False)
+        return fcn_safe_runtime_search
 
-        return fcn_safe_presearch if safe else fcn_nonsafe_presearch
-
-    # elif not _parsdict
-    # the comment is given just for some clarity between two parts of code
-
-    def fcn_safe_runtime_search(**kwargs):
-        parameters = _collect_pars_permissive(storage, kwargs.keys())
-        pars = []
-        for name, val in kwargs.items():
-            par = _get_parameter(name, parameters, storage)
-            par.push(val)
-            pars.append(par)
-        node.touch()
-        res = _return_data(node, copy=True)
-        for par in pars:
-            par.pop()
-        node.touch()
-        return res
+    # elif not safe
+    # the comment is given just for some clarity between two conditions
 
     def fcn_nonsafe_runtime_search(**kwargs):
         parameters = _collect_pars_permissive(storage, kwargs.keys())
@@ -125,4 +138,4 @@ def makefcn(
         node.touch()
         return _return_data(node, copy=False)
 
-    return fcn_safe_runtime_search if safe else fcn_nonsafe_runtime_search
+    return fcn_nonsafe_runtime_search
