@@ -31,6 +31,23 @@ def _collect_pars_permissive(
     return res
 
 
+def _get_parameter(name: str, parsdict: dict[str, Parameter], storage: NodeStorage | NestedMKDict):
+    """
+    Gets a parameter from the parameters dict,
+    which stores the parameters found from the "fuzzy" search,
+    or try to get the parameter from the storage,
+    supposing that the name is the precise key in the storage
+    """
+    try:
+        par = parsdict[name]
+    except KeyError as exc:
+        try:
+            par = storage[name]
+        except KeyError:
+            raise RuntimeError(f"There is no parameter '{name}' in the {storage=}!") from exc
+    return par
+
+
 def makefcn(
     node: Node,
     storage: NodeStorage | NestedMKDict,
@@ -58,24 +75,6 @@ def makefcn(
         )
     # the dict with parameters found from the presearch
     _parsdict = _collect_pars_permissive(storage, par_names) if par_names else {}
-
-    def _get_parameter(
-        name: str, parsdict: dict[str, Parameter], storage: NodeStorage | NestedMKDict
-    ):
-        """
-        Gets a parameter from the parameters dict,
-        which stores the parameters found from the "fuzzy" search,
-        or try to get the parameter from the storage,
-        supposing that the name is the precise key in the storage
-        """
-        try:
-            par = parsdict[name]
-        except KeyError:
-            try:
-                par = storage[name]
-            except KeyError:
-                raise RuntimeError(f"There is no parameter '{name}' in the {storage=}!")
-        return par
 
     def fcn_safe_presearch(**kwargs):
         pars = []
