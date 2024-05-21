@@ -91,6 +91,7 @@ class ManyToOneNode(FunctionNode):
         *args: NodeStorage | Any,
         replicate: Sequence[KeyLike] = ((),),
         allow_skip_inputs: bool = False,
+        skippable_inputs_should_contain: Sequence[KeyLike] | None = None,
         **kwargs,
     ) -> tuple[Node | None, NodeStorage]:
         storage = NodeStorage(default_containers=True)
@@ -135,6 +136,7 @@ class ManyToOneNode(FunctionNode):
             fcn_outer_before=fcn_outer_before,
             fcn_outer_after=fcn_outer_after,
             require_all_left_keys_processed=not allow_skip_inputs,
+            skippable_left_keys_should_contain=skippable_inputs_should_contain
         )
 
         NodeStorage.update_current(storage, strict=True)
