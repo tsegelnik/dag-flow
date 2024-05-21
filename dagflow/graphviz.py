@@ -462,7 +462,7 @@ else:
                 return
 
             for eoutput in output.dd.axes_edges:
-                self._add_edge(eoutput.node, eoutput, output, style={"style": "dotted"})
+                self._add_edge(eoutput.node, eoutput, output, style={"style": "dashed"})
 
         def _add_mesh(self, output: Output) -> None:
             if self._node_is_filtered(output.node):
@@ -621,12 +621,9 @@ else:
 
             if node:
                 if node.frozen:
-                    attrin["style"] = "dashed"
-                    if attr["style"] != "dotted":
-                        attr["style"] = "dashed"
-                    # attr['arrowhead']='tee'
-                elif attr["style"] == "dashed":
-                    attr["style"] = ""
+                    attrin["color"] = "gray"
+                elif attr["color"] == "gray":
+                    del attr["color"]
 
         def update_style(self):
             for nodedag, nodedot in self._nodes_map_dag.items():
