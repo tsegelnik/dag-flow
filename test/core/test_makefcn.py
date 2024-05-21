@@ -37,7 +37,10 @@ def test_makefcn_safe(testname, pass_params, pass_output):
         safe=True,
         par_names=("a",) if pass_params else None,
     )
-    res1 = LF(a=vals_new[0], **{"parameters.all.b.IDX1": vals_new[1]})
+    if pass_params:
+        res1 = LF(a=vals_new[0], **{"parameters.all.b.IDX1": vals_new[1]})
+    else:
+        res1 = LF(**{"parameters.all.a": vals_new[0], "parameters.all.b.IDX1": vals_new[1]})
     res2 = LF()
 
     # pars equal inital values
@@ -79,7 +82,10 @@ def test_makefcn_nonsafe(testname, pass_params, pass_output):
         safe=False,
         par_names=("a",) if pass_params else None,
     )
-    res1 = LF(a=vals_new[0], **{"parameters.all.b.IDX1": vals_new[1]})
+    if pass_params:
+        res1 = LF(a=vals_new[0], **{"parameters.all.b.IDX1": vals_new[1]})
+    else:
+        res1 = LF(**{"parameters.all.a": vals_new[0], "parameters.all.b.IDX1": vals_new[1]})
     res2 = LF()
 
     # pars equal new values
