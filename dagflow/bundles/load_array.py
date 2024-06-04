@@ -25,7 +25,7 @@ _schema_cfg = Schema(
         "name": str,
         "filenames": And(IsFilenameSeqOrFilename, AllFileswithExt(*file_readers.keys())),
         SchemaOptional("dtype", default=None): Or("d", "f"),
-        SchemaOptional("replicate", default=((),)): Or((IsStrSeqOrStr,), [IsStrSeqOrStr]),
+        SchemaOptional("replicate_outputs", default=((),)): Or((IsStrSeqOrStr,), [IsStrSeqOrStr]),
         SchemaOptional("replicate_files", default=((),)): Or((IsStrSeqOrStr,), [IsStrSeqOrStr]),
         SchemaOptional("skip", default=None): And(
             Or(((str,),), [[str]]), Use(lambda l: tuple(set(k) for k in l))
@@ -60,7 +60,7 @@ def load_array(acfg: Mapping | None = None, **kwargs) -> NodeStorage:
 
     name = (cfg["name"],)
     filenames = cfg["filenames"]
-    keys = cfg["replicate"]
+    keys = cfg["replicate_outputs"]
     file_keys = cfg["replicate_files"]
     objectname = cfg["objects"]
     skip = cfg["skip"]

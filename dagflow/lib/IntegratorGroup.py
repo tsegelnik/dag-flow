@@ -83,7 +83,7 @@ class IntegratorGroup(MetaNode):
             "y": "mesh_y",
         },
         labels: Mapping = {},
-        replicate: tuple[KeyLike, ...] = ((),),
+        replicate_outputs: tuple[KeyLike, ...] = ((),),
         dropdim: bool = True,
     ) -> tuple["IntegratorGroup", "NodeStorage"]:
         storage = NodeStorage(default_containers=True)
@@ -100,7 +100,7 @@ class IntegratorGroup(MetaNode):
         outputs[key_sampler + (names["y"],)] = integrators._sampler.outputs["y"]
 
         label_int = labels.get("integrator", {})
-        for key in replicate:
+        for key in replicate_outputs:
             if isinstance(key, str):
                 key = (key,)
             name = ".".join(key_integrator + key)

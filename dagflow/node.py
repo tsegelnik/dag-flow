@@ -151,7 +151,7 @@ class Node(NodeBase):
         cls,
         *,
         name: str,
-        replicate: tuple[KeyLike, ...] = ((),),
+        replicate_outputs: tuple[KeyLike, ...] = ((),),
         **kwargs,
     ) -> tuple[Optional["Node"], "NodeStorage"]:
         from .storage import NodeStorage
@@ -161,11 +161,11 @@ class Node(NodeBase):
         inputs = storage("inputs")
         outputs = storage("outputs")
 
-        if not replicate:
-            raise RuntimeError("`replicate` tuple should have at least one item")
+        if not replicate_outputs:
+            raise RuntimeError("`replicate_outputs` tuple should have at least one item")
 
         tuplename = (name,)
-        for key in replicate:
+        for key in replicate_outputs:
             if isinstance(key, str):
                 key = (key,)
             outname = tuplename + key
@@ -197,7 +197,7 @@ class Node(NodeBase):
 
         NodeStorage.update_current(storage, strict=True)
 
-        if len(replicate) == 1:
+        if len(replicate_outputs) == 1:
             return instance, storage
 
         return None, storage

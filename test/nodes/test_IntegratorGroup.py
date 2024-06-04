@@ -95,7 +95,7 @@ def test_IntegratorGroup_trap(debug_graph):
 #        metaint, _ = IntegratorGroup.replicate(
 #            "2d",
 #            labels={"integrator": {"plottitle": "Integrator", "axis": "integral"}},
-#            replicate=("A", "B", "C"),
+#            replicate_outputs=("A", "B", "C"),
 #        )
 #        assert len(metaint._nodes) == 4  # 1 sampler + 3 integrators
 #

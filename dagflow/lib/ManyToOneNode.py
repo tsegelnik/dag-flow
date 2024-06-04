@@ -65,31 +65,31 @@ class ManyToOneNode(FunctionNode):
         cls,
         *args: NodeStorage | Any,
         name: str,
-        replicate: Sequence[KeyLike] = ((),),
+        replicate_outputs: Sequence[KeyLike] = ((),),
         replicate_inputs: Sequence[KeyLike] | None = None,
         **kwargs,
     ) -> tuple[Node | None, NodeStorage]:
         if args and replicate_inputs is not None:
             raise RuntimeError(
-                "ManyToOneNode.replicate can use either `args` or `replicate_inputs`"
+                "ManyToOneNode.replicate_outputs can use either `args` or `replicate_inputs`"
             )
 
         if args:
-            return cls.replicate_from_args(name, *args, replicate=replicate, **kwargs)
+            return cls.replicate_from_args(name, *args, replicate_outputs=replicate_outputs, **kwargs)
 
         if replicate_inputs:
             return cls.replicate_from_indices(
-                name, replicate=replicate, replicate_inputs=replicate_inputs, **kwargs
+                name, replicate_outputs=replicate_outputs, replicate_inputs=replicate_inputs, **kwargs
             )
 
-        return cls.replicate_from_indices(name, replicate=replicate, **kwargs)
+        return cls.replicate_from_indices(name, replicate_outputs=replicate_outputs, **kwargs)
 
     @classmethod
     def replicate_from_args(
         cls,
         fullname: str,
         *args: NodeStorage | Any,
-        replicate: Sequence[KeyLike] = ((),),
+        replicate_outputs: Sequence[KeyLike] = ((),),
         allow_skip_inputs: bool = False,
         skippable_inputs_should_contain: Sequence[KeyLike] | None = None,
         **kwargs,
@@ -98,8 +98,8 @@ class ManyToOneNode(FunctionNode):
         nodes = storage("nodes")
         outputs = storage("outputs")
 
-        if not replicate:
-            raise RuntimeError("`replicate` tuple should have at least one item")
+        if not replicate_outputs:
+            raise RuntimeError("`replicate_outputs` tuple should have at least one item")
 
         instance = None
         outname = ""
@@ -131,7 +131,7 @@ class ManyToOneNode(FunctionNode):
         keys_left = tuple(tuple(walkkeys(arg)) for arg in args)
         match_keys(
             keys_left,
-            replicate,
+            replicate_outputs,
             fcn,
             fcn_outer_before=fcn_outer_before,
             fcn_outer_after=fcn_outer_after,
@@ -141,7 +141,7 @@ class ManyToOneNode(FunctionNode):
 
         NodeStorage.update_current(storage, strict=True)
 
-        if len(replicate) == 1:
+        if len(replicate_outputs) == 1:
             return instance, storage  # pyright: ignore [reportUnboundVariable]
 
         return None, storage
@@ -151,7 +151,7 @@ class ManyToOneNode(FunctionNode):
         cls,
         fullname: str,
         *,
-        replicate: Sequence[KeyLike] = ((),),
+        replicate_outputs: Sequence[KeyLike] = ((),),
         replicate_inputs: Sequence[KeyLike] = ((),),
         **kwargs,
     ) -> tuple[Node | None, NodeStorage]:
@@ -160,8 +160,8 @@ class ManyToOneNode(FunctionNode):
         outputs = storage("outputs")
         inputs = storage("inputs")
 
-        if not replicate:
-            raise RuntimeError("`replicate` tuple should have at least one item")
+        if not replicate_outputs:
+            raise RuntimeError("`replicate_outputs` tuple should have at least one item")
 
         instance = None
         outname = ""
@@ -190,7 +190,7 @@ class ManyToOneNode(FunctionNode):
 
         match_keys(
             (replicate_inputs,),
-            replicate,
+            replicate_outputs,
             fcn,
             fcn_outer_before=fcn_outer_before,
             fcn_outer_after=fcn_outer_after,
@@ -198,7 +198,7 @@ class ManyToOneNode(FunctionNode):
 
         NodeStorage.update_current(storage, strict=True)
 
-        if len(replicate) == 1:
+        if len(replicate_outputs) == 1:
             return instance, storage  # pyright: ignore [reportUnboundVariable]
 
         return None, storage

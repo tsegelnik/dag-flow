@@ -37,25 +37,25 @@ class OneToOneNode(FunctionNode):
         cls,
         *args: NodeStorage | Any,
         name: str,
-        replicate: Sequence[KeyLike] | None = None,
+        replicate_outputs: Sequence[KeyLike] | None = None,
         **kwargs,
     ) -> tuple[Node | None, NodeStorage]:
         if args:
-            if replicate is not None:
-                raise RuntimeError("OneToOneNode.replicate can use either `args` or `replicate`")
+            if replicate_outputs is not None:
+                raise RuntimeError("OneToOneNode.replicate_outputs can use either `args` or `replicate_outputs`")
 
             return cls.replicate_from_args(name, *args, **kwargs)
 
-        if replicate is None:
-            replicate = ((),)
+        if replicate_outputs is None:
+            replicate_outputs = ((),)
 
-        return cls.replicate_from_indices(name, replicate=replicate, **kwargs)
+        return cls.replicate_from_indices(name, replicate_outputs=replicate_outputs, **kwargs)
 
     @classmethod
     def replicate_from_indices(
         cls,
         name: str,
-        replicate: Sequence[KeyLike] = ((),),
+        replicate_outputs: Sequence[KeyLike] = ((),),
         **kwargs,
     ) -> tuple[Node | None, NodeStorage]:
         storage = NodeStorage(default_containers=True)
@@ -63,10 +63,10 @@ class OneToOneNode(FunctionNode):
         inputs = storage("inputs")
         outputs = storage("outputs")
 
-        if not replicate:
-            raise RuntimeError("`replicate` tuple should have at least one item")
+        if not replicate_outputs:
+            raise RuntimeError("`replicate_outputs` tuple should have at least one item")
 
-        for outkey in replicate:
+        for outkey in replicate_outputs:
             outname = (name,) + outkey
             instance = cls(".".join(outname), **kwargs)
             nodes[outname] = instance
@@ -76,7 +76,7 @@ class OneToOneNode(FunctionNode):
 
         NodeStorage.update_current(storage, strict=True)
 
-        if len(replicate) == 1:
+        if len(replicate_outputs) == 1:
             return instance, storage
 
         return None, storage

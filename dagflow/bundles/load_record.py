@@ -34,7 +34,7 @@ _schema_cfg = Schema(
         "filenames": And(IsFilenameSeqOrFilename, AllFileswithExt(*file_readers.keys())),
         "columns": Or([str], (str,), And(str, lambda s: (s,))),
         SchemaOptional("dtype", default=None): Or("d", "f"),
-        SchemaOptional("replicate", default=((),)): Or((IsStrSeqOrStr,), [IsStrSeqOrStr]),
+        SchemaOptional("replicate_outputs", default=((),)): Or((IsStrSeqOrStr,), [IsStrSeqOrStr]),
         SchemaOptional("replicate_files", default=((),)): Or((IsStrSeqOrStr,), [IsStrSeqOrStr]),
         SchemaOptional("skip", default=None): And(
             Or((Or((str,),{str}),), [Or([str], {str})]), Use(lambda l: tuple(set(k) for k in l))
@@ -71,7 +71,7 @@ def _load_record_data(
 
     name = cfg["name"]
     filenames = cfg["filenames"]
-    keys = cfg["replicate"]
+    keys = cfg["replicate_outputs"]
     file_keys = cfg["replicate_files"]
     objectname = cfg["objects"]
     skip = cfg["skip"]
