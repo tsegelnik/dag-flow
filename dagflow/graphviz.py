@@ -810,7 +810,8 @@ def _format_1d(array: NDArray) -> str:
 def _format_2d(array: NDArray) -> str:
     n0 = array.shape[0]
     if n0<13:
-        return f"[{'\n'.join(map(_format_1d, array))}]"
+        contents = '\n'.join(map(_format_1d, array))
+        return f"[{contents}]"
 
     lead = array[:3]
     nmid = (array.shape[0] - 1) // 2 - 1
