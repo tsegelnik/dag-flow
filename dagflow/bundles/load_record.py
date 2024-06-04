@@ -37,7 +37,7 @@ _schema_cfg = Schema(
         SchemaOptional("replicate", default=((),)): Or((IsStrSeqOrStr,), [IsStrSeqOrStr]),
         SchemaOptional("replicate_files", default=((),)): Or((IsStrSeqOrStr,), [IsStrSeqOrStr]),
         SchemaOptional("skip", default=None): And(
-            Or(((str,),), [[str]]), Use(lambda l: tuple(set(k) for k in l))
+            Or((Or((str,),{str}),), [Or([str], {str})]), Use(lambda l: tuple(set(k) for k in l))
         ),
         SchemaOptional("key_order", default=None): Or((int,), [int]),
         SchemaOptional("objects", default=lambda: lambda st, tpl: st): Or(
