@@ -79,6 +79,7 @@ else:
             nodeattr: dict = {},
             show: Sequence | str = ["type", "mark", "label"],
             filter: Mapping[str, Sequence[str | int]] = {},
+            label: str | None = None,
             **kwargs,
         ):
             if show == "full" or "full" in show:
@@ -136,7 +137,7 @@ else:
                 self._graph.node_attr.update(nodeattr)
 
             if isinstance(graph_or_node, Graph):
-                if label := kwargs.pop("label", graph_or_node.label()):
+                if label:
                     self.set_label(label)
                 self._transform_graph(graph_or_node)
             elif isinstance(graph_or_node, Node):
