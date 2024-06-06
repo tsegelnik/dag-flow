@@ -166,14 +166,14 @@ else:
             self.update_style()
 
         @classmethod
-        def from_object(cls, object: Output | Node | Graph, *args, **kwargs) -> GraphDot:
-            match object:
+        def from_object(cls, obj: Output | Node | Graph, *args, **kwargs) -> GraphDot:
+            match obj:
                 case Output():
-                    return cls.from_output(object, *args, **kwargs)
+                    return cls.from_output(obj, *args, **kwargs)
                 case Node():
-                    return cls.from_node(object, *args, **kwargs)
+                    return cls.from_node(obj, *args, **kwargs)
                 case Graph():
-                    return cls.from_graph(object, *args, **kwargs)
+                    return cls.from_graph(obj, *args, **kwargs)
 
             raise RuntimeError("Invalid object")
 
@@ -630,10 +630,10 @@ else:
             for nodedag, nodedot in self._nodes_map_dag.items():
                 self._set_style_node(nodedag, nodedot.attr)
 
-            for object, edgedef in self._edges.items():
+            for obj, edgedef in self._edges.items():
                 for edge in edgedef.edges:
                     self._set_style_edge(
-                        object, edgedef.nodein.attr, edge.attr, edgedef.nodeout.attr
+                        obj, edgedef.nodein.attr, edge.attr, edgedef.nodeout.attr
                     )
 
         def set_label(self, label: str):
@@ -647,10 +647,10 @@ else:
                 self._graph.layout(prog="dot")
                 self._graph.draw(fname)
 
-        def get_id(self, object, suffix: str = "") -> str:
-            name = type(object).__name__
+        def get_id(self, obj, suffix: str = "") -> str:
+            name = type(obj).__name__
             omap = self._node_id_map.setdefault(name, {})
-            onum = omap.setdefault(object, len(omap))
+            onum = omap.setdefault(obj, len(omap))
             return f"{name}_{onum}{suffix}"
 
         def get_label(self, node: Node, *, depth: int | None = None) -> str:
