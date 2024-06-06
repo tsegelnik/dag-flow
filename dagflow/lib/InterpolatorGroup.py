@@ -75,7 +75,7 @@ class InterpolatorGroup(MetaNode):
         },
         labels: Mapping = {},
         *,
-        replicate: tuple[KeyLike, ...] = ((),),
+        replicate_outputs: tuple[KeyLike, ...] = ((),),
         **kwargs,
     ) -> tuple["InterpolatorGroup", "NodeStorage"]:
         storage = NodeStorage(default_containers=True)
@@ -87,7 +87,7 @@ class InterpolatorGroup(MetaNode):
 
         interpolators._init_indexer(names["indexer"], label=labels.get("indexer", {}))
         label_int = labels.get("interpolator", {})
-        for key in replicate:
+        for key in replicate_outputs:
             if isinstance(key, str):
                 key = (key,)
             name = ".".join((names["interpolator"],) + key)

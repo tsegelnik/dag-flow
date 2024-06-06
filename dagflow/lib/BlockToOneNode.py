@@ -1,19 +1,19 @@
 from collections.abc import Sequence
 from typing import Any
 
-from multikeydict.typing import KeyLike
-from multikeydict.typing import properkey
-from multikeydict.typing import TupleKey
+from multikeydict.typing import KeyLike, TupleKey, properkey
 
 from ..inputhandler import MissingInputAddEach
 from ..node import Node
 from ..nodes import FunctionNode
 from ..storage import NodeStorage
-from ..typefunctions import AllPositionals
-from ..typefunctions import check_has_inputs
-from ..typefunctions import check_inputs_equivalence
-from ..typefunctions import copy_from_input_to_output
-from ..typefunctions import eval_output_dtype
+from ..typefunctions import (
+    AllPositionals,
+    check_has_inputs,
+    check_inputs_equivalence,
+    copy_from_input_to_output,
+    eval_output_dtype,
+)
 
 
 class BlockToOneNode(FunctionNode):
@@ -62,7 +62,7 @@ class BlockToOneNode(FunctionNode):
         cls,
         *args: NodeStorage | Any,
         name: str,
-        replicate: Sequence[KeyLike] = ((),),
+        replicate_outputs: Sequence[KeyLike] = ((),),
         replicate_inputs: Sequence[KeyLike] | None = None,
         **kwargs,
     ) -> tuple[Node | None, NodeStorage]:
@@ -72,24 +72,26 @@ class BlockToOneNode(FunctionNode):
             )
 
         if args:
-            return cls.replicate_from_args(name, *args, replicate=replicate, **kwargs)
+            return cls.replicate_from_args(
+                name, *args, replicate_outputs=replicate_outputs, **kwargs
+            )
 
         if replicate_inputs:
             return cls.replicate_from_indices(
-                name, replicate=replicate, replicate_inputs=replicate_inputs, **kwargs
+                name,
+                replicate_outputs=replicate_outputs,
+                replicate_inputs=replicate_inputs,
+                **kwargs,
             )
 
-        return cls.replicate_from_indices(
-            name, replicate=replicate, **kwargs
-        )
-
+        return cls.replicate_from_indices(name, replicate_outputs=replicate_outputs, **kwargs)
 
     @classmethod
     def replicate_from_args(
         cls,
         fullname: str,
         *args: NodeStorage | Any,
-        replicate: Sequence[KeyLike] = ((),),
+        replicate_outputs: Sequence[KeyLike] = ((),),
         allow_skip_inputs: bool = False,
         **kwargs,
     ) -> tuple[Node | None, NodeStorage]:
@@ -97,8 +99,8 @@ class BlockToOneNode(FunctionNode):
         nodes = storage("nodes")
         outputs = storage("outputs")
 
-        if not replicate:
-            raise RuntimeError("`replicate` tuple should have at least one item")
+        if not replicate_outputs:
+            raise RuntimeError("`replicate_outputs` tuple should have at least one item")
 
         instance = None
         outname = ""
@@ -124,13 +126,13 @@ class BlockToOneNode(FunctionNode):
         def fcn_outer_after(_):
             outputs[outname] = instance.outputs[-1]
 
-        from multikeydict.tools import match_keys
         from multikeydict.nestedmkdict import walkkeys
+        from multikeydict.tools import match_keys
 
         keys_left = tuple(tuple(walkkeys(arg)) for arg in args)
         match_keys(
             keys_left,
-            replicate,
+            replicate_outputs,
             fcn,
             fcn_outer_before=fcn_outer_before,
             fcn_outer_after=fcn_outer_after,
@@ -140,7 +142,7 @@ class BlockToOneNode(FunctionNode):
 
         NodeStorage.update_current(storage, strict=True)
 
-        if len(replicate) == 1:
+        if len(replicate_outputs) == 1:
             return instance, storage  # pyright: ignore [reportUnboundVariable]
 
         return None, storage
@@ -150,7 +152,7 @@ class BlockToOneNode(FunctionNode):
         cls,
         fullname: str,
         *,
-        replicate: Sequence[KeyLike] = ((),),
+        replicate_outputs: Sequence[KeyLike] = ((),),
         replicate_inputs: Sequence[KeyLike] | None = None,
         **kwargs,
     ) -> tuple[Node | None, NodeStorage]:
@@ -159,10 +161,10 @@ class BlockToOneNode(FunctionNode):
         outputs = storage("outputs")
         inputs = storage("inputs")
 
-        if not replicate:
-            raise RuntimeError("`replicate` tuple should have at least one item")
+        if not replicate_outputs:
+            raise RuntimeError("`replicate_outputs` tuple should have at least one item")
         if replicate_inputs is None:
-            replicate_inputs = replicate
+            replicate_inputs = replicate_outputs
         elif not replicate_inputs:
             raise RuntimeError("`replicate_inputs` tuple should have at least one item")
 
@@ -193,7 +195,7 @@ class BlockToOneNode(FunctionNode):
 
         match_keys(
             (replicate_inputs,),
-            replicate,
+            replicate_outputs,
             fcn,
             fcn_outer_before=fcn_outer_before,
             fcn_outer_after=fcn_outer_after,
@@ -201,7 +203,7 @@ class BlockToOneNode(FunctionNode):
 
         NodeStorage.update_current(storage, strict=True)
 
-        if len(replicate) == 1:
+        if len(replicate_outputs) == 1:
             return instance, storage  # pyright: ignore [reportUnboundVariable]
 
         return None, storage

@@ -8,6 +8,7 @@ from logging import (
     addLevelName,
     getLogger,
 )
+from sys import stdout
 
 # To avoid a creation of duplicates save an instance
 _loggers = {}
@@ -35,7 +36,7 @@ def get_logger(
         fh.setFormatter(formatter)
         logger.addHandler(fh)
     if console:
-        ch = StreamHandler()
+        ch = StreamHandler(stdout)
         ch.setLevel(level)
         ch.setFormatter(formatter)
         logger.addHandler(ch)

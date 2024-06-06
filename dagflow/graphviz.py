@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from collections.abc import Mapping, Sequence
 from contextlib import suppress
-from typing import Literal, TYPE_CHECKING
+from typing import TYPE_CHECKING, Literal
 
 from numpy import printoptions, square
 
@@ -79,6 +79,7 @@ else:
             nodeattr: dict = {},
             show: Sequence | str = ["type", "mark", "label"],
             filter: Mapping[str, Sequence[str | int]] = {},
+            label: str | None = None,
             **kwargs,
         ):
             if show == "full" or "full" in show:
@@ -136,7 +137,7 @@ else:
                 self._graph.node_attr.update(nodeattr)
 
             if isinstance(graph_or_node, Graph):
-                if label := kwargs.pop("label", graph_or_node.label()):
+                if label:
                     self.set_label(label)
                 self._transform_graph(graph_or_node)
             elif isinstance(graph_or_node, Node):
@@ -165,6 +166,18 @@ else:
             self.update_style()
 
         @classmethod
+        def from_object(cls, obj: Output | Node | Graph, *args, **kwargs) -> GraphDot:
+            match obj:
+                case Output():
+                    return cls.from_output(obj, *args, **kwargs)
+                case Node():
+                    return cls.from_node(obj, *args, **kwargs)
+                case Graph():
+                    return cls.from_graph(obj, *args, **kwargs)
+
+            raise RuntimeError("Invalid object")
+
+        @classmethod
         def from_output(cls, output: Output, *args, **kwargs) -> GraphDot:
             return cls.from_node(output.node, *args, **kwargs)
 
@@ -176,7 +189,8 @@ else:
             mindepth: int | None = None,
             maxdepth: int | None = None,
             minsize: int | None = None,
-            **kwargs,
+            keep_direction: bool = False,
+            **kwargs
         ) -> GraphDot:
             gd = cls(None, *args, **kwargs)
             label = [node.name]
@@ -187,36 +201,48 @@ else:
             if minsize is not None:
                 label.append(f"{minsize=:d}")
             gd.set_label(", ".join(label))
-            gd._transform_from_node(node, mindepth=mindepth, maxdepth=maxdepth, minsize=minsize)
-            return gd
-
-        def _transform_from_node(
-            self,
-            node: Node,
-            mindepth: int | None = None,
-            maxdepth: int | None = None,
-            minsize: int | None = None,
-            no_forward: bool = False,
-            no_backward: bool = False,
-        ) -> None:
-            if self._node_is_filtered(node):
-                return
-
-            self._add_nodes_backward_recursive(
+            gd._transform_from_node(
                 node,
-                including_self=True,
                 mindepth=mindepth,
                 maxdepth=maxdepth,
                 minsize=minsize,
-                no_forward=no_forward,
-                no_backward=no_backward,
+                keep_direction=keep_direction
             )
+            return gd
+
+        def _transform_from_node(self, node: Node, **kwargs) -> None:
+            logger.debug(f"Start building graph from node {node.labels.path or node.name}, {kwargs=}")
+            if self._node_is_filtered(node):
+                return
+
+            self._add_nodes_backward_recursive(node, including_self=True, **kwargs)
+            self._add_nodes_forward_recursive(node, including_self=False, **kwargs)
 
             for nodedag in self._nodes_map_dag:
                 self._add_open_inputs(nodedag)
                 self._add_edges(nodedag)
 
             self.update_style()
+
+        def _add_node_only(
+                self,
+                node: Node,
+                *,
+                mindepth: int | None = None,
+                maxdepth: int | None = None,
+                depth: int = 0,
+                minsize: int | None = None,
+        ) -> bool:
+            if node in self._nodes_map_dag:
+                return False
+            if not num_in_range(depth, mindepth, maxdepth):
+                return False
+
+            if depth > 0 or num_in_range(node.outputs[0].dd.size, minsize):
+                self._add_node(node, depth=depth)
+                return True
+
+            return False
 
         def _add_nodes_backward_recursive(
             self,
@@ -226,29 +252,26 @@ else:
             mindepth: int | None = None,
             maxdepth: int | None = None,
             minsize: int | None = None,
-            no_forward: bool = False,
-            no_backward: bool = False,
+            keep_direction: bool = False,
             depth: int = 0,
             visited_nodes: set[Node] = set(),
         ) -> None:
-            if no_forward and no_backward:
-                raise RuntimeError("May not set no_forward and no_backward simultaneously")
             if self._node_is_filtered(node):
                 return
-            if node not in visited_nodes:
-                visited_nodes.add(node)
+            visited_nodes.add(node)
 
             if including_self:
-                if node in self._nodes_map_dag:
+                if not self._add_node_only(
+                    node,
+                    mindepth=mindepth,
+                    maxdepth=maxdepth,
+                    depth=depth,
+                    minsize=minsize
+                ):
                     return
-                if not num_in_range(depth, mindepth, maxdepth):
-                    return
-                if depth > 0 or num_in_range(node.outputs[0].dd.size, minsize):
-                    self._add_node(node, depth=depth)
-                else:
-                    return
-            depth -= 1
-            if not no_backward:
+
+            newdepth = depth - 1
+            if newdepth<0 or not keep_direction:
                 for input in node.inputs.iter_all():
                     try:
                         parent_node = input.parent_node
@@ -257,23 +280,23 @@ else:
                     self._add_nodes_backward_recursive(
                         parent_node,
                         including_self=True,
-                        depth=depth,
+                        depth=newdepth,
                         mindepth=mindepth,
                         maxdepth=maxdepth,
                         minsize=minsize,
-                        no_forward=no_forward,
+                        keep_direction=keep_direction,
                         visited_nodes=visited_nodes,
                     )
 
-            if not no_forward:
+            if not keep_direction:
                 self._add_nodes_forward_recursive(
                     node,
                     including_self=False,
-                    depth=depth + 1,
-                    no_backward=no_backward,
+                    depth=depth,
                     mindepth=mindepth,
                     maxdepth=maxdepth,
                     minsize=minsize,
+                    keep_direction=keep_direction,
                     ignore_visit=True,
                     visited_nodes=visited_nodes,
                 )
@@ -286,10 +309,10 @@ else:
             mindepth: int | None = None,
             maxdepth: int | None = None,
             minsize: int | None = None,
-            no_backward: bool = False,
+            keep_direction: bool = False,
             depth: int = 0,
             visited_nodes: set[Node] = set(),
-            ignore_visit: bool = False,
+            ignore_visit: bool = False
         ) -> None:
             if self._node_is_filtered(node):
                 return
@@ -297,38 +320,40 @@ else:
                 return
             visited_nodes.add(node)
             if including_self:
-                if node in self._nodes_map_dag:
+                if not self._add_node_only(
+                    node,
+                    mindepth=mindepth,
+                    maxdepth=maxdepth,
+                    depth=depth,
+                    minsize=minsize
+                ):
                     return
-                if not num_in_range(depth, mindepth, maxdepth):
-                    return
-                if depth > 0 or num_in_range(node.outputs[0].dd.size, minsize):
-                    self._add_node(node, depth=depth)
-                else:
-                    return
-            depth += 1
+
+            newdepth = depth + 1
             for output in node.outputs.iter_all():
                 for child_input in output.child_inputs:
-                    if not no_backward:
-                        self._add_nodes_backward_recursive(
-                            child_input.node,
-                            including_self=True,
-                            depth=depth,
-                            mindepth=mindepth,
-                            maxdepth=maxdepth,
-                            minsize=minsize,
-                            visited_nodes=visited_nodes,
-                        )
-                    self._add_nodes_forward_recursive(
+                    self._add_nodes_backward_recursive(
                         child_input.node,
-                        including_self=no_backward,
-                        depth=depth,
-                        no_backward=no_backward,
+                        including_self=True,
+                        depth=newdepth,
+                        keep_direction=keep_direction,
                         mindepth=mindepth,
                         maxdepth=maxdepth,
                         minsize=minsize,
                         visited_nodes=visited_nodes,
-                        ignore_visit=True,
                     )
+
+                    if newdepth>0 or not keep_direction:
+                        self._add_nodes_forward_recursive(
+                            child_input.node,
+                            depth=newdepth,
+                            keep_direction=keep_direction,
+                            mindepth=mindepth,
+                            maxdepth=maxdepth,
+                            minsize=minsize,
+                            visited_nodes=visited_nodes,
+                            ignore_visit=True,
+                        )
 
         def _add_node(self, nodedag: Node, *, depth: int | None = None) -> None:
             if nodedag in self._nodes_map_dag or self._node_is_filtered(nodedag):
@@ -346,7 +371,7 @@ else:
             if self._node_is_filtered(nodedag):
                 return
             for input in nodedag.inputs.iter_all():
-                if not input.connected() or self._node_is_filtered(input.parent_node):
+                if not input.connected() or self._node_is_filtered(input.parent_node) or self._node_is_missing(input.parent_node):
                     self._add_open_input(input, nodedag)
 
         def _add_open_input(self, input, nodedag):
@@ -409,10 +434,17 @@ else:
                 return
             vnode = self.get_id(output, "_mid")
             self._graph.add_node(
-                vnode, label="", shape="none", width=0, height=0, penwidth=0, weight=10
+                vnode,
+                label="",
+                shape="cds",
+                width=.1,
+                height=.1,
+                color="forestgreen",
+                weight=10
             )
-            firstinput = output.child_inputs[0]
-            self._add_edge(nodedag, output, firstinput, vtarget=vnode)
+            for input in output.child_inputs:
+                if self._add_edge(nodedag, output, input, vtarget=vnode):
+                    break
             for input in output.child_inputs:
                 self._add_edge(nodedag, output, input, vsource=vnode)
 
@@ -431,7 +463,7 @@ else:
                 return
 
             for eoutput in output.dd.axes_edges:
-                self._add_edge(eoutput.node, eoutput, output, style={"style": "dotted"})
+                self._add_edge(eoutput.node, eoutput, output, style={"style": "dashed"})
 
         def _add_mesh(self, output: Output) -> None:
             if self._node_is_filtered(output.node):
@@ -483,12 +515,11 @@ else:
             vsource: str | None = None,
             vtarget: str | None = None,
             style: dict | None = None,
-        ) -> None:
-            if self._node_is_filtered(nodedag):
-                return
-            if self._node_is_filtered(input.node):
-                # self._add_open_output()
-                return
+        ) -> bool:
+            if self._node_is_missing(input.node):
+                return False
+            if self._node_is_missing(nodedag):
+                return False
             styledict = style or {}
 
             if vsource is not None:
@@ -516,6 +547,11 @@ else:
                 self._edges[input] = EdgeDef(nodein, None, nodeout, edge)
             else:
                 edgedef.append(edge)
+
+            return True
+
+        def _node_is_missing(self, node: Node) -> bool:
+            return node not in self._nodes_map_dag
 
         def _node_is_filtered(self, node: Node) -> bool:
             if node in self._filtered_nodes:
@@ -586,21 +622,18 @@ else:
 
             if node:
                 if node.frozen:
-                    attrin["style"] = "dashed"
-                    if attr["style"] != "dotted":
-                        attr["style"] = "dashed"
-                    # attr['arrowhead']='tee'
-                elif attr["style"] == "dashed":
-                    attr["style"] = ""
+                    attrin["color"] = "gray"
+                elif attr["color"] == "gray":
+                    del attr["color"]
 
         def update_style(self):
             for nodedag, nodedot in self._nodes_map_dag.items():
                 self._set_style_node(nodedag, nodedot.attr)
 
-            for object, edgedef in self._edges.items():
+            for obj, edgedef in self._edges.items():
                 for edge in edgedef.edges:
                     self._set_style_edge(
-                        object, edgedef.nodein.attr, edge.attr, edgedef.nodeout.attr
+                        obj, edgedef.nodein.attr, edge.attr, edgedef.nodeout.attr
                     )
 
         def set_label(self, label: str):
@@ -614,10 +647,10 @@ else:
                 self._graph.layout(prog="dot")
                 self._graph.draw(fname)
 
-        def get_id(self, object, suffix: str = "") -> str:
-            name = type(object).__name__
+        def get_id(self, obj, suffix: str = "") -> str:
+            name = type(obj).__name__
             omap = self._node_id_map.setdefault(name, {})
-            onum = omap.setdefault(object, len(omap))
+            onum = omap.setdefault(obj, len(omap))
             return f"{name}_{onum}{suffix}"
 
         def get_label(self, node: Node, *, depth: int | None = None) -> str:
@@ -720,9 +753,11 @@ else:
                     sm2 = square(data).sum()
                     mn = data.min()
                     mx = data.max()
+                    avg = data.mean()
                     block = [
                         f"Σ={sm:.2g}",
                         f"Σ²={sm2:.2g}",
+                        f"avg={avg:.2g}",
                         f"min={mn:.2g}",
                         f"max={mx:.2g}",
                         f"{tainted}",
@@ -757,28 +792,52 @@ def num_in_range(num: int, minnum: int | None, maxnum: int | None = None) -> boo
         return False
     return maxnum is None or num <= maxnum
 
+def _get_lead_mid_trail(array: NDArray) -> Tuple[NDArray, NDArray, NDArray]:
+        lead = array[:3]
+        nmid = (array.shape[0] - 1) // 2 - 1
+        mid = array[nmid : nmid + 3]
+        tail = array[-3:]
+        return lead, mid, tail
+
+
+def _format_1d(array: NDArray) -> str:
+    if array.size < 13:
+        with printoptions(precision=6):
+            return str(array)
+
+    with printoptions(threshold=17, precision=2):
+        lead, mid, tail = _get_lead_mid_trail(array)
+
+        leadstr = str(lead)[:-1]
+        midstr = str(mid)[1:-1]
+        tailstr = str(tail)[1:]
+        return f"{leadstr} ... {midstr} ... {tailstr}"
+
+def _format_2d(array: NDArray) -> str:
+    n0 = array.shape[0]
+    if n0<13:
+        contents = '\n'.join(map(_format_1d, array))
+        return f"[{contents}]"
+
+    lead, mid, tail = _get_lead_mid_trail(array)
+
+    leadstr = _format_2d(lead)[:-1]
+    midstr = _format_2d(mid)[1:-1]
+    tailstr = _format_2d(tail)[1:]
+    return f"{leadstr}\n...\n{midstr}\n...\n{tailstr}"
+
 
 def _format_data(data: NDArray | None, part: bool = False) -> str:
     if data is None:
         return "None"
     if part:
-        if data.size < 12:
+        if data.size<13 or data.ndim>2:
             with printoptions(precision=6):
                 datastr = str(data)
-        elif data.ndim > 1:
-            with printoptions(threshold=17, precision=2):
-                datastr = str(data)
+        elif data.ndim == 1:
+            datastr = _format_1d(data)
         else:
-            with printoptions(threshold=17, precision=2):
-                lead = data[:3]
-                nmid = (len(data) - 1) // 2 - 1
-                mid = data[nmid : nmid + 3]
-                tail = data[-3:]
-
-                leadstr = str(lead)[:-1]
-                midstr = str(mid)[1:-1]
-                tailstr = str(tail)[1:]
-                datastr = f"{leadstr} ... {midstr} ... {tailstr}"
+            datastr = _format_2d(data)
     else:
         datastr = str(data)
     return datastr.replace("\n", "\\l") + "\\l"

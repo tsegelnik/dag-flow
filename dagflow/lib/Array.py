@@ -2,7 +2,7 @@ from collections.abc import Sequence
 from numbers import Number
 
 from multikeydict.nestedmkdict import NestedMKDict
-from numpy import array
+from numpy import array as nparray
 from numpy import full
 from numpy.typing import ArrayLike
 from numpy.typing import DTypeLike
@@ -29,7 +29,7 @@ class Array(FunctionNode):
     def __init__(
         self,
         name: str,
-        arr: NDArray,
+        array: NDArray,
         *,
         mode: str = "store",
         outname: str="array",
@@ -43,7 +43,9 @@ class Array(FunctionNode):
         self._mode = mode
         if mark is not None:
             self._labels.setdefault("mark", mark)
-        self._data = array(arr, copy=True, dtype=dtype)
+        else:
+            self._labels.setdefault("mark", edges is not None and "h⃗" or meshes is not None and "y⃗" or "a⃗")
+        self._data = nparray(array, copy=True, dtype=dtype)
 
         if mode == "store":
             self._output = self._add_output(outname, data=self._data)

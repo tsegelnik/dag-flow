@@ -1,6 +1,4 @@
-from collections.abc import Callable
-from collections.abc import Mapping
-from collections.abc import Sequence
+from collections.abc import Callable, Mapping, Sequence
 from pathlib import Path
 
 from .tools.schema import LoadYaml
@@ -229,6 +227,13 @@ class Labels:
     @mark.setter
     def mark(self, value: str):
         self._mark = value
+
+    @property
+    def path(self) -> str | None:
+        try:
+            return self._paths[0]
+        except IndexError:
+            return None
 
     @property
     def paths(self) -> list[str]:
