@@ -1,8 +1,7 @@
 from __future__ import annotations
 
 from collections.abc import Sequence
-from typing import Any
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 from multikeydict.typing import properkey
 
@@ -75,11 +74,16 @@ class ManyToOneNode(FunctionNode):
             )
 
         if args:
-            return cls.replicate_from_args(name, *args, replicate_outputs=replicate_outputs, **kwargs)
+            return cls.replicate_from_args(
+                name, *args, replicate_outputs=replicate_outputs, **kwargs
+            )
 
         if replicate_inputs:
             return cls.replicate_from_indices(
-                name, replicate_outputs=replicate_outputs, replicate_inputs=replicate_inputs, **kwargs
+                name,
+                replicate_outputs=replicate_outputs,
+                replicate_inputs=replicate_inputs,
+                **kwargs,
             )
 
         return cls.replicate_from_indices(name, replicate_outputs=replicate_outputs, **kwargs)
@@ -125,8 +129,8 @@ class ManyToOneNode(FunctionNode):
         def fcn_outer_after(_):
             outputs[outname] = instance.outputs[0]
 
-        from multikeydict.tools import match_keys
         from multikeydict.nestedmkdict import walkkeys
+        from multikeydict.tools import match_keys
 
         keys_left = tuple(tuple(walkkeys(arg)) for arg in args)
         match_keys(
@@ -136,7 +140,7 @@ class ManyToOneNode(FunctionNode):
             fcn_outer_before=fcn_outer_before,
             fcn_outer_after=fcn_outer_after,
             require_all_left_keys_processed=not allow_skip_inputs,
-            skippable_left_keys_should_contain=skippable_inputs_should_contain
+            skippable_left_keys_should_contain=skippable_inputs_should_contain,
         )
 
         NodeStorage.update_current(storage, strict=True)

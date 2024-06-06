@@ -1,19 +1,19 @@
 from collections.abc import Sequence
 from typing import Any
 
-from multikeydict.typing import KeyLike
-from multikeydict.typing import properkey
-from multikeydict.typing import TupleKey
+from multikeydict.typing import KeyLike, TupleKey, properkey
 
 from ..inputhandler import MissingInputAddEach
 from ..node import Node
 from ..nodes import FunctionNode
 from ..storage import NodeStorage
-from ..typefunctions import AllPositionals
-from ..typefunctions import check_has_inputs
-from ..typefunctions import check_inputs_equivalence
-from ..typefunctions import copy_from_input_to_output
-from ..typefunctions import eval_output_dtype
+from ..typefunctions import (
+    AllPositionals,
+    check_has_inputs,
+    check_inputs_equivalence,
+    copy_from_input_to_output,
+    eval_output_dtype,
+)
 
 
 class BlockToOneNode(FunctionNode):
@@ -72,17 +72,19 @@ class BlockToOneNode(FunctionNode):
             )
 
         if args:
-            return cls.replicate_from_args(name, *args, replicate_outputs=replicate_outputs, **kwargs)
+            return cls.replicate_from_args(
+                name, *args, replicate_outputs=replicate_outputs, **kwargs
+            )
 
         if replicate_inputs:
             return cls.replicate_from_indices(
-                name, replicate_outputs=replicate_outputs, replicate_inputs=replicate_inputs, **kwargs
+                name,
+                replicate_outputs=replicate_outputs,
+                replicate_inputs=replicate_inputs,
+                **kwargs,
             )
 
-        return cls.replicate_from_indices(
-            name, replicate_outputs=replicate_outputs, **kwargs
-        )
-
+        return cls.replicate_from_indices(name, replicate_outputs=replicate_outputs, **kwargs)
 
     @classmethod
     def replicate_from_args(
@@ -124,8 +126,8 @@ class BlockToOneNode(FunctionNode):
         def fcn_outer_after(_):
             outputs[outname] = instance.outputs[-1]
 
-        from multikeydict.tools import match_keys
         from multikeydict.nestedmkdict import walkkeys
+        from multikeydict.tools import match_keys
 
         keys_left = tuple(tuple(walkkeys(arg)) for arg in args)
         match_keys(
