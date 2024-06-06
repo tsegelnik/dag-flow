@@ -792,16 +792,21 @@ def num_in_range(num: int, minnum: int | None, maxnum: int | None = None) -> boo
         return False
     return maxnum is None or num <= maxnum
 
+def _get_lead_mid_trail(array: NDArray) -> Tuple[NDArray, NDArray, NDArray]:
+        lead = array[:3]
+        nmid = (array.shape[0] - 1) // 2 - 1
+        mid = array[nmid : nmid + 3]
+        tail = array[-3:]
+        return lead, mid, tail
+
+
 def _format_1d(array: NDArray) -> str:
     if array.size < 13:
         with printoptions(precision=6):
             return str(array)
 
     with printoptions(threshold=17, precision=2):
-        lead = array[:3]
-        nmid = (array.shape[0] - 1) // 2 - 1
-        mid = array[nmid : nmid + 3]
-        tail = array[-3:]
+        lead, mid, tail = _get_lead_mid_trail(array)
 
         leadstr = str(lead)[:-1]
         midstr = str(mid)[1:-1]
@@ -814,10 +819,7 @@ def _format_2d(array: NDArray) -> str:
         contents = '\n'.join(map(_format_1d, array))
         return f"[{contents}]"
 
-    lead = array[:3]
-    nmid = (array.shape[0] - 1) // 2 - 1
-    mid = array[nmid : nmid + 3]
-    tail = array[-3:]
+    lead, mid, tail = _get_lead_mid_trail(array)
 
     leadstr = _format_2d(lead)[:-1]
     midstr = _format_2d(mid)[1:-1]
