@@ -66,9 +66,10 @@ class NodeProfiler(Profiler):
                      agg_funcs: Sequence[str] | None=None,
                      sort_by: str | None=None) -> DataFrame:
         report = self.make_report(group_by, agg_funcs, sort_by)
-        print(f"\nNode Profilng {hex(id(self))}, "
+        print(f"\nNode Profiling {hex(id(self))}, "
               f"n_runs for each node: {self._n_runs}\n"
-              f"sort by: {sort_by or 'default sorting'}, "
+              f"sort by: `{sort_by or 'default sorting'}`, "
+              f"group by: `{group_by or 'no grouping'}`, "
               f"max rows displayed: {rows}")
         super()._print_table(report, rows)
         self._print_total_time()

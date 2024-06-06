@@ -1,5 +1,5 @@
 # to see output of this file you need use -s flag:
-#       pytest -s ./test/test_profiling.py
+#       pytest -s ./test/tools/test_frameworkprofiler.py
 import types
 from collections import Counter
 

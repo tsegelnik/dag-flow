@@ -1,5 +1,5 @@
 # to see output of this file you need use -s flag:
-#       pytest -s ./test/test_profiling.py
+#       pytest -s ./test/tools/test_nodeprofiler.py
 from collections import Counter
 
 import pytest
@@ -28,7 +28,7 @@ def check_inputs_taint(node: FunctionNode):
 
 def test_estimate_node_g0():
     _, nodes = graph_0()
-    print(f"(graph 0) NodeProfiling.estimate_node (n_runs={n_runs}):")
+    print(f"(graph 0) NodeProfiler.estimate_node (n_runs={n_runs}):")
     for node in nodes:
         print(f"\t{node.name} estimated with:",
                 NodeProfiler.estimate_node(node, n_runs))
@@ -36,7 +36,7 @@ def test_estimate_node_g0():
 
 def test_estimate_node_g1():
     _, nodes = graph_1()
-    print(f"(graph 1) NodeProfiling.estimate_node (n_runs={n_runs}):")
+    print(f"(graph 1) NodeProfiler.estimate_node (n_runs={n_runs}):")
     for node in nodes:
         print(f"\t{node.name} estimated with:",
                 NodeProfiler.estimate_node(node, n_runs))
