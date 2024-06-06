@@ -1,5 +1,5 @@
 # to see estimations results need use -s flag:
-#       pytest -s ./test/test_profiling.py
+#       pytest -s ./test/tools/test_delaynode.py
 
 import pytest
 
@@ -9,7 +9,7 @@ from dagflow.tools.profiling import NodeProfiler, FrameworkProfiler
 from dagflow.tools.profiling import DelayNode
 
 @pytest.mark.skip(reason="too slow to test every time")
-def test_one_sleepy_node():
+def test_one_delay_node():
     with Graph(close=True) as graph:
         sl = DelayNode("SL0", sleep_time=0.25)
     sl['result'].data
@@ -30,7 +30,7 @@ def _gen_graph(sleep_time: float):
     return graph, [sl0, sl1, sl2]
 
 @pytest.mark.skip(reason="too slow to test every time")
-def test_three_sleepy_nodes():
+def test_three_delay_nodes():
     for x in (0.001, 0.1, 0.25, 0.5, 1):
         g, nodes = _gen_graph(sleep_time=x)
         print("\nsleep_time =", x)

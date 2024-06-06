@@ -111,10 +111,11 @@ class FrameworkProfiler(Profiler):
                      agg_funcs: Sequence[str] | None=None,
                      sort_by: str | None=None) -> DataFrame:
         report = self.make_report(group_by, agg_funcs, sort_by)
-        print(f"\nFramework Profling {hex(id(self))}, "
+        print(f"\nFramework Profiling {hex(id(self))}, "
               f"n_runs for given subgraph: {self._n_runs}, "
               f"nodes in subgraph: {len(self._target_nodes)}\n"
               f"sort by: `{sort_by or 'default sorting'}`, "
+              f"group by: `{group_by or 'no grouping'}`, "
               f"max rows displayed: {rows}")
         super()._print_table(report, rows)
         return report
