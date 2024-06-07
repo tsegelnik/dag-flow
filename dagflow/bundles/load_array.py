@@ -54,7 +54,9 @@ def _validate_cfg(cfg):
         return _schema_cfg.validate(cfg)
 
 
-def load_array(acfg: Mapping | None = None, **kwargs) -> NodeStorage:
+def load_array(
+    acfg: Mapping | None = None, *, array_kwargs: dict = Mapping, **kwargs
+) -> NodeStorage:
     acfg = dict(acfg or {}, **kwargs)
     cfg = _validate_cfg(acfg)
 
@@ -80,7 +82,7 @@ def load_array(acfg: Mapping | None = None, **kwargs) -> NodeStorage:
     storage = NodeStorage(default_containers=True)
     with storage:
         for key, array in data.items():
-            Array.make_stored(name+key, array)
+            Array.make_stored(name + key, array, **array_kwargs)
 
     NodeStorage.update_current(storage, strict=True)
 
