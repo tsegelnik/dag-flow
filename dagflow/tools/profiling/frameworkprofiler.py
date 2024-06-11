@@ -37,7 +37,9 @@ class FrameworkProfiler(Profiler):
             func=self._t_single_node,
             aliases=['t_single_by_node', 'single_by_node',
                      'mean_by_node', 't_mean_by_node'],
-            column_name='t_single_by_node')
+            column_name='t_single_by_node'
+            )
+        self._default_agg_funcs = ("count", "single", "sum", "t_single_by_node")
         if not (self._sources and self._sinks):
             self._reveal_source_sink()
 
