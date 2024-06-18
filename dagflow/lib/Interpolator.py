@@ -4,7 +4,7 @@ from typing import TYPE_CHECKING, Literal
 
 from numba import float64, int32, njit, void
 from numba.core.types import FunctionType
-from numpy import exp, float_, integer, log
+from numpy import exp, double, integer, log
 from numpy.typing import NDArray
 
 from ..exception import InitializationError
@@ -216,11 +216,11 @@ class Interpolator(FunctionNode):
 )
 def _interpolation(
     method: Callable[[float, float, float, float, float], float],
-    coarse: NDArray[float_],
-    yc: NDArray[float_],
-    fine: NDArray[float_],
+    coarse: NDArray[double],
+    yc: NDArray[double],
+    fine: NDArray[double],
     indices: NDArray[integer],
-    result: NDArray[float_],
+    result: NDArray[double],
     tolerance: float,
     underflow: int,
     overflow: int,
