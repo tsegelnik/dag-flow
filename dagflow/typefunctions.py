@@ -1,13 +1,10 @@
 from __future__ import annotations
 
-from collections.abc import Callable
-from collections.abc import Sequence
+from collections.abc import Callable, Sequence
 from itertools import repeat
 from typing import TYPE_CHECKING
-from typing import Union
 
-from numpy import issubdtype
-from numpy import result_type
+from numpy import allclose, issubdtype, result_type
 from numpy.typing import DTypeLike
 
 from .exception import TypeFunctionError
@@ -18,7 +15,7 @@ if TYPE_CHECKING:
     from .node import Node
 
 AllPositionals = slice(None)
-LimbKey = Union[str, int, slice, Sequence]
+LimbKey = str | int | slice | Sequence
 
 try:
     zip((), (), strict=True)
@@ -371,8 +368,11 @@ def check_inputs_equivalence(
     check_dtype: bool = True,
     check_shape: bool = True,
     check_edges: bool = True,
+    check_edges_contents: bool = False,
     check_meshes: bool = False,
+    check_meshes_contents: bool = False,
     broadcastable: bool = False,
+    atol: float = 1.0e-14,
 ):
     """Checking the equivalence of the dtype, shape, axes_edges and axes_meshes of all the inputs"""
     inputs = tuple(node.inputs.iter(inputkey))
@@ -395,10 +395,17 @@ def check_inputs_equivalence(
             )
         else:
             shape_inconsistent = False
+
         edges_inconsistent = check_edges and dd.axes_edges and edges and dd.axes_edges != edges
+        if edges_inconsistent and check_edges_contents:
+            edges_inconsistent = not all(allclose(a.data, b.data, atol=atol) for a, b in zip(edges, dd.axes_edges))
+
         meshes_inconsistent = (
             check_meshes and dd.axes_meshes and meshes and dd.axes_meshes != meshes
         )
+        if meshes_inconsistent and check_meshes_contents:
+            meshes_inconsistent = not all(allclose(a.data, b.data, atol=atol) for a, b in zip(meshes, dd.axes_meshes))
+
         if any(
             (
                 dtype_inconsistent,
