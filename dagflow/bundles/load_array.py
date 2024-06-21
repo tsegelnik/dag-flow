@@ -1,7 +1,7 @@
 from collections.abc import Callable, Mapping
 from pathlib import Path
 
-from numpy import asfarray
+from numpy import asarray
 from schema import And
 from schema import Optional as SchemaOptional
 from schema import Or, Schema, Use
@@ -77,7 +77,7 @@ def load_array(
         logger.log(INFO3, f"Process {skey}")
 
         array = FileReader.array[filename, objectname(skey, key)]
-        data[key] = asfarray(array, dtype)
+        data[key] = asarray(array, dtype)
 
     storage = NodeStorage(default_containers=True)
     with storage:
