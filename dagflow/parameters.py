@@ -83,6 +83,7 @@ class Parameter:
             self._value_output = self._view.outputs[0]
             self._connectible_output = self._value_output
         else:
+            self._idx = idx
             self._view = None
             self._connectible_output = None
         self._stack = []
