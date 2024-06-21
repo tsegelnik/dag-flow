@@ -38,10 +38,11 @@ def _fillna(df: DataFrame, columnname: str, replacement: str):
     if not column.isnull().values.any():
         return
 
-    if column.dtype!='O':
-        column.astype('O', copy=False)
+    # if column.dtype!='O':
+    #     df[columnname] = (column:=column.astype('O', copy=False))
 
-    column.fillna(replacement, inplace=True)
+    newcol = column.fillna(replacement)
+    df[columnname] = newcol
 
 class NodeStorage(NestedMKDict):
     __slots__ = ("_remove_connected_inputs",)
@@ -251,8 +252,9 @@ class NodeStorage(NestedMKDict):
         df = DataFrame(dct, columns=columns)
 
         df.insert(4, "sigma_rel_perc", df["sigma"])
-        df["sigma_rel_perc"] = df["sigma"] / df["central"] * 100.0
-        df["sigma_rel_perc"].mask(df["central"] == 0, nan, inplace=True)
+        sigma_rel_perc = df["sigma"] / df["central"] * 100.0
+        sigma_rel_perc[df["central"]==0] = nan
+        df["sigma_rel_perc"] = sigma_rel_perc
 
         for key in ("central", "sigma", "sigma_rel_perc"):
             if df[key].isna().all():
