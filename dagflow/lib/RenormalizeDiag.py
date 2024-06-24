@@ -10,13 +10,14 @@ from ..typefunctions import AllPositionals
 from ..typefunctions import check_input_shape
 from ..typefunctions import check_input_square
 from ..typefunctions import check_inputs_equivalence
-from .OneToOneNode import OneToOneNode
+from ..typefunctions import eval_output_dtype
+from ..nodes import FunctionNode
 
 if TYPE_CHECKING:
     from ..input import Input
 
 
-class RenormalizeDiag(OneToOneNode):
+class RenormalizeDiag(FunctionNode):
     __slots__ = ("_mode", "_ndiag", "_scale")
 
     _mode: str
@@ -58,10 +59,11 @@ class RenormalizeDiag(OneToOneNode):
             _renorm_offdiag_numba(input.data, output._data, scale, self._ndiag)
 
     def _typefunc(self) -> None:
-        super()._typefunc()
         check_input_shape(self, "scale", (1,))
         check_input_square(self, 0)
         check_inputs_equivalence(self, AllPositionals, check_dtype=True, check_shape=True)
+        eval_output_dtype(self, AllPositionals, "result")
+        self.outputs[0].dd.shape = self.inputs[0].dd.shape
         self.fcn = self._functions[self._mode]
 
 
