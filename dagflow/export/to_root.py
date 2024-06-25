@@ -1,33 +1,25 @@
-from typing import Any
+from __future__ import annotations
+
 from typing import TYPE_CHECKING
-from typing import Union
+
+from numpy import allclose, array, dtype, frombuffer
+from numpy.typing import NDArray
 
 from multikeydict.visitor import NestedMKDictVisitor
-from numpy import allclose
-from numpy import array
-from numpy import dtype
-from numpy import frombuffer
-from numpy.typing import NDArray
-from ROOT import TFile
-from ROOT import TGraph
-from ROOT import TGraph2D
-from ROOT import TH1D
-from ROOT import TH2D
 
-from ..logger import INFO1
-from ..logger import INFO2
-from ..logger import logger
+from ..logger import INFO1, INFO2, logger
 from ..output import Output
 
 if TYPE_CHECKING:
     from contextlib import suppress
     from pathlib import Path
+    from typing import Any
 
     with suppress(ImportError):
-        from ROOT import TH1, TH2, TDirectory, TObject
+        from ROOT import TH1, TH1D, TH2, TH2D, TDirectory, TFile, TObject
 
 
-def to_root(output: Output | Any) -> dict[str, "TObject"]:
+def to_root(output: Output | Any) -> dict[str, TObject]:
     rets = {}
     if not isinstance(output, Output):
         return rets
@@ -64,13 +56,13 @@ def edges_to_args(edges: NDArray, *, rtol: float = 1.0e-9) -> tuple:
     return edges.size - 1, edges
 
 
-def get_buffer_hist1(hist: "TH1") -> NDArray:
+def get_buffer_hist1(hist: TH1) -> NDArray:
     buf = hist.GetArray()
     buf = frombuffer(buf, dtype(buf.typecode), hist.GetNbinsX() + 2)
     return buf[1:-1]
 
 
-def get_buffer_hist2(hist: "TH2") -> NDArray:
+def get_buffer_hist2(hist: TH2) -> NDArray:
     nx, ny = hist.GetNbinsX(), hist.GetNbinsY()
     buf = hist.GetArray()
     res = frombuffer(buf, dtype(buf.typecode), (nx + 2) * (ny + 2)).reshape((ny + 2, nx + 2))
@@ -78,7 +70,9 @@ def get_buffer_hist2(hist: "TH2") -> NDArray:
     return res[1 : ny + 1, 1 : nx + 1].T
 
 
-def to_TH1(output: "Output") -> "TH1D":
+def to_TH1(output: Output) -> TH1D:
+    from ROOT import TH1D
+
     data = _buffer_clean(output.data)
     labels = output.labels
 
@@ -94,7 +88,9 @@ def to_TH1(output: "Output") -> "TH1D":
     return hist
 
 
-def to_TH2(output: "Output") -> "TH2D":
+def to_TH2(output: Output) -> TH2D:
+    from ROOT import TH2D
+
     data = _buffer_clean(output.data)
     labels = output.labels
 
@@ -113,6 +109,8 @@ def to_TH2(output: "Output") -> "TH2D":
 
 
 def to_TGraph(output):
+    from ROOT import TGraph
+
     labels = output.labels
 
     x = _buffer_clean(output.dd.axes_meshes[0].data)
@@ -129,6 +127,8 @@ def to_TGraph(output):
 
 
 def to_TGraph2(output):
+    from ROOT import TGraph2D
+
     labels = output.labels
 
     x = _buffer_clean(output.dd.axes_meshes[0].data)
@@ -148,12 +148,12 @@ def to_TGraph2(output):
 
 class ExportToRootVisitor(NestedMKDictVisitor):
     __slots__ = ("_file", "_cwd", "_prevd", "_level")
-    _file: "TFile"
+    _file: TFile
     _prevd: list["TDirectory"]
-    _cwd: "TDirectory"
+    _cwd: TDirectory
     _level: int
 
-    def __init__(self, filename: Union["Path", str]):
+    def __init__(self, filename: "Path" | str):
         from ROOT import TFile
 
         filename = str(filename)

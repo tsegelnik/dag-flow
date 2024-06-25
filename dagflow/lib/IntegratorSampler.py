@@ -1,23 +1,19 @@
-from typing import Literal
-from typing import TYPE_CHECKING
+from __future__ import annotations
 
-from numpy import empty
-from numpy import errstate
-from numpy import integer
-from numpy import linspace
-from numpy import matmul
-from numpy import meshgrid
-from numpy import newaxis
+from typing import TYPE_CHECKING, Literal
+
+from numpy import empty, errstate, integer, linspace, matmul, meshgrid, newaxis
 from numpy.polynomial.legendre import leggauss
-from numpy.typing import DTypeLike
-from numpy.typing import NDArray
+from numpy.typing import DTypeLike, NDArray
 
 from ..exception import InitializationError
 from ..nodes import FunctionNode
-from ..typefunctions import check_input_dimension
-from ..typefunctions import check_input_edges_dim
-from ..typefunctions import check_input_subtype
-from ..typefunctions import check_inputs_number
+from ..typefunctions import (
+    check_input_dimension,
+    check_input_edges_dim,
+    check_input_subtype,
+    check_inputs_number,
+)
 
 if TYPE_CHECKING:
     from ..input import Input
@@ -41,8 +37,7 @@ def _gl_sampler(orders: NDArray, sample: NDArray, weights: NDArray, edges: NDArr
         ) = leggauss(n)
         # transforms to the original range [a, b]
         sample[offset : offset + n] = 0.5 * (
-            sample[offset : offset + n] * (edges[i + 1] - edges[i])
-            + (edges[i + 1] + edges[i])
+            sample[offset : offset + n] * (edges[i + 1] - edges[i]) + (edges[i + 1] + edges[i])
         )
         weights[offset : offset + n] *= 0.5 * (edges[i + 1] - edges[i])
         # NOTE: the operations above may allocate additional memory in runtime!
@@ -82,11 +77,11 @@ class IntegratorSampler(FunctionNode):
     _align: Literal["left", "center", "right"] | None
     __bufferX: NDArray
     __bufferY: NDArray
-    _ordersX: "Input"
-    _ordersY: "Input"
-    _weights: "Output"
-    _x: "Output"
-    _y: "Output"
+    _ordersX: Input
+    _ordersY: Input
+    _weights: Output
+    _x: Output
+    _y: Output
 
     def __init__(
         self,

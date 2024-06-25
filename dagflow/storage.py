@@ -339,7 +339,7 @@ class NodeStorage(NestedMKDict):
     def current() -> NodeStorage | None:
         return _context_storage[-1] if _context_storage else None
 
-    def __enter__(self) -> "NodeStorage":
+    def __enter__(self) -> NodeStorage:
         _context_storage.append(self)
         return self
 
@@ -431,10 +431,10 @@ class PlotVisitor(NestedMKDictVisitor):
 
     def _makefigure(
         self, key: TupleKey, *, force_new: bool = False
-    ) -> tuple["Axes", tuple[str] | None, str | None, bool]:
+    ) -> tuple[Axes, tuple[str] | None, str | None, bool]:
         from matplotlib.pyplot import sca, subplots
 
-        def mkfig(storekey: TupleKey | None = None) -> "Axes":
+        def mkfig(storekey: TupleKey | None = None) -> Axes:
             fig, ax = subplots(1, 1)
             if storekey is not None:
                 self._active_figures[tuple(storekey)] = fig

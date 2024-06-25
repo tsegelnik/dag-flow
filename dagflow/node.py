@@ -1,33 +1,34 @@
-from collections.abc import Callable
-from collections.abc import Mapping
-from collections.abc import Sequence
-from typing import Any
-from typing import Optional
+from __future__ import annotations
+
 from typing import TYPE_CHECKING
 from weakref import ref as weakref
-from weakref import ReferenceType
 
 from multikeydict.typing import KeyLike
 
-from .exception import AllocationError
-from .exception import ClosedGraphError
-from .exception import ClosingError
-from .exception import CriticalError
-from .exception import DagflowError
-from .exception import InitializationError
-from .exception import OpeningError
-from .exception import ReconnectionError
-from .exception import UnclosedGraphError
+from .exception import (
+    AllocationError,
+    ClosedGraphError,
+    ClosingError,
+    CriticalError,
+    DagflowError,
+    InitializationError,
+    OpeningError,
+    ReconnectionError,
+    UnclosedGraphError,
+)
 from .flagsdescriptor import FlagsDescriptor
 from .input import Input
 from .iter import IsIterable
 from .labels import Labels
-from .logger import get_logger
-from .logger import Logger
+from .logger import Logger, get_logger
 from .nodebase import NodeBase
 from .output import Output
 
 if TYPE_CHECKING:
+    from collections.abc import Callable, Mapping, Sequence
+    from typing import Any
+    from weakref import ReferenceType
+
     from .graph import Graph
     from .metanode import MetaNode
     from .storage import NodeStorage
@@ -51,7 +52,7 @@ class Node(NodeBase):
     _name: str
     _labels: Labels
     _allowed_kw_inputs: tuple[str, ...]
-    _graph: Optional["Graph"]
+    _graph: Graph | None
     _exception: str | None
     _logger: Logger
 
@@ -69,7 +70,7 @@ class Node(NodeBase):
         name,
         *,
         label: str | dict | None = None,
-        graph: Optional["Graph"] = None,
+        graph: Graph | None = None,
         debug: bool | None = None,
         logger: Any | None = None,
         missing_input_handler: Callable | None = None,
@@ -124,7 +125,7 @@ class Node(NodeBase):
     @classmethod
     def make_stored(
         cls, name: str, *args, label_from: Mapping | None = None, **kwargs
-    ) -> tuple[Optional["Node"], "NodeStorage"]:
+    ) -> tuple[Node | None, "NodeStorage"]:
         from multikeydict.nestedmkdict import NestedMKDict  # fmt: skip
         if label_from is not None:
             label_from = NestedMKDict(label_from, sep=".")
@@ -153,7 +154,7 @@ class Node(NodeBase):
         name: str,
         replicate_outputs: tuple[KeyLike, ...] = ((),),
         **kwargs,
-    ) -> tuple[Optional["Node"], "NodeStorage"]:
+    ) -> tuple[Node | None, "NodeStorage"]:
         from .storage import NodeStorage
 
         storage = NodeStorage(default_containers=True)
@@ -222,11 +223,11 @@ class Node(NodeBase):
         return self._exception
 
     @property
-    def metanode(self) -> "MetaNode":
+    def metanode(self) -> MetaNode:
         return self._metanode and self._metanode()
 
     @metanode.setter
-    def metanode(self, value: "MetaNode"):
+    def metanode(self, value: MetaNode):
         if self._metanode is not None:
             raise RuntimeError("MetaNode may be set only once")
         self._metanode = weakref(value)

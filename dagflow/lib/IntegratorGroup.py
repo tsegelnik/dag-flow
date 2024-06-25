@@ -1,4 +1,5 @@
-from collections.abc import Mapping
+from __future__ import annotations
+
 from typing import TYPE_CHECKING
 
 from multikeydict.typing import KeyLike
@@ -6,17 +7,18 @@ from multikeydict.typing import KeyLike
 from ..metanode import MetaNode
 from ..storage import NodeStorage
 from .Integrator import Integrator
-from .IntegratorSampler import IntegratorSampler
-from .IntegratorSampler import ModeType
+from .IntegratorSampler import IntegratorSampler, ModeType
 
 if TYPE_CHECKING:
+    from collections.abc import Mapping
+
     from ..node import Node
 
 
 class IntegratorGroup(MetaNode):
     __slots__ = ("_sampler",)
 
-    _sampler: "Node"
+    _sampler: Node
 
     def __init__(
         self,

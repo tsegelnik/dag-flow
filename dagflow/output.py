@@ -1,8 +1,7 @@
-from collections.abc import Mapping
-from collections.abc import Sequence
-from typing import Optional
+from __future__ import annotations
+
+from collections.abc import Mapping, Sequence
 from typing import TYPE_CHECKING
-from typing import Union
 
 if TYPE_CHECKING:
     from .input import Input
@@ -33,12 +32,12 @@ class Output:
     _data: NDArray | None = None
     _dd: DataDescriptor
 
-    _node: Optional["Node"]
+    _node: Node | None
     _name: str | None
 
     _child_inputs: list["Input"]
-    _parent_input: Optional["Input"] = None
-    _allocating_input: Optional["Input"] = None
+    _parent_input: Input | None = None
+    _allocating_input: Input | None = None
 
     _allocatable: bool = True
     _owns_buffer: bool = False
@@ -51,7 +50,7 @@ class Output:
     def __init__(
         self,
         name: str | None,
-        node: Optional["Node"],
+        node: Node | None,
         *,
         debug: bool | None = None,
         allocatable: bool | None = None,
@@ -223,7 +222,7 @@ class Output:
     def data_unsafe(self):
         return self._data
 
-    def connect_to(self, input) -> "Input":
+    def connect_to(self, input) -> Input:
         if not self.closed and input.closed:
             raise ConnectionError(
                 "Cannot connect an output to a closed input!",
@@ -240,7 +239,7 @@ class Output:
             )
         return self._connect_to(input)
 
-    def _connect_to(self, input) -> "Input":
+    def _connect_to(self, input) -> Input:
         if input.allocatable:
             if self._allocating_input:
                 raise ConnectionError(
@@ -269,14 +268,7 @@ class Output:
 
     def __rshift__(
         self,
-        other: Union[
-            "Input",
-            "Node",
-            Sequence["Input"],
-            Sequence["Node"],
-            Mapping[str, "Node"],
-            "NestedMKDict",
-        ],
+        other: Input | Node | Sequence[Input] | Sequence[Node] | Mapping[str, Node] | NestedMKDict,
     ):
         """
         self >> other

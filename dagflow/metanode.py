@@ -1,20 +1,19 @@
-from collections.abc import Callable
-from collections.abc import Sequence
-from typing import Literal
-from typing import Optional
-from typing import TYPE_CHECKING
-from typing import Union
+from __future__ import annotations
 
-from .exception import CriticalError
-from .exception import InitializationError
+from collections.abc import Callable, Sequence
+from typing import TYPE_CHECKING, Literal
+
+from .exception import CriticalError, InitializationError
 from .node import Node
 from .nodebase import NodeBase
 
 if TYPE_CHECKING:
+    from collections.abc import Callable
+
     from .input import Input
 
-TStrOrPair = Union[str, tuple[str, str]]
-TPairsOrDict = Union[Sequence[TStrOrPair], dict]
+TStrOrPair = str | tuple[str, str]
+TPairsOrDict = Sequence[TStrOrPair] | dict
 
 MetaNodeStrategies = {"LeadingNode", "NewNode", "Disable"}
 MetaNodeStrategiesType = Literal[MetaNodeStrategies]
@@ -85,7 +84,7 @@ class MetaNode(NodeBase):
 
     def _add_input_to_node(
         self, node: Node, name: str | None = None, *args, **kwargs
-    ) -> Optional["Input"]:
+    ) -> Input | None:
         inp = node(name, *args, **kwargs)
         if inp and inp.name not in self.inputs:
             self.inputs.add(inp)  # adding to metanode.inputs
@@ -99,7 +98,7 @@ class MetaNode(NodeBase):
         input_args: dict | None = None,
         metanode_args: dict | None = None,
         new_node_cls: type[Node] | None = None,
-    ) -> Optional["Input"]:
+    ) -> Input | None:
         """
         Creates new node with positional input
         """
@@ -118,7 +117,7 @@ class MetaNode(NodeBase):
             node, idx=len(self._nodes), idx_out=len(self._nodes), **input_args
         )
 
-    def _call_leading_node(self, *args, **kwargs) -> Optional["Input"]:
+    def _call_leading_node(self, *args, **kwargs) -> Input | None:
         """
         Creates new node with positional input
         """
@@ -128,13 +127,11 @@ class MetaNode(NodeBase):
             )
         return self._add_input_to_node(self.leading_node, *args, **kwargs)
 
-    def _call_disabled(self, *args, **kwargs) -> Optional["Input"]:
+    def _call_disabled(self, *args, **kwargs) -> Input | None:
         """
         Prevents creation of new nodes
         """
-        raise CriticalError(
-            "Cannot create a new input: the node is not scalable!", node=self
-        )
+        raise CriticalError("Cannot create a new input: the node is not scalable!", node=self)
 
     def __call__(
         self,
@@ -142,7 +139,7 @@ class MetaNode(NodeBase):
         nodename: str | None = None,
         *args,
         **kwargs,
-    ) -> Optional["Input"] | tuple[Optional["Input"], ...]:
+    ) -> Input | None | tuple[Input | None, ...]:
         """
         For positional inputs there are two strategies:
             * append a new positional input into the leading node,

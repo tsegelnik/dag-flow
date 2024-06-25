@@ -1,4 +1,6 @@
-from typing import TYPE_CHECKING, Optional
+from __future__ import annotations
+
+from typing import TYPE_CHECKING
 
 from ..nodes import FunctionNode
 from ..typefunctions import copy_from_input_to_output
@@ -16,19 +18,19 @@ class View(FunctionNode):
         "_start",
         "_length",
     )
-    _input: "Input"
+    _input: Input
     _start: int | None
     _length: int | None
 
     def __init__(
         self,
         name,
-        output: Optional["Output"] = None,
+        output: Output | None = None,
         *,
         outname="view",
         start: int | None = None,
         length: int | None = None,
-        **kwargs
+        **kwargs,
     ) -> None:
         super().__init__(name, **kwargs)
         child_output = self._add_output(outname, allocatable=False, forbid_reallocation=True)
@@ -61,7 +63,7 @@ class View(FunctionNode):
             case [None, length]:
                 view = buffer[:length]
             case [start, length]:
-                view = buffer[start:start+length]
+                view = buffer[start : start + length]
 
         output._set_data(
             view,

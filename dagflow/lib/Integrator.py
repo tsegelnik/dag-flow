@@ -1,24 +1,26 @@
+from __future__ import annotations
+
 from typing import TYPE_CHECKING
 
 from numba import njit
-from numpy import empty
-from numpy import floating
-from numpy import integer
-from numpy import multiply
-from numpy.typing import NDArray
+from numpy import empty, floating, integer, multiply
 
 from ..exception import TypeFunctionError
 from ..inputhandler import MissingInputAddPair
 from ..nodes import FunctionNode
-from ..typefunctions import check_has_inputs
-from ..typefunctions import check_input_dimension
-from ..typefunctions import check_input_dtype
-from ..typefunctions import check_input_edges_dim
-from ..typefunctions import check_input_shape
-from ..typefunctions import check_input_subtype
+from ..typefunctions import (
+    check_has_inputs,
+    check_input_dimension,
+    check_input_dtype,
+    check_input_edges_dim,
+    check_input_shape,
+    check_input_subtype,
+)
 from ..types import ShapeLike
 
 if TYPE_CHECKING:
+    from numpy.typing import NDArray
+
     from ..input import Input
 
 
@@ -102,9 +104,9 @@ class Integrator(FunctionNode):
 
     __buffer: NDArray
     _dropdim: bool
-    _ordersX: "Input"
-    _ordersY: "Input"
-    _weights: "Input"
+    _ordersX: Input
+    _ordersY: Input
+    _weights: Input
 
     def __init__(self, *args, dropdim: bool = True, **kwargs):
         kwargs.setdefault("missing_input_handler", MissingInputAddPair())

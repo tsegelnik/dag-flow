@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from typing import Literal
 from typing import TYPE_CHECKING
 
@@ -33,9 +35,9 @@ class SegmentIndex(FunctionNode):
         "_indices",
     )
 
-    _coarse: "Input"
-    _fine: "Input"
-    _indices: "Output"
+    _coarse: Input
+    _fine: Input
+    _indices: Output
 
     def __init__(
         self,

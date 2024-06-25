@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from collections.abc import Generator, Sequence
 from contextlib import suppress
 
@@ -26,7 +28,7 @@ class Parameter:
         "_labelfmt",
         "_stack",
     )
-    _parent: "Parameters"
+    _parent: Parameters
     _idx: int
     _common_output: Output
     _value_output: Output
@@ -41,7 +43,7 @@ class Parameter:
         value_output: Output,
         idx: int | None = None,
         *,
-        parent: "Parameters",
+        parent: Parameters,
         connectible: Output | None = None,
         labelfmt: str = "{}",
         make_view: bool = True,
@@ -258,9 +260,9 @@ class NormalizedGaussianParameter(Parameter):
 
 class Constraint:
     __slots__ = ("_pars",)
-    _pars: "Parameters"
+    _pars: Parameters
 
-    def __init__(self, parameters: "Parameters"):
+    def __init__(self, parameters: Parameters):
         self._pars = parameters
 
     @property
@@ -396,7 +398,7 @@ class Parameters:
         fixed: bool | None = None,
         label: dict[str, str] | None = None,
         **kwargs,
-    ) -> "Parameters":
+    ) -> Parameters:
         if label is None:
             label = {"text": "parameter"}
         else:

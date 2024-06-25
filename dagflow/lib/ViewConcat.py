@@ -1,11 +1,11 @@
+from __future__ import annotations
+
 from typing import TYPE_CHECKING
 
 from numpy import zeros
-from numpy.typing import NDArray
 
 from ..nodes import FunctionNode
-from ..typefunctions import check_input_dimension
-from ..typefunctions import check_input_dtype
+from ..typefunctions import check_input_dimension, check_input_dtype
 
 if TYPE_CHECKING:
     from ..input import Input
@@ -16,19 +16,15 @@ class ViewConcat(FunctionNode):
     """Creates a node with a single data output which is a concatenated memory of the inputs"""
 
     __slots__ = ("_output", "_offsets")
-    _output: "Output"
+    _output: Output
     _offsets: list[int]
 
     def __init__(self, name, outname="concat", **kwargs) -> None:
         super().__init__(name, **kwargs)
-        self._output = self._add_output(
-            outname, allocatable=False, forbid_reallocation=True
-        )
+        self._output = self._add_output(outname, allocatable=False, forbid_reallocation=True)
         self._offsets = []
 
-    def missing_input_handler(
-        self, idx: int | None = None, scope: int | None = None
-    ) -> "Input":
+    def missing_input_handler(self, idx: int | None = None, scope: int | None = None) -> Input:
         idx = idx if idx is not None else len(self.inputs)
         iname = f"input_{idx:02d}"
         return self._add_input(iname, allocatable=True, child_output=self._output)

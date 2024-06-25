@@ -1,12 +1,8 @@
-from typing import Optional
+from __future__ import annotations
 
-from .exception import ClosedGraphError
-from .exception import ClosingError
-from .exception import InitializationError
-from .exception import UnclosedGraphError
+from .exception import ClosedGraphError, ClosingError, InitializationError, UnclosedGraphError
 from .graphbase import GraphBase
-from .logger import get_logger
-from .logger import Logger
+from .logger import Logger, get_logger
 
 
 class Graph(GraphBase):
@@ -156,7 +152,7 @@ class Graph(GraphBase):
                 output.labels.build_index_dict(index)
 
     @classmethod
-    def current(cls) -> Optional["Graph"]:
+    def current(cls) -> Graph | None:
         return _context_graph[-1] if _context_graph else None
 
     def __enter__(self):

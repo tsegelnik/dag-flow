@@ -1,12 +1,16 @@
+from __future__ import annotations
+
 from typing import TYPE_CHECKING
 
 from numpy import multiply
 
 from ..nodes import FunctionNode
-from ..typefunctions import check_input_dimension
-from ..typefunctions import check_input_square
-from ..typefunctions import check_inputs_multiplicable_mat
-from ..typefunctions import copy_from_input_to_output
+from ..typefunctions import (
+    check_input_dimension,
+    check_input_square,
+    check_inputs_multiplicable_mat,
+    copy_from_input_to_output,
+)
 
 if TYPE_CHECKING:
     from ..input import Input
@@ -21,9 +25,9 @@ class CovmatrixFromCormatrix(FunctionNode):
     __slots__ = ("_mode", "_sigma", "_cormatrix", "_covmatrix")
 
     _mode: str
-    _sigma: "Input"
-    _cormatrix: "Input"
-    _covmatrix: "Output"
+    _sigma: Input
+    _cormatrix: Input
+    _covmatrix: Output
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs, allowed_kw_inputs=("sigma", "cormatrix"))

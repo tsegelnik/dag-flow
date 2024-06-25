@@ -3,10 +3,9 @@ from __future__ import annotations
 from contextlib import suppress
 from os import listdir
 from pathlib import Path
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING
 
 from numpy import double, dtype, frombuffer, linspace, ndarray
-from numpy.typing import NDArray
 
 from multikeydict.tools import reorder_key
 from multikeydict.typing import KeyLike, TupleKey, properkey
@@ -14,7 +13,9 @@ from multikeydict.typing import KeyLike, TupleKey, properkey
 from ..logger import INFO1, INFO2, INFO3, logger
 
 if TYPE_CHECKING:
+    from numpy.typing import NDArray
     import ROOT
+    from typing import Any
 
 from collections.abc import Generator, Sequence
 
@@ -78,7 +79,7 @@ class FileReaderMeta(type):
         if ext:
             file_readers[ext] = self
 
-    def __getitem__(self, file_name: str | Path) -> "FileReader":
+    def __getitem__(self, file_name: str | Path) -> FileReader:
         file_name_str = file_name if isinstance(file_name, str) else str(file_name)
         try:
             ret = self._opened_files[file_name_str]
@@ -137,7 +138,7 @@ class FileReader(metaclass=FileReaderMeta):
         self._read_objects = {}
 
     @classmethod
-    def open(cls, file_name: str | Path) -> "FileReader":
+    def open(cls, file_name: str | Path) -> FileReader:
         file_path = file_name if isinstance(file_name, Path) else Path(file_name)
         ext = file_path.suffix
 
@@ -223,17 +224,16 @@ class FileReader(metaclass=FileReaderMeta):
         match rec:
             case ndarray():
                 nrows = rec.shape[0]
-                columns = ', '.join(rec.dtype.names) if rec.dtype.names else '???'
+                columns = ", ".join(rec.dtype.names) if rec.dtype.names else "???"
             case dict():
                 nrows = next(iter(rec.values())).shape[0]
-                columns = ', '.join(rec.keys())
+                columns = ", ".join(rec.keys())
             case _:
                 nrows = -1
                 columns = "???"
         logger.log(
             INFO2,
-            f"record {object_name} ({nrows}):"
-            f" {columns}",
+            f"record {object_name} ({nrows}):" f" {columns}",
         )
         return rec
 
@@ -375,9 +375,7 @@ class FileReaderROOTUpROOT(FileReader):
 
     def _get_record(self, object_name: str) -> dict[str, NDArray]:
         tree = self._get_object(object_name)
-        return {
-                key: tree[key].array().to_numpy().copy() for key in tree.keys()
-                }
+        return {key: tree[key].array().to_numpy().copy() for key in tree.keys()}
 
     def keys(self) -> tuple[str, ...]:
         return tuple(key.split(";", 1)[0] for key in self._file.GetListOfKeys())
@@ -401,8 +399,8 @@ with suppress(ImportError):
         @property
         def reader_uproot(self) -> FileReaderROOTUpROOT:
             if self._reader_uproot is None:
-                self._reader_uproot = FileReaderROOTUpROOT(self._file_name) 
-            
+                self._reader_uproot = FileReaderROOTUpROOT(self._file_name)
+
             return self._reader_uproot
 
         def _close(self):
@@ -497,7 +495,7 @@ def iterate_filenames_and_objectnames(
             yield filekey, filename, key, fullkey
 
 
-def _get_buffer_hist1(h: "ROOT.TH1", flows: bool = False) -> NDArray:
+def _get_buffer_hist1(h: ROOT.TH1, flows: bool = False) -> NDArray:
     """Return TH1* histogram data buffer
     if flows=False, exclude underflow and overflow
     """
@@ -523,7 +521,7 @@ def _get_buffer_hist2(h, flows=False):
     return res.copy()
 
 
-def _get_bin_edges(ax: "ROOT.TAxis") -> NDArray:
+def _get_bin_edges(ax: ROOT.TAxis) -> NDArray:
     """Get the array with bin edges"""
     xbins = ax.GetXbins()
     n = xbins.GetSize()
@@ -533,7 +531,7 @@ def _get_bin_edges(ax: "ROOT.TAxis") -> NDArray:
     return linspace(ax.GetXmin(), ax.GetXmax(), ax.GetNbins() + 1)
 
 
-def _get_bin_left_edges(ax: "ROOT.TAxis") -> NDArray:
+def _get_bin_left_edges(ax: ROOT.TAxis) -> NDArray:
     """Get the array with bin left edges"""
     xbins = ax.GetXbins()
     n = xbins.GetSize()
@@ -543,7 +541,7 @@ def _get_bin_left_edges(ax: "ROOT.TAxis") -> NDArray:
     return linspace(ax.GetXmin(), ax.GetXmax(), ax.GetNbins() + 1)[:-1]
 
 
-def _get_buffers_graph(g: "ROOT.TGraph") -> tuple[NDArray, NDArray]:
+def _get_buffers_graph(g: ROOT.TGraph) -> tuple[NDArray, NDArray]:
     """Get TGraph x and y buffers"""
     npoints = g.GetN()
     if npoints == 0:

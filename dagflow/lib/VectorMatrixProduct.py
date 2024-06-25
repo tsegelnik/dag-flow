@@ -1,17 +1,20 @@
-from typing import Literal
-from typing import TYPE_CHECKING
+from __future__ import annotations
 
-from numpy import matmul
-from numpy import multiply
+from typing import TYPE_CHECKING, Literal
+
+from numpy import matmul, multiply
+
+from dagflow.inputhandler import MissingInputAddPair
 
 from ..exception import TypeFunctionError
 from ..nodes import FunctionNode
-from ..typefunctions import AllPositionals
-from ..typefunctions import check_input_dimension
-from ..typefunctions import check_input_matrix_or_diag
-from ..typefunctions import check_inputs_multiplicable_mat
-from ..typefunctions import eval_output_dtype
-from dagflow.inputhandler import MissingInputAddPair
+from ..typefunctions import (
+    AllPositionals,
+    check_input_dimension,
+    check_input_matrix_or_diag,
+    check_inputs_multiplicable_mat,
+    eval_output_dtype,
+)
 
 if TYPE_CHECKING:
     from ..input import Input
@@ -24,11 +27,13 @@ class VectorMatrixProduct(FunctionNode):
 
     __slots__ = ("_mat", "_matrix_column")
 
-    _mat: "Input"
+    _mat: Input
     _matrix_column: bool
 
     def __init__(self, *args, mode: Literal["column", "row"] = "column", **kwargs) -> None:
-        kwargs.setdefault("missing_input_handler", MissingInputAddPair(input_fmt="vector", output_fmt="result"))
+        kwargs.setdefault(
+            "missing_input_handler", MissingInputAddPair(input_fmt="vector", output_fmt="result")
+        )
         super().__init__(*args, **kwargs, allowed_kw_inputs=("matrix",))
         self._mat = self._add_input("matrix", positional=False)
 
