@@ -1,7 +1,7 @@
 from collections.abc import Sequence
 from typing import Any
 
-from multikeydict.typing import KeyLike
+from multikeydict.typing import KeyLike, properkey
 
 from ..inputhandler import MissingInputAddPair
 from ..node import Node
@@ -42,7 +42,9 @@ class OneToOneNode(FunctionNode):
     ) -> tuple[Node | None, NodeStorage]:
         if args:
             if replicate_outputs is not None:
-                raise RuntimeError("OneToOneNode.replicate_outputs can use either `args` or `replicate_outputs`")
+                raise RuntimeError(
+                    "OneToOneNode.replicate_outputs can use either `args` or `replicate_outputs`"
+                )
 
             return cls.replicate_from_args(name, *args, **kwargs)
 
@@ -67,7 +69,7 @@ class OneToOneNode(FunctionNode):
             raise RuntimeError("`replicate_outputs` tuple should have at least one item")
 
         for outkey in replicate_outputs:
-            outname = (name,) + outkey
+            outname = (name,) + properkey(outkey)
             instance = cls(".".join(outname), **kwargs)
             nodes[outname] = instance
             instance()
