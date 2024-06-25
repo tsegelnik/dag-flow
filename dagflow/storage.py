@@ -274,9 +274,9 @@ class NodeStorage(NestedMKDict):
 
         return df
 
-    def to_str(self, **kwargs) -> str:
+    def to_string(self, **kwargs) -> str:
         df = self.to_df()
-        return df.to_str(**kwargs)
+        return df.to_string(**kwargs)
 
     def to_table(
         self, *, df_kwargs: Mapping = {}, truncate: int | bool | Literal["auto"] = False, **kwargs
