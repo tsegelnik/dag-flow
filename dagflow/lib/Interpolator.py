@@ -1,11 +1,11 @@
-from collections.abc import Callable
+from __future__ import annotations
+
 from enum import IntEnum
-from typing import TYPE_CHECKING, Literal
+from typing import TYPE_CHECKING
 
 from numba import float64, int32, njit, void
 from numba.core.types import FunctionType
-from numpy import exp, double, integer, log
-from numpy.typing import NDArray
+from numpy import double, exp, integer, log
 
 from ..exception import InitializationError
 from ..nodes import FunctionNode
@@ -19,6 +19,10 @@ from ..typefunctions import (
 )
 
 if TYPE_CHECKING:
+    from typing import Callable, Literal
+
+    from numpy.typing import NDArray
+
     from ..input import Input
     from ..output import Output
 
@@ -71,11 +75,11 @@ class Interpolator(FunctionNode):
         "_result",
     )
 
-    _y: "Input"
-    _coarse: "Input"
-    _fine: "Input"
-    _indices: "Input"
-    _result: "Output"
+    _y: Input
+    _coarse: Input
+    _fine: Input
+    _indices: Input
+    _result: Output
 
     def __init__(
         self,

@@ -1,7 +1,6 @@
 from __future__ import annotations
 
-from collections.abc import Sequence
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING
 
 from multikeydict.typing import properkey
 
@@ -11,6 +10,9 @@ from ..nodes import FunctionNode
 from ..storage import NodeStorage
 
 if TYPE_CHECKING:
+    from collections.abc import Sequence
+    from typing import Any
+
     from multikeydict.typing import KeyLike, TupleKey
 
 
@@ -57,9 +59,7 @@ class ManyToOneNode(FunctionNode):
 
         check_has_inputs(self)  # at least one input
         check_inputs_equivalence(
-            self,
-            broadcastable=self._broadcastable,
-            check_edges_contents=self._check_edges_contents
+            self, broadcastable=self._broadcastable, check_edges_contents=self._check_edges_contents
         )  # all the inputs should have same dd fields
         copy_from_input_to_output(
             self,

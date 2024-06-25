@@ -1,19 +1,23 @@
-from collections.abc import Callable
-from typing import Literal
+from __future__ import annotations
+
 from typing import TYPE_CHECKING
 
 from numba import njit
 from numpy.typing import NDArray
 
 from ..inputhandler import MissingInputAddPair
-from ..typefunctions import AllPositionals
-from ..typefunctions import check_input_shape
-from ..typefunctions import check_input_square
-from ..typefunctions import check_inputs_equivalence
-from ..typefunctions import eval_output_dtype
 from ..nodes import FunctionNode
+from ..typefunctions import (
+    AllPositionals,
+    check_input_shape,
+    check_input_square,
+    check_inputs_equivalence,
+    eval_output_dtype,
+)
 
 if TYPE_CHECKING:
+    from typing import Callable, Literal
+
     from ..input import Input
 
 
@@ -22,7 +26,7 @@ class RenormalizeDiag(FunctionNode):
 
     _mode: str
     _ndiag: int
-    _scale: "Input"
+    _scale: Input
 
     def __init__(
         self, *args, mode: Literal["diag", "offdiag"] = "diag", ndiag: int = 1, **kwargs

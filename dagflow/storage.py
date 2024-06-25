@@ -1,7 +1,6 @@
 from __future__ import annotations
 
-from collections.abc import Mapping, MutableSet, Sequence
-from typing import TYPE_CHECKING, Any, Literal
+from typing import TYPE_CHECKING
 
 from orderedset import OrderedSet
 
@@ -16,6 +15,9 @@ from .output import Output
 
 if TYPE_CHECKING:
     from matplotlib.axes import Axes
+    from typing import TYPE_CHECKING, Any, Literal
+
+    from collections.abc import Mapping, MutableSet, Sequence
 
 from LaTeXDatax import datax
 from numpy import nan, ndarray
