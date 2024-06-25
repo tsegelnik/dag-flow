@@ -88,6 +88,7 @@ class Parameter:
             self._idx = idx
             self._view = None
             self._connectible_output = None
+            self._value_output = value_output
         self._stack = []
 
     def __str__(self) -> str:
@@ -117,7 +118,11 @@ class Parameter:
         return self._labelfmt.format(self._value_output.node.labels[source])
 
     def to_dict(self, *, label_from: str = "text") -> dict:
-        return {"value": self.value, "label": self.label(label_from), "flags": ""}
+        return {
+            "value": self.value,
+            "label": self.label(label_from),
+            "flags": ""
+        }
 
     def __rshift__(self, other):
         self._connectible_output >> other
