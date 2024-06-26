@@ -335,7 +335,7 @@ class FileReaderTSV(FileReaderArray):
         raise FileNotFoundError(", ".join(map(str, filenames)))
 
     def _get_array(self, object_name: str) -> NDArray:
-        return self._get_object(object_name, return_record=False).T
+        return self._get_object(object_name, return_record=False)
 
     def keys(self) -> tuple[str, ...]:
         return tuple(file for file in listdir(self._file_name) if file.endswith(self._extension))
