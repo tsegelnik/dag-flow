@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from collections.abc import Generator, Sequence
 from contextlib import suppress
 
@@ -26,7 +28,7 @@ class Parameter:
         "_labelfmt",
         "_stack",
     )
-    _parent: "Parameters"
+    _parent: Parameters
     _idx: int
     _common_output: Output
     _value_output: Output
@@ -41,7 +43,7 @@ class Parameter:
         value_output: Output,
         idx: int | None = None,
         *,
-        parent: "Parameters",
+        parent: Parameters,
         connectible: Output | None = None,
         labelfmt: str = "{}",
         make_view: bool = True,
@@ -83,8 +85,10 @@ class Parameter:
             self._value_output = self._view.outputs[0]
             self._connectible_output = self._value_output
         else:
+            self._idx = idx
             self._view = None
             self._connectible_output = None
+            self._value_output = value_output
         self._stack = []
 
     def __str__(self) -> str:
@@ -114,7 +118,11 @@ class Parameter:
         return self._labelfmt.format(self._value_output.node.labels[source])
 
     def to_dict(self, *, label_from: str = "text") -> dict:
-        return {"value": self.value, "label": self.label(label_from), "flags": ""}
+        return {
+            "value": self.value,
+            "label": self.label(label_from),
+            "flags": ""
+        }
 
     def __rshift__(self, other):
         self._connectible_output >> other
@@ -257,9 +265,9 @@ class NormalizedGaussianParameter(Parameter):
 
 class Constraint:
     __slots__ = ("_pars",)
-    _pars: "Parameters"
+    _pars: Parameters
 
-    def __init__(self, parameters: "Parameters"):
+    def __init__(self, parameters: Parameters):
         self._pars = parameters
 
     @property
@@ -395,7 +403,7 @@ class Parameters:
         fixed: bool | None = None,
         label: dict[str, str] | None = None,
         **kwargs,
-    ) -> "Parameters":
+    ) -> Parameters:
         if label is None:
             label = {"text": "parameter"}
         else:

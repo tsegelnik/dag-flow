@@ -1,19 +1,24 @@
+from __future__ import annotations
+
 from typing import TYPE_CHECKING
 
 from numba import njit
 from numpy import integer
-from numpy.typing import NDArray
 
 from ..exception import TypeFunctionError
-from ..typefunctions import AllPositionals
-from ..typefunctions import check_has_inputs
-from ..typefunctions import check_input_dimension
-from ..typefunctions import check_input_shape
-from ..typefunctions import check_input_subtype
-from ..typefunctions import copy_input_dtype_to_output
+from ..typefunctions import (
+    AllPositionals,
+    check_has_inputs,
+    check_input_dimension,
+    check_input_shape,
+    check_input_subtype,
+    copy_input_dtype_to_output,
+)
 from .OneToOneNode import OneToOneNode
 
 if TYPE_CHECKING:
+    from numpy.typing import NDArray
+
     from ..input import Input
 
 
@@ -38,7 +43,7 @@ class PartialSums(OneToOneNode):
     """
 
     __slots__ = ("_array",)
-    _array: "Input"
+    _array: Input
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -58,8 +63,7 @@ class PartialSums(OneToOneNode):
         add = self._array.dd
         if add.axes_edges:
             raise TypeFunctionError(
-                "The PartialSums doesn't support edges functional, "
-                f"but given {add.axes_edges}",
+                "The PartialSums doesn't support edges functional, " f"but given {add.axes_edges}",
                 node=self,
                 input=self._array,
             )

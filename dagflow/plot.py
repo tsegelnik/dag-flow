@@ -6,31 +6,28 @@ from matplotlib.axes import Axes
 from matplotlib.pyplot import close as closefig
 from matplotlib.pyplot import cm
 from matplotlib.pyplot import colorbar as plot_colorbar
-from matplotlib.pyplot import errorbar
-from matplotlib.pyplot import gca
-from matplotlib.pyplot import gcf
-from matplotlib.pyplot import imshow
-from matplotlib.pyplot import matshow
-from matplotlib.pyplot import pcolor
-from matplotlib.pyplot import pcolormesh
-from matplotlib.pyplot import plot
-from matplotlib.pyplot import savefig
-from matplotlib.pyplot import sca
+from matplotlib.pyplot import (
+    errorbar,
+    gca,
+    gcf,
+    imshow,
+    matshow,
+    pcolor,
+    pcolormesh,
+    plot,
+    savefig,
+    sca,
+)
 from matplotlib.pyplot import show as showfig
 from matplotlib.pyplot import stairs
-from numpy import asanyarray
-from numpy import meshgrid
-from numpy import zeros_like
+from numpy import asanyarray, meshgrid, zeros_like
 from numpy.ma import array as masked_array
-from numpy.typing import ArrayLike
-from numpy.typing import NDArray
+from numpy.typing import ArrayLike, NDArray
 
-from .logger import INFO1
-from .logger import logger
+from .logger import INFO1, logger
 from .nodebase import NodeBase
 from .output import Output
-from .types import EdgesLike
-from .types import MeshesLike
+from .types import EdgesLike, MeshesLike
 
 
 class plot_auto:
@@ -275,9 +272,7 @@ def plot_array_1d_vs(
     return plot(meshes, array, *args, **kwargs)
 
 
-def plot_array_1d_array(
-    array: NDArray, *args, plotter: plot_auto | None = None, **kwargs
-) -> tuple:
+def plot_array_1d_array(array: NDArray, *args, plotter: plot_auto | None = None, **kwargs) -> tuple:
     return plot(array, *args, **kwargs)
 
 
@@ -292,9 +287,7 @@ def plot_array_2d(
         return plot_array_2d_array(array, *args, **kwargs)
 
 
-def plot_array_2d_array(
-    array: NDArray, *args, plotter: plot_auto | None = None, **kwargs
-) -> tuple:
+def plot_array_2d_array(array: NDArray, *args, plotter: plot_auto | None = None, **kwargs) -> tuple:
     kwargs.setdefault("aspect", "auto")
     return plot_array_2d_hist_matshow(array, None, *args, **kwargs)
 
@@ -480,7 +473,7 @@ def plot_array_2d_vs_wireframe(
     Z: NDArray,
     meshes: list[NDArray],
     *args,
-    # facecolors: Optional[str] = None,
+    # facecolors: str | None = None,
     plotter: plot_auto | None = None,
     cmap: str | bool | None = None,
     colorbar: dict | bool = False,
@@ -568,9 +561,7 @@ def _patch_with_colorbar(fcn, mode3d=False):
     return newfcn
 
 
-def apply_colors(
-    buf: NDArray, cmap: str | bool | None, kwargs: dict, colorsname: str
-) -> tuple:
+def apply_colors(buf: NDArray, cmap: str | bool | None, kwargs: dict, colorsname: str) -> tuple:
     if cmap is True:
         cmap = "viridis"
     elif not cmap:

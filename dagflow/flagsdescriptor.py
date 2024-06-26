@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
@@ -33,15 +35,15 @@ class FlagsDescriptor:
     being_evaluated: bool
     types_tainted: bool
     # observers and observed
-    # _node: "Node"
-    _children: "Outputs"  # List[FlagsDescriptor]
-    _parents: "Inputs"  # List[FlagsDescriptor]
+    # _node: Node
+    _children: Outputs  # List[FlagsDescriptor]
+    _parents: Inputs  # List[FlagsDescriptor]
 
     def __init__(
         self,
         *,
-        children: "Outputs",
-        parents: "Inputs",
+        children: Outputs,
+        parents: Inputs,
         tainted: bool = True,
         frozen: bool = False,
         frozen_tainted: bool = False,
@@ -66,11 +68,11 @@ class FlagsDescriptor:
         return ", ".join(f"{slot}={getattr(self, slot)}" for slot in self.__slots__)
 
     @property
-    def children(self) -> "Outputs":
+    def children(self) -> Outputs:
         return self._children
 
     @property
-    def parents(self) -> "Inputs":
+    def parents(self) -> Inputs:
         return self._parents
 
     def _invalidate(self, invalid) -> None:

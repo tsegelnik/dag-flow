@@ -1,7 +1,7 @@
+from __future__ import annotations
+
 from collections.abc import Sequence
-from typing import Optional
 from typing import TYPE_CHECKING
-from typing import Union
 
 from .exception import InitializationError
 
@@ -27,18 +27,20 @@ class Formatter:
         return SequentialFormatter(seq)  # pyright: ignore [reportUndefinedVariable]
 
     @staticmethod
-    def from_value(value: Union[str, Sequence[str], "Formatter"]):
+    def from_value(value: str | Sequence[str] | Formatter):
         if isinstance(value, Formatter):
-             return value
+            return value
         elif isinstance(value, str):
             return Formatter.from_string(value)
         elif isinstance(value, Sequence):
             return Formatter.from_sequence(value)
 
-        raise InitializationError(f"Expect str, Tuple[str] or Formatter, got {type(value).__name__}")
+        raise InitializationError(
+            f"Expect str, Tuple[str] or Formatter, got {type(value).__name__}"
+        )
 
 
-Formattable = Union[Formatter, str]
+Formattable = Formatter | str
 
 
 class SimpleFormatter(Formatter):
@@ -90,9 +92,9 @@ class MissingInputHandler:
 
     __slots__ = ("_node",)
 
-    _node: Optional["Node"]
+    _node: Node | None
 
-    def __init__(self, node: Optional["Node"] = None):
+    def __init__(self, node: Node | None = None):
         self.node = node
 
     @property
@@ -131,7 +133,7 @@ class MissingInputAdd(MissingInputHandler):
 
     def __init__(
         self,
-        node: Optional["Node"] = None,
+        node: Node | None = None,
         *,
         input_fmt: str | Sequence[str] | Formatter = SimpleFormatter("input", "_{:02d}"),
         input_kws: dict | None = None,

@@ -1,6 +1,5 @@
 from collections.abc import Generator, Mapping, Sequence
 from pathlib import Path
-from typing import Optional as OptionalType
 
 from schema import And, Optional, Or, Schema, SchemaError, Use
 
@@ -245,7 +244,7 @@ def check_correlations_consistent(cfg: NestedMKDict) -> None:
 
 
 def load_parameters(
-    acfg: OptionalType[Mapping] = None,
+    acfg: Mapping | None = None,
     *,
     nuisance_location: str | Sequence[str] | None = "statistic.nuisance.parts",
     **kwargs,
@@ -316,7 +315,7 @@ def load_parameters(
             )
             varcfg_sub = varcfg.copy()
             varcfg_sub["label"] = label
-            label["paths"] = [key_str]
+            label["paths"] = [".".join(path+(key_str,))]
             label["index_values"] = key
             label.setdefault("text", key_str)
 

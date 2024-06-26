@@ -1,19 +1,17 @@
-from collections.abc import Sequence
-from collections.abc import Mapping
+from __future__ import annotations
+
+from collections.abc import Mapping, Sequence
 from typing import TYPE_CHECKING
-from typing import Union
 
 from multikeydict.nestedmkdict import NestedMKDict
 
 from . import inputhandler
 from .exception import ConnectionError
-from .input import Input
-from .input import Inputs
+from .input import Input, Inputs
 from .iter import StopNesting
 from .labels import repr_pretty
 from .logger import logger
-from .output import Output
-from .output import Outputs
+from .output import Output, Outputs
 from .shift import rshift
 
 if TYPE_CHECKING:
@@ -116,7 +114,7 @@ class NodeBase:
 
     def __rshift__(
         self,
-        other: Union[Input, "Node", Sequence[Input], Mapping[str, "Output"], "NestedMKDict"],
+        other: Input | Node | Sequence[Input] | Mapping[str, Output] | NestedMKDict,
     ):
         """
         self >> other

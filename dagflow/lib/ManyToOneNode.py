@@ -1,7 +1,6 @@
 from __future__ import annotations
 
-from collections.abc import Sequence
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING
 
 from multikeydict.typing import properkey
 
@@ -11,6 +10,9 @@ from ..nodes import FunctionNode
 from ..storage import NodeStorage
 
 if TYPE_CHECKING:
+    from collections.abc import Sequence
+    from typing import Any
+
     from multikeydict.typing import KeyLike, TupleKey
 
 
@@ -20,17 +22,26 @@ class ManyToOneNode(FunctionNode):
     which is the result of some function of all the positional inputs
     """
 
-    __slots__ = ("_broadcastable",)
+    __slots__ = ("_broadcastable", "_check_edges_contents")
 
     _broadcastable: bool
+    _check_edges_contents: bool
 
-    def __init__(self, *args, broadcastable: bool = False, output_name: str = "result", **kwargs):
+    def __init__(
+        self,
+        *args,
+        broadcastable: bool = False,
+        output_name: str = "result",
+        check_edges_contents: bool = False,
+        **kwargs,
+    ):
         kwargs.setdefault(
             "missing_input_handler", MissingInputAddOne(input_fmt=self._input_names())
         )
         super().__init__(*args, **kwargs)
         self._add_output(output_name)
         self._broadcastable = broadcastable
+        self._check_edges_contents = check_edges_contents
 
     @staticmethod
     def _input_names() -> tuple[str, ...]:
@@ -48,7 +59,7 @@ class ManyToOneNode(FunctionNode):
 
         check_has_inputs(self)  # at least one input
         check_inputs_equivalence(
-            self, broadcastable=self._broadcastable
+            self, broadcastable=self._broadcastable, check_edges_contents=self._check_edges_contents
         )  # all the inputs should have same dd fields
         copy_from_input_to_output(
             self,

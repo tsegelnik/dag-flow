@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from typing import TYPE_CHECKING
 
 from numba import njit
@@ -13,8 +15,8 @@ class LinearFunction(OneToOneNode):
     """Calculates y_i = a*x_i + b"""
 
     __slots__ = ("_a", "_b")
-    _a: "Input"
-    _b: "Input"
+    _a: Input
+    _b: Input
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)

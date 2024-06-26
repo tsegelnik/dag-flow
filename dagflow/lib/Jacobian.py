@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from collections.abc import Sequence
 from typing import TYPE_CHECKING
 
@@ -72,7 +74,7 @@ class Jacobian(OneToOneNode):
         param: GaussianParameter,
         newval: float,
         coeff: float,
-        inp: "Input",
+        inp: Input,
         res: NDArray,
     ):
         param.value = newval

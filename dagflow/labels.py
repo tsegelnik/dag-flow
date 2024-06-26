@@ -1,8 +1,12 @@
-from collections.abc import Callable, Mapping, Sequence
+from __future__ import annotations
+
 from pathlib import Path
+from typing import TYPE_CHECKING
 
 from .tools.schema import LoadYaml
 
+if TYPE_CHECKING:
+    from collections.abc import Callable, Mapping, Sequence
 
 def format_latex(k, s, /, *args, **kwargs) -> str:
     if not isinstance(s, str):
@@ -280,7 +284,7 @@ class Labels:
             if getattr(self, k) is None:
                 setattr(self, k, v)
 
-    def copy(self) -> "Labels":
+    def copy(self) -> Labels:
         l = Labels()
         for slot in self.__slots__:
             setattr(l, slot, getattr(self, slot))
@@ -288,7 +292,7 @@ class Labels:
 
     def inherit(
         self,
-        source: "Labels",
+        source: Labels,
         fmtlong: str | Callable | None=None,
         fmtshort: str | Callable | None=None,
         fields: Sequence[str] = []

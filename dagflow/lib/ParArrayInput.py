@@ -1,11 +1,11 @@
+from __future__ import annotations
+
 from collections.abc import Sequence
 from typing import TYPE_CHECKING
 
-from ..exception import InitializationError
-from ..exception import TypeFunctionError
+from ..exception import InitializationError, TypeFunctionError
 from ..nodes import FunctionNode
-from ..parameters import Parameter
-from ..parameters import Parameters
+from ..parameters import Parameter, Parameters
 
 if TYPE_CHECKING:
     from ..input import Input
@@ -17,7 +17,7 @@ class ParArrayInput(FunctionNode):
     __slots__ = ("_parameters_list", "_values")
 
     _parameters_list: list[Parameter]
-    _values: "Input"
+    _values: Input
 
     def __init__(
         self, name, parameters: Sequence[Parameter] | Parameters | None = None, **kwargs

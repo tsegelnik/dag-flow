@@ -1,7 +1,7 @@
 from collections.abc import Callable, Mapping
 from pathlib import Path
 
-from numpy import asfarray
+from numpy import asarray
 from schema import And
 from schema import Optional as SchemaOptional
 from schema import Or, Schema, Use
@@ -54,7 +54,9 @@ def _validate_cfg(cfg):
         return _schema_cfg.validate(cfg)
 
 
-def load_array(acfg: Mapping | None = None, **kwargs) -> NodeStorage:
+def load_array(
+    acfg: Mapping | None = None, *, array_kwargs: dict = Mapping, **kwargs
+) -> NodeStorage:
     acfg = dict(acfg or {}, **kwargs)
     cfg = _validate_cfg(acfg)
 
@@ -75,12 +77,12 @@ def load_array(acfg: Mapping | None = None, **kwargs) -> NodeStorage:
         logger.log(INFO3, f"Process {skey}")
 
         array = FileReader.array[filename, objectname(skey, key)]
-        data[key] = asfarray(array, dtype)
+        data[key] = asarray(array, dtype)
 
     storage = NodeStorage(default_containers=True)
     with storage:
         for key, array in data.items():
-            Array.make_stored(name+key, array)
+            Array.make_stored(name + key, array, **array_kwargs)
 
     NodeStorage.update_current(storage, strict=True)
 

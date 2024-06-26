@@ -1,7 +1,6 @@
 from __future__ import annotations
 
-from collections.abc import Mapping, MutableSet, Sequence
-from typing import TYPE_CHECKING, Any, Literal
+from typing import TYPE_CHECKING
 
 from orderedset import OrderedSet
 
@@ -16,6 +15,9 @@ from .output import Output
 
 if TYPE_CHECKING:
     from matplotlib.axes import Axes
+    from typing import TYPE_CHECKING, Any, Literal
+
+    from collections.abc import Mapping, MutableSet, Sequence
 
 from LaTeXDatax import datax
 from numpy import nan, ndarray
@@ -38,10 +40,11 @@ def _fillna(df: DataFrame, columnname: str, replacement: str):
     if not column.isnull().values.any():
         return
 
-    if column.dtype!='O':
-        column.astype('O', copy=False)
+    # if column.dtype!='O':
+    #     df[columnname] = (column:=column.astype('O', copy=False))
 
-    column.fillna(replacement, inplace=True)
+    newcol = column.fillna(replacement)
+    df[columnname] = newcol
 
 class NodeStorage(NestedMKDict):
     __slots__ = ("_remove_connected_inputs",)
@@ -251,8 +254,9 @@ class NodeStorage(NestedMKDict):
         df = DataFrame(dct, columns=columns)
 
         df.insert(4, "sigma_rel_perc", df["sigma"])
-        df["sigma_rel_perc"] = df["sigma"] / df["central"] * 100.0
-        df["sigma_rel_perc"].mask(df["central"] == 0, nan, inplace=True)
+        sigma_rel_perc = df["sigma"] / df["central"] * 100.0
+        sigma_rel_perc[df["central"]==0] = nan
+        df["sigma_rel_perc"] = sigma_rel_perc
 
         for key in ("central", "sigma", "sigma_rel_perc"):
             if df[key].isna().all():
@@ -270,9 +274,9 @@ class NodeStorage(NestedMKDict):
 
         return df
 
-    def to_str(self, **kwargs) -> str:
+    def to_string(self, **kwargs) -> str:
         df = self.to_df()
-        return df.to_str(**kwargs)
+        return df.to_string(**kwargs)
 
     def to_table(
         self, *, df_kwargs: Mapping = {}, truncate: int | bool | Literal["auto"] = False, **kwargs
@@ -335,7 +339,7 @@ class NodeStorage(NestedMKDict):
     def current() -> NodeStorage | None:
         return _context_storage[-1] if _context_storage else None
 
-    def __enter__(self) -> "NodeStorage":
+    def __enter__(self) -> NodeStorage:
         _context_storage.append(self)
         return self
 
@@ -427,10 +431,10 @@ class PlotVisitor(NestedMKDictVisitor):
 
     def _makefigure(
         self, key: TupleKey, *, force_new: bool = False
-    ) -> tuple["Axes", tuple[str] | None, str | None, bool]:
+    ) -> tuple[Axes, tuple[str] | None, str | None, bool]:
         from matplotlib.pyplot import sca, subplots
 
-        def mkfig(storekey: TupleKey | None = None) -> "Axes":
+        def mkfig(storekey: TupleKey | None = None) -> Axes:
             fig, ax = subplots(1, 1)
             if storekey is not None:
                 self._active_figures[tuple(storekey)] = fig

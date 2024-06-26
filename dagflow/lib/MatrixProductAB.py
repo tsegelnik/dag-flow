@@ -1,14 +1,17 @@
+from __future__ import annotations
+
 from typing import TYPE_CHECKING
 
-from numpy import matmul
-from numpy import multiply
+from numpy import matmul, multiply
 
 from ..exception import TypeFunctionError
 from ..nodes import FunctionNode
-from ..typefunctions import check_has_inputs
-from ..typefunctions import check_input_matrix_or_diag
-from ..typefunctions import check_inputs_multiplicable_mat
-from ..typefunctions import eval_output_dtype
+from ..typefunctions import (
+    check_has_inputs,
+    check_input_matrix_or_diag,
+    check_inputs_multiplicable_mat,
+    eval_output_dtype,
+)
 
 if TYPE_CHECKING:
     from ..input import Input
@@ -22,9 +25,9 @@ class MatrixProductAB(FunctionNode):
 
     __slots__ = ("_left", "_right", "_out")
 
-    _left: "Input"
-    _right: "Input"
-    _out: "Output"
+    _left: Input
+    _right: Input
+    _out: Output
 
     def __init__(self, *args, **kwargs) -> None:
         super().__init__(*args, **kwargs, allowed_kw_inputs=("left", "right"))
@@ -83,9 +86,7 @@ class MatrixProductAB(FunctionNode):
             self.fcn = self._fcn_diagonal_diagonal
             ndim_out = 1
         else:
-            raise TypeFunctionError(
-                f"One of the inputs' dimension >2: {ndim}", node=self
-            )
+            raise TypeFunctionError(f"One of the inputs' dimension >2: {ndim}", node=self)
 
         (resshape,) = check_inputs_multiplicable_mat(self, "left", "right")
         eval_output_dtype(self, slice(None), "result")

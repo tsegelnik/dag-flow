@@ -59,3 +59,4 @@ addLevelName(INFO2, "INFO2")
 addLevelName(INFO3, "INFO3")
 
 logger = get_logger()
+logger.propagate = False

@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from typing import TYPE_CHECKING
 
 from numpy import add
@@ -45,12 +47,12 @@ class NormalizeCorrelatedVars2(FunctionNode):
     )
 
     _ndim: str
-    _matrix: "Input"
-    _central: "Input"
-    _input_value: "Input"
-    _input_normvalue: "Input"
-    _output_value: "Output"
-    _output_normvalue: "Output"
+    _matrix: Input
+    _central: Input
+    _input_value: Input
+    _input_normvalue: Input
+    _output_value: Output
+    _output_normvalue: Output
     _valuedata: ndarray
     _normvaluedata: ndarray
 
@@ -146,7 +148,7 @@ class NormalizeCorrelatedVars2(FunctionNode):
         add(output_value, central, out=output_value)
         copyto(output_normvalue, input_normvalue)
 
-    def _on_taint(self, caller: "Input") -> None:
+    def _on_taint(self, caller: Input) -> None:
         """Choose the function to call based on the modified input:
         - if normvalue is modified, the value should be updated
         - if value is modified, the normvalue should be updated

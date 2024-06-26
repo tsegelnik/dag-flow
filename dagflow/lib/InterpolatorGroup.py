@@ -13,7 +13,7 @@ from .SegmentIndex import SegmentIndex
 class InterpolatorGroup(MetaNode):
     __slots__ = ("_indexer",)
 
-    _indexer: "Node"
+    _indexer: Node
 
     def __init__(self, *, bare: bool = False, labels: Mapping = {}, **kwargs):
         super().__init__()

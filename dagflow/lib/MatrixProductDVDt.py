@@ -1,18 +1,21 @@
+from __future__ import annotations
+
 from typing import TYPE_CHECKING
 
-from numpy import empty
-from numpy import matmul
-from numpy import multiply
-from numpy.typing import NDArray
+from numpy import empty, matmul, multiply
 
 from ..nodes import FunctionNode
-from ..typefunctions import check_has_inputs
-from ..typefunctions import check_input_dimension
-from ..typefunctions import check_input_matrix_or_diag
-from ..typefunctions import check_inputs_multiplicable_mat
-from ..typefunctions import eval_output_dtype
+from ..typefunctions import (
+    check_has_inputs,
+    check_input_dimension,
+    check_input_matrix_or_diag,
+    check_inputs_multiplicable_mat,
+    eval_output_dtype,
+)
 
 if TYPE_CHECKING:
+    from numpy.typing import NDArray
+
     from ..input import Input
     from ..output import Output
 
@@ -27,9 +30,9 @@ class MatrixProductDVDt(FunctionNode):
 
     __slots__ = ("_left", "_square", "_out", "_buffer")
 
-    _left: "Input"
-    _square: "Input"
-    _out: "Output"
+    _left: Input
+    _square: Input
+    _out: Output
     _buffer: NDArray
 
     def __init__(self, *args, **kwargs) -> None:
@@ -37,9 +40,7 @@ class MatrixProductDVDt(FunctionNode):
         self._left = self._add_input("left")
         self._square = self._add_input("square")
         self._out = self._add_output("result")
-        self._functions.update(
-            {"diagonal": self._fcn_diagonal, "square": self._fcn_square}
-        )
+        self._functions.update({"diagonal": self._fcn_diagonal, "square": self._fcn_square})
         self._labels.setdefault("mark", "LDLᵀ")
 
     def _fcn_diagonal(self):

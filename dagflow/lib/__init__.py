@@ -1,13 +1,13 @@
-from .arithmetic import Division, Product, Sum
 from .Array import Array
 from .ArraySum import ArraySum
 from .BinCenter import BinCenter
 from .BlockToOneNode import BlockToOneNode
+from .Cache import Cache
 from .Cholesky import Cholesky
 from .Concatenation import Concatenation
+from .Copy import Copy
 from .CovmatrixFromCormatrix import CovmatrixFromCormatrix
 from .ElSumSq import ElSumSq
-from .exponential import Exp, Expm1, Log, Log1p, Log10
 from .Integrator import Integrator
 from .IntegratorGroup import IntegratorGroup
 from .IntegratorSampler import IntegratorSampler
@@ -26,11 +26,13 @@ from .RenormalizeDiag import RenormalizeDiag
 from .SegmentIndex import SegmentIndex
 from .SumMatOrDiag import SumMatOrDiag
 from .SumSq import SumSq
-from .trigonometry import ArcCos, ArcSin, ArcTan, Cos, Sin, Tan
 from .VectorMatrixProduct import VectorMatrixProduct
 from .View import View
 from .ViewConcat import ViewConcat
 from .WeightedSum import WeightedSum
+from .arithmetic import Division, Product, Sum
+from .exponential import Exp, Expm1, Log, Log1p, Log10
+from .trigonometry import ArcCos, ArcSin, ArcTan, Cos, Sin, Tan
 
 __all__ = [
     "ArcCos",
@@ -40,8 +42,10 @@ __all__ = [
     "ArraySum",
     "BinCenter",
     "BlockToOneNode",
+    "Cache",
     "Cholesky",
     "Concatenation",
+    "Copy",
     "Cos",
     "CovmatrixFromCormatrix",
     "Division",
@@ -56,8 +60,8 @@ __all__ = [
     "Jacobian",
     "LinearFunction",
     "Log",
-    "Log1p",
     "Log10",
+    "Log1p",
     "ManyToOneNode",
     "MatrixProductAB",
     "MatrixProductDVDt",

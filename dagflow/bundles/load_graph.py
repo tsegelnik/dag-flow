@@ -4,7 +4,7 @@ from collections.abc import Callable, Mapping
 from pathlib import Path
 from typing import TYPE_CHECKING
 
-from numpy import allclose, asfarray
+from numpy import allclose, asarray
 from schema import And
 from schema import Optional as SchemaOptional
 from schema import Or, Schema, Use
@@ -92,8 +92,8 @@ def _load_graph_data(
         logger.log(INFO3, f"Process {skey}")
 
         x, y = FileReader.graph[filename, objectname(skey, key)]
-        x = asfarray(x, dtype)
-        y = asfarray(y, dtype)
+        x = asarray(x, dtype)
+        y = asarray(y, dtype)
 
         data[key] = x, y
         meshes_list.append(x)

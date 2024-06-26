@@ -4,7 +4,7 @@ from collections.abc import Callable, Mapping
 from pathlib import Path
 from typing import TYPE_CHECKING
 
-from numpy import asfarray
+from numpy import asarray
 from schema import And
 from schema import Optional as SchemaOptional
 from schema import Or, Schema, Use
@@ -90,7 +90,7 @@ def _load_record_data(
         for column in columns:
             fullkey = reorder_key((column,) + key, key_order)
             rec = record[column][:]
-            data[fullkey] = asfarray(rec, dtype)
+            data[fullkey] = asarray(rec, dtype)
 
     return name, data
 
