@@ -1,15 +1,18 @@
-from typing import Literal
+from __future__ import annotations
+
+from typing import TYPE_CHECKING
 
 from numba import njit
-from numpy import divide
-from numpy import sum
-from numpy.typing import NDArray
+from numpy import divide, sum
 
 from ..inputhandler import MissingInputAddPair
-from ..typefunctions import AllPositionals
-from ..typefunctions import check_input_dimension
-from ..typefunctions import check_inputs_equivalence
+from ..typefunctions import AllPositionals, check_input_dimension, check_inputs_equivalence
 from .OneToOneNode import OneToOneNode
+
+if TYPE_CHECKING:
+    from typing import Literal
+
+    from numpy.typing import NDArray
 
 
 class NormalizeMatrix(OneToOneNode):

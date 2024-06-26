@@ -3,25 +3,19 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 
 from numba import njit
-from numpy.typing import NDArray
 
 from ..inputhandler import MissingInputAddPair
-from ..nodes import FunctionNode
-from ..typefunctions import (
-    AllPositionals,
-    check_input_shape,
-    check_input_square,
-    check_inputs_equivalence,
-    eval_output_dtype,
-)
+from .OneToOneNode import OneToOneNode
 
 if TYPE_CHECKING:
     from typing import Callable, Literal
 
+    from numpy.typing import NDArray
+
     from ..input import Input
 
 
-class RenormalizeDiag(FunctionNode):
+class RenormalizeDiag(OneToOneNode):
     __slots__ = ("_mode", "_ndiag", "_scale")
 
     _mode: str
@@ -63,11 +57,20 @@ class RenormalizeDiag(FunctionNode):
             _renorm_offdiag_numba(input.data, output._data, scale, self._ndiag)
 
     def _typefunc(self) -> None:
+        from ..typefunctions import (
+            AllPositionals,
+            check_input_shape,
+            check_input_square,
+            check_inputs_equivalence,
+            eval_output_dtype,
+        )
+
+        super()._typefunc()
+
         check_input_shape(self, "scale", (1,))
         check_input_square(self, 0)
         check_inputs_equivalence(self, AllPositionals, check_dtype=True, check_shape=True)
-        eval_output_dtype(self, AllPositionals, "result")
-        self.outputs[0].dd.shape = self.inputs[0].dd.shape
+        eval_output_dtype(self, (AllPositionals, "scale"), "result")
         self.fcn = self._functions[self._mode]
 
 
