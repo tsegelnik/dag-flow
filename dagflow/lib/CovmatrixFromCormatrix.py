@@ -4,7 +4,7 @@ from typing import TYPE_CHECKING
 
 from numpy import multiply
 
-from ..nodes import FunctionNode
+from ..node import Node
 from ..typefunctions import (
     check_input_dimension,
     check_input_square,
@@ -17,7 +17,7 @@ if TYPE_CHECKING:
     from ..output import Output
 
 
-class CovmatrixFromCormatrix(FunctionNode):
+class CovmatrixFromCormatrix(Node):
     """Compute covariance matrix from correlation matrix:
     Vₖₘ=Cₖₘσₖσₘ
     """

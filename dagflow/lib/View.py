@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-from ..nodes import FunctionNode
+from ..node import Node
 from ..typefunctions import copy_from_input_to_output
 
 if TYPE_CHECKING:
@@ -10,7 +10,7 @@ if TYPE_CHECKING:
     from ..output import Output
 
 
-class View(FunctionNode):
+class View(Node):
     """Creates a node with a single data output which is a view on the input"""
 
     __slots__ = (

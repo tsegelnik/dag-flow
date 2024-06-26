@@ -1,7 +1,7 @@
-from ..nodes import FunctionNode
+from ..node import Node
 
 
-class Dummy(FunctionNode):
+class Dummy(Node):
     """A dummy class that does nothing"""
 
     def __init__(self, name, **kwargs):

@@ -4,14 +4,14 @@ from collections.abc import Sequence
 from typing import TYPE_CHECKING
 
 from ..exception import InitializationError, TypeFunctionError
-from ..nodes import FunctionNode
+from ..node import Node
 from ..parameters import Parameter, Parameters
 
 if TYPE_CHECKING:
     from ..input import Input
 
 
-class ParArrayInput(FunctionNode):
+class ParArrayInput(Node):
     """Set values for parameters list from an input"""
 
     __slots__ = ("_parameters_list", "_values")

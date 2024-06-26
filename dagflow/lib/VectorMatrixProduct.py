@@ -7,7 +7,7 @@ from numpy import matmul, multiply
 from dagflow.inputhandler import MissingInputAddPair
 
 from ..exception import TypeFunctionError
-from ..nodes import FunctionNode
+from ..node import Node
 from ..typefunctions import (
     AllPositionals,
     check_input_dimension,
@@ -20,7 +20,7 @@ if TYPE_CHECKING:
     from ..input import Input
 
 
-class VectorMatrixProduct(FunctionNode):
+class VectorMatrixProduct(Node):
     """
     Compute matrix product `C=row(v)@M` or `C=M@column(v)`
     """

@@ -4,7 +4,7 @@ from typing import TYPE_CHECKING
 
 from numpy import zeros
 
-from ..nodes import FunctionNode
+from ..node import Node
 from ..typefunctions import check_input_dimension, check_input_dtype
 
 if TYPE_CHECKING:
@@ -12,7 +12,7 @@ if TYPE_CHECKING:
     from ..output import Output
 
 
-class ViewConcat(FunctionNode):
+class ViewConcat(Node):
     """Creates a node with a single data output which is a concatenated memory of the inputs"""
 
     __slots__ = ("_output", "_offsets")

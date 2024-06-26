@@ -7,7 +7,7 @@ from numpy.polynomial.legendre import leggauss
 from numpy.typing import DTypeLike, NDArray
 
 from ..exception import InitializationError
-from ..nodes import FunctionNode
+from ..node import Node
 from ..typefunctions import (
     check_input_dimension,
     check_input_edges_dim,
@@ -44,7 +44,7 @@ def _gl_sampler(orders: NDArray, sample: NDArray, weights: NDArray, edges: NDArr
         offset += n
 
 
-class IntegratorSampler(FunctionNode):
+class IntegratorSampler(Node):
     """
     The `IntegratorSampler` node creates a sample for the `Integrator` node.
 

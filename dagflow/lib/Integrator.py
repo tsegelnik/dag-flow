@@ -7,7 +7,7 @@ from numpy import empty, floating, integer, multiply
 
 from ..exception import TypeFunctionError
 from ..inputhandler import MissingInputAddPair
-from ..nodes import FunctionNode
+from ..node import Node
 from ..typefunctions import (
     check_has_inputs,
     check_input_dimension,
@@ -69,7 +69,7 @@ def _integrate2to1d(result: NDArray, data: NDArray, orders: NDArray):
         iprev = inext
 
 
-class Integrator(FunctionNode):
+class Integrator(Node):
     """
     self.inputs:
         `i`: points to integrate

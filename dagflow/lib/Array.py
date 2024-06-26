@@ -1,23 +1,20 @@
 from collections.abc import Sequence
 from numbers import Number
 
-from multikeydict.nestedmkdict import NestedMKDict
 from numpy import array as nparray
 from numpy import full
-from numpy.typing import ArrayLike
-from numpy.typing import DTypeLike
-from numpy.typing import NDArray
+from numpy.typing import ArrayLike, DTypeLike, NDArray
+
+from multikeydict.nestedmkdict import NestedMKDict
 
 from ..exception import InitializationError
 from ..node import Node
-from ..nodes import FunctionNode
 from ..output import Output
 from ..tools.iter import iter_sequence_not_string
-from ..typefunctions import check_array_edges_consistency
-from ..typefunctions import check_edges_type
+from ..typefunctions import check_array_edges_consistency, check_edges_type
 
 
-class Array(FunctionNode):
+class Array(Node):
     """Creates a node with a single data output with predefined array"""
 
     __slots__ = ("_mode", "_data", "_output")
@@ -32,8 +29,8 @@ class Array(FunctionNode):
         array: NDArray,
         *,
         mode: str = "store",
-        outname: str="array",
-        dtype: DTypeLike=None,
+        outname: str = "array",
+        dtype: DTypeLike = None,
         mark: str | None = None,
         edges: Output | Sequence[Output] | Node | None = None,
         meshes: Output | Sequence[Output] | Node | None = None,
@@ -44,7 +41,9 @@ class Array(FunctionNode):
         if mark is not None:
             self._labels.setdefault("mark", mark)
         else:
-            self._labels.setdefault("mark", edges is not None and "h⃗" or meshes is not None and "y⃗" or "a⃗")
+            self._labels.setdefault(
+                "mark", edges is not None and "h⃗" or meshes is not None and "y⃗" or "a⃗"
+            )
         self._data = nparray(array, copy=True, dtype=dtype)
 
         if mode == "store":
@@ -52,9 +51,7 @@ class Array(FunctionNode):
         elif mode == "store_weak":
             self._output = self._add_output(outname, data=self._data, owns_buffer=False)
         elif mode == "fill":
-            self._output = self._add_output(
-                outname, dtype=self._data.dtype, shape=self._data.shape
-            )
+            self._output = self._add_output(outname, dtype=self._data.dtype, shape=self._data.shape)
         else:
             raise InitializationError(f'Array: invalid mode "{mode}"', node=self)
 
@@ -116,18 +113,22 @@ class Array(FunctionNode):
         **kwargs,
     ):
         localstorage = storage(path)
-        tmpstorage = NestedMKDict(sep='.')
+        tmpstorage = NestedMKDict(sep=".")
         used_array_keys = set()
         for key, data in localstorage.walkitems():
             skey = ".".join((path,) + key)
             _, istorage = cls.make_stored(skey, data, **kwargs)
-            tmpstorage|=istorage
+            tmpstorage |= istorage
             used_array_keys.add(key)
 
-        edges = list(tmpstorage[f"nodes.{path}.{name}"] for name in iter_sequence_not_string(edgesname))
-        mesh = list(tmpstorage[f"nodes.{path}.{name}"] for name in iter_sequence_not_string(meshname))
+        edges = list(
+            tmpstorage[f"nodes.{path}.{name}"] for name in iter_sequence_not_string(edgesname)
+        )
+        mesh = list(
+            tmpstorage[f"nodes.{path}.{name}"] for name in iter_sequence_not_string(meshname)
+        )
         if edges or mesh:
-            for node in tmpstorage('nodes').walkvalues():
+            for node in tmpstorage("nodes").walkvalues():
                 if node in edges or node in mesh:
                     continue
                 node.set_mesh(mesh)
@@ -136,7 +137,6 @@ class Array(FunctionNode):
         if remove_used_arrays:
             for key in used_array_keys:
                 localstorage.delete_with_parents(key)
-
 
     def _typefunc(self) -> None:
         check_edges_type(self, slice(None), "array")  # checks List[Output]
@@ -156,9 +156,7 @@ class Array(FunctionNode):
         if ndim == value:
             return
 
-        raise InitializationError(
-            f"Array ndim is {ndim}. {type} of {value} are not consistent"
-        )
+        raise InitializationError(f"Array ndim is {ndim}. {type} of {value} are not consistent")
 
     def set_edges(self, edges: Output | Node | Sequence[Output | Node]):
         if not edges:
@@ -169,9 +167,7 @@ class Array(FunctionNode):
 
         dd = self._output.dd
         if dd.axes_edges:
-            raise InitializationError(
-                "Edges already set", node=self, output=self._output
-            )
+            raise InitializationError("Edges already set", node=self, output=self._output)
 
         self._check_ndim(len(edges), "Edges")
 
@@ -198,9 +194,7 @@ class Array(FunctionNode):
 
         dd = self._output.dd
         if dd.axes_meshes:
-            raise InitializationError(
-                "Meshes already set", node=self, output=self._output
-            )
+            raise InitializationError("Meshes already set", node=self, output=self._output)
 
         dd.meshes_inherited = False
         for meshesi in meshes:
@@ -210,7 +204,9 @@ class Array(FunctionNode):
                 dd.axes_meshes += (meshesi.outputs[0],)
             else:
                 raise InitializationError(
-                    "Array: meshes must be `Output/Node` or `Sequence[Output/Node]`, "
-                    f"got {meshes=}, {type(meshes)=}",
+                    (
+                        "Array: meshes must be `Output/Node` or `Sequence[Output/Node]`, "
+                        f"got {meshes=}, {type(meshes)=}"
+                    ),
                     node=self,
                 )

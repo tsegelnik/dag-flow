@@ -4,7 +4,7 @@ from typing import Literal
 from typing import TYPE_CHECKING
 
 from ..exception import InitializationError
-from ..nodes import FunctionNode
+from ..node import Node
 from ..typefunctions import check_inputs_number
 from ..typefunctions import copy_from_input_to_output
 
@@ -13,7 +13,7 @@ if TYPE_CHECKING:
     from ..output import Output
 
 
-class SegmentIndex(FunctionNode):
+class SegmentIndex(Node):
     """
     inputs:
         `0` or `coarse`: array of the coarse x points
@@ -66,9 +66,7 @@ class SegmentIndex(FunctionNode):
         The function to determine the dtype and shape of the ouput.
         """
         check_inputs_number(self, 2)
-        copy_from_input_to_output(
-            self, 1, 0, dtype=False, shape=True, edges=False, meshes=False
-        )
+        copy_from_input_to_output(self, 1, 0, dtype=False, shape=True, edges=False, meshes=False)
         self._indices.dd.dtype = "i"
 
     def _fcn(self):

@@ -12,7 +12,7 @@ from numpy import subtract
 from numpy import zeros
 from scipy.linalg import solve_triangular
 
-from ..nodes import FunctionNode
+from ..node import Node
 from ..typefunctions import check_has_inputs
 from ..typefunctions import check_input_dimension
 from ..typefunctions import check_input_matrix_or_diag
@@ -25,7 +25,7 @@ if TYPE_CHECKING:
     from ..output import Output
 
 
-class NormalizeCorrelatedVars2(FunctionNode):
+class NormalizeCorrelatedVars2(Node):
     """Normalize correlated variables or correlate normal variables with linear expression
 
     If x is a vector of values, μ are the central values and L is a cholesky decomposition
@@ -180,18 +180,14 @@ class NormalizeCorrelatedVars2(FunctionNode):
         self._ndim = f"{ndim}d"
         self.fcn = self._functions[f"forward_{self._ndim}"]
 
-        self._valuedata = zeros(
-            shape=self._input_value.dd.shape, dtype=self._input_value.dd.dtype
-        )
+        self._valuedata = zeros(shape=self._input_value.dd.shape, dtype=self._input_value.dd.dtype)
         self._normvaluedata = zeros(
             shape=self._input_normvalue.dd.shape,
             dtype=self._input_normvalue.dd.dtype,
         )
         self._input_value.set_own_data(self._valuedata, owns_buffer=False)
         self._input_normvalue.set_own_data(self._normvaluedata, owns_buffer=False)
-        self._output_value._set_data(
-            self._valuedata, owns_buffer=False, forbid_reallocation=True
-        )
+        self._output_value._set_data(self._valuedata, owns_buffer=False, forbid_reallocation=True)
         self._output_normvalue._set_data(
             self._normvaluedata, owns_buffer=False, forbid_reallocation=True
         )

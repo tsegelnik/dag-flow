@@ -47,6 +47,9 @@ class Node(NodeBase):
         "_debug",
         "_allowed_kw_inputs",
         "_fd",
+        "fcn",
+        "_fcn_chain",
+        "_functions",
     )
 
     _name: str
@@ -115,6 +118,10 @@ class Node(NodeBase):
         self._immediate = immediate
         self._auto_freeze = auto_freeze
         self.fd.frozen = frozen
+
+        self._fcn_chain = []  # do we need a chain of functions?
+        self._functions: dict[Any, Callable] = {"default": self._fcn}
+        self.fcn = self._functions["default"]
 
         if kwargs:
             raise InitializationError(f"Unparsed arguments: {kwargs}!")
@@ -534,8 +541,32 @@ class Node(NodeBase):
             self.fd.frozen = True
         return ret
 
+    def _stash_fcn(self):
+        self._fcn_chain.append(self.fcn)
+        return self.fcn
+
+    def _make_wrap(self, prev_fcn, wrap_fcn):
+        def wrapped_fcn():
+            wrap_fcn(prev_fcn, self)
+
+        return wrapped_fcn
+
+    def _wrap_fcn(self, wrap_fcn, *other_fcns):
+        prev_fcn = self._stash_fcn()
+        self.fcn = self._make_wrap(prev_fcn, wrap_fcn)
+        if other_fcns:
+            self._wrap_fcn(*other_fcns)
+
+    def _unwrap_fcn(self):
+        if not self._fcn_chain:
+            raise DagflowError("Unable to unwrap bare function")
+        self.fcn = self._fcn_chain.pop()
+
+    def _fcn(self):
+        pass
+
     def _eval(self):
-        raise CriticalError("Unimplemented method: use FunctionNode, StaticNode or MemberNode")
+        return self.fcn()
 
     def eval(self):
         if not self.closed:

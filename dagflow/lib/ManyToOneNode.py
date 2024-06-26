@@ -6,7 +6,6 @@ from multikeydict.typing import properkey
 
 from ..inputhandler import MissingInputAddOne
 from ..node import Node
-from ..nodes import FunctionNode
 from ..storage import NodeStorage
 
 if TYPE_CHECKING:
@@ -16,7 +15,7 @@ if TYPE_CHECKING:
     from multikeydict.typing import KeyLike, TupleKey
 
 
-class ManyToOneNode(FunctionNode):
+class ManyToOneNode(Node):
     """
     The abstract node with only one output `result`,
     which is the result of some function of all the positional inputs

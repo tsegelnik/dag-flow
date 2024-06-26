@@ -1,15 +1,21 @@
-from collections.abc import Sequence
-from typing import Any
+from __future__ import annotations
 
-from multikeydict.typing import KeyLike, properkey
+from typing import TYPE_CHECKING
+
+from multikeydict.typing import properkey
 
 from ..inputhandler import MissingInputAddPair
 from ..node import Node
-from ..nodes import FunctionNode
 from ..storage import NodeStorage
 
+if TYPE_CHECKING:
+    from collections.abc import Sequence
+    from typing import Any
 
-class OneToOneNode(FunctionNode):
+    from multikeydict.typing import KeyLike
+
+
+class OneToOneNode(Node):
     """
     The abstract node with an output for every positional input
     """

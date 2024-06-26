@@ -2,13 +2,13 @@ from numpy import sqrt
 from scipy.linalg import cholesky
 
 from ..inputhandler import MissingInputAddPair
-from ..nodes import FunctionNode
+from ..node import Node
 from ..typefunctions import check_has_inputs
 from ..typefunctions import check_input_matrix_or_diag
 from ..typefunctions import copy_from_input_to_output
 
 
-class Cholesky(FunctionNode):
+class Cholesky(Node):
     """Compute the Cholesky decomposition of a matrix V=LL̃ᵀ
     1d input is considered to be a diagonal of square matrix"""
 
