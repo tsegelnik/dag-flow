@@ -3,7 +3,7 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 from weakref import ref as weakref
 
-from multikeydict.typing import KeyLike
+from multikeydict.typing import KeyLike, properkey
 
 from .exception import (
     AllocationError,
@@ -167,8 +167,7 @@ class Node(NodeBase):
 
         tuplename = (name,)
         for key in replicate_outputs:
-            if isinstance(key, str):
-                key = (key,)
+            key = properkey(key)
             outname = tuplename + key
             instance = cls(".".join(outname), **kwargs)
             nodes[outname] = instance

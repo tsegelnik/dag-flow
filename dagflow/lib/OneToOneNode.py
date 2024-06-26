@@ -68,13 +68,31 @@ class OneToOneNode(FunctionNode):
         if not replicate_outputs:
             raise RuntimeError("`replicate_outputs` tuple should have at least one item")
 
+        tuplename = (name,)
         for outkey in replicate_outputs:
-            outname = (name,) + properkey(outkey)
+            outkey = properkey(outkey)
+            outname = tuplename + outkey
             instance = cls(".".join(outname), **kwargs)
             nodes[outname] = instance
             instance()
-            inputs[outname] = instance.inputs[0]
-            outputs[outname] = instance.outputs[0]
+
+            iter_inputs = instance.inputs.iter_all_items()
+            ninputs = instance.inputs.len_all()
+            if ninputs > 1:
+                for iname, input in iter_inputs:
+                    inputs[tuplename + (iname,) + outkey] = input
+            else:
+                _, input = next(iter_inputs)
+                inputs[tuplename + outkey] = input
+
+            iter_outputs = instance.outputs.iter_all_items()
+            noutputs = instance.outputs.len_all()
+            if noutputs > 1:
+                for oname, output in instance.outputs.iter_all_items():
+                    outputs[tuplename + (oname,) + outkey] = output
+            else:
+                _, output = next(iter_outputs)
+                outputs[tuplename + outkey] = output
 
         NodeStorage.update_current(storage, strict=True)
 
@@ -92,18 +110,40 @@ class OneToOneNode(FunctionNode):
     ) -> tuple[Node | None, NodeStorage]:
         storage = NodeStorage(default_containers=True)
         nodes = storage("nodes")
+        inputs = storage("inputs")
         outputs = storage("outputs")
 
         from multikeydict.nestedmkdict import walkitems
 
         nobjects = 0
+        tuplename = (name,)
         for arg in args:
-            for key, obj in walkitems(arg):
-                outname = (name,) + key
+            for outkey, obj in walkitems(arg):
+                outname = tuplename + outkey
                 instance = cls(".".join(outname), **kwargs)
                 nodes[outname] = instance
+
                 obj >> instance  # pyright: ignore [reportUnusedExpression]
+
+                iter_inputs = instance.inputs.iter_all_items()
+                ninputs = instance.inputs.len_all()
+                if ninputs > 1:
+                    for iname, input in iter_inputs:
+                        inputs[tuplename + (iname,) + outkey] = input
+                else:
+                    _, input = next(iter_inputs)
+                    inputs[tuplename + outkey] = input
+
                 outputs[outname] = instance.outputs[0]
+                iter_outputs = instance.outputs.iter_all_items()
+                noutputs = instance.outputs.len_all()
+                if noutputs > 1:
+                    for oname, output in instance.outputs.iter_all_items():
+                        outputs[tuplename + (oname,) + outkey] = output
+                else:
+                    _, output = next(iter_outputs)
+                    outputs[tuplename + outkey] = output
+
                 nobjects += 1
 
         NodeStorage.update_current(storage, strict=True)
