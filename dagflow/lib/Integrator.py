@@ -16,12 +16,12 @@ from ..typefunctions import (
     check_input_shape,
     check_input_subtype,
 )
-from ..types import ShapeLike
 
 if TYPE_CHECKING:
     from numpy.typing import NDArray
 
     from ..input import Input
+    from ..types import ShapeLike
 
 
 @njit(cache=True)

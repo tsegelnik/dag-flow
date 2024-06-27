@@ -1,15 +1,12 @@
-from numpy import arccos
-from numpy import arcsin
-from numpy import arctan
-from numpy import cos
-from numpy import sin
-from numpy import tan
+from numpy import arccos, arcsin, arctan, cos, sin, tan
 
 from .OneToOneNode import OneToOneNode
 
 
 class Cos(OneToOneNode):
     """Cos function"""
+
+    __slots__ = ()
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -23,6 +20,8 @@ class Cos(OneToOneNode):
 class Sin(OneToOneNode):
     """Sin function"""
 
+    __slots__ = ()
+
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self._labels.setdefault("mark", "sin")
@@ -34,6 +33,8 @@ class Sin(OneToOneNode):
 
 class ArcCos(OneToOneNode):
     """ArcCos function"""
+
+    __slots__ = ()
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -47,6 +48,8 @@ class ArcCos(OneToOneNode):
 class ArcSin(OneToOneNode):
     """ArcSin function"""
 
+    __slots__ = ()
+
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self._labels.setdefault("mark", "asin")
@@ -59,6 +62,8 @@ class ArcSin(OneToOneNode):
 class Tan(OneToOneNode):
     """Tan function"""
 
+    __slots__ = ()
+
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self._labels.setdefault("mark", "tan")
@@ -70,6 +75,8 @@ class Tan(OneToOneNode):
 
 class ArcTan(OneToOneNode):
     """Arctan function"""
+
+    __slots__ = ()
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)

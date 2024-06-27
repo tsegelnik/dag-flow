@@ -1,13 +1,18 @@
-from collections.abc import Mapping
-from typing import Literal
+from __future__ import annotations
 
-from multikeydict.typing import KeyLike
+from typing import TYPE_CHECKING
 
 from ..metanode import MetaNode
 from ..node import Node
 from ..storage import NodeStorage
 from .Interpolator import Interpolator
 from .SegmentIndex import SegmentIndex
+
+if TYPE_CHECKING:
+    from collections.abc import Mapping
+    from typing import Literal
+
+    from multikeydict.typing import KeyLike
 
 
 class InterpolatorGroup(MetaNode):

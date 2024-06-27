@@ -17,6 +17,7 @@ from .exception import (
     UnclosedGraphError,
 )
 from .flagsdescriptor import FlagsDescriptor
+from .graph import Graph
 from .input import Input
 from .iter import IsIterable
 from .labels import Labels
@@ -29,7 +30,6 @@ if TYPE_CHECKING:
     from typing import Any
     from weakref import ReferenceType
 
-    from .graph import Graph
     from .metanode import MetaNode
     from .storage import NodeStorage
 
@@ -94,7 +94,6 @@ class Node(NodeBase):
         self._fd = FlagsDescriptor(children=self.outputs, parents=self.inputs, **kwargs)
 
         if graph is None:
-            from .graph import Graph  # fmt: skip
             self.graph = Graph.current()
         else:
             self.graph = graph
@@ -629,7 +628,7 @@ class Node(NodeBase):
         for output in self.outputs.iter_nonpos():
             print("    ", output)
 
-    def _typefunc(self) -> bool:
+    def _typefunc(self) -> None:
         """A output takes this function to determine the dtype and shape"""
         raise DagflowError("Unimplemented method: the method must be overridden!")
 

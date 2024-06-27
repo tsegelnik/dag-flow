@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Literal
+from typing import TYPE_CHECKING
 
 from numpy import matmul, multiply
 
@@ -17,6 +17,8 @@ from ..typefunctions import (
 )
 
 if TYPE_CHECKING:
+    from typing import Literal
+
     from ..input import Input
 
 

@@ -1,4 +1,5 @@
 from ..inputhandler import MissingInputAddOne
+from ..typefunctions import check_has_inputs, check_input_dimension, check_input_dtype
 from .ManyToOneNode import ManyToOneNode
 
 
@@ -17,8 +18,6 @@ class Concatenation(ManyToOneNode):
 
     def _typefunc(self) -> None:
         """A output takes this function to determine the dtype and shape"""
-        from ..typefunctions import check_has_inputs, check_input_dimension, check_input_dtype
-
         check_has_inputs(self)
         cdtype = self.inputs[0].dd.dtype
         check_input_dtype(self, slice(None), cdtype)

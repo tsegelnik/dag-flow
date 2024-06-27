@@ -7,6 +7,11 @@ from multikeydict.typing import properkey
 from ..inputhandler import MissingInputAddPair
 from ..node import Node
 from ..storage import NodeStorage
+from ..typefunctions import (
+    assign_outputs_axes_from_inputs,
+    check_has_inputs,
+    copy_from_input_to_output,
+)
 
 if TYPE_CHECKING:
     from collections.abc import Sequence
@@ -20,18 +25,14 @@ class OneToOneNode(Node):
     The abstract node with an output for every positional input
     """
 
+    __slots__ = ()
+
     def __init__(self, *args, **kwargs):
         kwargs.setdefault("missing_input_handler", MissingInputAddPair())
         super().__init__(*args, **kwargs)
 
     def _typefunc(self) -> None:
         """A output takes this function to determine the dtype and shape"""
-        from ..typefunctions import (
-            assign_outputs_axes_from_inputs,
-            check_has_inputs,
-            copy_from_input_to_output,
-        )
-
         check_has_inputs(self)
         copy_from_input_to_output(self, slice(None), slice(None), edges=True, meshes=True)
         assign_outputs_axes_from_inputs(
@@ -102,10 +103,7 @@ class OneToOneNode(Node):
 
         NodeStorage.update_current(storage, strict=True)
 
-        if len(replicate_outputs) == 1:
-            return instance, storage
-
-        return None, storage
+        return (instance, storage) if len(replicate_outputs) == 1 else (None, storage)
 
     @classmethod
     def replicate_from_args(
@@ -154,7 +152,4 @@ class OneToOneNode(Node):
 
         NodeStorage.update_current(storage, strict=True)
 
-        if nobjects == 1:
-            return instance, storage
-
-        return None, storage
+        return (instance, storage) if nobjects == 1 else (None, storage)

@@ -4,13 +4,14 @@ from collections.abc import Sequence
 from typing import TYPE_CHECKING
 
 from numba import njit
-from numpy.typing import NDArray
 
 from ..exception import InitializationError
 from ..parameters import GaussianParameter
 from .OneToOneNode import OneToOneNode
 
 if TYPE_CHECKING:
+    from numpy.typing import NDArray
+
     from ..input import Input
 
 

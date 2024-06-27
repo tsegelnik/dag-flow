@@ -4,7 +4,6 @@ from typing import TYPE_CHECKING, Literal
 
 from numpy import empty, errstate, integer, linspace, matmul, meshgrid, newaxis
 from numpy.polynomial.legendre import leggauss
-from numpy.typing import DTypeLike, NDArray
 
 from ..exception import InitializationError
 from ..node import Node
@@ -16,6 +15,8 @@ from ..typefunctions import (
 )
 
 if TYPE_CHECKING:
+    from numpy.typing import DTypeLike, NDArray
+
     from ..input import Input
     from ..output import Output
 

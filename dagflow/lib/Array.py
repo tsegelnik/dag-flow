@@ -1,9 +1,10 @@
+from __future__ import annotations
+
 from collections.abc import Sequence
-from numbers import Number
+from typing import TYPE_CHECKING
 
 from numpy import array as nparray
 from numpy import full
-from numpy.typing import ArrayLike, DTypeLike, NDArray
 
 from multikeydict.nestedmkdict import NestedMKDict
 
@@ -12,6 +13,11 @@ from ..node import Node
 from ..output import Output
 from ..tools.iter import iter_sequence_not_string
 from ..typefunctions import check_array_edges_consistency, check_edges_type
+
+if TYPE_CHECKING:
+    from numbers import Number
+
+    from numpy.typing import ArrayLike, DTypeLike, NDArray
 
 
 class Array(Node):
@@ -121,12 +127,10 @@ class Array(Node):
             tmpstorage |= istorage
             used_array_keys.add(key)
 
-        edges = list(
-            tmpstorage[f"nodes.{path}.{name}"] for name in iter_sequence_not_string(edgesname)
-        )
-        mesh = list(
-            tmpstorage[f"nodes.{path}.{name}"] for name in iter_sequence_not_string(meshname)
-        )
+        edges = [tmpstorage[f"nodes.{path}.{name}"] for name in iter_sequence_not_string(edgesname)]
+
+        mesh = [tmpstorage[f"nodes.{path}.{name}"] for name in iter_sequence_not_string(meshname)]
+
         if edges or mesh:
             for node in tmpstorage("nodes").walkvalues():
                 if node in edges or node in mesh:

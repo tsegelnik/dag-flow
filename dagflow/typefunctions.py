@@ -1,17 +1,20 @@
 from __future__ import annotations
 
-from collections.abc import Callable, Sequence
+from collections.abc import Sequence
 from itertools import repeat
 from typing import TYPE_CHECKING
 
 from numpy import allclose, issubdtype, result_type
-from numpy.typing import DTypeLike
 
 from .exception import TypeFunctionError
 from .input import Input
 from .output import Output
 
 if TYPE_CHECKING:
+    from collections.abc import Callable
+
+    from numpy.typing import DTypeLike
+
     from .node import Node
 
 AllPositionals = slice(None)
@@ -398,13 +401,17 @@ def check_inputs_equivalence(
 
         edges_inconsistent = check_edges and dd.axes_edges and edges and dd.axes_edges != edges
         if edges_inconsistent and check_edges_contents:
-            edges_inconsistent = not all(allclose(a.data, b.data, atol=atol) for a, b in zip(edges, dd.axes_edges))
+            edges_inconsistent = not all(
+                allclose(a.data, b.data, atol=atol) for a, b in zip(edges, dd.axes_edges)
+            )
 
         meshes_inconsistent = (
             check_meshes and dd.axes_meshes and meshes and dd.axes_meshes != meshes
         )
         if meshes_inconsistent and check_meshes_contents:
-            meshes_inconsistent = not all(allclose(a.data, b.data, atol=atol) for a, b in zip(meshes, dd.axes_meshes))
+            meshes_inconsistent = not all(
+                allclose(a.data, b.data, atol=atol) for a, b in zip(meshes, dd.axes_meshes)
+            )
 
         if any(
             (

@@ -5,6 +5,13 @@ from typing import TYPE_CHECKING
 from numba import njit
 
 from ..inputhandler import MissingInputAddPair
+from ..typefunctions import (
+    AllPositionals,
+    check_input_shape,
+    check_input_square,
+    check_inputs_equivalence,
+    eval_output_dtype,
+)
 from .OneToOneNode import OneToOneNode
 
 if TYPE_CHECKING:
@@ -57,16 +64,7 @@ class RenormalizeDiag(OneToOneNode):
             _renorm_offdiag_numba(input.data, output._data, scale, self._ndiag)
 
     def _typefunc(self) -> None:
-        from ..typefunctions import (
-            AllPositionals,
-            check_input_shape,
-            check_input_square,
-            check_inputs_equivalence,
-            eval_output_dtype,
-        )
-
         super()._typefunc()
-
         check_input_shape(self, "scale", (1,))
         check_input_square(self, 0)
         check_inputs_equivalence(self, AllPositionals, check_dtype=True, check_shape=True)
