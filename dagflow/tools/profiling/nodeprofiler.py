@@ -10,7 +10,6 @@ from .profiler import Profiler
 if TYPE_CHECKING:
     from dagflow.nodes import FunctionNode
 
-DEFAULT_RUNS = 10000
 _TABLE_COLUMNS = ("node", "type", "name", "time")
 _ALLOWED_GROUPBY = ("node", "type", "name")
 
@@ -19,16 +18,17 @@ class NodeProfiler(Profiler):
     __slots__ = ()
 
     def __init__(self,
-                 target_nodes: Sequence[FunctionNode]=[],
+                 target_nodes: Sequence[FunctionNode] = (),
                  *,
-                 sources: Sequence[FunctionNode]=[],
-                 sinks: Sequence[FunctionNode]=[],
-                 n_runs: int=DEFAULT_RUNS):
+                 sources: Sequence[FunctionNode] = (),
+                 sinks: Sequence[FunctionNode] = (),
+                 n_runs: int = 10_000
+                 ) -> None:
         self._allowed_groupby = _ALLOWED_GROUPBY
         super().__init__(target_nodes, sources, sinks, n_runs)
 
     @classmethod
-    def estimate_node(cls, node: FunctionNode, n_runs: int=DEFAULT_RUNS):
+    def estimate_node(cls, node: FunctionNode, n_runs: int = 10_000):
         for input in node.inputs.iter_all():
             input.touch()
         return timeit(stmt=node.fcn, number=n_runs)
@@ -45,10 +45,11 @@ class NodeProfiler(Profiler):
         return self
 
     def make_report(self,
-                    group_by: str | tuple[str] | None="type",
-                    agg_funcs: Sequence[str] | None=None,
-                    sort_by: str | None=None,
-                    normilize: bool=True):
+                    group_by: str | tuple[str] | None = "type",
+                    agg_funcs: Sequence[str] | None = None,
+                    sort_by: str | None = None,
+                    normilize: bool = True
+                    ) -> DataFrame:
         report = super().make_report(group_by, agg_funcs, sort_by)
         if normilize:
             return self._normalize(report)
@@ -61,10 +62,11 @@ class NodeProfiler(Profiler):
         print("total estimations time: %.6f sec." % total)
 
     def print_report(self,
-                     rows: int | None=10,
-                     group_by: str | None="type",
-                     agg_funcs: Sequence[str] | None=None,
-                     sort_by: str | None=None) -> DataFrame:
+                     rows: int | None = 40,
+                     group_by: str | None = "type",
+                     agg_funcs: Sequence[str] | None = None,
+                     sort_by: str | None = None
+                     ) -> DataFrame:
         report = self.make_report(group_by, agg_funcs, sort_by)
         print(f"\nNode Profiling {hex(id(self))}, "
               f"n_runs for each node: {self._n_runs}\n"
