@@ -26,11 +26,12 @@ class FrameworkProfiler(Profiler):
     __slots__ = ()
 
     def __init__(self,
-                 target_nodes: Sequence[FunctionNode]=[],
+                 target_nodes: Sequence[FunctionNode] = (),
                  *,
-                 sources: Sequence[FunctionNode]=[],
-                 sinks: Sequence[FunctionNode]=[],
-                 n_runs = 100) -> None:
+                 sources: Sequence[FunctionNode] = (),
+                 sinks: Sequence[FunctionNode] = (),
+                 n_runs = 100
+                 ) -> None:
         super().__init__(target_nodes, sources, sinks, n_runs)
         self._allowed_groupby = _ALLOWED_GROUPBY
         self.register_agg_func(
@@ -102,16 +103,18 @@ class FrameworkProfiler(Profiler):
         return self
 
     def make_report(self,
-                    group_by=["source nodes", "sink nodes"],
-                    agg_funcs: Sequence[str] | None=None,
-                    sort_by: str | None=None):
+                    group_by = ["source nodes", "sink nodes"],
+                    agg_funcs: Sequence[str] | None = None,
+                    sort_by: str | None = None
+                    ) -> DataFrame:
         return super().make_report(group_by, agg_funcs, sort_by)
 
     def print_report(self,
-                     rows: int | None=10,
-                     group_by=["source nodes", "sink nodes"],
-                     agg_funcs: Sequence[str] | None=None,
-                     sort_by: str | None=None) -> DataFrame:
+                     rows: int | None = 40,
+                     group_by = ["source nodes", "sink nodes"],
+                     agg_funcs: Sequence[str] | None = None,
+                     sort_by: str | None = None
+                     ) -> DataFrame:
         report = self.make_report(group_by, agg_funcs, sort_by)
         print(f"\nFramework Profiling {hex(id(self))}, "
               f"n_runs for given subgraph: {self._n_runs}, "

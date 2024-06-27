@@ -123,7 +123,7 @@ def test_print_report_g1_2():
         profiling.print_report(agg_funcs=['single', 'count',
                                           'sum', 'percentage'])
         
-def test_print_report_g1_2():
+def test_print_report_g1_3():
     g, _ = graph_1()
     target_nodes = g._nodes
     profiling = NodeProfiler(target_nodes, n_runs=n_runs)

@@ -15,12 +15,11 @@ def test_init_g0(monkeypatch):
     profiling = Profiler(target_nodes, n_runs=10000)
     assert profiling._target_nodes == target_nodes
     assert profiling._n_runs == 10000
-    assert profiling._sources == profiling._sinks == []
+    assert profiling._sources == profiling._sinks == ()
 
     sources, sinks = [a2, a3], [s3]
     target_nodes = [a2, a3, s0, p1, s1, s2, s3]
     profiling = Profiler(sources=sources, sinks=sinks)
-
     assert Counter(profiling._target_nodes) == Counter(target_nodes)
     assert profiling._sources == sources
     assert profiling._sinks == sinks
@@ -47,7 +46,6 @@ def test_init_g1(monkeypatch):
     sources, sinks = [a4, s1], [p2]
     target_nodes = [a4, s1, p1, p2]
     profiling = Profiler(sources=sources, sinks=sinks)
-
     assert Counter(profiling._target_nodes) == Counter(target_nodes)
     assert profiling._sources == sources
     assert profiling._sinks == sinks

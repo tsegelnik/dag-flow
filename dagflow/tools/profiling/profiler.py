@@ -28,7 +28,6 @@ _COLUMN_ALIASES: dict[str | Callable, str] = {
     "min": "t_min",
     "max": "t_max",
     "var": "t_var",
-    "cumsum": "t_cumsum",
 }
 _AGG_ALIASES: dict[str, str | Callable] = {
     "single": "mean",
@@ -41,7 +40,6 @@ _AGG_ALIASES: dict[str, str | Callable] = {
     "t_min": "min",
     "t_max": "max",
     "t_var": "var",
-    "t_cumsum": "cumsum",
 }
 
 _DEFAULT_AGG_FUNCS = ("count", "single", "sum", "%_of_total")
@@ -71,10 +69,11 @@ class Profiler(metaclass=ABCMeta):
     _agg_aliases: dict[str, str | Callable]
 
     def __init__(self,
-                 target_nodes: Sequence[FunctionNode]=[],
-                 sources: Sequence[FunctionNode]=[],
-                 sinks: Sequence[FunctionNode]=[],
-                 n_runs: int=100):
+                 target_nodes: Sequence[FunctionNode] = (),
+                 sources: Sequence[FunctionNode] = (),
+                 sinks: Sequence[FunctionNode] = (),
+                 n_runs: int = 100
+                 ) -> None:
         self._default_agg_funcs = _DEFAULT_AGG_FUNCS
         self._column_aliases = _COLUMN_ALIASES.copy()
         self._agg_aliases = _AGG_ALIASES.copy()
@@ -129,20 +128,18 @@ class Profiler(metaclass=ABCMeta):
             while True:
                 last_in_path = True
                 for ch in self.__child_nodes_gen(cur_node):
-                    in_related = False
                     if ch in self._sinks:
                         related_nodes.add(ch)
-                    # if child node in `_sinks` it would be in `related_nodes` already
+                    # If `_sinks` contains child node it would be already in `related_nodes`
                     if ch in related_nodes:
                         related_nodes.update(stack)
                         related_nodes.add(cur_node)
-                        in_related = True
-                    if ch not in visited and not in_related:
+                    elif ch not in visited:
                         stack.append(cur_node)
                         cur_node = ch
                         last_in_path = False
                         break
-                # no unvisited childs found (`for` loop did not encounter a `break`)
+                # No unvisited childs found (`for` loop did not encounter a `break`)
                 else:
                     visited.add(cur_node)
                 if len(stack) == 0:
@@ -151,6 +148,7 @@ class Profiler(metaclass=ABCMeta):
                     cur_node = stack.pop()
         self.__check_reachable(related_nodes)
         return related_nodes
+
 
     def _reveal_source_sink(self):
         """Find sources and sinks for self._target_nodes"""
@@ -269,13 +267,14 @@ class Profiler(metaclass=ABCMeta):
     def make_report(self,
                     group_by: str | tuple[str] | None,
                     agg_funcs: Sequence[str] | None,
-                    sort_by: str | None) -> DataFrame:
+                    sort_by: str | None
+                    ) -> DataFrame:
         """Make a report table. \n
         Note: Since the report table is just a `Pandas.DataFrame`,
         you can call Pandas methods like `.to_csv()` or `to_excel()`
         to export your data in appropriate format.
         """
-        if agg_funcs is None or agg_funcs == []:
+        if not agg_funcs:
             agg_funcs = self._default_agg_funcs
         self._check_report_consistency(group_by, agg_funcs)
         sort_by = self._col_from_alias(sort_by)
@@ -305,9 +304,10 @@ class Profiler(metaclass=ABCMeta):
     @abstractmethod
     def print_report(self,
                      rows: int | None,
-                     group_by: str | None,
+                     group_by: str | tuple[str] | None,
                      agg_funcs: Sequence[str] | None,
-                     sort_by) -> DataFrame:
+                     sort_by: str | None
+                     ) -> DataFrame:
         """Make report and print it. \n
         Return `Pandas.DataPrame` as report
         ( See: `self.make_report()` )
