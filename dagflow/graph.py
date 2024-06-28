@@ -170,4 +170,4 @@ class Graph(GraphBase):
             self.close(strict=self._strict)
 
 
-_context_graph: list["Graph"] = []
+_context_graph: list[Graph] = []
