@@ -7,12 +7,12 @@ from .iter import IsIterable
 
 class EdgeContainer:
     __slots__ = (
-        '_kw_edges',
-        '_pos_edges',
-        '_pos_edges_list',
-        '_nonpos_edges',
-        '_all_edges',
-        '_dtype'
+        "_kw_edges",
+        "_pos_edges",
+        "_pos_edges_list",
+        "_nonpos_edges",
+        "_all_edges",
+        "_dtype",
     )
     _kw_edges: dict[str, Any]
     _pos_edges_list: list
@@ -31,25 +31,22 @@ class EdgeContainer:
             self.add(iterable)
 
     def __str__(self):
-        if self._dtype:
-            type = self._dtype.__name__
-        else:
-            type = 'Edge'
-        return f"{type}: {tuple(self._all_edges)}"
+        _type = self._dtype.__name__ if self._dtype else "Edge"
+        return f"{_type}: {tuple(self._all_edges)}"
 
     def add(
         self,
         value: Any,
         *,
-        name: str | None=None,
-        positional: bool=True,
-        keyword: bool=True,
-        merge: bool=False
+        name: str | None = None,
+        positional: bool = True,
+        keyword: bool = True,
+        merge: bool = False,
     ):
-        if positional==keyword==False:
-            raise RuntimeError('Edge should be at least positional or a keyword')
+        if positional == keyword == False:
+            raise RuntimeError("Edge should be at least positional or a keyword")
         if positional and merge:
-            raise RuntimeError('May not merge positional limbs')
+            raise RuntimeError("May not merge positional limbs")
 
         if IsIterable(value):
             for v in value:
@@ -58,8 +55,7 @@ class EdgeContainer:
         if self._dtype:
             if not isinstance(value, self._dtype):
                 raise RuntimeError(
-                    f"The type {type(value)} of the data doesn't correpond "
-                    f"to {self._dtype}!"
+                    f"The type {type(value)} of the data doesn't correpond " f"to {self._dtype}!"
                 )
         else:
             self._dtype = type(value)
@@ -72,28 +68,28 @@ class EdgeContainer:
         if keyword:
             if merge:
                 prevlimb = self._kw_edges.get(name, ())
-                value = prevlimb+(value,)
+                value = prevlimb + (value,)
             self._kw_edges[name] = value
 
-        self._all_edges[name]=value
+        self._all_edges[name] = value
         if positional:
             self._pos_edges_list.append(value)
-            self._pos_edges[name]=value
+            self._pos_edges[name] = value
         else:
-            self._nonpos_edges[name]=value
+            self._nonpos_edges[name] = value
         return self
 
     def make_positional(self, name: str) -> Any:
         try:
             limb = self._kw_edges[name]
-        except KeyError:
-            raise RuntimeError(f"Invalid keyword limb {name}")
+        except KeyError as exc:
+            raise RuntimeError(f"Invalid keyword limb {name}") from exc
 
         if limb in self._pos_edges_list:
             raise RuntimeError(f"Limb {name} is already positional")
 
         self._pos_edges_list.append(limb)
-        self._pos_edges[name]=limb
+        self._pos_edges[name] = limb
         del self._nonpos_edges[name]
         return limb
 
@@ -136,7 +132,7 @@ class EdgeContainer:
     def nonpos_edges(self) -> dict:
         return self._nonpos_edges
 
-    def get(self, key, default = None):
+    def get(self, key, default=None):
         try:
             return self.__getitem__(key)
         except Exception:
@@ -148,6 +144,7 @@ class EdgeContainer:
     def get_pos(self, idx: int):
         """Get positional leg"""
         return self._pos_edges_list[idx]
+
     iat = get_pos
 
     def key(self, arg):
@@ -163,11 +160,13 @@ class EdgeContainer:
     def get_kw(self, key: str):
         """Return keyword leg"""
         return self._kw_edges[key]
+
     kat = get_kw
 
     def len_pos(self) -> int:
         """Returns a number of the positional limbs"""
         return len(self._pos_edges_list)
+
     __len__ = len_pos
 
     def len_kw(self) -> int:
@@ -204,17 +203,19 @@ class EdgeContainer:
         self,
         key: int | str | slice | Sequence,
         *,
-        include_kw: bool=False,
-        exclude_pos: bool=False
+        include_kw: bool = False,
+        exclude_pos: bool = False,
     ):
         if not include_kw and exclude_pos:
-            raise RuntimeError("EdgeContainer.iter(): unable to set {include_kw=} and {exclude_pos=}")
+            raise RuntimeError(
+                "EdgeContainer.iter(): unable to set {include_kw=} and {exclude_pos=}"
+            )
         if isinstance(key, int):
             yield self._pos_edges_list[key]
         elif isinstance(key, str):
             yield self._kw_edges[key]
         elif isinstance(key, slice):
-            if key==slice(None):
+            if key == slice(None):
                 if include_kw:
                     if exclude_pos:
                         yield from self.iter_nonpos()
@@ -233,9 +234,9 @@ class EdgeContainer:
                 elif isinstance(subkey, slice):
                     yield from self._pos_edges_list[subkey]
                 else:
-                    raise CriticalError(f'Invalid subkey type {type(subkey).__name__}')
+                    raise CriticalError(f"Invalid subkey type {type(subkey).__name__}")
         else:
-            raise CriticalError(f'Invalid key type {type(key).__name__}')
+            raise CriticalError(f"Invalid key type {type(key).__name__}")
 
     def __contains__(self, name):
         return name in self._all_edges
@@ -254,4 +255,4 @@ class EdgeContainer:
                 replaced = True
 
         if not replaced:
-            raise CriticalError('Unable to replace an output/input (not found)')
+            raise CriticalError("Unable to replace an output/input (not found)")

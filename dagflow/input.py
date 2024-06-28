@@ -3,40 +3,49 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 
 from numpy import zeros
-from numpy.typing import DTypeLike
-from numpy.typing import NDArray
 
 from .datadescriptor import DataDescriptor
 from .edges import EdgeContainer
-from .exception import AllocationError
-from .exception import ClosedGraphError
-from .exception import InitializationError
-from .exception import ReconnectionError
+from .exception import AllocationError, ClosedGraphError, InitializationError, ReconnectionError
 from .iter import StopNesting
 from .labels import repr_pretty
-from .output import Output
 from .shift import rshift
-from .types import EdgesLike
-from .types import ShapeLike
 
 if TYPE_CHECKING:
+    from collections.abc import Iterator
+
+    from numpy.typing import DTypeLike, NDArray
+
     from .node import Node
+    from .output import Output
+    from .types import EdgesLike, ShapeLike
 
 
 class Input:
-    _own_data: NDArray | None = None
+    __slots__ = (
+        "_own_data",
+        "_own_dd",
+        "_node",
+        "_name",
+        "_parent_output",
+        "_child_output",
+        "_allocatable",
+        "_owns_buffer",
+        "_debug",
+    )
+    _own_data: NDArray | None
     _own_dd: DataDescriptor
 
     _node: Node | None
     _name: str | None
 
-    _parent_output: Output | None = None
-    _child_output: Output | None = None
+    _parent_output: Output | None
+    _child_output: Output | None
 
-    _allocatable: bool = False
-    _owns_buffer: bool = False
+    _allocatable: bool
+    _owns_buffer: bool
 
-    _debug: bool = False
+    _debug: bool
 
     def __init__(
         self,
@@ -58,9 +67,13 @@ class Input:
 
         self._name = name
         self._node = node
-        self._set_child_output(child_output)
-        self._parent_output = parent_output
         self._allocatable = allocatable
+        self._parent_output = parent_output
+
+        self._child_output = None
+        if child_output:
+            self._set_child_output(child_output)
+
         if debug is not None:
             self._debug = debug
         elif node:
@@ -68,8 +81,9 @@ class Input:
         else:
             self._debug = False
 
+        self._owns_buffer = False
+        self._own_data = None
         self._own_dd = DataDescriptor(dtype, shape, axes_edges, axes_meshes)
-
         if data is not None:
             self.set_own_data(data, owns_buffer=True)
 
@@ -261,6 +275,8 @@ class Input:
 
 
 class Inputs(EdgeContainer):
+    __slots__ = ()
+
     def __init__(self, iterable=None):
         super().__init__(iterable)
         self._dtype = Input

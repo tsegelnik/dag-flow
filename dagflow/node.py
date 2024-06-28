@@ -93,11 +93,7 @@ class Node(NodeBase):
         self._name = name
         self._fd = FlagsDescriptor(children=self.outputs, parents=self.inputs, **kwargs)
 
-        if graph is None:
-            self.graph = Graph.current()
-        else:
-            self.graph = graph
-
+        self.graph = Graph.current() if graph is None else graph
         if debug is None and self.graph is not None:
             self._debug = self.graph.debug
         else:
@@ -203,10 +199,7 @@ class Node(NodeBase):
 
         NodeStorage.update_current(storage, strict=True)
 
-        if len(replicate_outputs) == 1:
-            return instance, storage
-
-        return None, storage
+        return (instance, storage) if len(replicate_outputs) == 1 else (None, storage)
 
     #
     # Properties
@@ -659,8 +652,8 @@ class Node(NodeBase):
             for _input in self.inputs.iter_all():
                 try:
                     parent_node = _input.parent_node
-                except AttributeError:
-                    raise ClosingError("Parent node is not initialized", input=_input)
+                except AttributeError as exc:
+                    raise ClosingError("Parent node is not initialized", input=_input) from exc
                 if not parent_node.allocate(recursive):
                     return False
         self.logger.debug(f"Node '{self.name}': Allocate memory on inputs")
