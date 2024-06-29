@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from collections.abc import Generator, Sequence
 from contextlib import suppress
 from os import listdir
 from pathlib import Path
@@ -8,16 +9,17 @@ from typing import TYPE_CHECKING
 from numpy import double, dtype, frombuffer, linspace, ndarray
 
 from multikeydict.tools import reorder_key
-from multikeydict.typing import KeyLike, TupleKey, properkey
+from multikeydict.typing import properkey
 
 from ..logger import INFO1, INFO2, INFO3, logger
 
 if TYPE_CHECKING:
-    from numpy.typing import NDArray
-    import ROOT
     from typing import Any
 
-from collections.abc import Generator, Sequence
+    import ROOT
+    from numpy.typing import NDArray
+
+    from multikeydict.typing import KeyLike, TupleKey
 
 file_readers = {}
 
@@ -25,7 +27,9 @@ _log_float_format = ".3g"
 
 
 class HistGetter:
-    def __getitem__(self, names: tuple[str | Path, str]):
+    __slots__ = ()
+
+    def __getitem__(self, names: tuple[str | Path, str]) -> tuple[NDArray, NDArray]:
         file_name, object_name = names
         fr = FileReader[file_name]
         return fr.get_hist(object_name)
@@ -35,7 +39,9 @@ _HistGetter = HistGetter()
 
 
 class GraphGetter:
-    def __getitem__(self, names: tuple[str | Path, str]):
+    __slots__ = ()
+
+    def __getitem__(self, names: tuple[str | Path, str]) -> tuple[NDArray, NDArray]:
         file_name, object_name = names
         fr = FileReader[file_name]
         return fr.get_graph(object_name)
@@ -45,7 +51,9 @@ _GraphGetter = GraphGetter()
 
 
 class ArrayGetter:
-    def __getitem__(self, names: tuple[str | Path, str]):
+    __slots__ = ()
+
+    def __getitem__(self, names: tuple[str | Path, str]) -> NDArray:
         file_name, object_name = names
         fr = FileReader[file_name]
         return fr.get_array(object_name)
@@ -55,7 +63,9 @@ _ArrayGetter = ArrayGetter()
 
 
 class RecordGetter:
-    def __getitem__(self, names: tuple[str | Path, str]):
+    __slots__ = ()
+
+    def __getitem__(self, names: tuple[str | Path, str]) -> NDArray | dict[str, NDArray]:
         file_name, object_name = names
         fr = FileReader[file_name]
         return fr.get_record(object_name)
@@ -67,14 +77,16 @@ _RecordGetter = RecordGetter()
 class FileReaderMeta(type):
     """Metaclass for `FileReader` class, implementing `FileReader[file_name]` method"""
 
-    _opened_files: dict[str, "FileReader"] = {}
-    _last_used_file: str = ""
-    hist = None
+    __slots__ = ("_opened_files", "_last_used_file")
 
-    def __init__(self, name: str, parents: tuple, args: dict):
+    _opened_files: dict[str, "FileReader"]
+    _last_used_file: str
+
+    def __init__(self, name: str, parents: tuple, args: dict) -> None:
         """Register the file reader based on the `_extension`"""
-
         super().__init__(name, parents, args)
+        self._opened_files = {}
+        self._last_used_file = ""
         ext = args.get("_extension")
         if ext:
             file_readers[ext] = self
@@ -83,7 +95,7 @@ class FileReaderMeta(type):
         file_name_str = file_name if isinstance(file_name, str) else str(file_name)
         try:
             ret = self._opened_files[file_name_str]
-            action = file_name_str != self._last_used_file and "Use" or None
+            action = "Use" if file_name_str != self._last_used_file else None
         except KeyError:
             ret = FileReader.open(file_name)
             action = "Read"
@@ -96,13 +108,13 @@ class FileReaderMeta(type):
 
         return ret
 
-    def __enter__(self):
+    def __enter__(self) -> None:
         pass
 
-    def __exit__(self, *args, **kwargs):
+    def __exit__(self, *args, **kwargs) -> None:
         self.release_files()
 
-    def release_files(self):
+    def release_files(self) -> None:
         for k, v in list(self._opened_files.items()):
             v._close()
             del self._opened_files[k]
@@ -110,30 +122,35 @@ class FileReaderMeta(type):
             logger.log(INFO3, f"Close: {v._file_name!s}")
 
     @property
-    def array(self):
+    def array(self) -> ArrayGetter:
         return _ArrayGetter
 
     @property
-    def graph(self):
+    def graph(self) -> GraphGetter:
         return _GraphGetter
 
     @property
-    def hist(self):
+    def hist(self) -> HistGetter:
         return _HistGetter
 
     @property
-    def record(self):
+    def record(self) -> RecordGetter:
         return _RecordGetter
 
 
 class FileReader(metaclass=FileReaderMeta):
-    _extension: str = ""
-    _file: Any = None
-    _file_name: Path = Path("")
-    _opened_files: dict[str, "FileReader"] = FileReaderMeta._opened_files
+    __slots__ = ("_extension", "_file", "_file_name", "_opened_files", "_read_objects")
+
+    _extension: str
+    _file: Any
+    _file_name: Path
+    _opened_files: dict[str, FileReader]
     _read_objects: dict[str, Any]
 
     def __init__(self, file_name: str | Path):
+        self._extension = ""
+        self._file = None
+        self._opened_files = FileReaderMeta._opened_files
         self._file_name = Path(file_name)
         self._read_objects = {}
 
@@ -144,18 +161,18 @@ class FileReader(metaclass=FileReaderMeta):
 
         try:
             cls = file_readers[ext]
-        except KeyError:
+        except KeyError as e:
             raise ValueError(
                 f"Do not know how to load ext {ext}. Available file_readers:"
                 f" {', '.join(file_readers)}"
-            )
+            ) from e
 
         try:
             return cls(file_name)
         except FileNotFoundError as e:
             raise FileNotFoundError(f"Can not open file {file_name!s} (loader {ext})") from e
 
-    def _close(self):
+    def _close(self) -> None:
         self._read_objects = {}
 
     def keys(self) -> tuple[str, ...]:
@@ -225,12 +242,13 @@ class FileReader(metaclass=FileReaderMeta):
             case ndarray():
                 nrows = rec.shape[0]
                 columns = ", ".join(rec.dtype.names) if rec.dtype.names else "???"
-            case dict():
+            case {}:
                 nrows = next(iter(rec.values())).shape[0]
                 columns = ", ".join(rec.keys())
             case _:
                 nrows = -1
                 columns = "???"
+
         logger.log(
             INFO2,
             f"record {object_name} ({nrows}):" f" {columns}",
@@ -239,6 +257,8 @@ class FileReader(metaclass=FileReaderMeta):
 
 
 class FileReaderArray(FileReader):
+    __slots__ = ()
+
     def _get_graph(self, object_name: str) -> tuple[NDArray, NDArray]:
         return self._get_xy(object_name)
 
@@ -250,8 +270,7 @@ class FileReaderArray(FileReader):
         return self._get_object(object_name)
 
     def _get_record(self, object_name: str) -> NDArray:
-        ret = self._get_object(object_name)
-        return ret
+        return self._get_object(object_name)
 
     def _get_xy(self, object_name: str) -> tuple[NDArray, NDArray]:
         data = self._get_object(object_name)
@@ -260,15 +279,17 @@ class FileReaderArray(FileReader):
 
 
 class FileReaderNPZ(FileReaderArray):
-    _extension: str = ".npz"
+    __slots__ = "_extension"
+    _extension: str
 
-    def __init__(self, file_name: str | Path):
+    def __init__(self, file_name: str | Path) -> None:
         super().__init__(file_name)
         from numpy import load
 
         self._file = load(self._file_name, allow_pickle=True)
+        self._extension = ".npz"
 
-    def _close(self):
+    def _close(self) -> None:
         super()._close()
         del self._file
 
@@ -281,15 +302,17 @@ class FileReaderNPZ(FileReaderArray):
 
 
 class FileReaderHDF5(FileReaderArray):
-    _extension: str = ".hdf5"
+    __slots__ = "_extension"
+    _extension: str
 
-    def __init__(self, file_name: str | Path):
+    def __init__(self, file_name: str | Path) -> None:
         super().__init__(file_name)
         from h5py import File
 
         self._file = File(self._file_name, "r")
+        self._extension = ".hdf5"
 
-    def _close(self):
+    def _close(self) -> None:
         super()._close()
         self._file.close()
 
@@ -306,7 +329,12 @@ class FileReaderHDF5(FileReaderArray):
 
 
 class FileReaderTSV(FileReaderArray):
-    _extension: str = ".tsv"
+    __slots__ = "_extension"
+    _extension: str
+
+    def __init__(self, file_name: str | Path) -> None:
+        super().__init__(file_name)
+        self._extension = ".tsv"
 
     def _get_filenames(self, object_name: str) -> tuple[str, ...]:
         return (
@@ -323,8 +351,7 @@ class FileReaderTSV(FileReaderArray):
             for filename in filenames:
                 with suppress(FileNotFoundError):
                     df = read_table(filename, comment="#", sep=None, engine="python")
-                    ret = df.to_records(index=False)
-                    return ret
+                    return df.to_records(index=False)
         else:
             from numpy import loadtxt
 
@@ -342,15 +369,17 @@ class FileReaderTSV(FileReaderArray):
 
 
 class FileReaderROOTUpROOT(FileReader):
-    _extension: str = ".root"
+    __slots__ = "_extension"
+    _extension: str
 
-    def __init__(self, file_name: str | Path):
+    def __init__(self, file_name: str | Path) -> None:
         super().__init__(file_name)
         from uproot import open
 
         self._file = open(file_name)
+        self._extension = ".root"
 
-    def _close(self):
+    def _close(self) -> None:
         super()._close()
         self._file.close()
 
@@ -385,14 +414,15 @@ with suppress(ImportError):
     import ROOT
 
     class FileReaderROOTROOT(FileReader):
-        _extension: str = ".root"
-        _reader_uproot: FileReaderROOTUpROOT | None = None
+        __slots__ = ("_extension", "_reader_uproot")
+        _extension: str
+        _reader_uproot: FileReaderROOTUpROOT | None
 
-        def __init__(self, file_name: str | Path):
+        def __init__(self, file_name: str | Path) -> None:
             super().__init__(file_name)
-            from ROOT import TFile
-
-            self._file = TFile(file_name)
+            self._extension = ".root"
+            self._reader_uproot = None
+            self._file = ROOT.TFile(file_name)
             if self._file.IsZombie():
                 raise FileNotFoundError(file_name)
 
@@ -403,7 +433,7 @@ with suppress(ImportError):
 
             return self._reader_uproot
 
-        def _close(self):
+        def _close(self) -> None:
             super()._close()
             self._file.Close()
 
@@ -418,8 +448,6 @@ with suppress(ImportError):
             return ret
 
         def _get_hist(self, object_name: str) -> tuple[NDArray, NDArray]:
-            import ROOT
-
             obj = self._get_object(object_name)
             if isinstance(obj, ROOT.TH1) and obj.GetDimension() == 1:
                 return _get_bin_edges(obj.GetXaxis()), _get_buffer_hist1(obj, flows=False)
@@ -427,10 +455,7 @@ with suppress(ImportError):
             raise ValueError(f"Do not know ho to convert {obj} to hist")
 
         def _get_graph(self, object_name: str) -> tuple[NDArray, NDArray]:
-            import ROOT
-
             obj = self._get_object(object_name)
-
             if isinstance(obj, ROOT.TH1) and obj.GetDimension() == 1:
                 return _get_bin_left_edges(obj.GetXaxis()), _get_buffer_hist1(obj, flows=False)
             if isinstance(obj, ROOT.TGraph):
@@ -439,8 +464,6 @@ with suppress(ImportError):
             raise ValueError(f"Do not know ho to convert {obj} to graph")
 
         def _get_array(self, object_name: str) -> NDArray:
-            import ROOT
-
             obj = self._get_object(object_name)
 
             if isinstance(obj, ROOT.TH1) and obj.GetDimension() == 1:

@@ -1,14 +1,13 @@
 from __future__ import annotations
 
-from collections.abc import Callable, Mapping
+from collections.abc import Callable
 from pathlib import Path
 from typing import TYPE_CHECKING
 
 from numpy import asarray
-from schema import And
-from schema import Optional as SchemaOptional
-from schema import Or, Schema, Use
+from schema import And, Optional, Or, Schema, Use
 
+from multikeydict.tools import reorder_key
 from multikeydict.typing import strkey
 
 from ..lib.Array import Array
@@ -22,32 +21,34 @@ from ..tools.schema import (
     LoadYaml,
 )
 from .file_reader import FileReader, file_readers, iterate_filenames_and_objectnames
-from multikeydict.tools import reorder_key
 
 if TYPE_CHECKING:
+    from collections.abc import Mapping
+
     from numpy.typing import NDArray
 
     from multikeydict.typing import TupleKey
+
 _schema_cfg = Schema(
     {
-        SchemaOptional("name", default=()): And(str, Use(lambda s: (s,))),
+        Optional("name", default=()): And(str, Use(lambda s: (s,))),
         "filenames": And(IsFilenameSeqOrFilename, AllFileswithExt(*file_readers.keys())),
         "columns": Or([str], (str,), And(str, lambda s: (s,))),
-        SchemaOptional("dtype", default=None): Or("d", "f"),
-        SchemaOptional("replicate_outputs", default=((),)): Or((IsStrSeqOrStr,), [IsStrSeqOrStr]),
-        SchemaOptional("replicate_files", default=((),)): Or((IsStrSeqOrStr,), [IsStrSeqOrStr]),
-        SchemaOptional("skip", default=None): And(
-            Or((Or((str,),{str}),), [Or([str], {str})]), Use(lambda l: tuple(set(k) for k in l))
+        Optional("dtype", default=None): Or("d", "f"),
+        Optional("replicate_outputs", default=((),)): Or((IsStrSeqOrStr,), [IsStrSeqOrStr]),
+        Optional("replicate_files", default=((),)): Or((IsStrSeqOrStr,), [IsStrSeqOrStr]),
+        Optional("skip", default=None): And(
+            Or((Or((str,), {str}),), [Or([str], {str})]), Use(lambda l: tuple(set(k) for k in l))
         ),
-        SchemaOptional("key_order", default=None): Or((int,), [int]),
-        SchemaOptional("objects", default=lambda: lambda st, tpl: st): Or(
+        Optional("key_order", default=None): Or((int,), [int]),
+        Optional("objects", default=lambda: lambda st, tpl: st): Or(
             Callable, And({str: str}, Use(lambda dct: lambda st, tpl: dct.get(st, st)))
         ),
     }
 )
 
 _schema_loadable_cfg = And(
-    {"load": Or(str, And(Path, Use(str))), SchemaOptional(str): object},
+    {"load": Or(str, And(Path, Use(str))), Optional(str): object},
     Use(
         LoadFileWithExt(yaml=LoadYaml, key="load", update=True),
         error="Failed to load {}",
@@ -82,7 +83,7 @@ def _load_record_data(
     data: dict[TupleKey, NDArray] = {}
     for _, filename, _, key in iterate_filenames_and_objectnames(
         filenames, file_keys, keys, skip=skip
-        ):
+    ):
         skey = strkey(key)
         logger.log(INFO3, f"Process {skey}")
 

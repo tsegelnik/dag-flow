@@ -13,22 +13,23 @@ from ..tools.schema import IsStrSeqOrStr, LoadFileWithExt, LoadYaml, MakeLoaderP
 
 
 class ParsCfgHasProperFormat:
+    __slots__ = ()
+
     def validate(self, data: dict) -> dict:
-        format = data["format"]
-        nelements = 1 if isinstance(format, str) else len(format)
+        form = data["format"]
+        nelements = 1 if isinstance(form, str) else len(form)
 
         dtin = NestedMKDict(data)
         for key, subdata in dtin("parameters").walkitems():
             if isinstance(subdata, tuple):
                 if len(subdata) == nelements:
                     continue
-            else:
-                if nelements == 1:
-                    continue
+            elif nelements == 1:
+                continue
 
             key = ".".join(str(k) for k in key)
             raise SchemaError(
-                f'Key "{key}" has  value "{subdata}"" inconsistent with format "{format}"'
+                f'Key "{key}" has  value "{subdata}"" inconsistent with format "{form}"'
             )
 
         return data
@@ -73,10 +74,7 @@ def CheckCorrelationSizes(cfg):
     matrix = cfg["matrix"]
     nrows = len(matrix)
 
-    if nrows != nnames:
-        return False
-
-    return all(nnames == len(row) for row in matrix)
+    return False if nrows != nnames else all(nnames == len(row) for row in matrix)
 
 
 IsCorrelationsDict = And(
@@ -210,13 +208,13 @@ def iterate_varcfgs(
 ) -> Generator[tuple[tuple[str, ...], NestedMKDict], None, None]:
     parameterscfg = cfg("parameters")
     labelscfg = cfg("labels")
-    format = cfg["format"]
+    form = cfg["format"]
 
-    hascentral = "central" in format
-    process = get_format_processor(format)
+    hascentral = "central" in form
+    process = get_format_processor(form)
 
     for key, varcfg in parameterscfg.walkitems():
-        varcfg = process(varcfg, format, hascentral)
+        varcfg = process(varcfg, form, hascentral)
         varcfg["label"] = get_label(key, labelscfg)
         yield key, varcfg
 
@@ -233,8 +231,8 @@ def check_correlations_consistent(cfg: NestedMKDict) -> None:
         names = corrcfg["names"]
         try:
             parcfg = parscfg(key)
-        except KeyError:
-            raise InitializationError(f"Failed to obtain parameters for {key}")
+        except KeyError as e:
+            raise InitializationError(f"Failed to obtain parameters for {key}") from e
 
         inames = tuple(parcfg.walkjoinedkeys())
         if names != inames:
@@ -273,12 +271,7 @@ def load_parameters(
                 "nuisance_parts": {},
                 "nuisance": {},
             },
-            "parameter_node": {
-                "all": {},
-                "constant": {},
-                "free": {},
-                "constrained": {}
-            },
+            "parameter_node": {"all": {}, "constant": {}, "free": {}, "constrained": {}},
         },
         sep=".",
     )
@@ -315,7 +308,7 @@ def load_parameters(
             )
             varcfg_sub = varcfg.copy()
             varcfg_sub["label"] = label
-            label["paths"] = [".".join(path+(key_str,))]
+            label["paths"] = [".".join(path + (key_str,))]
             label["index_values"] = key
             label.setdefault("text", key_str)
 
@@ -328,7 +321,7 @@ def load_parameters(
 
         matrixtype = corrcfg["matrix_type"]
         matrix = corrcfg["matrix"]
-        mark_matrix = matrixtype == "correlation" and "C" or "V"
+        mark_matrix = "C" if matrixtype == "correlation" else "V"
         label_mat = inherit_labels(
             label, fmtlong=f"{matrixtype.capitalize()} matrix: {{}}", fmtshort=mark_matrix + "({})"
         )
@@ -341,8 +334,8 @@ def load_parameters(
             subkey_str = ".".join(subkey)
             try:
                 varcfg = varcfgs(fullkey)
-            except KeyError:
-                raise InitializationError(f"Failed to obtain parameters for {fullkey}")
+            except KeyError as e:
+                raise InitializationError(f"Failed to obtain parameters for {fullkey}") from e
 
             kwargs = {matrixtype: matrix_array}
             kwargs["value"] = (vvalue := [])

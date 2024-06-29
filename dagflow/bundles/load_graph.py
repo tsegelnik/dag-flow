@@ -5,9 +5,7 @@ from pathlib import Path
 from typing import TYPE_CHECKING
 
 from numpy import allclose, asarray
-from schema import And
-from schema import Optional as SchemaOptional
-from schema import Or, Schema, Use
+from schema import And, Optional, Or, Schema, Use
 
 from multikeydict.typing import strkey
 
@@ -32,24 +30,24 @@ _schema_cfg = Schema(
     {
         "name": str,
         "filenames": And(IsFilenameSeqOrFilename, AllFileswithExt(*file_readers.keys())),
-        SchemaOptional("merge_x", default=False): bool,
-        SchemaOptional("x", default="x"): str,
-        SchemaOptional("y", default="y"): str,
-        SchemaOptional("dtype", default=None): Or("d", "f"),
-        SchemaOptional("replicate_outputs", default=((),)): Or((IsStrSeqOrStr,), [IsStrSeqOrStr]),
-        SchemaOptional("replicate_files", default=((),)): Or((IsStrSeqOrStr,), [IsStrSeqOrStr]),
-        SchemaOptional("skip", default=None): And(
+        Optional("merge_x", default=False): bool,
+        Optional("x", default="x"): str,
+        Optional("y", default="y"): str,
+        Optional("dtype", default=None): Or("d", "f"),
+        Optional("replicate_outputs", default=((),)): Or((IsStrSeqOrStr,), [IsStrSeqOrStr]),
+        Optional("replicate_files", default=((),)): Or((IsStrSeqOrStr,), [IsStrSeqOrStr]),
+        Optional("skip", default=None): And(
             Or(((str,),), [[str]]), Use(lambda l: tuple(set(k) for k in l))
         ),
-        SchemaOptional("key_order", default=None): Or((int,), [int]),
-        SchemaOptional("objects", default=lambda: lambda st, tpl: st): Or(
+        Optional("key_order", default=None): Or((int,), [int]),
+        Optional("objects", default=lambda: lambda st, tpl: st): Or(
             Callable, And({str: str}, Use(lambda dct: lambda st, tpl: dct.get(st, st)))
         ),
     }
 )
 
 _schema_loadable_cfg = And(
-    {"load": Or(str, And(Path, Use(str))), SchemaOptional(str): object},
+    {"load": Or(str, And(Path, Use(str))), Optional(str): object},
     Use(
         LoadFileWithExt(yaml=LoadYaml, key="load", update=True),
         error="Failed to load {}",

@@ -1,5 +1,8 @@
+from __future__ import annotations
+
 from collections.abc import Mapping
 from contextlib import suppress
+from typing import TYPE_CHECKING
 
 from matplotlib import colormaps
 from matplotlib.axes import Axes
@@ -22,12 +25,15 @@ from matplotlib.pyplot import show as showfig
 from matplotlib.pyplot import stairs
 from numpy import asanyarray, meshgrid, zeros_like
 from numpy.ma import array as masked_array
-from numpy.typing import ArrayLike, NDArray
 
 from .logger import INFO1, logger
 from .nodebase import NodeBase
 from .output import Output
-from .types import EdgesLike, MeshesLike
+
+if TYPE_CHECKING:
+    from numpy.typing import ArrayLike, NDArray
+
+    from .types import EdgesLike, MeshesLike
 
 
 class plot_auto:
@@ -401,8 +407,8 @@ def plot_array_2d_hist(
     )  # pyright: ignore [reportGeneralTypeIssues]
     try:
         fcn = plot_array_2d_hist_methods[smethod]
-    except KeyError:
-        raise RuntimeError(f"Invlid 2d hist method: {method}")
+    except KeyError as e:
+        raise RuntimeError(f"Invlid 2d hist method: {method}") from e
 
     return fcn(dZ, edges, *args, **kwargs)
 
@@ -514,8 +520,8 @@ def plot_array_2d_vs(
     )  # pyright: ignore [reportGeneralTypeIssues]
     try:
         fcn = plot_array_2d_vs_methods[smethod]
-    except KeyError:
-        raise RuntimeError("unimplemented")
+    except KeyError as e:
+        raise RuntimeError("unimplemented") from e
 
     return fcn(array, meshes, *args, **kwargs)
 
