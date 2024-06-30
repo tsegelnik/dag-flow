@@ -42,7 +42,7 @@ def makefcn(
     :param node: A node (or output), depending (explicitly or implicitly) on the parameters
     :type node: class:`dagflow.node.Node` | class:`dagflow.output.Output`
     :param storage: A storage with parameters
-    :type storage: class:`dagflow.storage.nodetorage`
+    :type storage: class:`dagflow.storage.NodeStorage`
     :param safe: If `safe=True`, the parameters will be resetted to old values after evaluation.
     If `safe=False`, the parameters will be setted to the new values
     :type safe: bool
