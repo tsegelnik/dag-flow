@@ -420,9 +420,11 @@ with suppress(ImportError):
 
         def __init__(self, file_name: str | Path) -> None:
             super().__init__(file_name)
+            from ROOT import TFile
+
             self._extension = ".root"
             self._reader_uproot = None
-            self._file = ROOT.TFile(file_name)
+            self._file = TFile(file_name)
             if self._file.IsZombie():
                 raise FileNotFoundError(file_name)
 
@@ -448,6 +450,8 @@ with suppress(ImportError):
             return ret
 
         def _get_hist(self, object_name: str) -> tuple[NDArray, NDArray]:
+            import ROOT
+
             obj = self._get_object(object_name)
             if isinstance(obj, ROOT.TH1) and obj.GetDimension() == 1:
                 return _get_bin_edges(obj.GetXaxis()), _get_buffer_hist1(obj, flows=False)
@@ -455,6 +459,8 @@ with suppress(ImportError):
             raise ValueError(f"Do not know ho to convert {obj} to hist")
 
         def _get_graph(self, object_name: str) -> tuple[NDArray, NDArray]:
+            import ROOT
+
             obj = self._get_object(object_name)
             if isinstance(obj, ROOT.TH1) and obj.GetDimension() == 1:
                 return _get_bin_left_edges(obj.GetXaxis()), _get_buffer_hist1(obj, flows=False)
@@ -464,6 +470,8 @@ with suppress(ImportError):
             raise ValueError(f"Do not know ho to convert {obj} to graph")
 
         def _get_array(self, object_name: str) -> NDArray:
+            import ROOT
+
             obj = self._get_object(object_name)
 
             if isinstance(obj, ROOT.TH1) and obj.GetDimension() == 1:
