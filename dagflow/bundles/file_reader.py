@@ -279,7 +279,7 @@ class FileReaderArray(FileReader):
 
 
 class FileReaderNPZ(FileReaderArray):
-    __slots__ = "_extension"
+    __slots__ = ("_extension",)
     _extension: str
 
     def __init__(self, file_name: str | Path) -> None:
@@ -302,7 +302,7 @@ class FileReaderNPZ(FileReaderArray):
 
 
 class FileReaderHDF5(FileReaderArray):
-    __slots__ = "_extension"
+    __slots__ = ("_extension",)
     _extension: str
 
     def __init__(self, file_name: str | Path) -> None:
@@ -329,7 +329,7 @@ class FileReaderHDF5(FileReaderArray):
 
 
 class FileReaderTSV(FileReaderArray):
-    __slots__ = "_extension"
+    __slots__ = ("_extension",)
     _extension: str
 
     def __init__(self, file_name: str | Path) -> None:
@@ -369,7 +369,7 @@ class FileReaderTSV(FileReaderArray):
 
 
 class FileReaderROOTUpROOT(FileReader):
-    __slots__ = "_extension"
+    __slots__ = ("_extension",)
     _extension: str
 
     def __init__(self, file_name: str | Path) -> None:
