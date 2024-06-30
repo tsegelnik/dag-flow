@@ -242,7 +242,7 @@ class FileReader(metaclass=FileReaderMeta):
             case ndarray():
                 nrows = rec.shape[0]
                 columns = ", ".join(rec.dtype.names) if rec.dtype.names else "???"
-            case {}:
+            case dict():
                 nrows = next(iter(rec.values())).shape[0]
                 columns = ", ".join(rec.keys())
             case _:
