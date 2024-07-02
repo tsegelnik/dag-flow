@@ -76,17 +76,12 @@ _RecordGetter = RecordGetter()
 
 class FileReaderMeta(type):
     """Metaclass for `FileReader` class, implementing `FileReader[file_name]` method"""
-
-    __slots__ = ("_opened_files", "_last_used_file")
-
-    _opened_files: dict[str, "FileReader"]
-    _last_used_file: str
+    _opened_files: dict[str, "FileReader"] = {}
+    _last_used_file: str = ""
 
     def __init__(self, name: str, parents: tuple, args: dict) -> None:
         """Register the file reader based on the `_extension`"""
         super().__init__(name, parents, args)
-        self._opened_files = {}
-        self._last_used_file = ""
         ext = args.get("_extension")
         if ext:
             file_readers[ext] = self
