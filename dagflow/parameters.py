@@ -1,10 +1,10 @@
 from __future__ import annotations
 
-from collections.abc import Generator, Sequence
+from collections.abc import Sequence
 from contextlib import suppress
+from typing import TYPE_CHECKING
 
 from numpy import array, ndarray, zeros_like
-from numpy.typing import ArrayLike, DTypeLike
 
 from .exception import InitializationError
 from .labels import inherit_labels
@@ -14,6 +14,11 @@ from .lib.CovmatrixFromCormatrix import CovmatrixFromCormatrix
 from .lib.NormalizeCorrelatedVars2 import NormalizeCorrelatedVars2
 from .lib.View import View
 from .node import Node, Output
+
+if TYPE_CHECKING:
+    from collections.abc import Generator
+
+    from numpy.typing import ArrayLike, DTypeLike
 
 
 class Parameter:
@@ -118,11 +123,7 @@ class Parameter:
         return self._labelfmt.format(self._value_output.node.labels[source])
 
     def to_dict(self, *, label_from: str = "text") -> dict:
-        return {
-            "value": self.value,
-            "label": self.label(label_from),
-            "flags": ""
-        }
+        return {"value": self.value, "label": self.label(label_from), "flags": ""}
 
     def __rshift__(self, other):
         self._connectible_output >> other
@@ -307,8 +308,8 @@ class Parameters:
         self._value_node = value
         try:
             self.value = value.outputs[0]
-        except IndexError:
-            raise InitializationError("Parameters: value node has no outputs")
+        except IndexError as exc:
+            raise InitializationError("Parameters: value node has no outputs") from exc
 
         if all(f is not None for f in (variable, fixed)):
             raise RuntimeError("Parameter may not be set to variable and fixed at the same time")
@@ -404,10 +405,7 @@ class Parameters:
         label: dict[str, str] | None = None,
         **kwargs,
     ) -> Parameters:
-        if label is None:
-            label = {"text": "parameter"}
-        else:
-            label = dict(label)
+        label = {"text": "parameter"} if label is None else dict(label)
         name: str = label.setdefault("name", "parameter")
         has_constraint = kwargs.get("sigma", None) is not None
 
@@ -625,10 +623,7 @@ class GaussianConstraint(Constraint):
         dtype: DTypeLike = "d",
         **kwargs,
     ) -> Parameters:
-        if label is None:
-            label = {"text": "gaussian parameter"}
-        else:
-            label = dict(label)
+        label = {"text": "gaussian parameter"} if label is None else dict(label)
         name = label.setdefault("name", "parameter")
 
         if isinstance(central, (float, int)):

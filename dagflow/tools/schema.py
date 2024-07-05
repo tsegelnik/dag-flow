@@ -1,20 +1,18 @@
-from collections.abc import Callable
+from __future__ import annotations
+
 from collections.abc import Mapping
-from collections.abc import Sequence
 from contextlib import suppress
-from os import access
-from os import R_OK
+from os import R_OK, access
 from pathlib import Path
-from typing import Any
+from typing import TYPE_CHECKING
 
-from schema import And
-from schema import Or
-from schema import Schema
-from schema import SchemaError
-from schema import Use
+from schema import And, Or, Schema, SchemaError, Use
 
-from ..logger import INFO1
-from ..logger import logger
+from ..logger import INFO1, logger
+
+if TYPE_CHECKING:
+    from collections.abc import Callable, Sequence
+    from typing import Any
 
 IsStrSeq = Or((str,), And([str], Use(tuple)))
 IsStrSeqOrStr = Or(IsStrSeq, And(str, Use(lambda s: (s,))))
@@ -121,8 +119,9 @@ def LoadPy(fname: Path | str, variable: str, *, type: type | None = None):
 
     try:
         ret = dct[variable]
-    except KeyError:
-        raise RuntimeError(f"Variable {variable} is not provided in file {fname}")
+    except KeyError as e:
+        raise RuntimeError(f"Variable {variable} is not provided in file {fname}") from e
+
 
     if type is not None and not isinstance(ret, type):
         raise RuntimeError(

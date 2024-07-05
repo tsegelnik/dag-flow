@@ -1,5 +1,4 @@
-from .printl import next_level
-from .printl import printl
+from .printl import next_level, printl
 
 
 def printer(fcn, node):

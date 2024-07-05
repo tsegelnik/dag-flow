@@ -4,7 +4,7 @@ from typing import TYPE_CHECKING
 
 from numpy import empty, matmul, multiply
 
-from ..nodes import FunctionNode
+from ..node import Node
 from ..typefunctions import (
     check_has_inputs,
     check_input_dimension,
@@ -20,7 +20,7 @@ if TYPE_CHECKING:
     from ..output import Output
 
 
-class MatrixProductDVDt(FunctionNode):
+class MatrixProductDVDt(Node):
     """
     Compute matrix product `C=L@D@Lᵀ`,
     where `L` is a matrix and `D` is a diagonal matrix (maybe 1d array).

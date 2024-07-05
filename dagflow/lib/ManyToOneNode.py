@@ -6,8 +6,14 @@ from multikeydict.typing import properkey
 
 from ..inputhandler import MissingInputAddOne
 from ..node import Node
-from ..nodes import FunctionNode
 from ..storage import NodeStorage
+from ..typefunctions import (
+    AllPositionals,
+    check_has_inputs,
+    check_inputs_equivalence,
+    copy_from_input_to_output,
+    eval_output_dtype,
+)
 
 if TYPE_CHECKING:
     from collections.abc import Sequence
@@ -16,7 +22,7 @@ if TYPE_CHECKING:
     from multikeydict.typing import KeyLike, TupleKey
 
 
-class ManyToOneNode(FunctionNode):
+class ManyToOneNode(Node):
     """
     The abstract node with only one output `result`,
     which is the result of some function of all the positional inputs
@@ -49,14 +55,6 @@ class ManyToOneNode(FunctionNode):
 
     def _typefunc(self) -> None:
         """A output takes this function to determine the dtype and shape"""
-        from ..typefunctions import (
-            AllPositionals,
-            check_has_inputs,
-            check_inputs_equivalence,
-            copy_from_input_to_output,
-            eval_output_dtype,
-        )
-
         check_has_inputs(self)  # at least one input
         check_inputs_equivalence(
             self, broadcastable=self._broadcastable, check_edges_contents=self._check_edges_contents
@@ -156,10 +154,7 @@ class ManyToOneNode(FunctionNode):
 
         NodeStorage.update_current(storage, strict=True)
 
-        if len(replicate_outputs) == 1:
-            return instance, storage  # pyright: ignore [reportUnboundVariable]
-
-        return None, storage
+        return (instance, storage) if len(replicate_outputs) == 1 else (None, storage)
 
     @classmethod
     def replicate_from_indices(
@@ -213,7 +208,4 @@ class ManyToOneNode(FunctionNode):
 
         NodeStorage.update_current(storage, strict=True)
 
-        if len(replicate_outputs) == 1:
-            return instance, storage  # pyright: ignore [reportUnboundVariable]
-
-        return None, storage
+        return (instance, storage) if len(replicate_outputs) == 1 else (None, storage)

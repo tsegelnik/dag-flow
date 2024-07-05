@@ -1,14 +1,12 @@
-from numpy import exp
-from numpy import expm1
-from numpy import log
-from numpy import log10
-from numpy import log1p
+from numpy import exp, expm1, log, log1p, log10
 
 from .OneToOneNode import OneToOneNode
 
 
 class Exp(OneToOneNode):
     """exp(x) function"""
+
+    __slots__ = ()
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -22,6 +20,8 @@ class Exp(OneToOneNode):
 class Expm1(OneToOneNode):
     """exp(x)-1 function"""
 
+    __slots__ = ()
+
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self._labels.setdefault("mark", "exp-1")
@@ -33,6 +33,8 @@ class Expm1(OneToOneNode):
 
 class Log(OneToOneNode):
     """log(x) function"""
+
+    __slots__ = ()
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -46,6 +48,8 @@ class Log(OneToOneNode):
 class Log1p(OneToOneNode):
     """log(x+1) function"""
 
+    __slots__ = ()
+
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self._labels.setdefault("mark", "log(x+1)")
@@ -57,6 +61,8 @@ class Log1p(OneToOneNode):
 
 class Log10(OneToOneNode):
     """log10(x) function"""
+
+    __slots__ = ()
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)

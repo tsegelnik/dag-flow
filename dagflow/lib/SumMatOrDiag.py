@@ -1,16 +1,17 @@
 from numba import njit
-from numpy import add
-from numpy import copyto
+from numpy import add, copyto
 from numpy.typing import NDArray
 
 from ..inputhandler import MissingInputAddOne
-from ..nodes import FunctionNode
-from ..typefunctions import AllPositionals
-from ..typefunctions import check_has_inputs
-from ..typefunctions import check_inputs_consistent_square_or_diag
-from ..typefunctions import check_inputs_same_dtype
-from ..typefunctions import copy_input_shape_to_outputs
-from ..typefunctions import eval_output_dtype
+from ..node import Node
+from ..typefunctions import (
+    AllPositionals,
+    check_has_inputs,
+    check_inputs_consistent_square_or_diag,
+    check_inputs_same_dtype,
+    copy_input_shape_to_outputs,
+    eval_output_dtype,
+)
 
 
 @njit(cache=True)
@@ -25,7 +26,7 @@ def _addtodiag(inarray: NDArray, outmatrix: NDArray):
         outmatrix[i, i] += inarray[i]
 
 
-class SumMatOrDiag(FunctionNode):
+class SumMatOrDiag(Node):
     """Sum of all the inputs together. Inputs are square matrices or diagonals of square matrices"""
 
     __slots__ = ("_ndim",)

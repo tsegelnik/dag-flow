@@ -1,14 +1,15 @@
-from numpy import add
-from numpy import empty
-from numpy import square
+from numpy import add, empty, square
 from numpy.typing import NDArray
 
-from ..typefunctions import AllPositionals
-from ..typefunctions import check_has_inputs
-from ..typefunctions import check_inputs_equivalence
-from ..typefunctions import copy_input_shape_to_outputs
-from ..typefunctions import eval_output_dtype
+from ..typefunctions import (
+    AllPositionals,
+    check_has_inputs,
+    check_inputs_equivalence,
+    copy_input_shape_to_outputs,
+    eval_output_dtype,
+)
 from .ManyToOneNode import ManyToOneNode
+
 
 class SumSq(ManyToOneNode):
     """Sum of the squares of all the inputs"""

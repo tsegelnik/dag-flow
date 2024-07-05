@@ -1,13 +1,13 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Literal
+from typing import TYPE_CHECKING
 
 from numpy import matmul, multiply
 
 from dagflow.inputhandler import MissingInputAddPair
 
 from ..exception import TypeFunctionError
-from ..nodes import FunctionNode
+from ..node import Node
 from ..typefunctions import (
     AllPositionals,
     check_input_dimension,
@@ -17,10 +17,12 @@ from ..typefunctions import (
 )
 
 if TYPE_CHECKING:
+    from typing import Literal
+
     from ..input import Input
 
 
-class VectorMatrixProduct(FunctionNode):
+class VectorMatrixProduct(Node):
     """
     Compute matrix product `C=row(v)@M` or `C=M@column(v)`
     """

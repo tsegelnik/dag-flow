@@ -7,10 +7,10 @@ from numpy import result_type
 from dagflow.graph import Graph
 from dagflow.inputhandler import MissingInputAddOne
 from dagflow.lib import Array
-from dagflow.nodes import FunctionNode
+from dagflow.node import Node
 
 
-class SumIntProductFloatElseNothing(FunctionNode):
+class SumIntProductFloatElseNothing(Node):
     def __init__(self, name, **kwargs):
         kwargs.setdefault("missing_input_handler", MissingInputAddOne(output_fmt="result"))
         super().__init__(name, **kwargs)

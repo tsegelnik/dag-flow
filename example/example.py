@@ -9,13 +9,13 @@ from dagflow.lib import Array
 from dagflow.lib import Product
 from dagflow.lib import Sum
 from dagflow.lib import WeightedSum
-from dagflow.nodes import FunctionNode
+from dagflow.node import Node
 
 array = arange(3, dtype="d")
 debug = False
 
 
-class ThreeInputsOneOutput(FunctionNode):
+class ThreeInputsOneOutput(Node):
     def __init__(self, *args, **kwargs):
         kwargs.setdefault("missing_input_handler", MissingInputAddEach())
         super().__init__(*args, **kwargs)

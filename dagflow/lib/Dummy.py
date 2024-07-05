@@ -1,8 +1,10 @@
-from ..nodes import FunctionNode
+from ..node import Node
 
 
-class Dummy(FunctionNode):
+class Dummy(Node):
     """A dummy class that does nothing"""
+
+    __slots__ = ()
 
     def __init__(self, name, **kwargs):
         super().__init__(name, **kwargs)

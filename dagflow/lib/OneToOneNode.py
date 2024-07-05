@@ -1,18 +1,31 @@
-from collections.abc import Sequence
-from typing import Any
+from __future__ import annotations
 
-from multikeydict.typing import KeyLike, properkey
+from typing import TYPE_CHECKING
+
+from multikeydict.typing import properkey
 
 from ..inputhandler import MissingInputAddPair
 from ..node import Node
-from ..nodes import FunctionNode
 from ..storage import NodeStorage
+from ..typefunctions import (
+    assign_outputs_axes_from_inputs,
+    check_has_inputs,
+    copy_from_input_to_output,
+)
+
+if TYPE_CHECKING:
+    from collections.abc import Sequence
+    from typing import Any
+
+    from multikeydict.typing import KeyLike
 
 
-class OneToOneNode(FunctionNode):
+class OneToOneNode(Node):
     """
     The abstract node with an output for every positional input
     """
+
+    __slots__ = ()
 
     def __init__(self, *args, **kwargs):
         kwargs.setdefault("missing_input_handler", MissingInputAddPair())
@@ -20,12 +33,6 @@ class OneToOneNode(FunctionNode):
 
     def _typefunc(self) -> None:
         """A output takes this function to determine the dtype and shape"""
-        from ..typefunctions import (
-            assign_outputs_axes_from_inputs,
-            check_has_inputs,
-            copy_from_input_to_output,
-        )
-
         check_has_inputs(self)
         copy_from_input_to_output(self, slice(None), slice(None), edges=True, meshes=True)
         assign_outputs_axes_from_inputs(
@@ -96,10 +103,7 @@ class OneToOneNode(FunctionNode):
 
         NodeStorage.update_current(storage, strict=True)
 
-        if len(replicate_outputs) == 1:
-            return instance, storage
-
-        return None, storage
+        return (instance, storage) if len(replicate_outputs) == 1 else (None, storage)
 
     @classmethod
     def replicate_from_args(
@@ -148,7 +152,4 @@ class OneToOneNode(FunctionNode):
 
         NodeStorage.update_current(storage, strict=True)
 
-        if nobjects == 1:
-            return instance, storage
-
-        return None, storage
+        return (instance, storage) if nobjects == 1 else (None, storage)

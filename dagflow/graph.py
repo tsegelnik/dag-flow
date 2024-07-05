@@ -78,12 +78,12 @@ class Graph(GraphBase):
         """
         Adds a node, if the graph is opened.
         It is possible to pass the node class via the `nodeclass` arg
-        (default: `FunctionNode`)
+        (default: `Node`)
         """
         if not self.closed:
-            from .nodes import FunctionNode
+            from .node import Node
 
-            return kwargs.pop("nodeclass", FunctionNode)(name, graph=self, **kwargs)
+            return kwargs.pop("nodeclass", Node)(name, graph=self, **kwargs)
         raise ClosedGraphError(node=name)
 
     def add_nodes(self, nodes, **kwargs):
@@ -170,4 +170,4 @@ class Graph(GraphBase):
             self.close(strict=self._strict)
 
 
-_context_graph: list["Graph"] = []
+_context_graph: list[Graph] = []

@@ -8,17 +8,20 @@ from .tools.schema import LoadYaml
 if TYPE_CHECKING:
     from collections.abc import Callable, Mapping, Sequence
 
+
 def format_latex(k, s, /, *args, **kwargs) -> str:
     if not isinstance(s, str):
         return s
-    if (k=='latex' and '$' in s) or '{' not in s:
+    if (k == "latex" and "$" in s) or "{" not in s:
         return s
 
     return s.format(*args, **kwargs)
 
+
 def repr_pretty(self, p, cycle):
     """Pretty repr for IPython. To be used as __repr__ method"""
-    p.text(str(self) if not cycle else "...")
+    p.text("..." if cycle else str(self))
+
 
 def _make_formatter(fmt: str | Callable | dict | None) -> Callable:
     if isinstance(fmt, str):
@@ -29,6 +32,7 @@ def _make_formatter(fmt: str | Callable | dict | None) -> Callable:
         return lambda s: s
 
     return fmt
+
 
 class Labels:
     __slots__ = (
@@ -45,7 +49,7 @@ class Labels:
         "_roottitle",
         "_rootaxis",
         "_paths",
-        "_plotmethod"
+        "_plotmethod",
     )
 
     _name: str | None
@@ -63,7 +67,7 @@ class Labels:
     _paths: list[str]
     _plotmethod: str | None
 
-    def __init__(self, label: dict[str, str] | str | Path | None=None):
+    def __init__(self, label: dict[str, str] | str | Path | None = None):
         for slot in self.__slots__:
             setattr(self, slot, None)
         self._paths = []
@@ -81,11 +85,13 @@ class Labels:
             self.update(label)
 
     def __str__(self):
-        return str({
-            slot.removeprefix("_"): v
-            for slot in self.__slots__
-            if (v:=getattr(self, slot)) is not None
-        })
+        return str(
+            {
+                slot.removeprefix("_"): v
+                for slot in self.__slots__
+                if (v := getattr(self, slot)) is not None
+            }
+        )
 
     _repr_pretty_ = repr_pretty
 
@@ -93,16 +99,12 @@ class Labels:
         d = LoadYaml(path)
         self.update(d)
 
-    def update(self, d: dict[str,str]):
+    def update(self, d: dict[str, str]):
         for k, v in d.items():
             setattr(self, k, v)
 
     def format(self, *args, **kwargs):
-        for name in (
-                "text", "graph", "latex",
-                "xaxis", "plottitle", "roottitle",
-                "rootaxis"
-                ):
+        for name in ("text", "graph", "latex", "xaxis", "plottitle", "roottitle", "rootaxis"):
             aname = f"_{name}"
             oldvalue = getattr(self, aname)
             newvalue = format_latex(name, oldvalue, *args, **kwargs)
@@ -113,20 +115,20 @@ class Labels:
         return self._name
 
     @property
-    def index_dict(self) -> dict[str,tuple[str,int]]:
+    def index_dict(self) -> dict[str, tuple[str, int]]:
         return self._index_dict
 
     @index_dict.setter
-    def index_dict(self, index_dict: dict[str,tuple[str,int]]):
+    def index_dict(self, index_dict: dict[str, tuple[str, int]]):
         self._index_dict = index_dict
 
-    def build_index_dict(self, index: Mapping[str, Sequence[str]]={}):
+    def build_index_dict(self, index: Mapping[str, Sequence[str]] = {}):
         if not index or self.index_dict:
             return
 
         if not self.index_values and self.paths:
             path = self.paths[0]
-            self.index_values = path.split('.')
+            self.index_values = path.split(".")
 
         to_remove = []
         index_values = self.index_values
@@ -200,9 +202,7 @@ class Labels:
 
     @property
     def rootaxis(self) -> str | None:
-        if self._rootaxis is not None:
-            return self._rootaxis
-        return _latex_to_root(self.axis)
+        return _latex_to_root(self.axis) if self._rootaxis is None else self._rootaxis
 
     @rootaxis.setter
     def rootaxis(self, value: str | None):
@@ -249,7 +249,7 @@ class Labels:
 
     @property
     def plottable(self) -> bool:
-        return self._plotmethod!="none"
+        return self._plotmethod != "none"
 
     @property
     def plotmethod(self) -> str | None:
@@ -273,7 +273,7 @@ class Labels:
         return getattr(self, k, default)
 
     def setdefault(self, k: str, default: str) -> str | None:
-        if (value:=getattr(self, k, None)) is not None:
+        if (value := getattr(self, k, None)) is not None:
             return value
 
         setattr(self, k, default)
@@ -293,15 +293,15 @@ class Labels:
     def inherit(
         self,
         source: Labels,
-        fmtlong: str | Callable | None=None,
-        fmtshort: str | Callable | None=None,
-        fields: Sequence[str] = []
+        fmtlong: str | Callable | None = None,
+        fmtshort: str | Callable | None = None,
+        fields: Sequence[str] = [],
     ):
         fmtlong = _make_formatter(fmtlong)
         fmtshort = _make_formatter(fmtshort)
 
         if fields:
-            inherit = tuple(f'_{s}' for s in fields)
+            inherit = tuple(f"_{s}" for s in fields)
         else:
             inherit = (
                 "_text",
@@ -317,23 +317,25 @@ class Labels:
         kshort = {"_mark"}
         for _key in inherit:
             label = getattr(source, _key, None)
-            if label is None: continue
+            if label is None:
+                continue
             match label:
                 case str():
                     newv = fmtshort(label) if _key in kshort else fmtlong(label)
                     if newv is not None:
                         self[_key] = newv
-                case tuple() | dict() | list():
+                case tuple() | {} | []:
                     self[_key] = type(label)(label)
                 case _:
                     self[_key] = label
 
+
 def inherit_labels(
-        source: dict,
-        destination: dict | None=None,
-        *,
-        fmtlong: str | Callable,
-        fmtshort: str | Callable
+    source: dict,
+    destination: dict | None = None,
+    *,
+    fmtlong: str | Callable,
+    fmtshort: str | Callable,
 ) -> dict:
     if destination is None:
         destination = {}
@@ -355,7 +357,6 @@ def inherit_labels(
 
     return destination
 
+
 def _latex_to_root(text: str | None) -> str | None:
-    if not text:
-        return text
-    return text.replace(r"\rm ", "").replace("\\", "#").replace("$","")
+    return text.replace(r"\rm ", "").replace("\\", "#").replace("$", "") if text else text

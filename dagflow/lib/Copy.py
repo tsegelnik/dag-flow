@@ -3,6 +3,7 @@ from .OneToOneNode import OneToOneNode
 
 class Copy(OneToOneNode):
     """Copy/identity function"""
+    __slots__ = ()
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
