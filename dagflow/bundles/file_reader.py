@@ -134,8 +134,6 @@ class FileReaderMeta(type):
 
 
 class FileReader(metaclass=FileReaderMeta):
-    __slots__ = ("_extension", "_file", "_file_name", "_opened_files", "_read_objects")
-
     _extension: str
     _file: Any
     _file_name: Path
@@ -252,8 +250,6 @@ class FileReader(metaclass=FileReaderMeta):
 
 
 class FileReaderArray(FileReader):
-    __slots__ = ()
-
     def _get_graph(self, object_name: str) -> tuple[NDArray, NDArray]:
         return self._get_xy(object_name)
 
@@ -274,7 +270,6 @@ class FileReaderArray(FileReader):
 
 
 class FileReaderNPZ(FileReaderArray):
-    __slots__ = ("_extension",)
     _extension: str
 
     def __init__(self, file_name: str | Path) -> None:
@@ -297,7 +292,6 @@ class FileReaderNPZ(FileReaderArray):
 
 
 class FileReaderHDF5(FileReaderArray):
-    __slots__ = ("_extension",)
     _extension: str
 
     def __init__(self, file_name: str | Path) -> None:
@@ -324,7 +318,6 @@ class FileReaderHDF5(FileReaderArray):
 
 
 class FileReaderTSV(FileReaderArray):
-    __slots__ = ("_extension",)
     _extension: str
 
     def __init__(self, file_name: str | Path) -> None:
@@ -364,7 +357,6 @@ class FileReaderTSV(FileReaderArray):
 
 
 class FileReaderROOTUpROOT(FileReader):
-    __slots__ = ("_extension",)
     _extension: str
 
     def __init__(self, file_name: str | Path) -> None:
@@ -409,7 +401,6 @@ with suppress(ImportError):
     import ROOT
 
     class FileReaderROOTROOT(FileReader):
-        __slots__ = ("_extension", "_reader_uproot")
         _extension: str
         _reader_uproot: FileReaderROOTUpROOT | None
 
