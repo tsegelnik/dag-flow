@@ -5,7 +5,7 @@ from typing import TYPE_CHECKING
 from numpy import matmul, multiply
 
 from ..exception import TypeFunctionError
-from ..nodes import FunctionNode
+from ..node import Node
 from ..typefunctions import (
     check_has_inputs,
     check_input_matrix_or_diag,
@@ -18,7 +18,7 @@ if TYPE_CHECKING:
     from ..output import Output
 
 
-class MatrixProductAB(FunctionNode):
+class MatrixProductAB(Node):
     """
     Compute matrix product `C=A@B`,
     """

@@ -3,13 +3,7 @@ from __future__ import annotations
 from collections.abc import Mapping, Sequence
 from typing import TYPE_CHECKING
 
-if TYPE_CHECKING:
-    from .input import Input
-    from .node import Node
-    from multikeydict.nestedmkdict import NestedMKDict
-
 from numpy import zeros
-from numpy.typing import ArrayLike, DTypeLike, NDArray
 
 from .datadescriptor import DataDescriptor
 from .edges import EdgeContainer
@@ -25,27 +19,46 @@ from .exception import (
 from .iter import StopNesting
 from .labels import Labels, repr_pretty
 from .shift import rshift
-from .types import EdgesLike, ShapeLike
+
+if TYPE_CHECKING:
+    from numpy.typing import ArrayLike, DTypeLike, NDArray
+
+    from multikeydict.nestedmkdict import NestedMKDict
+
+    from .input import Input
+    from .node import Node
+    from .types import EdgesLike, ShapeLike
 
 
 class Output:
-    _data: NDArray | None = None
+    __slots__ = (
+        "_data",
+        "_dd",
+        "_node",
+        "_name",
+        "_child_inputs",
+        "_parent_input",
+        "_allocating_input",
+        "_allocatable",
+        "_owns_buffer",
+        "_forbid_reallocation",
+        "_labels",
+        "_debug",
+    )
+    _data: NDArray | None
     _dd: DataDescriptor
-
+    _labels: Labels | None
     _node: Node | None
     _name: str | None
 
-    _child_inputs: list["Input"]
-    _parent_input: Input | None = None
-    _allocating_input: Input | None = None
+    _child_inputs: list[Input]
+    _parent_input: Input | None
+    _allocating_input: Input | None
 
-    _allocatable: bool = True
-    _owns_buffer: bool = False
-    _forbid_reallocation: bool = False
-
-    _debug: bool = False
-
-    _labels: Labels | None = None
+    _allocatable: bool
+    _owns_buffer: bool
+    _forbid_reallocation: bool
+    _debug: bool
 
     def __init__(
         self,
@@ -62,6 +75,10 @@ class Output:
         axes_meshes: EdgesLike | None = None,
         forbid_reallocation: bool = False,
     ):
+        self._labels = None
+        self._data = None
+        self._allocating_input = None
+
         self._name = name
         self._node = node
         self._child_inputs = []
@@ -72,6 +89,8 @@ class Output:
 
         if data is None:
             self._allocatable = True if allocatable is None else allocatable
+            self._parent_input = None
+            self._owns_buffer = False
         else:
             if owns_buffer is None:
                 owns_buffer = True
@@ -173,7 +192,7 @@ class Output:
         if self.closed:
             raise ClosedGraphError("Unable to set output data.", node=self._node, output=self)
         if self._data is not None and not override:
-            # TODO: this will fail during reallocation
+            # NOTE: this will fail during reallocation
             raise AllocationError("Output already has data.", node=self._node, output=self)
         if owns_buffer:
             forbid_reallocation = True
@@ -313,16 +332,16 @@ class Output:
             return True
 
         if self._allocating_input:
-            input = self._allocating_input
-            input.allocate(recursive=False)
-            if input.has_data:
-                idata = input._own_data
+            _input = self._allocating_input
+            _input.allocate(recursive=False)
+            if _input.has_data:
+                idata = _input._own_data
                 if idata.shape != self.dd.shape or idata.dtype != self.dd.dtype:
                     raise AllocationError(
                         "Input's data shape/type is inconsistent",
                         node=self._node,
                         output=self,
-                        input=input,
+                        input=_input,
                     )
 
                 if self._data is not idata:
@@ -397,6 +416,8 @@ class Output:
 
 
 class Outputs(EdgeContainer):
+    __slots__ = ()
+
     def __init__(self, iterable=None) -> None:
         super().__init__(iterable)
         self._dtype = Output

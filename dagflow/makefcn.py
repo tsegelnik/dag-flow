@@ -1,11 +1,16 @@
-from collections.abc import Callable, KeysView
+from __future__ import annotations
 
-from numpy.typing import NDArray
+from typing import TYPE_CHECKING
 
 from dagflow.node import Node
 from dagflow.output import Output
 from dagflow.parameters import Parameter
 from dagflow.storage import NestedMKDict, NodeStorage
+
+if TYPE_CHECKING:
+    from collections.abc import Callable, KeysView
+
+    from numpy.typing import NDArray
 
 
 def _find_par_permissive(storage: NodeStorage | NestedMKDict, name: str) -> Parameter | None:

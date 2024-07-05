@@ -149,11 +149,10 @@ class NodeBase:
         """
         other >> self
         """
-        if isinstance(other, Output):
-            for input in self.inputs:
-                other >> input
-        else:
+        if not isinstance(other, Output):
             return rshift(other, self)
+        for input in self.inputs:
+            other >> input
 
     def __lshift__(self, storage: Mapping[str, Output]) -> None:
         """

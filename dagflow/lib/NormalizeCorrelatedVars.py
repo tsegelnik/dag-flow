@@ -7,7 +7,7 @@ from scipy.linalg import solve_triangular
 
 from ..exception import InitializationError
 from ..inputhandler import MissingInputAddPair
-from ..nodes import FunctionNode
+from ..node import Node
 from ..typefunctions import (
     check_has_inputs,
     check_input_dimension,
@@ -21,7 +21,7 @@ if TYPE_CHECKING:
     from ..input import Input
 
 
-class NormalizeCorrelatedVars(FunctionNode):
+class NormalizeCorrelatedVars(Node):
     """Normalize correlated variables or correlate normal variables with linear expression
 
     If x is a vector of values, μ are the central values and L is a cholesky decomposition

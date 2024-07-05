@@ -86,6 +86,7 @@ def _norm_columns(matrix: NDArray, out: NDArray):
             out[row, column] += matrix[row, column] / total_sum
 
 
+# NOTE: methods below are not used now!
 def _norm_rows_python(matrix: NDArray, out: NDArray, buffer: NDArray):
     sum(matrix, axis=1, out=buffer)
     divide(matrix, buffer[:, None], out=out)

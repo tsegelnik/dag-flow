@@ -3,11 +3,13 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 
 from numba import njit
-from numpy.typing import NDArray
 
+from ..typefunctions import AllPositionals, check_input_size, check_inputs_same_dtype
 from .OneToOneNode import OneToOneNode
 
 if TYPE_CHECKING:
+    from numpy.typing import NDArray
+
     from ..input import Input
 
 
@@ -25,8 +27,6 @@ class LinearFunction(OneToOneNode):
 
     def _typefunc(self) -> None:
         super()._typefunc()
-        from ..typefunctions import AllPositionals, check_input_size, check_inputs_same_dtype
-
         check_input_size(self, ("a", "b"), exact=1)
         check_inputs_same_dtype(self, ("a", "b", AllPositionals))
 

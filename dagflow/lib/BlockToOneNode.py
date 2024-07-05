@@ -1,11 +1,11 @@
-from collections.abc import Sequence
-from typing import Any
+from __future__ import annotations
 
-from multikeydict.typing import KeyLike, TupleKey, properkey
+from typing import TYPE_CHECKING
+
+from multikeydict.typing import properkey
 
 from ..inputhandler import MissingInputAddEach
 from ..node import Node
-from ..nodes import FunctionNode
 from ..storage import NodeStorage
 from ..typefunctions import (
     AllPositionals,
@@ -15,8 +15,14 @@ from ..typefunctions import (
     eval_output_dtype,
 )
 
+if TYPE_CHECKING:
+    from collections.abc import Sequence
+    from typing import Any
 
-class BlockToOneNode(FunctionNode):
+    from multikeydict.typing import KeyLike, TupleKey
+
+
+class BlockToOneNode(Node):
     """
     The abstract node with only one output per block of N inputs
     """

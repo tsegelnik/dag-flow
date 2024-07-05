@@ -3,8 +3,8 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
-    from .output import Outputs
     from .input import Inputs
+    from .output import Outputs
 
 
 class FlagsDescriptor:
@@ -36,8 +36,8 @@ class FlagsDescriptor:
     types_tainted: bool
     # observers and observed
     # _node: Node
-    _children: Outputs  # List[FlagsDescriptor]
-    _parents: Inputs  # List[FlagsDescriptor]
+    _children: Outputs  # TODO: List[FlagsDescriptor]?
+    _parents: Inputs  # TODO: List[FlagsDescriptor]?
 
     def __init__(
         self,

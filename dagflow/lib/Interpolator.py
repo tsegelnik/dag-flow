@@ -8,7 +8,7 @@ from numba.core.types import FunctionType
 from numpy import double, exp, integer, log
 
 from ..exception import InitializationError
-from ..nodes import FunctionNode
+from ..node import Node
 from ..typefunctions import (
     assign_output_axes_from_inputs,
     check_has_inputs,
@@ -33,7 +33,7 @@ class ExtrapolationStrategy(IntEnum):
     extrapolate = 2
 
 
-class Interpolator(FunctionNode):
+class Interpolator(Node):
     """
     self.inputs:
         `0` or `y`: array of the `y=f(coarse)`

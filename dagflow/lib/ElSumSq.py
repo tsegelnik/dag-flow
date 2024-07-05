@@ -2,11 +2,13 @@ from numba import njit
 from numpy.typing import NDArray
 
 from ..inputhandler import MissingInputAddOne
-from ..nodes import FunctionNode
-from ..typefunctions import AllPositionals
-from ..typefunctions import check_has_inputs
-from ..typefunctions import check_inputs_same_dtype
-from ..typefunctions import eval_output_dtype
+from ..node import Node
+from ..typefunctions import (
+    AllPositionals,
+    check_has_inputs,
+    check_inputs_same_dtype,
+    eval_output_dtype,
+)
 
 
 @njit(cache=True)
@@ -17,8 +19,10 @@ def _sumsq(data: NDArray, out: NDArray):
     out[0] += sm
 
 
-class ElSumSq(FunctionNode):
+class ElSumSq(Node):
     """Sum of the squared of all the inputs"""
+
+    __slots__ = ()
 
     def __init__(self, *args, **kwargs):
         kwargs.setdefault("missing_input_handler", MissingInputAddOne(output_fmt="result"))

@@ -17,14 +17,11 @@ class Formatter:
 
     @staticmethod
     def from_string(string: str):
-        if "{" in string:
-            return string
-
-        return SimpleFormatter(string)  # pyright: ignore [reportUndefinedVariable]
+        return string if "{" in string else SimpleFormatter(string)
 
     @staticmethod
     def from_sequence(seq: Sequence[str]):
-        return SequentialFormatter(seq)  # pyright: ignore [reportUndefinedVariable]
+        return SequentialFormatter(seq)
 
     @staticmethod
     def from_value(value: str | Sequence[str] | Formatter):
@@ -53,10 +50,7 @@ class SimpleFormatter(Formatter):
         self._numfmt = numfmt
 
     def format(self, num: int) -> str:
-        if num > 0:
-            return self._base + self._numfmt.format(num)
-
-        return self._base
+        return self._base + self._numfmt.format(num) if num > 0 else self._base
 
 
 class SequentialFormatter(Formatter):
@@ -72,7 +66,7 @@ class SequentialFormatter(Formatter):
         self._startidx = startidx
 
     def format(self, num: int) -> str:
-        num = num - self._startidx
+        num -= self._startidx
         idx = num % len(self._base)
         groupnum = num // len(self._base)
         base = self._base[idx]

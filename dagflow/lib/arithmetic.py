@@ -1,7 +1,4 @@
-from numpy import add
-from numpy import copyto
-from numpy import divide
-from numpy import multiply
+from numpy import add, copyto, divide, multiply
 
 from .ManyToOneNode import ManyToOneNode
 
@@ -9,8 +6,10 @@ from .ManyToOneNode import ManyToOneNode
 class Sum(ManyToOneNode):
     """Sum of all the inputs together"""
 
+    __slots__ = ()
+
     def __init__(self, *args, **kwargs):
-        kwargs.setdefault('broadcastable', True)
+        kwargs.setdefault("broadcastable", True)
         super().__init__(*args, **kwargs)
         self._labels.setdefault("mark", "Σ")
 
@@ -24,8 +23,10 @@ class Sum(ManyToOneNode):
 class Product(ManyToOneNode):
     """Product of all the inputs together"""
 
+    __slots__ = ()
+
     def __init__(self, *args, **kwargs):
-        kwargs.setdefault('broadcastable', True)
+        kwargs.setdefault("broadcastable", True)
         super().__init__(*args, **kwargs)
         self._labels.setdefault("mark", "Π")
 
@@ -42,8 +43,11 @@ class Division(ManyToOneNode):
 
     .. note:: a division by zero returns `nan`
     """
+
+    __slots__ = ()
+
     def __init__(self, *args, **kwargs):
-        kwargs.setdefault('broadcastable', True)
+        kwargs.setdefault("broadcastable", True)
         super().__init__(*args, **kwargs)
         self._labels.setdefault("mark", "÷")
 

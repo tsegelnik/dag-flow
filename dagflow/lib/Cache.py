@@ -3,6 +3,7 @@ from .OneToOneNode import OneToOneNode
 
 class Cache(OneToOneNode):
     """Copy/identity/cache function, which freezes after operation"""
+    __slots__ = ()
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, auto_freeze=True, **kwargs)

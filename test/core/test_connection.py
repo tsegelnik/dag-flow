@@ -8,7 +8,7 @@ from dagflow.graph import Graph
 from dagflow.graphviz import savegraph
 from dagflow.input import Input
 from dagflow.lib.Dummy import Dummy
-from dagflow.nodes import FunctionNode
+from dagflow.node import Node
 from dagflow.output import Output
 
 
@@ -20,8 +20,8 @@ def test_01():
 
 
 def test_02():
-    n1 = FunctionNode("node1")
-    n2 = FunctionNode("node2")
+    n1 = Node("node1")
+    n2 = Node("node2")
 
     n1._add_output("o1")
     n1._add_output("o2")
@@ -34,8 +34,8 @@ def test_02():
 
 
 def test_03():
-    n1 = FunctionNode("node1")
-    n2 = FunctionNode("node2")
+    n1 = Node("node1")
+    n2 = Node("node2")
 
     out = n1._add_output("o1")
 
@@ -46,8 +46,8 @@ def test_03():
 
 
 def test_04():
-    n1 = FunctionNode("node1")
-    n2 = FunctionNode("node2")
+    n1 = Node("node1")
+    n2 = Node("node2")
 
     out = n1._add_output("o1")
 
