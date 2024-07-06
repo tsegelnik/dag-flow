@@ -82,8 +82,11 @@ class FileReaderMeta(type):
     def __init__(self, name: str, parents: tuple, args: dict) -> None:
         """Register the file reader based on the `_extension`"""
         super().__init__(name, parents, args)
-        ext = args.get("_extension")
-        if ext:
+        try:
+            ext = args["_extension"]
+        except KeyError as e:
+            raise e
+        else:
             file_readers[ext] = self
 
     def __getitem__(self, file_name: str | Path) -> FileReader:
@@ -134,18 +137,13 @@ class FileReaderMeta(type):
 
 
 class FileReader(metaclass=FileReaderMeta):
-    __slots__ = ("_extension", "_file", "_file_name", "_read_objects")
-
-    _extension: str
-    _file: Any
-    _file_name: Path
-    _opened_files: dict[str, FileReader]
+    _extension: str = ""
+    _file: Any = None
+    _file_name: Path = Path("")
+    _opened_files: dict[str, FileReader] = FileReaderMeta._opened_files
     _read_objects: dict[str, Any]
 
     def __init__(self, file_name: str | Path):
-        self._extension = ""
-        self._file = None
-        self._opened_files = FileReaderMeta._opened_files
         self._file_name = Path(file_name)
         self._read_objects = {}
 
@@ -252,7 +250,7 @@ class FileReader(metaclass=FileReaderMeta):
 
 
 class FileReaderArray(FileReader):
-    __slots__ = ()
+    _extension: str = ""
 
     def _get_graph(self, object_name: str) -> tuple[NDArray, NDArray]:
         return self._get_xy(object_name)
@@ -274,15 +272,13 @@ class FileReaderArray(FileReader):
 
 
 class FileReaderNPZ(FileReaderArray):
-    __slots__ = ("_extension",)
-    _extension: str
+    _extension: str = ".npz"
 
     def __init__(self, file_name: str | Path) -> None:
         super().__init__(file_name)
         from numpy import load
 
         self._file = load(self._file_name, allow_pickle=True)
-        self._extension = ".npz"
 
     def _close(self) -> None:
         super()._close()
@@ -297,15 +293,13 @@ class FileReaderNPZ(FileReaderArray):
 
 
 class FileReaderHDF5(FileReaderArray):
-    __slots__ = ("_extension",)
-    _extension: str
+    _extension: str = ".hdf5"
 
     def __init__(self, file_name: str | Path) -> None:
         super().__init__(file_name)
         from h5py import File
 
         self._file = File(self._file_name, "r")
-        self._extension = ".hdf5"
 
     def _close(self) -> None:
         super()._close()
@@ -324,12 +318,10 @@ class FileReaderHDF5(FileReaderArray):
 
 
 class FileReaderTSV(FileReaderArray):
-    __slots__ = ("_extension",)
-    _extension: str
+    _extension: str = ".tsv"
 
     def __init__(self, file_name: str | Path) -> None:
         super().__init__(file_name)
-        self._extension = ".tsv"
 
     def _get_filenames(self, object_name: str) -> tuple[str, ...]:
         return (
@@ -364,15 +356,13 @@ class FileReaderTSV(FileReaderArray):
 
 
 class FileReaderROOTUpROOT(FileReader):
-    __slots__ = ("_extension",)
-    _extension: str
+    _extension: str = ".root"
 
     def __init__(self, file_name: str | Path) -> None:
         super().__init__(file_name)
         from uproot import open
 
         self._file = open(file_name)
-        self._extension = ".root"
 
     def _close(self) -> None:
         super()._close()
@@ -409,16 +399,13 @@ with suppress(ImportError):
     import ROOT
 
     class FileReaderROOTROOT(FileReader):
-        __slots__ = ("_extension", "_reader_uproot")
-        _extension: str
-        _reader_uproot: FileReaderROOTUpROOT | None
+        _extension: str = ".root"
+        _reader_uproot: FileReaderROOTUpROOT | None = None
 
         def __init__(self, file_name: str | Path) -> None:
             super().__init__(file_name)
             from ROOT import TFile
 
-            self._extension = ".root"
-            self._reader_uproot = None
             self._file = TFile(file_name)
             if self._file.IsZombie():
                 raise FileNotFoundError(file_name)
