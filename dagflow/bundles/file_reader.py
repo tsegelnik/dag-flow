@@ -82,8 +82,11 @@ class FileReaderMeta(type):
     def __init__(self, name: str, parents: tuple, args: dict) -> None:
         """Register the file reader based on the `_extension`"""
         super().__init__(name, parents, args)
-        ext = args.get("_extension")
-        if ext:
+        try:
+            ext = args["_extension"]
+        except KeyError as e:
+            raise
+        finally:
             file_readers[ext] = self
 
     def __getitem__(self, file_name: str | Path) -> FileReader:
