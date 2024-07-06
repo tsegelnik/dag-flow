@@ -310,9 +310,9 @@ class Labels:
                 "_mark",
                 "_axis",
                 "_plottitle",
-                '_index_values',
-                '_index_dict',
-                '_path',
+                "_index_values",
+                "_index_dict",
+                "_path",
             )
         kshort = {"_mark"}
         for _key in inherit:
