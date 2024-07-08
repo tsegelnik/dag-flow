@@ -1,5 +1,6 @@
 from collections.abc import Generator, Mapping, Sequence
 from pathlib import Path
+from math import fabs
 
 from schema import And, Optional, Or, Schema, SchemaError, Use
 
@@ -142,13 +143,13 @@ def process_var_absolute(vcfg, format, hascentral) -> dict:
 
 def process_var_relative(vcfg, format, hascentral) -> dict:
     ret = process_var_fixed2(vcfg, format, hascentral)
-    ret["sigma"] = ret["sigma_relative"] * ret["central"]
+    ret["sigma"] = ret["sigma_relative"] * fabs(ret["central"])
     return ret
 
 
 def process_var_percent(vcfg, format, hascentral) -> dict:
     ret = process_var_fixed2(vcfg, format, hascentral)
-    ret["sigma"] = 0.01 * ret["sigma_percent"] * ret["central"]
+    ret["sigma"] = 0.01 * ret["sigma_percent"] * fabs(ret["central"])
     return ret
 
 

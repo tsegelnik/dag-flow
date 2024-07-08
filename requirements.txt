@@ -1,5 +1,6 @@
 contextlib2
 coverage
+h5py
 latexdatax
 matplotlib
 numba
