@@ -1,22 +1,17 @@
 #!/usr/bin/env python
 from matplotlib import pyplot as plt
-from numpy import allclose
-from numpy import finfo
-from numpy import geomspace
-from numpy import linspace
-from numpy import ndarray
-from numpy import ones_like
-from numpy import zeros_like
+from numpy import allclose, finfo, geomspace, linspace, ndarray, ones_like, zeros_like
+from pytest import mark
 
 from dagflow.graph import Graph
 from dagflow.graphviz import savegraph
-from dagflow.lib import Array
-from dagflow.lib import BinCenter
+from dagflow.lib import Array, BinCenter
 
 
-def test_BinCenter_01(testname, debug_graph):
-    array1 = linspace(0, 100, 26, dtype="f")
-    array2 = geomspace(1e-2, 1e2, 10, dtype="d")
+@mark.parametrize("dtype", ("d", "f"))
+def test_BinCenter_01(testname, debug_graph, dtype):
+    array1 = linspace(0, 100, 26, dtype=dtype)
+    array2 = geomspace(1e-2, 1e2, 10, dtype=dtype)
 
     with Graph(close=True, debug=debug_graph) as graph:
         arr1 = Array("linspace", array1)
@@ -34,14 +29,14 @@ def test_BinCenter_01(testname, debug_graph):
     res1 = bc.outputs[0].data
     res2 = bc.outputs[1].data
 
-    assert res1.dtype == "f"
+    assert res1.dtype == dtype
     assert (res1 == ((array1 + 4 + array1) / 2)[:-1]).all()
     assert (res1 == bincenter(array1)).all()
     assert (res1 == bincenter2(array1)).all()
 
-    assert res2.dtype == "d"
+    assert res2.dtype == dtype
     assert (res2 == bincenter(array2)).all()
-    assert allclose(res2, bincenter2(array2), atol=finfo("d").resolution)
+    assert allclose(res2, bincenter2(array2), atol=finfo(dtype).resolution)
 
     plt.scatter(array1, zeros_like(array1), label="linspace edges")
     plt.scatter(res1, zeros_like(res1), marker="+", label="linspace centers")
