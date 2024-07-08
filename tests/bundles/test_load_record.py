@@ -7,7 +7,7 @@ from dagflow.bundles.load_record import load_record
 
 
 def _save_data(filename, object_name, data):
-    basename, extension = filename.split(".")
+    _, extension = filename.split(".")
     if extension == "tsv":
         pd.DataFrame(data).to_csv(filename, sep="\t")
     elif extension == "npz":

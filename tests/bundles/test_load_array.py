@@ -1,12 +1,14 @@
-import pytest
 import tempfile
+
 import h5py
 import numpy as np
+import pytest
+
 from dagflow.bundles.load_array import load_array
 
 
 def _save_data(filename, object_name, data):
-    basename, extension = filename.split(".")
+    _, extension = filename.split(".")
     if extension == "tsv":
         np.savetxt(filename, data)
     elif extension == "npz":
@@ -15,12 +17,14 @@ def _save_data(filename, object_name, data):
         with h5py.File(filename, "w") as f:
             f.create_dataset(object_name, data=data)
     elif extension == "root":
-        raise Exception("It is not implemented")
+        raise RuntimeError("It is not implemented")
 
 
 # TODO: Add .root
 @pytest.mark.parametrize("object_type", ["hdf5", "npz", "tsv"])
-@pytest.mark.parametrize("size,dtype", [((10, 10), "d"), ((12, 10), "f"), ((5,), "d"), ((1, 15), "f")])
+@pytest.mark.parametrize(
+    "size,dtype", [((10, 10), "d"), ((12, 10), "f"), ((5,), "d"), ((1, 15), "f")]
+)
 def test_load_array(object_type, size, dtype):
     object_name = "matrix"
     output_ns = "array"
@@ -34,7 +38,7 @@ def test_load_array(object_type, size, dtype):
     with tempfile.NamedTemporaryFile(suffix=suffix) as f:
         filename = f.name
         filename_prefix, _ = filename.split(suffix)
-        filename_object = filename_prefix + "." + object_type
+        filename_object = f"{filename_prefix}.{object_type}"
         generated_data = np.random.random(size=size)
         _save_data(filename, object_name, generated_data)
 
@@ -47,4 +51,6 @@ def test_load_array(object_type, size, dtype):
         )
 
     loaded_array = storage[f"outputs.{output_ns}.{output_name}"]
-    assert np.allclose(loaded_array.data, generated_data, atol=atol, rtol=0), "Generated array is not equal to loaded"
+    assert np.allclose(
+        loaded_array.data, generated_data, atol=atol, rtol=0
+    ), "Generated array is not equal to loaded"

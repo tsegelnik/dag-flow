@@ -1,12 +1,14 @@
-import pytest
 import tempfile
-import uproot
+
 import numpy as np
+import pytest
+import uproot
+
 from dagflow.bundles.load_hist import load_hist
 
 
 def _save_data(filename, object_name, hist):
-    basename, extension = filename.split(".")
+    _, extension = filename.split(".")
     if extension == "root":
         f = uproot.recreate(filename)
         f[object_name] = hist
@@ -44,4 +46,6 @@ def test_load_hist(object_type, entries, dtype):
 
     for (axis, loaded_output_name), output in storage(f"outputs.{output_ns}").walkitems():
         assert loaded_output_name == output_name, "Initial output name is not equal to loaded"
-        assert np.allclose(output.data, generated_data_dict[axis], atol=atol, rtol=0), "Generated data is not equal to loaded"
+        assert np.allclose(
+            output.data, generated_data_dict[axis], atol=atol, rtol=0
+        ), "Generated data is not equal to loaded"

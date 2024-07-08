@@ -1,16 +1,18 @@
-import pytest
 import tempfile
+
 import h5py
 import numpy as np
+import pytest
+
 from dagflow.bundles.load_graph import load_graph
 
 
 def _save_data(filename, object_name, data):
-    basename, extension = filename.split(".")
+    _, extension = filename.split(".")
     if extension == "tsv":
         with open(filename, "w") as f:
             f.write("x\ty\n")
-            f.writelines([f"{x[0]:1.32e}"+"\t"+f"{x[1]:1.32e}\n" for x in data])
+            f.writelines([f"{x[0]:1.32e}" + "\t" + f"{x[1]:1.32e}\n" for x in data])
     elif extension == "npz":
         np.savez(filename, **{object_name: data})
     elif extension == "hdf5":
@@ -42,9 +44,9 @@ def test_load_graph(object_type, n_points, x_axis_parameters, dtype):
         filename_object = filename_prefix + "." + object_type
         generated_x = np.linspace(x_start, x_stop, n_points)
         generated_y = np.random.random(size=n_points)
-        generated_data  = np.array(
-            [(x_, y_) for x_, y_ in zip(generated_x, generated_y)],
-            dtype=[(column_x, dtype), (column_y, dtype)]
+        generated_data = np.array(
+            list(zip(generated_x, generated_y)),
+            dtype=[(column_x, dtype), (column_y, dtype)],
         )
         _save_data(filename, object_name, generated_data)
 
@@ -60,4 +62,6 @@ def test_load_graph(object_type, n_points, x_axis_parameters, dtype):
 
     for (column, loaded_output_name), output in storage(f"outputs.{output_ns}").walkitems():
         assert loaded_output_name == output_name, "Initial output name is not equal to loaded"
-        assert np.allclose(output.data, generated_data[column], atol=atol, rtol=0), "Generated data is not equal to loaded"
+        assert np.allclose(
+            output.data, generated_data[column], atol=atol, rtol=0
+        ), "Generated data is not equal to loaded"

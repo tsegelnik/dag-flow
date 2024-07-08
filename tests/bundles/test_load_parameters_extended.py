@@ -1,9 +1,10 @@
+import tempfile
+
+import numpy as np
 import pytest
 import yaml
-import tempfile
-import numpy as np
-from dagflow.bundles.load_parameters import load_parameters
 
+from dagflow.bundles.load_parameters import load_parameters
 
 # TODO: add test for offset
 
@@ -34,7 +35,9 @@ def _load_parameters_from_file(format, state, parameters, labels, replicate_indi
     with tempfile.NamedTemporaryFile(suffix=".yaml") as f:
         filename = f.name
         with open(filename, "w") as fin:
-            yaml.safe_dump(dict(format=format, state=state, parameters=parameters, labels=labels), fin)
+            yaml.safe_dump(
+                dict(format=format, state=state, parameters=parameters, labels=labels), fin
+            )
 
         storage = load_parameters(
             path="",
@@ -45,23 +48,23 @@ def _load_parameters_from_file(format, state, parameters, labels, replicate_indi
 
 
 def _load_parameters_from_dict(format, state, parameters, labels, replicate_indices):
-    storage = load_parameters(
+    return load_parameters(
         format=format,
         state=state,
         parameters=parameters,
         labels=labels,
         replicate=replicate_indices,
     )
-    return storage
 
 
 @pytest.mark.parametrize("state", ["variable", "fixed"])
 @pytest.mark.parametrize("format", ["value"])
 @pytest.mark.parametrize(
-    "parameters,labels", [
+    "parameters,labels",
+    [
         ({"x": 1}, {"x": "Label for x"}),
-        ({"nested": {"x": -1.5, "y": 1.5}}, {"nested": {"x": "Label for x", "y": "Label for y"}})
-    ]
+        ({"nested": {"x": -1.5, "y": 1.5}}, {"nested": {"x": "Label for x", "y": "Label for y"}}),
+    ],
 )
 @pytest.mark.parametrize("replicate_indices", replicate_indices)
 @pytest.mark.parametrize("load_from_file", [True, False])
@@ -87,19 +90,24 @@ def test_load_parameters(state, format, parameters, labels, replicate_indices, l
     "parameters,labels",
     [
         ({"x": (1, 1)}, {"x": "Label for x"}),
-        ({"nested": {"x": (-1.5, 0.1), "y": (1.5, 0.1)}}, {"nested": {"x": "Label for x", "y": "Label for y"}})
+        (
+            {"nested": {"x": (-1.5, 0.1), "y": (1.5, 0.1)}},
+            {"nested": {"x": "Label for x", "y": "Label for y"}},
+        ),
     ],
 )
 @pytest.mark.parametrize("replicate_indices", replicate_indices)
 @pytest.mark.parametrize("load_from_file", [True, False])
-def test_load_parameters_constrained(sigma_format, parameters, labels, replicate_indices, load_from_file):
+def test_load_parameters_constrained(
+    sigma_format, parameters, labels, replicate_indices, load_from_file
+):
     state = "variable"
-    format = ("value", sigma_format)
+    fmt = ("value", sigma_format)
 
     if load_from_file:
-        storage = _load_parameters_from_file(format, state, parameters, labels, replicate_indices)
+        storage = _load_parameters_from_file(fmt, state, parameters, labels, replicate_indices)
     else:
-        storage = _load_parameters_from_dict(format, state, parameters, labels, replicate_indices)
+        storage = _load_parameters_from_dict(fmt, state, parameters, labels, replicate_indices)
 
     for key, loaded_parameter in storage("parameter.all").walkitems():
         parameter, label = _get_parameter_value_label(parameters, labels, key, replicate_indices)
@@ -112,18 +120,17 @@ def test_load_parameters_constrained(sigma_format, parameters, labels, replicate
 
         assert parameter_value == loaded_value, "Loaded value is not equal to initial"
         if sigma_format == "sigma_absolute":
-            assert parameter_error == loaded_error, "Loaded absolute sigma" \
-                " is not equal to initial (absolute case)"
+            assert parameter_error == loaded_error, (
+                "Loaded absolute sigma" " is not equal to initial (absolute case)"
+            )
         elif sigma_format == "sigma_relative":
             assert np.allclose(
-                np.float64(np.abs(parameter_value) * parameter_error),
-                loaded_error
+                np.float64(np.abs(parameter_value) * parameter_error), loaded_error
             ), "Loaded sigma is not equal to initial (relative case)"
         else:
             assert np.allclose(
-                np.float64(np.abs(parameter_value) * parameter_error * 1e-2),
-                loaded_error
+                np.float64(np.abs(parameter_value) * parameter_error * 1e-2), loaded_error
             ), "Loaded sigma is not equal to initial (percent case)"
         assert parameter_value == loaded_value, "Loaded value is not equal to initial"
-        assert "[norm] " + label == loaded_label, "Loaded label is not equal to initial"
-        assert len(storage(f"parameter.{STATE_FORMAT_to_NS[(state, format)]}").keys()) > 0
+        assert f"[norm] {label}" == loaded_label, "Loaded label is not equal to initial"
+        assert len(storage(f"parameter.{STATE_FORMAT_to_NS[(state, fmt)]}").keys()) > 0
