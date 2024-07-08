@@ -46,10 +46,12 @@ class Array(Node):
         self._mode = mode
         if mark is not None:
             self._labels.setdefault("mark", mark)
+        elif edges:
+            self._labels.setdefault("mark", "h⃗")
+        elif meshes:
+            self._labels.setdefault("mark", "y⃗")
         else:
-            self._labels.setdefault(
-                "mark", edges is not None and "h⃗" or meshes is not None and "y⃗" or "a⃗"
-            )
+            self._labels.setdefault("mark", "a⃗")
         self._data = nparray(array, copy=True, dtype=dtype)
 
         if mode == "store":
