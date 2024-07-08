@@ -53,7 +53,7 @@ def _validate_cfg(cfg):
 
 
 def load_array(
-    acfg: Mapping | None = None, *, array_kwargs: dict = Mapping, **kwargs
+    acfg: Mapping | None = None, *, array_kwargs: Mapping = {}, **kwargs
 ) -> NodeStorage:
     acfg = dict(acfg or {}, **kwargs)
     cfg = _validate_cfg(acfg)
