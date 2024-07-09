@@ -7,15 +7,41 @@ from .tools.schema import LoadYaml
 
 if TYPE_CHECKING:
     from collections.abc import Callable, Mapping, Sequence
+    from typing import Any
 
 
-def format_latex(k, s, /, *args, **kwargs) -> str:
+def format_latex(k: str, s: str | Any, /, *args, protect_latex: bool = True, **kwargs) -> str:
     if not isinstance(s, str):
         return s
-    if (k == "latex" and "$" in s) or "{" not in s:
+
+    if protect_latex and (k == "latex" and "$" in s) or "{" not in s:
         return s
 
     return s.format(*args, **kwargs)
+
+
+def format_dict(
+    dct: Mapping | str,
+    /,
+    *args,
+    process_keys: tuple | list | set | None = None,
+    protect_latex: bool = True,
+    **kwargs,
+) -> dict:
+    if isinstance(dct, str):
+        return {"text": format_latex("", dct, *args, **kwargs)}
+
+    if process_keys is None:
+        return {
+            k: format_latex(k, v, *args, protect_latex=protect_latex, **kwargs)
+            for k, v in dct.items()
+        }
+
+    return {
+        k: format_latex(k, v, *args, protect_latex=protect_latex, **kwargs)
+        for k, v in dct.items()
+        if k in process_keys
+    }
 
 
 def repr_pretty(self, p, cycle):
