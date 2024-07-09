@@ -545,6 +545,9 @@ else:
             if node in self._filtered_nodes:
                 return True
 
+            if node.labels.node_hidden:
+                return True
+
             index = node.labels.index_dict
             for category, list_accepted in self._filter.items():
                 if (

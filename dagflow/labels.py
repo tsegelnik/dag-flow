@@ -76,6 +76,7 @@ class Labels:
         "_rootaxis",
         "_paths",
         "_plotmethod",
+        "_node_hidden",
     )
 
     _name: str | None
@@ -92,6 +93,7 @@ class Labels:
     _mark: str | None
     _paths: list[str]
     _plotmethod: str | None
+    _node_hidden: bool | None
 
     def __init__(self, label: dict[str, str] | str | Path | None = None):
         for slot in self.__slots__:
@@ -99,6 +101,7 @@ class Labels:
         self._paths = []
         self._index_values = []
         self._index_dict = {}
+        self._node_hidden = False
 
         if isinstance(label, str):
             if label.endswith(".yaml"):
@@ -285,6 +288,14 @@ class Labels:
     def plotmethod(self, value: str):
         self._plotmethod = value.lower()
 
+    @property
+    def node_hidden(self) -> bool:
+        return bool(self._node_hidden)
+
+    @node_hidden.setter
+    def node_hidden(self, value: bool):
+        self._node_hidden = value
+
     def items(self):
         for k in self.__slots__:
             yield k, getattr(self, k)
@@ -339,6 +350,7 @@ class Labels:
                 "_index_values",
                 "_index_dict",
                 "_path",
+                "_node_hidden"
             )
         kshort = {"_mark"}
         for _key in inherit:

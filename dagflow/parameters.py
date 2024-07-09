@@ -16,7 +16,7 @@ from .lib.View import View
 from .node import Node, Output
 
 if TYPE_CHECKING:
-    from collections.abc import Generator
+    from collections.abc import Generator, Mapping
 
     from numpy.typing import ArrayLike, DTypeLike
 
@@ -402,7 +402,7 @@ class Parameters:
         dtype: DTypeLike = "d",
         variable: bool | None = None,
         fixed: bool | None = None,
-        label: dict[str, str] | None = None,
+        label: Mapping[str, str] | None = None,
         **kwargs,
     ) -> Parameters:
         label = {"text": "parameter"} if label is None else dict(label)

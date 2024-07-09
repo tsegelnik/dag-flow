@@ -22,10 +22,12 @@ def make_y_parameters_for_x(
     namefmt: str,
     key: str | tuple[str, ...],
     format: str | tuple[str, ...],
-    values: float | tuple[float,],
+    values: float | tuple[float, ...],
     state: str,
     labels: Mapping | str = {},
     disable_last_one: bool = False,
+    hide_nodes = False,
+    **kwargs
 ) -> NestedMKDict:
     parcfg = NestedMKDict({})
     parcfg[key] = values
@@ -33,17 +35,21 @@ def make_y_parameters_for_x(
     data = _get_array(array)
     if disable_last_one:
         data = data[:-1]
-    index = tuple(namefmt.format(i) for i in range(len(data)))
+    npars = len(data)
+    index = tuple(namefmt.format(i) for i in range(npars))
 
     labels_storage = NestedMKDict({})
     labels_loc = labels_storage.child(key)
     for i, (key, value) in enumerate(zip(index, data)):
-        labels_loc[key] = format_dict(
+        labels_loc[key] = (label_loc:=format_dict(
             labels,
-            i=i,
-            value=value,
-            process_keys=label_keys,
-        )
+            i = i,
+            value = value,
+            process_keys = label_keys,
+        ))
+
+        if hide_nodes:
+            label_loc["node_hidden"] = i>1 and i<(npars-2)
 
     return load_parameters(
         format=format,
@@ -51,6 +57,7 @@ def make_y_parameters_for_x(
         parameters=parcfg.object,
         labels=labels_storage.object,
         replicate=index,
+        **kwargs
     )
 
 

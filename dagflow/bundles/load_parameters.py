@@ -44,7 +44,7 @@ IsNumber = Or(float, int, error='Invalid number "{}", expect int of float')
 IsNumberOrTuple = Or(
     IsNumber, (IsNumber,), And([IsNumber], Use(tuple)), error="Invalid number/tuple {}"
 )
-label_keys = {"text", "latex", "graph", "mark", "name", "index_values"}
+label_keys = {"text", "latex", "graph", "mark", "name", "index_values", "node_hidden"}
 IsLabel = Or(
     {
         "text": str,
@@ -52,6 +52,7 @@ IsLabel = Or(
         Optional("graph"): str,
         Optional("mark"): str,
         Optional("name"): str,
+        Optional("node_hidden"): bool,
     },
     And(str, Use(lambda s: {"text": s}), error="Invalid string: {}"),
 )
