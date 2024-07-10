@@ -566,7 +566,7 @@ class Node(NodeBase):
         self.fd.being_evaluated = True
         try:
             ret = self._eval()
-        except Exception as exc:
+        except DagflowError as exc:
             raise exc
         self.fd.being_evaluated = False
         return ret

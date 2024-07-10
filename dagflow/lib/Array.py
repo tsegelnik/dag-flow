@@ -32,7 +32,7 @@ class Array(Node):
     def __init__(
         self,
         name: str,
-        array: NDArray,
+        array: NDArray | list[float | int] | tuple[float | int,...],
         *,
         mode: str = "store",
         outname: str = "array",

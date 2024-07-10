@@ -109,3 +109,10 @@ class ConnectionError(CriticalError):
         if not message:
             message = "An exception occurred during connection!"
         super().__init__(message, *args, **kwargs)
+
+
+class CalculationError(CriticalError):
+    def __init__(self, message: str | None = None, *args, **kwargs):
+        if not message:
+            message = "An exception occurred during calculation!"
+        super().__init__(message, *args, **kwargs)
