@@ -93,15 +93,25 @@ class Profiler(metaclass=ABCMeta):
             raise ValueError("You shoud provide profiler with `target_nodes` "
                              "or provide `sources` and `sinks` arguments"
                              "to automatically find the target nodes")
+        
+    @property
+    def n_runs(self) -> int:
+        return self._n_runs
+    
+    @n_runs.setter
+    def n_runs(self, value):
+        self._n_runs = value
 
     def __child_nodes_gen(self, node: FunctionNode) \
                             -> Generator[FunctionNode, None, None]:
+        """Access to the child nodes of the given node via the generator"""
         for output in node.outputs.iter_all():
             for child_input in output.child_inputs:
                 yield child_input.node
 
     def __parent_nodes_gen(self, node: FunctionNode) \
                             -> Generator[FunctionNode, None, None]:
+        """Access to the parent nodes of the given node via the generator"""
         for input in node.inputs.iter_all():
             yield input.parent_node
 
@@ -148,7 +158,6 @@ class Profiler(metaclass=ABCMeta):
                     cur_node = stack.pop()
         self.__check_reachable(related_nodes)
         return related_nodes
-
 
     def _reveal_source_sink(self):
         """Find sources and sinks for self._target_nodes"""
@@ -292,7 +301,7 @@ class Profiler(metaclass=ABCMeta):
         return report
 
     def _normalize(self, df: DataFrame) -> DataFrame:
-        """Normalize time by `self._n_runs`"""
+        """Normalize time by `self.n_runs`"""
         for c in df.columns:
             if c.startswith('t_') or c == 'time':
                 df[c] /= self._n_runs
