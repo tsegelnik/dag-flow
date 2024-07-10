@@ -39,7 +39,6 @@ def test_InterpolatorGroup(debug_graph, testname):
     with Graph(debug=debug_graph, close=True) as graph:
         nc, nf = 10, 20
         coarseX = linspace(0, 10, nc + 1)
-        shuffle(coarseX)
         fineX = linspace(-2, 12, nf + 1)
         shuffle(fineX)
         ycX = k * coarseX + b

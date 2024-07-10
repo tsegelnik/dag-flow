@@ -11,7 +11,7 @@ from .exception import (
     AllocationError,
     ClosedGraphError,
     ConnectionError,
-    CriticalError,
+    CalculationError,
     DagflowError,
     InitializationError,
     UnclosedGraphError,
@@ -173,8 +173,8 @@ class Output:
         try:
             self.touch()
             return self._data
-        except Exception as exc:
-            raise CriticalError(
+        except CalculationError as exc:
+            raise CalculationError(
                 "An exception occured while the node was touched!",
                 node=self._node,
                 output=self,

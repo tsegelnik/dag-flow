@@ -45,7 +45,7 @@ class Interpolator(Node):
         `0` or `result`: array of the `y≈f(fine)`
 
     extra arguments:
-        `method`: defines an interpolation method ("linear", "log", "logx", "exp");
+        `method`: defines an interpolation method ("linear", "log", "logx", "exp", "left", "right", "nearest");
         default: `linear`
         `tolerance`: determines the accuracy with which the point will be identified
         with the segment boundary; default: `1e-10`
@@ -84,7 +84,7 @@ class Interpolator(Node):
     def __init__(
         self,
         *args,
-        method: Literal["linear", "log", "logx", "exp"] = "linear",
+        method: Literal["linear", "log", "logx", "exp", "left", "right", "nearest"] = "linear",
         tolerance: float = 1e-10,
         underflow: Literal["constant", "nearestedge", "extrapolate"] = "extrapolate",
         overflow: Literal["constant", "nearestedge", "extrapolate"] = "extrapolate",
@@ -98,6 +98,9 @@ class Interpolator(Node):
             "log": _log_interpolation,
             "logx": _logx_interpolation,
             "exp": _exp_interpolation,
+            "left": _left_interpolation,
+            "right": _right_interpolation,
+            "nearest": _nearest_interpolation,
         }
         if (mlist := self._methods.keys()) and method not in mlist:
             raise InitializationError(
@@ -188,11 +191,10 @@ class Interpolator(Node):
         indices = self._indices.data.ravel()
         out = self._result.data.ravel()
 
-        sortedindices = coarse.argsort()  # indices to sort the arrays
         _interpolation(
             self._method,
-            coarse[sortedindices],
-            yc[sortedindices],
+            coarse,
+            yc,
             fine,
             indices,
             out,
@@ -308,3 +310,36 @@ def _exp_interpolation(
     fine: float,
 ) -> float:
     return yc0 * exp((coarse0 - fine) * log(yc0 / yc1) / (coarse1 - coarse0))
+
+
+@njit(cache=True)
+def _left_interpolation(
+    coarse0: float,
+    coarse1: float,
+    yc0: float,
+    yc1: float,
+    fine: float,
+) -> float:
+    return yc0
+
+
+@njit(cache=True)
+def _right_interpolation(
+    coarse0: float,
+    coarse1: float,
+    yc0: float,
+    yc1: float,
+    fine: float,
+) -> float:
+    return yc1
+
+
+@njit(cache=True)
+def _nearest_interpolation(
+    coarse0: float,
+    coarse1: float,
+    yc0: float,
+    yc1: float,
+    fine: float,
+) -> float:
+    return yc0 if (fine - coarse0) <= (coarse1 - fine) else yc1

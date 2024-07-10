@@ -7,15 +7,41 @@ from .tools.schema import LoadYaml
 
 if TYPE_CHECKING:
     from collections.abc import Callable, Mapping, Sequence
+    from typing import Any
 
 
-def format_latex(k, s, /, *args, **kwargs) -> str:
+def format_latex(k: str, s: str | Any, /, *args, protect_latex: bool = True, **kwargs) -> str:
     if not isinstance(s, str):
         return s
-    if (k == "latex" and "$" in s) or "{" not in s:
+
+    if protect_latex and (k == "latex" and "$" in s) or "{" not in s:
         return s
 
     return s.format(*args, **kwargs)
+
+
+def format_dict(
+    dct: Mapping | str,
+    /,
+    *args,
+    process_keys: tuple | list | set | None = None,
+    protect_latex: bool = True,
+    **kwargs,
+) -> dict:
+    if isinstance(dct, str):
+        return {"text": format_latex("", dct, *args, **kwargs)}
+
+    if process_keys is None:
+        return {
+            k: format_latex(k, v, *args, protect_latex=protect_latex, **kwargs)
+            for k, v in dct.items()
+        }
+
+    return {
+        k: format_latex(k, v, *args, protect_latex=protect_latex, **kwargs)
+        for k, v in dct.items()
+        if k in process_keys
+    }
 
 
 def repr_pretty(self, p, cycle):
@@ -50,6 +76,7 @@ class Labels:
         "_rootaxis",
         "_paths",
         "_plotmethod",
+        "_node_hidden",
     )
 
     _name: str | None
@@ -66,6 +93,7 @@ class Labels:
     _mark: str | None
     _paths: list[str]
     _plotmethod: str | None
+    _node_hidden: bool | None
 
     def __init__(self, label: dict[str, str] | str | Path | None = None):
         for slot in self.__slots__:
@@ -73,6 +101,7 @@ class Labels:
         self._paths = []
         self._index_values = []
         self._index_dict = {}
+        self._node_hidden = False
 
         if isinstance(label, str):
             if label.endswith(".yaml"):
@@ -259,6 +288,14 @@ class Labels:
     def plotmethod(self, value: str):
         self._plotmethod = value.lower()
 
+    @property
+    def node_hidden(self) -> bool:
+        return bool(self._node_hidden)
+
+    @node_hidden.setter
+    def node_hidden(self, value: bool):
+        self._node_hidden = value
+
     def items(self):
         for k in self.__slots__:
             yield k, getattr(self, k)
@@ -313,6 +350,7 @@ class Labels:
                 "_index_values",
                 "_index_dict",
                 "_path",
+                "_node_hidden"
             )
         kshort = {"_mark"}
         for _key in inherit:

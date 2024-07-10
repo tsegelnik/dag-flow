@@ -1,6 +1,9 @@
-from collections.abc import Generator, Mapping, Sequence
-from pathlib import Path
+from __future__ import annotations
+
+from contextlib import suppress
 from math import fabs
+from pathlib import Path
+from typing import TYPE_CHECKING
 
 from schema import And, Optional, Or, Schema, SchemaError, Use
 
@@ -8,9 +11,12 @@ from multikeydict.nestedmkdict import NestedMKDict
 from multikeydict.typing import properkey
 
 from ..exception import InitializationError
-from ..labels import format_latex, inherit_labels
+from ..labels import format_dict, inherit_labels
 from ..storage import NodeStorage
 from ..tools.schema import IsStrSeqOrStr, LoadFileWithExt, LoadYaml, MakeLoaderPy, NestedSchema
+
+if TYPE_CHECKING:
+    from collections.abc import Generator, Mapping, Sequence
 
 
 class ParsCfgHasProperFormat:
@@ -40,7 +46,7 @@ IsNumber = Or(float, int, error='Invalid number "{}", expect int of float')
 IsNumberOrTuple = Or(
     IsNumber, (IsNumber,), And([IsNumber], Use(tuple)), error="Invalid number/tuple {}"
 )
-label_keys = {"text", "latex", "graph", "mark", "name", "index_values"}
+label_keys = {"text", "latex", "graph", "mark", "name", "index_values", "node_hidden"}
 IsLabel = Or(
     {
         "text": str,
@@ -48,6 +54,7 @@ IsLabel = Or(
         Optional("graph"): str,
         Optional("mark"): str,
         Optional("name"): str,
+        Optional("node_hidden"): bool,
     },
     And(str, Use(lambda s: {"text": s}), error="Invalid string: {}"),
 )
@@ -169,10 +176,6 @@ def get_format_processor(format):
         return process_var_percent
 
 
-def format_dict(dct: dict, /, *args, **kwargs) -> dict:
-    return {k: format_latex(k, v, *args, **kwargs) for k, v in dct.items() if k in label_keys}
-
-
 def get_label(key: tuple, labelscfg: dict) -> dict:
     try:
         ret = labelscfg.any(key)
@@ -196,7 +199,12 @@ def get_label(key: tuple, labelscfg: dict) -> dict:
 
         key_str = ".".join(key[n - 1 :])
         ret = format_dict(
-            lcfg, key_str, key=key_str, space_key=f" {key_str}", key_space=f"{key_str} "
+            lcfg,
+            key_str,
+            key=key_str,
+            space_key=f" {key_str}",
+            key_space=f"{key_str} ",
+            process_keys=label_keys,
         )
         ret["index_values"] = list(key)
         return ret
@@ -247,11 +255,19 @@ def load_parameters(
     *,
     nuisance_location: str | Sequence[str] | None = "statistic.nuisance.parts",
     **kwargs,
-):
+) -> NestedMKDict:
     acfg = dict(acfg or {}, **kwargs)
     cfg = ValidateParsCfg(acfg)
     cfg = NestedMKDict(cfg)
 
+    return _load_parameters(cfg, nuisance_location=nuisance_location)
+
+
+def _load_parameters(
+    cfg: NestedMKDict,
+    *,
+    nuisance_location: str | Sequence[str] | None = "statistic.nuisance.parts",
+) -> NestedMKDict:
     pathstr = cfg["path"]
     path = tuple(pathstr.split(".")) if pathstr else ()
 
@@ -293,7 +309,7 @@ def load_parameters(
     for key_general, varcfg in iterate_varcfgs(cfg):
         varcfg.setdefault(state, True)
 
-        label_general = varcfg["label"]
+        label_general = NestedMKDict(varcfg["label"])
 
         for subkey in subkeys:
             key = key_general + subkey
@@ -301,11 +317,17 @@ def load_parameters(
             key_str = ".".join(key)
             subkey_str = ".".join(subkey)
 
+            label_local = label_general.object
+            if subkey:
+                with suppress(KeyError):
+                    label_local = label_general(subkey).object
+
             label = format_dict(
-                label_general.copy(),
+                label_local.copy(),
                 subkey=key_str,
                 space_key=f" {subkey_str}",
                 key_space=f"{subkey_str} ",
+                process_keys=label_keys,
             )
             varcfg_sub = varcfg.copy()
             varcfg_sub["label"] = label
@@ -327,7 +349,13 @@ def load_parameters(
             label, fmtlong=f"{matrixtype.capitalize()} matrix: {{}}", fmtshort=mark_matrix + "({})"
         )
         label_mat["mark"] = mark_matrix
-        label_mat = format_dict(label_mat, key="", space_key="", key_space="")
+        label_mat = format_dict(
+            label_mat,
+            key="",
+            space_key="",
+            key_space="",
+            process_keys=label_keys,
+        )
         matrix_array = Array("matrixtype", matrix, label=label_mat)
 
         for subkey in subkeys:
@@ -351,7 +379,11 @@ def load_parameters(
                 processed_cfgs.add(fullkey + name)
 
             labelsub = format_dict(
-                label, subkey=subkey_str, space_key=f" {subkey_str}", key_space=f"{subkey_str} "
+                label,
+                subkey=subkey_str,
+                space_key=f" {subkey_str}",
+                key_space=f"{subkey_str} ",
+                process_keys=label_keys,
             )
             labelsub["index_values"] = list(key + subkey)
             pars[fullkey] = Parameters.from_numbers(label=labelsub, **kwargs)

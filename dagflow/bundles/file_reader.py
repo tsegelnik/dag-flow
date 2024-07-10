@@ -324,6 +324,7 @@ class FileReaderTSV(FileReaderArray):
         super().__init__(file_name)
 
     def _get_filenames(self, object_name: str) -> tuple[str, ...]:
+        object_name = object_name.replace(".", "_")
         return (
             str(self._file_name / f"{self._file_name.stem}_{object_name}{self._extension}"),
             f"{self._file_name.parent/self._file_name.stem!s}_{object_name}{self._extension}",
