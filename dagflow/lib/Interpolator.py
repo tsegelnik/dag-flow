@@ -12,6 +12,7 @@ from ..node import Node
 from ..typefunctions import (
     assign_output_axes_from_inputs,
     check_has_inputs,
+    check_input_dimension,
     check_input_dtype,
     check_input_shape,
     check_inputs_number,
@@ -32,8 +33,10 @@ class ExtrapolationStrategy(IntEnum):
     nearestedge = 1
     extrapolate = 2
 
+
 MethodType = Literal["linear", "log", "logx", "exp", "left", "right", "nearest"]
 OutOfBoundsStrategyType = Literal["linear", "log", "logx", "exp", "left", "right", "nearest"]
+
 
 class Interpolator(Node):
     """
@@ -66,6 +69,7 @@ class Interpolator(Node):
         "_strategies",
         "_methods",
         "_method",
+        "_methodname",
         "_tolerance",
         "_underflow",
         "_overflow",
@@ -83,6 +87,10 @@ class Interpolator(Node):
     _indices: Input
     _result: Output
 
+    _methods: dict[str,Callable]
+    _method: Callable
+    _methodname: str
+
     def __init__(
         self,
         *args,
@@ -95,6 +103,7 @@ class Interpolator(Node):
     ) -> None:
         super().__init__(*args, **kwargs, allowed_kw_inputs=("y", "coarse", "fine", "indices"))
         self._labels.setdefault("mark", "~")
+        self._methodname = method
         self._methods = {
             "linear": _linear_interpolation,
             "log": _log_interpolation,
@@ -165,8 +174,14 @@ class Interpolator(Node):
         """
         check_inputs_number(self, 1)
         check_has_inputs(self, ("coarse", "y", "fine", "indices"))
+        check_input_dimension(self, ("coarse", "y"), 1)
         check_input_dtype(self, "indices", "i")
-        check_input_shape(self, "y", self._coarse.dd.shape)
+
+        ncoarse = self._coarse.dd.shape[0]
+        if self._methodname == "left":
+            check_input_shape(self, "y", (ncoarse,), (ncoarse - 1,))
+        else:
+            check_input_shape(self, "y", (ncoarse,))
         check_input_shape(self, "fine", self._indices.dd.shape)
         copy_from_input_to_output(self, "fine", "result")
         if self._fine.dd.dim == 1:
@@ -235,6 +250,7 @@ def _interpolation(
     fillvalue: float,
 ) -> None:
     nseg = coarse.size - 1
+    has_last_y = coarse.size == yc.size
     for i, j in enumerate(indices):
         if abs(fine[i] - coarse[j]) < tolerance:
             # get precise value from coarse
@@ -244,12 +260,20 @@ def _interpolation(
                 result[i] = fillvalue
             elif overflow == ExtrapolationStrategy.nearestedge:  # nearestedge
                 result[i] = yc[nseg]
-            else:  # extrapolate
+            elif has_last_y:  # extrapolate
                 result[i] = method(
                     coarse[nseg - 1],
                     coarse[nseg],
                     yc[nseg - 1],
                     yc[nseg],
+                    fine[i],
+                )
+            else:  # extrapolate
+                result[i] = method(
+                    coarse[nseg - 1],
+                    coarse[nseg],
+                    yc[nseg - 1],
+                    yc[nseg - 1],
                     fine[i],
                 )
         elif j <= 0:  # underflow
@@ -265,9 +289,10 @@ def _interpolation(
                     yc[1],
                     fine[i],
                 )
-        else:
-            # interpolate
+        elif has_last_y or j<nseg: # interpolate
             result[i] = method(coarse[j - 1], coarse[j], yc[j - 1], yc[j], fine[i])
+        else: # interpolate
+            result[i] = method(coarse[j - 1], coarse[j], yc[j - 1], yc[j - 1], fine[i])
 
 
 @njit(cache=True)
