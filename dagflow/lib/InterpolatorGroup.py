@@ -5,12 +5,11 @@ from typing import TYPE_CHECKING
 from ..metanode import MetaNode
 from ..node import Node
 from ..storage import NodeStorage
-from .Interpolator import Interpolator
+from .Interpolator import Interpolator, MethodType, OutOfBoundsStrategyType
 from .SegmentIndex import SegmentIndex
 
 if TYPE_CHECKING:
     from collections.abc import Mapping
-    from typing import Literal
 
     from multikeydict.typing import KeyLike
 
@@ -39,12 +38,12 @@ class InterpolatorGroup(MetaNode):
     def _add_interpolator(
         self,
         name: str,
-        method: Literal["linear", "log", "logx", "exp"] = "linear",
+        method: MethodType = "linear",
         *,
         positionals: bool = True,
         tolerance: float = 1e-10,
-        underflow: Literal["constant", "nearestedge", "extrapolate"] = "extrapolate",
-        overflow: Literal["constant", "nearestedge", "extrapolate"] = "extrapolate",
+        underflow: OutOfBoundsStrategyType = "extrapolate",
+        overflow: OutOfBoundsStrategyType = "extrapolate",
         fillvalue: float = 0.0,
         label={},
     ) -> Interpolator:
@@ -73,7 +72,7 @@ class InterpolatorGroup(MetaNode):
     @classmethod
     def replicate(
         cls,
-        method: Literal["linear", "log", "logx", "exp"] = "linear",
+        method: MethodType = "linear",
         names: Mapping[str, str] = {
             "indexer": "indexer",
             "interpolator": "interpolator",

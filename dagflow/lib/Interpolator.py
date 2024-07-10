@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from enum import IntEnum
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Literal
 
 from numba import float64, int32, njit, void
 from numba.core.types import FunctionType
@@ -19,7 +19,7 @@ from ..typefunctions import (
 )
 
 if TYPE_CHECKING:
-    from typing import Callable, Literal
+    from typing import Callable
 
     from numpy.typing import NDArray
 
@@ -32,6 +32,8 @@ class ExtrapolationStrategy(IntEnum):
     nearestedge = 1
     extrapolate = 2
 
+MethodType = Literal["linear", "log", "logx", "exp", "left", "right", "nearest"]
+OutOfBoundsStrategyType = Literal["linear", "log", "logx", "exp", "left", "right", "nearest"]
 
 class Interpolator(Node):
     """
@@ -84,10 +86,10 @@ class Interpolator(Node):
     def __init__(
         self,
         *args,
-        method: Literal["linear", "log", "logx", "exp", "left", "right", "nearest"] = "linear",
+        method: MethodType = "linear",
         tolerance: float = 1e-10,
-        underflow: Literal["constant", "nearestedge", "extrapolate"] = "extrapolate",
-        overflow: Literal["constant", "nearestedge", "extrapolate"] = "extrapolate",
+        underflow: OutOfBoundsStrategyType = "extrapolate",
+        overflow: OutOfBoundsStrategyType = "extrapolate",
         fillvalue: float = 0.0,
         **kwargs,
     ) -> None:
