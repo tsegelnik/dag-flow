@@ -20,7 +20,6 @@ def test_segmentIndex_01(debug_graph, testname, mode):
     with Graph(debug=debug_graph, close=True) as graph:
         nc, nf = 10, 100
         coarseX = linspace(0, 10, nc + 1)
-        shuffle(coarseX)
         fineX = linspace(0, 10, nf + 1)
         shuffle(fineX)
         coarse = Array("coarse", coarseX)
@@ -38,7 +37,6 @@ def test_segmentIndex_02(debug_graph, testname, mode):
     with Graph(debug=debug_graph, close=True) as graph:
         nc, nf = 10, 100
         coarseX = linspace(0, 10, nc).reshape(2, nc // 2)
-        shuffle(coarseX)
         fineX = linspace(0, 10, nf).reshape(2, nf // 2)
         shuffle(fineX)
         coarse = Array("coarse", coarseX)
@@ -58,7 +56,6 @@ def test_segmentIndex_03(debug_graph, testname, mode):
     with Graph(debug=debug_graph, close=True) as graph:
         nc, nf = 10, 100
         coarseX = linspace(0, 10, nc).reshape(nc // 2, 2)
-        shuffle(coarseX)
         fineX = linspace(0, 10, nf).reshape(nf // 2, 2)
         shuffle(fineX)
         coarse = Array("coarse", coarseX)
