@@ -191,11 +191,10 @@ class Interpolator(Node):
         indices = self._indices.data.ravel()
         out = self._result.data.ravel()
 
-        sortedindices = coarse.argsort()  # indices to sort the arrays
         _interpolation(
             self._method,
-            coarse[sortedindices],
-            yc[sortedindices],
+            coarse,
+            yc,
             fine,
             indices,
             out,

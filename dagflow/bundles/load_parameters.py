@@ -1,10 +1,10 @@
-from collections.abc import Generator, Mapping, Sequence
+from __future__ import annotations
+
 from contextlib import suppress
 from math import fabs
 from pathlib import Path
+from typing import TYPE_CHECKING
 
-from numpy import ndarray
-from numpy.typing import NDArray
 from schema import And, Optional, Or, Schema, SchemaError, Use
 
 from multikeydict.nestedmkdict import NestedMKDict
@@ -12,9 +12,11 @@ from multikeydict.typing import properkey
 
 from ..exception import InitializationError
 from ..labels import format_dict, inherit_labels
-from ..output import Output
 from ..storage import NodeStorage
 from ..tools.schema import IsStrSeqOrStr, LoadFileWithExt, LoadYaml, MakeLoaderPy, NestedSchema
+
+if TYPE_CHECKING:
+    from collections.abc import Generator, Mapping, Sequence
 
 
 class ParsCfgHasProperFormat:
