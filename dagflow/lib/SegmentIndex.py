@@ -2,13 +2,31 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, Literal
 
-from ..exception import InitializationError
+from numba import njit
+
+from ..exception import InitializationError, CalculationError
 from ..node import Node
 from ..typefunctions import check_inputs_number, copy_from_input_to_output
 
 if TYPE_CHECKING:
+    from numpy.typing import NDArray
+
     from ..input import Input
     from ..output import Output
+
+
+@njit
+def _is_sorted(array: NDArray) -> bool:
+    previous = array[0]
+    for i in range(1, len(array)):
+        current = array[i]
+
+        if current <= previous:
+            return False
+
+        previous = current
+
+    return True
 
 
 class SegmentIndex(Node):
@@ -72,7 +90,6 @@ class SegmentIndex(Node):
         out = self._indices.data.ravel()
         coarse = self._coarse.data.ravel()
         fine = self._fine.data.ravel()
-        # NOTE: `searchsorted` and `argsort` allocate a memory!
-        #       it is better to use another algorithm if possible
-        sorter = coarse.argsort()
-        out[:] = coarse.searchsorted(fine, side=self.mode, sorter=sorter)
+        if not _is_sorted(coarse):
+            raise CalculationError("Coarse array is not sorted", node=self, input=self._coarse)
+        out[:] = coarse.searchsorted(fine, side=self.mode)
