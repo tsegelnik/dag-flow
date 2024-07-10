@@ -175,6 +175,7 @@ class FileReader(metaclass=FileReaderMeta):
         raise RuntimeError("not implemented method")
 
     def _get_object(self, object_name: str, **kwargs) -> Any:
+        object_name = object_name.replace(".", "_")
         with suppress(KeyError):
             return self._read_objects[object_name]
 
@@ -324,7 +325,6 @@ class FileReaderTSV(FileReaderArray):
         super().__init__(file_name)
 
     def _get_filenames(self, object_name: str) -> tuple[str, ...]:
-        object_name = object_name.replace(".", "_")
         return (
             str(self._file_name / f"{self._file_name.stem}_{object_name}{self._extension}"),
             f"{self._file_name.parent/self._file_name.stem!s}_{object_name}{self._extension}",
@@ -425,7 +425,7 @@ with suppress(ImportError):
             if self._reader_uproot is not None:
                 self._reader_uproot._close()
 
-        def _get_object(self, object_name: str, **kwargs) -> Any:
+        def _get_object_impl(self, object_name: str, **kwargs) -> Any:
             assert not kwargs
             ret = self._file.Get(object_name)
             if not ret:
