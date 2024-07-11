@@ -221,7 +221,7 @@ def check_input_shape(node: Node, inputkey: LimbKey, *shapes: tuple[int,...], **
     """Checking the shape equivalence for inputs"""
     for input in node.inputs.iter(inputkey, **kwargs):
         shape_current = input.dd.shape
-        if not any(shape_current==shape for shape in shapes):
+        if all(shape_current!=shape for shape in shapes):
             raise TypeFunctionError(
                 f"The node supports only inputs with shape=({shapes}). Got {shape_current}!",
                 node=node,

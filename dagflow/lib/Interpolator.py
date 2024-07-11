@@ -35,8 +35,7 @@ class ExtrapolationStrategy(IntEnum):
 
 
 MethodType = Literal["linear", "log", "logx", "exp", "left", "right", "nearest"]
-OutOfBoundsStrategyType = Literal["linear", "log", "logx", "exp", "left", "right", "nearest"]
-
+OutOfBoundsStrategyType = Literal["constant", "nearestedge", "extrapolate"]
 
 class Interpolator(Node):
     """

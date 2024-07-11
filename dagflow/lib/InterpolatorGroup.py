@@ -5,13 +5,15 @@ from typing import TYPE_CHECKING
 from ..metanode import MetaNode
 from ..node import Node
 from ..storage import NodeStorage
-from .Interpolator import Interpolator, MethodType, OutOfBoundsStrategyType
+from .Interpolator import Interpolator
 from .SegmentIndex import SegmentIndex
 
 if TYPE_CHECKING:
     from collections.abc import Mapping
 
     from multikeydict.typing import KeyLike
+
+    from .Interpolator import MethodType, OutOfBoundsStrategyType
 
 
 class InterpolatorGroup(MetaNode):
