@@ -240,12 +240,19 @@ def test_interpolation_exp_01(debug_graph, testname, k, b, fine_x_mode):
 @mark.parametrize("b", (1.432, 0.742))
 @mark.parametrize("method", ("left", "right", "nearest"))
 @mark.parametrize("fine_x_mode", ("other", "same"))
-def test_interpolation_lrn_01(debug_graph, testname, k, b, method, fine_x_mode):
+@mark.parametrize("truncate_y", (False, True))
+def test_interpolation_lrn_01(debug_graph, testname, k, b, method: str, fine_x_mode: str, truncate_y: bool):
     seed(10)
 
     nc, nf = 100, 251
     coarseX = linspace(0, 0.5, nc + 1)
     ycX = exp(k * coarseX + b)
+
+    if truncate_y:
+        if method=="left":
+            ycX = ycX[:-1]
+        else:
+            return
 
     match fine_x_mode:
         case "other":
@@ -281,7 +288,10 @@ def test_interpolation_lrn_01(debug_graph, testname, k, b, method, fine_x_mode):
         case "left":
             compareB[are_in] = ycX[idx[are_in] - 1]
             compareB[are_below] = ycX[0]
-            compareB[are_above] = ycX[-2]
+            if truncate_y:
+                compareB[are_above] = ycX[-1]
+            else:
+                compareB[are_above] = ycX[-2]
         case "right":
             compareB[are_in] = ycX[idx[are_in]]
             compareB[are_below] = ycX[1]

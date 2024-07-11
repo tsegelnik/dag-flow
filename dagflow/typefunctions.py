@@ -217,13 +217,13 @@ def check_input_dimension(node: Node, inputkey: LimbKey, ndim: int, **kwargs):
             )
 
 
-def check_input_shape(node: Node, inputkey: LimbKey, shape: tuple, **kwargs):
+def check_input_shape(node: Node, inputkey: LimbKey, *shapes: tuple[int,...], **kwargs):
     """Checking the shape equivalence for inputs"""
     for input in node.inputs.iter(inputkey, **kwargs):
-        sshape = input.dd.shape
-        if sshape != shape:
+        shape_current = input.dd.shape
+        if all(shape_current!=shape for shape in shapes):
             raise TypeFunctionError(
-                f"The node supports only inputs with shape={shape}. Got {sshape}!",
+                f"The node supports only inputs with shape=({shapes}). Got {shape_current}!",
                 node=node,
                 input=input,
             )
