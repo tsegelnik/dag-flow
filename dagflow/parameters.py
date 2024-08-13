@@ -7,7 +7,7 @@ from typing import TYPE_CHECKING
 from numpy import array, ndarray, zeros_like
 
 from .exception import InitializationError
-from .labels import inherit_labels
+from .labels import inherit_labels, repr_pretty
 from .lib.Array import Array
 from .lib.Cholesky import Cholesky
 from .lib.CovmatrixFromCormatrix import CovmatrixFromCormatrix
@@ -98,6 +98,8 @@ class Parameter:
 
     def __str__(self) -> str:
         return f"par v={self.value}"
+
+    _repr_pretty_ = repr_pretty
 
     @property
     def value(self) -> float | int:
@@ -290,7 +292,7 @@ class Parameters:
     _value_node: Node
     _pars: list[Parameter]
     _names: tuple[tuple[str, ...], ...]
-    _norm_pars: list[Parameter]
+    _norm_pars: list[NormalizedGaussianParameter]
 
     _is_variable: bool
 
@@ -654,3 +656,5 @@ def GaussianParameters(names: tuple[tuple[str]], value: Node, *args, **kwargs) -
     pars._close()
 
     return pars
+
+AnyGaussianParameter = GaussianParameter | NormalizedGaussianParameter
