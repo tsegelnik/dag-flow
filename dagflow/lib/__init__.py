@@ -19,6 +19,7 @@ from .Jacobian import Jacobian
 from .LinearFunction import LinearFunction
 from .ManyToOneNode import ManyToOneNode
 from .MatrixProductAB import MatrixProductAB
+from .MatrixProductDDt import MatrixProductDDt
 from .MatrixProductDVDt import MatrixProductDVDt
 from .MeshToEdges import MeshToEdges
 from .NormalizeCorrelatedVars import NormalizeCorrelatedVars
@@ -65,6 +66,7 @@ __all__ = [
     "Log1p",
     "ManyToOneNode",
     "MatrixProductAB",
+    "MatrixProductDDt",
     "MatrixProductDVDt",
     "MeshToEdges",
     "NormalizeCorrelatedVars",
