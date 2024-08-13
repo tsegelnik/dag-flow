@@ -4,16 +4,20 @@ from pytest import mark
 
 from dagflow.graph import Graph
 from dagflow.graphviz import savegraph
-from dagflow.lib import Array
-from dagflow.lib import MatrixProductDVDt
+from dagflow.lib import Array, MatrixProductDVDt
 
 
 @mark.parametrize("dtype", ("d", "f"))
 def test_MatrixProductDVDt_2d(dtype):
     left = np.array([[1, 2, 3], [3, 4, 5]], dtype=dtype)
-    square = np.diag(
-        np.array([9, 4, 5], dtype=dtype)
-    )  # construct a diagonal array
+    square = np.array(
+        [
+            [9, 2, 1],
+            [0, 4, 2],
+            [1.5, 3, 1],
+        ],
+        dtype=dtype,
+    )
 
     with Graph(close=True) as graph:
         l_array = Array("Left", left)
