@@ -24,7 +24,7 @@ class Jacobian(OneToOneNode):
     def __init__(
         self,
         name,
-        scale: float = 0.5,
+        scale: float = 0.1,
         parameters: Sequence[GaussianParameter] | None = None,
         **kwargs,
     ) -> None:
