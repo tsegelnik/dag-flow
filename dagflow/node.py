@@ -125,6 +125,19 @@ class Node(NodeBase):
         return f"{{{self.name}}} {super().__str__()}"
 
     @classmethod
+    def from_args(cls, name, *positional_connectibles, kwargs: Mapping={}, **key_connectibles) -> Node:
+        # TODO:
+        #   - testing
+        #   - keyword connection syntax ([] or ())
+        #   - consistency with make_stored, replicate
+        instance = cls(name, **kwargs)
+        for connectible in positional_connectibles:
+            connectible >> instance
+        for key, connectible in key_connectibles.items():
+            connectible >> instance.inputs[key]
+        return instance
+
+    @classmethod
     def make_stored(
         cls, name: str, *args, label_from: Mapping | None = None, **kwargs
     ) -> tuple[Node | None, "NodeStorage"]:
