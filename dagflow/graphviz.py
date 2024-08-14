@@ -143,7 +143,7 @@ else:
                     self.set_label(label)
                 self._transform_graph(graph_or_node)
             elif isinstance(graph_or_node, Node):
-                self._transform_from_node(graph_or_node)
+                self._transform_from_nodes(graph_or_node)
             elif graph_or_node != None:
                 raise RuntimeError("Invalid graph entry point")
 
@@ -184,9 +184,13 @@ else:
             return cls.from_node(output.node, *args, **kwargs)
 
         @classmethod
-        def from_node(
+        def from_node(cls, node: Node, *args, **kwargs) -> GraphDot:
+            return cls.from_nodes((node,), *args, **kwargs)
+
+        @classmethod
+        def from_nodes(
             cls,
-            node: Node,
+            nodes: Sequence[Node],
             *args,
             mindepth: int | None = None,
             maxdepth: int | None = None,
@@ -194,8 +198,10 @@ else:
             keep_direction: bool = False,
             **kwargs,
         ) -> GraphDot:
+            node0=nodes[0]
+
             gd = cls(None, *args, **kwargs)
-            label = [node.name]
+            label = [node0.name]
             if mindepth is not None:
                 label.append(f"{mindepth=:+d}")
             if maxdepth is not None:
@@ -203,8 +209,8 @@ else:
             if minsize is not None:
                 label.append(f"{minsize=:d}")
             gd.set_label(", ".join(label))
-            gd._transform_from_node(
-                node,
+            gd._transform_from_nodes(
+                nodes,
                 mindepth=mindepth,
                 maxdepth=maxdepth,
                 minsize=minsize,
@@ -212,15 +218,19 @@ else:
             )
             return gd
 
-        def _transform_from_node(self, node: Node, **kwargs) -> None:
-            logger.debug(
-                f"Start building graph from node {node.labels.path or node.name}, {kwargs=}"
-            )
-            if self._node_is_filtered(node):
-                return
+        def _transform_from_nodes(self, nodes: Sequence[Node] | Node, **kwargs) -> None:
+            if isinstance(nodes, Node):
+                nodes = (nodes,)
 
-            self._add_nodes_backward_recursive(node, including_self=True, **kwargs)
-            self._add_nodes_forward_recursive(node, including_self=False, **kwargs)
+            for node in nodes:
+                logger.debug(
+                    f"Extending graph with node {node.labels.path or node.name}, {kwargs=}"
+                )
+                if self._node_is_filtered(node):
+                    return
+
+                self._add_nodes_backward_recursive(node, including_self=True, **kwargs)
+                self._add_nodes_forward_recursive(node, including_self=False, **kwargs)
 
             for nodedag in self._nodes_map_dag:
                 self._add_open_inputs(nodedag)
@@ -241,6 +251,7 @@ else:
                 return False
             if not num_in_range(depth, mindepth, maxdepth):
                 return False
+            # print(f"{depth=: 2d}: {node.name}")
 
             if depth > 0 or num_in_range(node.outputs[0].dd.size, minsize):
                 self._add_node(node, depth=depth)
