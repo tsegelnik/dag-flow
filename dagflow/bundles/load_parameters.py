@@ -288,7 +288,7 @@ def _load_parameters(
                 "nuisance_parts": {},
                 "nuisance": {},
             },
-            "parameter_node": {"all": {}, "constant": {}, "free": {}, "constrained": {}},
+            "parameter_group": {"all": {}, "constant": {}, "free": {}, "constrained": {}},
         },
         sep=".",
     )
@@ -403,8 +403,8 @@ def _load_parameters(
         else:
             targetkey = ("free",) + pathkey
 
-        ret[("parameter_node",) + targetkey] = par
-        ret[("parameter_node", "all") + pathkey] = par
+        ret[("parameter_group",) + targetkey] = par
+        ret[("parameter_group", "all") + pathkey] = par
 
         ptarget = ("parameter",) + targetkey
         target_all = ("parameter", "all") + pathkey
