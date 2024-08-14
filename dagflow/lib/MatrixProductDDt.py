@@ -26,7 +26,7 @@ class MatrixProductDDt(Node):
     _buffer: NDArray
 
     def __init__(self, *args, **kwargs) -> None:
-        super().__init__(*args, **kwargs, allowed_kw_inputs=("left", "square"))
+        super().__init__(*args, **kwargs, allowed_kw_inputs=("matrix",))
         self._matrix = self._add_input("matrix")
         self._out = self._add_output("result")
         self._labels.setdefault("mark", "DDᵀ")

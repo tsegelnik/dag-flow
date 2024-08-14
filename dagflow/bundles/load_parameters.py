@@ -356,7 +356,7 @@ def _load_parameters(
             key_space="",
             process_keys=label_keys,
         )
-        matrix_array = Array("matrixtype", matrix, label=label_mat)
+        matrix_array = Array(matrixtype, matrix, label=label_mat)
 
         for subkey in subkeys:
             fullkey = key + subkey
@@ -379,7 +379,7 @@ def _load_parameters(
                 processed_cfgs.add(fullkey + name)
 
             labelsub = format_dict(
-                label,
+                dict(label, name=".".join(fullkey)),
                 subkey=subkey_str,
                 space_key=f" {subkey_str}",
                 key_space=f"{subkey_str} ",
