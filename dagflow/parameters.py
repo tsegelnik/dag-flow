@@ -85,8 +85,8 @@ class Parameter:
                 self._common_output.node.labels,
                 fmtlong=f"{{}} {idxname} [{idx}]",
             )
-            if idxtuple:
-                self._view.labels.index_values.extend(idxtuple)
+            # if idxtuple:
+            #     self._view.labels.index_values.extend(idxtuple)
             self._value_output = self._view.outputs[0]
             self._connectible_output = self._value_output
         else:
@@ -246,6 +246,9 @@ class NormalizedGaussianParameter(Parameter):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, make_view=False, **kwargs)
+
+    def __str__(self) -> str:
+        return f"ngpar v={self.value}"
 
     @property
     def central(self) -> float:
@@ -464,7 +467,7 @@ class GaussianConstraint(Constraint):
     central: Output
     sigma: Output
     normvalue: Output
-    sigma_total: Output
+    sigma_total: Output | None
 
     normvalue_final: Output
 
@@ -536,6 +539,9 @@ class GaussianConstraint(Constraint):
             self._covariance_node >> self._cholesky_node
         elif sigma is not None:
             self._sigma_node = sigma
+            sigma.outputs[0]
+            # self._covariance_node = Square(f"σ²({value_node.name})")
+            # self._sigma_node >> self._covariance_node
         elif covariance is not None:
             self._cholesky_node = Cholesky(f"L({value_node.name})")
             self._sigma_node = self._cholesky_node
@@ -574,7 +580,7 @@ class GaussianConstraint(Constraint):
         self.central >> self._norm_node.inputs["central"]
         self.sigma >> self._norm_node.inputs["matrix"]
 
-        for nodename in ("_cholesky_node", "_covariance_node", "_norm_node"):
+        for nodename in ("_cholesky_node", "_covariance_node", "_norm_node", "_sigma_node"):
             if cnode := getattr(self, nodename):
                 cnode.labels.inherit(self._pars._value_node.labels, fields=("index_values",))
 
@@ -656,5 +662,6 @@ def GaussianParameters(names: tuple[tuple[str]], value: Node, *args, **kwargs) -
     pars._close()
 
     return pars
+
 
 AnyGaussianParameter = GaussianParameter | NormalizedGaussianParameter
