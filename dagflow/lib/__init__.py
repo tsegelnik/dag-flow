@@ -1,4 +1,4 @@
-from .arithmetic import Division, Product, Sum
+from .arithmetic import Division, Product, Sqrt, Square, Sum
 from .Array import Array
 from .ArraySum import ArraySum
 from .BinCenter import BinCenter
@@ -77,6 +77,8 @@ __all__ = [
     "RenormalizeDiag",
     "SegmentIndex",
     "Sin",
+    "Sqrt",
+    "Square",
     "Sum",
     "SumMatOrDiag",
     "SumSq",
