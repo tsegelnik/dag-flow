@@ -145,7 +145,7 @@ class Node(NodeBase):
         if label_from is not None:
             label_from = NestedMKDict(label_from, sep=".")
             try:
-                label = label_from.any(name, object=True)
+                label = label_from.get_any(name, object=True)
             except KeyError as exc:
                 raise RuntimeError(f"Could not find label for {name}") from exc
             kwargs.setdefault("label", label)

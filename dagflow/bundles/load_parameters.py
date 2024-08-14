@@ -178,7 +178,7 @@ def get_format_processor(format):
 
 def get_label(key: tuple, labelscfg: dict) -> dict:
     try:
-        ret = labelscfg.any(key)
+        ret = labelscfg.get_any(key)
     except KeyError:
         pass
     else:
@@ -190,7 +190,7 @@ def get_label(key: tuple, labelscfg: dict) -> dict:
     for n in range(1, len(key) + 1):
         subkey = key[:-n]
         try:
-            lcfg = labelscfg.any(subkey)
+            lcfg = labelscfg.get_any(subkey)
         except KeyError:
             continue
 
