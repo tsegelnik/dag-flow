@@ -11,7 +11,7 @@ from dagflow.lib import Array, Sum
 @mark.parametrize("dtype", ("d", "f"))
 def test_Array_00(testname, debug_graph, dtype):
     array = arange(12.0, dtype=dtype).reshape(3, 4)
-    with Graph(close=True, debug=debug_graph) as graph:
+    with Graph(close_on_exit=True, debug=debug_graph) as graph:
         arr1 = Array("array: store", array, mode="store")
         arr2 = Array("array: store (weak)", array, mode="store_weak")
         arr3 = Array("array: fill", array, mode="fill")

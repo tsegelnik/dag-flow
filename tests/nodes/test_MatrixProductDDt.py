@@ -11,7 +11,7 @@ from dagflow.lib import Array, MatrixProductDDt
 def test_MatrixProductDVDt_2d(dtype):
     left = np.array([[1, 2, 3], [3, 4, 5]], dtype=dtype)
 
-    with Graph(close=True) as graph:
+    with Graph(close_on_exit=True) as graph:
         l_array = Array("Left", left)
 
         prod = MatrixProductDDt("MatrixProductDDt2d")

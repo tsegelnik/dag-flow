@@ -22,7 +22,7 @@ def test_CovmatrixFromCormatrix_00(testname, debug_graph, dtype):
         ],
         dtype=dtype,
     )
-    with Graph(close=True, debug=debug_graph) as graph:
+    with Graph(close_on_exit=True, debug=debug_graph) as graph:
         matrix = Array("matrix", inC)
         sigma = Array("sigma", inSigma)
         cov = CovmatrixFromCormatrix("covariance")

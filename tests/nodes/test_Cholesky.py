@@ -25,7 +25,7 @@ def test_Cholesky_00(testname, debug_graph, dtype):
     inL2d2 = linalg.cholesky(inV2, lower=True)
     inL1d = sqrt(inD)
 
-    with Graph(close=True, debug=debug_graph) as graph:
+    with Graph(close_on_exit=True, debug=debug_graph) as graph:
         V1 = Array("V1", inV, mode="store")
         V2 = Array("V2", inV2, mode="store")
         D = Array("D", (inD), mode="store")

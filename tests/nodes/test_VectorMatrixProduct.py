@@ -34,7 +34,7 @@ def test_VectorMatrixProduct(dtype: str, diag_matrix: bool, mode: str):
         row = vector[None, :]
         desired = (row @ in_matrix).ravel()
 
-    with Graph(close=True) as graph:
+    with Graph(close_on_exit=True) as graph:
         array_vector = Array("Vector", vector)
         array_edgesX = Array("edgesX", edgesX)
         array_edgesY = Array("edgesY", edgesY)

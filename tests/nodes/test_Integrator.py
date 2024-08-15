@@ -24,7 +24,7 @@ from dagflow.plot import plot_auto
 
 @mark.parametrize("align", ("left", "center", "right"))
 def test_Integrator_rect_center(align, debug_graph, testname):
-    with Graph(debug=debug_graph, close=True) as graph:
+    with Graph(debug=debug_graph, close_on_exit=True) as graph:
         npoints = 10
         edges = Array("edges", linspace(0, pi, npoints + 1))
         ordersX = Array("ordersX", [1000] * npoints, edges=edges["array"])
@@ -48,7 +48,7 @@ def test_Integrator_rect_center(align, debug_graph, testname):
 
 
 def test_Integrator_trap(debug_graph, testname):
-    with Graph(debug=debug_graph, close=True) as graph:
+    with Graph(debug=debug_graph, close_on_exit=True) as graph:
         npoints = 10
         edges = Array("edges", linspace(0, pi, npoints + 1))
         ordersX = Array("ordersX", [1000] * npoints, edges=edges["array"])
@@ -98,7 +98,7 @@ class PolynomialRes(OneToOneNode):
 
 
 def test_Integrator_gl1d(debug_graph, testname):
-    with Graph(debug=debug_graph, close=True) as graph:
+    with Graph(debug=debug_graph, close_on_exit=True) as graph:
         npoints = 10
         edges = Array("edges", linspace(0, 10, npoints + 1))
         ordersX = Array("ordersX", [2] * npoints, edges=edges["array"])
@@ -129,7 +129,7 @@ def test_Integrator_gl2d(debug_graph, testname):
             )
             return list(self.outputs.iter_data())
 
-    with Graph(debug=debug_graph, close=True) as graph:
+    with Graph(debug=debug_graph, close_on_exit=True) as graph:
         npointsX, npointsY = 10, 20
         edgesX = Array(
             "edgesX",
@@ -214,7 +214,7 @@ def test_Integrator_gl2to1d_x(debug_graph, testname, dropdim):
             )
             return list(self.outputs.iter_data())
 
-    with Graph(debug=debug_graph, close=True) as graph:
+    with Graph(debug=debug_graph, close_on_exit=True) as graph:
         npointsX = 20
         edgesX = Array(
             "edgesX",
@@ -280,7 +280,7 @@ def test_Integrator_gl2to1d_y(debug_graph, testname, dropdim):
             )
             return list(self.outputs.iter_data())
 
-    with Graph(debug=debug_graph, close=True) as graph:
+    with Graph(debug=debug_graph, close_on_exit=True) as graph:
         npointsY = 20
         edgesX = Array("edgesX", [0, 1], label={"axis": "Label for axis X"})
         edgesY = Array(
@@ -351,7 +351,7 @@ def test_Integrator_edges_0(debug_graph):
 # test wrong ordersX: edges is wrong
 def test_Integrator_edges_1(debug_graph):
     arr = [1.0, 2.0, 3.0]
-    with Graph(debug=debug_graph, close=False):
+    with Graph(debug=debug_graph, close_on_exit=False):
         edges = Array("edges", [0.0, 1.0, 2.0])
         with raises(TypeFunctionError):
             arr1 = Array("array", arr, edges=edges["array"])
@@ -386,7 +386,7 @@ def test_Integrator_02(debug_graph):
 # test wrong ordersX: sum(ordersX[i]) != shape[i]
 def test_Integrator_03(debug_graph):
     arr = [1.0, 2.0, 3.0]
-    with Graph(debug=debug_graph, close=False):
+    with Graph(debug=debug_graph, close_on_exit=False):
         edgesX = Array("edgesX", [-1.0, 0.0, 1.0])
         edgesY = Array("edgesY", [-2.0, -1, 0.0, 1.0])
         arr1 = Array("array", [arr, arr], edges=[edgesX["array"], edgesY["array"]])
@@ -404,7 +404,7 @@ def test_Integrator_03(debug_graph):
 
 # test wrong shape
 def test_Integrator_04(debug_graph):
-    with Graph(debug=debug_graph, close=False):
+    with Graph(debug=debug_graph, close_on_exit=False):
         arr1 = Array("array", [[1.0, 1.0, 1.0], [1.0, 1.0, 1.0]])
         arr2 = Array("array", [[1.0, 2.0, 3.0, 4.0], [1.0, 2.0, 3.0, 4.0]])
         weights = Array("weights", [[1.0, 1.0, 1.0], [1.0, 1.0, 1.0]])

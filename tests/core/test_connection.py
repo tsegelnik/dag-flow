@@ -167,7 +167,7 @@ def test_08():
 
 def test_09(testname):
     """Test <<"""
-    with Graph(close=True) as g:
+    with Graph(close_on_exit=True) as g:
         n1 = Dummy("node1")
         n2 = Dummy("node2")
 

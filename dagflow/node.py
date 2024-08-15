@@ -575,7 +575,7 @@ class Node(NodeBase):
 
     def eval(self):
         if not self.closed:
-            raise UnclosedGraphError("Cannot evaluate the node!", node=self)
+            raise UnclosedGraphError("Cannot evaluate not closed node!", node=self)
         self.fd.being_evaluated = True
         try:
             ret = self._eval()

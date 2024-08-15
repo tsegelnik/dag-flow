@@ -84,7 +84,7 @@ def test_to_root(testname, debug_graph, dtype):
                 }
             }
 
-    with Graph(close=True, debug=debug_graph) as graph, NodeStorage({}) as storage:
+    with Graph(close_on_exit=True, debug=debug_graph) as graph, NodeStorage({}) as storage:
         EdgesX, _ = Array.make_stored('edgesx', edgesx)
         EdgesY, _ = Array.make_stored('edgesy', edgesy)
 

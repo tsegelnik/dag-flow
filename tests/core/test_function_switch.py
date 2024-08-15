@@ -50,7 +50,7 @@ class SumIntProductFloatElseNothing(Node):
 
 
 def test_00(debug_graph):
-    with Graph(debug=debug_graph, close=True):
+    with Graph(debug=debug_graph, close_on_exit=True):
         arr = Array("arr", array(("1", "2", "3")))
         node = SumIntProductFloatElseNothing("node")
         (arr, arr) >> node
@@ -58,7 +58,7 @@ def test_00(debug_graph):
 
 
 def test_01(debug_graph):
-    with Graph(debug=debug_graph, close=True):
+    with Graph(debug=debug_graph, close_on_exit=True):
         arr = Array("arr", arange(3, dtype="i"))  # [0, 1, 2]
         node = SumIntProductFloatElseNothing("node")
         (arr, arr) >> node
@@ -66,7 +66,7 @@ def test_01(debug_graph):
 
 
 def test_02(debug_graph):
-    with Graph(debug=debug_graph, close=True):
+    with Graph(debug=debug_graph, close_on_exit=True):
         arr = Array("arr", arange(3, dtype="d"))  # [0, 1, 2]
         node = SumIntProductFloatElseNothing("node")
         (arr, arr) >> node

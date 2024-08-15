@@ -14,7 +14,7 @@ def test_View_00():
     Use one-line code for connecting the nodes
     """
     array = arange(5.0)
-    with Graph(close=True) as graph:
+    with Graph(close_on_exit=True) as graph:
         initial = Array('array', array)
         view = View("view")
         view2 = View("view2")

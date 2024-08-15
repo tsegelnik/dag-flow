@@ -18,7 +18,7 @@ def test_IntegratorGroup_trap(debug_graph):
     metaint = MetaNode()
 
     xlabel = "Edges for the integrator"
-    with Graph(debug=debug_graph, close=True) as graph:
+    with Graph(debug=debug_graph, close_on_exit=True) as graph:
         npoints = 10
         edges = Array("edges", linspace(0, pi, npoints + 1), label={"axis": xlabel})
         ordersX = Array("ordersX", [1000] * npoints, edges=edges["array"])
@@ -80,7 +80,7 @@ def test_IntegratorGroup_trap(debug_graph):
 #            return list(self.outputs.iter_data())
 #
 #    metaint = MetaNode()
-#    with Graph(debug=debug_graph, close=True) as graph:
+#    with Graph(debug=debug_graph, close_on_exit=True) as graph:
 #        npointsX, npointsY = 10, 20
 #        edgesX = Array(
 #            "edgesX",

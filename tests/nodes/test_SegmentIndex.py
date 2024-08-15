@@ -17,7 +17,7 @@ from dagflow.lib import SegmentIndex
 @mark.parametrize("mode", ("left", "right"))
 def test_segmentIndex_01(debug_graph, testname, mode):
     seed(10)
-    with Graph(debug=debug_graph, close=True) as graph:
+    with Graph(debug=debug_graph, close_on_exit=True) as graph:
         nc, nf = 10, 100
         coarseX = linspace(0, 10, nc + 1)
         fineX = linspace(0, 10, nf + 1)
@@ -34,7 +34,7 @@ def test_segmentIndex_01(debug_graph, testname, mode):
 @mark.parametrize("mode", ("left", "right"))
 def test_segmentIndex_02(debug_graph, testname, mode):
     seed(10)
-    with Graph(debug=debug_graph, close=True) as graph:
+    with Graph(debug=debug_graph, close_on_exit=True) as graph:
         nc, nf = 10, 100
         coarseX = linspace(0, 10, nc).reshape(2, nc // 2)
         fineX = linspace(0, 10, nf).reshape(2, nf // 2)
@@ -53,7 +53,7 @@ def test_segmentIndex_02(debug_graph, testname, mode):
 @mark.parametrize("mode", ("left", "right"))
 def test_segmentIndex_03(debug_graph, testname, mode):
     seed(10)
-    with Graph(debug=debug_graph, close=True) as graph:
+    with Graph(debug=debug_graph, close_on_exit=True) as graph:
         nc, nf = 10, 100
         coarseX = linspace(0, 10, nc).reshape(nc // 2, 2)
         fineX = linspace(0, 10, nf).reshape(nf // 2, 2)
@@ -70,7 +70,7 @@ def test_segmentIndex_03(debug_graph, testname, mode):
 
 
 def test_segmentIndex_exception(debug_graph):
-    with Graph(debug=debug_graph, close=False):
+    with Graph(debug=debug_graph, close_on_exit=False):
         with raises(InitializationError):
             SegmentIndex(
                 "segmentIndex",

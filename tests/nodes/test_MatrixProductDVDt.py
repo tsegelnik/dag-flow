@@ -19,7 +19,7 @@ def test_MatrixProductDVDt_2d(dtype):
         dtype=dtype,
     )
 
-    with Graph(close=True) as graph:
+    with Graph(close_on_exit=True) as graph:
         l_array = Array("Left", left)
         s_array = Array("Square", square)
 
@@ -40,7 +40,7 @@ def test_MatrixProductDVDt_1d(dtype):
     left = np.array([[1, 2, 3], [3, 4, 5]], dtype=dtype)
     diagonal = np.array([9, 4, 5], dtype=dtype)
 
-    with Graph(close=True) as graph:
+    with Graph(close_on_exit=True) as graph:
         l_array = Array("Left", left)
         s_array = Array("Diagonal", diagonal)
 

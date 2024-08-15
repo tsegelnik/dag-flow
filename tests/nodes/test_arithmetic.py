@@ -14,7 +14,7 @@ from dagflow.lib import Array, Division, Product, Sum
 def test_Sum_01(testname, debug_graph, dtype):
     arrays_in = tuple(arange(12, dtype=dtype) * i for i in (1, 2, 3))
 
-    with Graph(close=True, debug=debug_graph) as graph:
+    with Graph(close_on_exit=True, debug=debug_graph) as graph:
         arrays = tuple(Array(f"arr_{i}", array_in) for i, array_in in enumerate(arrays_in))
         sm = Sum("sum")
         arrays >> sm
@@ -41,7 +41,7 @@ def test_Sum_01(testname, debug_graph, dtype):
 def test_Product_01(testname, debug_graph, dtype):
     arrays_in = tuple(arange(12, dtype=dtype) * i for i in (1, 2, 3))
 
-    with Graph(close=True, debug=debug_graph) as graph:
+    with Graph(close_on_exit=True, debug=debug_graph) as graph:
         arrays = tuple(Array(f"arr_{i}", array_in) for i, array_in in enumerate(arrays_in))
         prod = Product("prod")
         arrays >> prod
@@ -67,7 +67,7 @@ def test_Product_01(testname, debug_graph, dtype):
 def test_Division_01(testname, debug_graph, dtype):
     arrays_in = tuple(arange(12, dtype=dtype) * i + 1 for i in (1, 2, 3))
 
-    with Graph(close=True, debug=debug_graph) as graph:
+    with Graph(close_on_exit=True, debug=debug_graph) as graph:
         arrays = tuple(Array(f"arr_{i}", array_in) for i, array_in in enumerate(arrays_in))
         div = Division("division")
         arrays >> div
@@ -99,7 +99,7 @@ def test_Powers_01(testname, debug_graph, fcnname, dtype):
     else:
         arrays_in = tuple(linspace(0, 10, 101, dtype=dtype) * i for i in (1, 2, 3))
 
-    with Graph(close=True, debug=debug_graph) as graph:
+    with Graph(close_on_exit=True, debug=debug_graph) as graph:
         arrays = tuple(
             Array(f"arr_{i}", array_in, label={"text": f"X axis {i}"})
             for i, array_in in enumerate(arrays_in)

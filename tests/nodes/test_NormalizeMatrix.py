@@ -25,7 +25,7 @@ def test_NormalizeMatrix(dtype: str, mode: str):
     else:
         desired = matrix / matrix.sum(axis=1)[:, None]
 
-    with Graph(close=True) as graph:
+    with Graph(close_on_exit=True) as graph:
         array_matrix = Array("Matrix", matrix)
 
         prod = NormalizeMatrix("NormalizeMatrix", mode=mode)

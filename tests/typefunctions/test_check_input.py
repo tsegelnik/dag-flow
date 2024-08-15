@@ -37,7 +37,7 @@ from dagflow.typefunctions import copy_from_input_to_output
     ),
 )
 def test_check_input_common(testname, debug_graph, data, dim, shape, dtype):
-    with Graph(close=True, debug=debug_graph) as graph:
+    with Graph(close_on_exit=True, debug=debug_graph) as graph:
         arr1 = Array("arr1", array(data, dtype=dtype))
         node = Dummy(
             "node",
@@ -59,7 +59,7 @@ def test_check_input_common(testname, debug_graph, data, dim, shape, dtype):
 
 @mark.parametrize("data", ([0, 1, 2], [1], [[1, 2], [1, 2, 3]], [[[], [], []]]))
 def test_check_input_square_00(testname, debug_graph, data):
-    with Graph(close=False, debug=debug_graph) as graph:
+    with Graph(close_on_exit=False, debug=debug_graph) as graph:
         arr1 = Array("arr1", array(data, dtype=object))
         arr2 = Array("arr2", array(data, dtype=object))
         node = Dummy(
@@ -85,7 +85,7 @@ def test_check_input_square_00(testname, debug_graph, data):
     ),
 )
 def test_check_input_square_01(testname, debug_graph, data):
-    with Graph(close=False, debug=debug_graph) as graph:
+    with Graph(close_on_exit=False, debug=debug_graph) as graph:
         arr1 = Array("arr1", array(data))
         node = Dummy(
             "node",
@@ -107,7 +107,7 @@ def test_check_input_square_01(testname, debug_graph, data):
 )
 def test_check_inputs_equivalence(testname, debug_graph, dtype, wrongarr):
     # TODO: check edges and nodes
-    with Graph(close=False, debug=debug_graph) as graph:
+    with Graph(close_on_exit=False, debug=debug_graph) as graph:
         arr1 = Array("arr1", array([1, 2], dtype=dtype))
         arr2 = Array("arr2", array([3, 4], dtype=dtype))
         arr3 = Array("arr2", array([5, 6], dtype=dtype))
@@ -136,7 +136,7 @@ def test_check_inputs_equivalence(testname, debug_graph, dtype, wrongarr):
     ("float64", "float32", "float16", "float", "double"),
 )
 def test_check_subtype(testname, debug_graph, dtype):
-    with Graph(close=False, debug=debug_graph) as graph:
+    with Graph(close_on_exit=False, debug=debug_graph) as graph:
         arr1 = Array("arr1", array([1, 2], dtype=dtype))
         node = Dummy(
             "node",
@@ -161,7 +161,7 @@ def test_check_subtype(testname, debug_graph, dtype):
     ),
 )
 def test_check_inputs_multiplicable_mat_00(testname, debug_graph, data1, data2):
-    with Graph(close=False, debug=debug_graph) as graph:
+    with Graph(close_on_exit=False, debug=debug_graph) as graph:
         arr1 = Array("arr1", array(data1))
         arr2 = Array("arr2", array(data2))
         node = Dummy(
@@ -183,7 +183,7 @@ def test_check_inputs_multiplicable_mat_00(testname, debug_graph, data1, data2):
     ),
 )
 def test_check_inputs_multiplicable_mat_01(testname, debug_graph, data1, data2):
-    with Graph(close=False, debug=debug_graph) as graph:
+    with Graph(close_on_exit=False, debug=debug_graph) as graph:
         arr1 = Array("arr1", array(data1))
         arr2 = Array("arr2", array(data2))
         node = Dummy(

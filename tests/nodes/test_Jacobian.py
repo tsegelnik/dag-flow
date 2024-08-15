@@ -24,7 +24,7 @@ def test_Jacobian_01(dtype, testname):
     values = arange(size, dtype=dtype)
     sigmas = ones(size, dtype=dtype)
 
-    with Graph(close=True) as graph:
+    with Graph(close_on_exit=True) as graph:
         valueslist = [Array(f"arr_{i:02d}", [val]) for i, val in enumerate(values)]
         sigmaslist = [Array(f"sigma_{i:02d}", [sigma]) for i, sigma in enumerate(sigmas)]
         pars = [
@@ -70,7 +70,7 @@ def test_Jacobian_02(dtype, testname):
     x = arange(size, dtype=dtype)
     sigmas = (0.5, 2.0)
 
-    with Graph(close=True) as graph:
+    with Graph(close_on_exit=True) as graph:
         X = Array("x", x)
         A = Array("a", array([a], dtype=dtype))
         B = Array("b", array([b], dtype=dtype))
@@ -123,7 +123,7 @@ def test_Jacobian_03(dtype, testname):
     x = arange(size, dtype=dtype)
     sigmas = (0.5, 2.0, 3.0)
 
-    with Graph(close=True) as graph:
+    with Graph(close_on_exit=True) as graph:
         X = Array("x", x)
         A = Array("a", array([a], dtype=dtype))
         B = Array("b", array([b], dtype=dtype))

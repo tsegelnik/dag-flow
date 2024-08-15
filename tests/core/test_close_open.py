@@ -10,7 +10,7 @@ from dagflow.lib import WeightedSum
 
 
 def test_00(debug_graph):
-    with Graph(debug=debug_graph, close=True):
+    with Graph(debug=debug_graph, close_on_exit=True):
         arr = Array("arr", arange(3, dtype="d"))  # [0, 1, 2]
         ws = WeightedSum("weightedsum")
         (arr, arr) >> ws
@@ -23,7 +23,7 @@ def test_00(debug_graph):
 
 
 def test_01(debug_graph):
-    with Graph(debug=debug_graph, close=True):
+    with Graph(debug=debug_graph, close_on_exit=True):
         arr1 = Array("arr1", arange(3, dtype="d"))  # [0, 1, 2]
         arr2 = Array("arr2", array((3, 2, 1), dtype="d"))
         sum = Sum("sum")
@@ -39,7 +39,7 @@ def test_01(debug_graph):
 
 
 def test_02(debug_graph):
-    with Graph(debug=debug_graph, close=True):
+    with Graph(debug=debug_graph, close_on_exit=True):
         arr1 = Array("arr1", arange(3, dtype="d"))  # [0, 1, 2]
         arr2 = Array("arr2", array((3, 2, 1), dtype="d"))
         arr3 = Array("unity", array((1, 1, 1), dtype="d"))
@@ -60,7 +60,7 @@ def test_02(debug_graph):
 
 
 def test_03(debug_graph):
-    with Graph(debug=debug_graph, close=False):
+    with Graph(debug=debug_graph, close_on_exit=False):
         arr1 = Array("arr1", arange(3, dtype="d"))  # [0, 1, 2]
         arr2 = Array("arr2", array((3, 2, 1), dtype="d"))
         arr3 = Array("unity", array((1, 1, 1), dtype="d"))
@@ -71,7 +71,7 @@ def test_03(debug_graph):
         (arr3, sum1) >> prod  # [4, 4, 4]
         (arr1, prod) >> sum2  # [4, 5, 6]
 
-    with Graph(debug=debug_graph, close=True):
+    with Graph(debug=debug_graph, close_on_exit=True):
         arr4 = Array("arr1", arange(3, dtype="d"))  # [0, 1, 2]
         sum3 = Sum("sum3")
         (sum2, arr4) >> sum3  # [4, 7, 8]
