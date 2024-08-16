@@ -8,8 +8,8 @@ from dagflow.lib import Sum, Product
 from dagflow.graphviz import GraphDot
 
 
-def graph_0() -> tuple[Graph, list[FunctionNode]]:
-    with Graph(close=True) as graph:
+def graph_0(debug_graph) -> tuple[Graph, list[FunctionNode]]:
+    with Graph(close=True, debug=debug_graph) as graph:
         a0 = Array("A0", [8, 7, 13])
         a1 = Array("A1", [1, 2, 4])
         a2 = Array("A2", [12, 22, 121])
@@ -42,8 +42,8 @@ def graph_0() -> tuple[Graph, list[FunctionNode]]:
     nodes = [a0, a1, a2, a3, p0, p1, s0, s1, s2, s3, l_matrix, mdvdt]
     return graph, nodes
 
-def graph_1() -> tuple[Graph, list[FunctionNode]]:
-    with Graph(close=True) as graph:
+def graph_1(debug_graph) -> tuple[Graph, list[FunctionNode]]:
+    with Graph(close=True, debug=debug_graph) as graph:
         array_nodes = [Array(f"A{i}", np.arange(i, i+3, dtype='f'))
                        for i in range(5)]
         s1 = Sum("S1")

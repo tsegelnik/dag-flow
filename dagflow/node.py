@@ -23,6 +23,7 @@ from .labels import Labels
 from .logger import Logger, get_logger
 from .nodebase import NodeBase
 from .output import Output
+from .functionstack import _fstack
 
 if TYPE_CHECKING:
     from collections.abc import Mapping, Sequence
@@ -542,6 +543,51 @@ class Node(NodeBase):
         output = self._add_output(oname, **output_kws)
         input = self._add_input(iname, child_output=output, **input_kws)
         return input, output
+
+    def gather_all_inputs(self):
+        all_inputs = set()  # Using a set to avoid duplicates
+
+        def gather_inputs(node):
+            for input_node in node.inputs:
+                if input_node not in all_inputs:
+                    all_inputs.add(input_node)
+                    gather_inputs(input_node)
+
+        gather_inputs(self)
+        return all_inputs
+
+    def gather_all_inputs_touch(self):
+        all_inputs = []
+
+        def gather_inputs(node):
+            for inp in node.inputs:
+                if inp not in all_inputs:
+                    all_inputs.append(inp.touch)
+                    if (pnode:=inp.parent_node):
+                        gather_inputs(pnode)
+
+        gather_inputs(self)
+        return all_inputs
+
+    def touch(self, force_computation=False, recursive=True):
+        if self._frozen:
+            return
+        if not self.tainted and not force_computation:
+            return
+
+        self.logger.debug(f"Node '{self.name}': Touch")
+
+        if recursive:
+            self.logger.debug(f"Recursive: {self.name}")
+            _fstack.extend(self.gather_all_inputs_touch())
+            self.logger.debug(_fstack)
+            _fstack.free()
+
+        ret = self.eval()
+        self.fd.tainted = False  # self._always_tainted
+        if self._auto_freeze:
+            self.fd.frozen = True
+        return ret
 
     def _stash_fcn(self):
         self._fcn_chain.append(self.fcn)

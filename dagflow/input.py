@@ -216,8 +216,8 @@ class Input:
     def tainted(self) -> bool:
         return self._parent_output.tainted
 
-    def touch(self):
-        return self._parent_output.touch()
+    def touch(self, recursive=True):
+        return self._parent_output.touch(recursive=recursive)
 
     def taint(self, **kwargs) -> None:
         self._node.taint(caller=self, **kwargs)

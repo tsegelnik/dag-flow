@@ -6,7 +6,7 @@ from collections import Counter
 
 import pytest
 
-from dagflow.nodes import FunctionNode
+from dagflow.node import Node
 from dagflow.graph import Graph
 from dagflow.lib import Array
 from dagflow.lib import MatrixProductDVDt
@@ -17,7 +17,7 @@ from dagflow.tools.profiling.profiler import Profiler
 from dagflow.tools.profiling import NodeProfiler, FrameworkProfiler
 from dagflow.tools.profiling import SleepingNode
 
-def graph_0() -> tuple[Graph, list[FunctionNode]]:
+def graph_0() -> tuple[Graph, list[Node]]:
     with Graph(close=True) as graph:
         a0 = Array("A0", [8, 7, 13])
         a1 = Array("A1", [1, 2, 4])
@@ -51,7 +51,7 @@ def graph_0() -> tuple[Graph, list[FunctionNode]]:
     nodes = [a0, a1, a2, a3, p0, p1, s0, s1, s2, s3, l_matrix, mdvdt]
     return graph, nodes
 
-def graph_1() -> tuple[Graph, list[FunctionNode]]:
+def graph_1() -> tuple[Graph, list[Node]]:
     with Graph(close=True) as graph:
         array_nodes = [Array(f"A{i}", np.arange(i, i+3, dtype='f'))
                        for i in range(5)]
