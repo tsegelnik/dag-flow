@@ -4,7 +4,7 @@ from collections.abc import Sequence
 from contextlib import suppress
 from typing import TYPE_CHECKING
 
-from numpy import array, ndarray, zeros_like
+from numpy import ndarray, array, ndarray, zeros_like
 
 from .exception import InitializationError
 from .labels import inherit_labels, repr_pretty
@@ -368,7 +368,7 @@ class Parameters:
     def parameters(self) -> list:
         return self._pars
 
-    def outputs(self) -> tuple[Output,...]:
+    def outputs(self) -> tuple[Output, ...]:
         return tuple(par.output for par in self._pars)
 
     @property
@@ -643,6 +643,7 @@ class GaussianConstraint(Constraint):
         sigma: float | Sequence[float],
         label: dict[str, str] | None = None,
         dtype: DTypeLike = "d",
+        correlation: ndarray | None = None,
         **kwargs,
     ) -> Parameters:
         label = {"text": "gaussian parameter"} if label is None else dict(label)
@@ -657,17 +658,31 @@ class GaussianConstraint(Constraint):
             f"{name}_central",
             array(central, dtype=dtype),
             label=inherit_labels(label, fmtlong="central: {}", fmtshort="c({})"),
-            mode="store_weak",
         )
 
         node_sigma = Array(
             f"{name}_sigma",
             array(sigma, dtype=dtype),
             label=inherit_labels(label, fmtlong="sigma: {}", fmtshort="σ({})"),
-            mode="store_weak",
         )
 
-        return GaussianConstraint(central=node_central, sigma=node_sigma, **kwargs)
+        match correlation:
+            case ndarray():
+                node_cor = Array(
+                    f"{name}_correlation",
+                    array(correlation, dtype=dtype),
+                    label=inherit_labels(label, fmtlong="correlations: {}", fmtshort="C({})"),
+                )
+            case Node():
+                node_cor = correlation
+            case None:
+                node_cor = None
+            case _:
+                raise RuntimeError(f"Unknown type for correlation: {type(correlation).__name__}")
+
+        return GaussianConstraint(
+            central=node_central, sigma=node_sigma, correlation=node_cor, **kwargs
+        )
 
 
 def GaussianParameters(names: tuple[tuple[str]], value: Node, *args, **kwargs) -> Parameters:
