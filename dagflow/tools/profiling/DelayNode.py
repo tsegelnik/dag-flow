@@ -1,13 +1,13 @@
 from typing import TYPE_CHECKING
 from time import sleep
 
-from dagflow.nodes import FunctionNode
+from dagflow.node import Node
 from dagflow.inputhandler import MissingInputAdd
 from dagflow.exception import InitializationError
 if TYPE_CHECKING:
     from dagflow.output import Output
 
-class DelayNode(FunctionNode):
+class DelayNode(Node):
     """
     A node that sleeps for a certain time.
     Used for profiler debugging and testing.

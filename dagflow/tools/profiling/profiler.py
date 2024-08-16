@@ -9,7 +9,7 @@ import numpy
 from tabulate import tabulate
 
 if TYPE_CHECKING:
-    from dagflow.nodes import FunctionNode
+    from dagflow.node import Node
     from collections.abc import Generator, Sequence, Iterable
 
 from collections.abc import Callable
@@ -58,9 +58,9 @@ class Profiler(metaclass=ABCMeta):
         "_agg_aliases",
         "_column_aliases"
     )
-    _target_nodes: Sequence[FunctionNode]
-    _sources: Sequence[FunctionNode]
-    _sinks: Sequence[FunctionNode]
+    _target_nodes: Sequence[Node]
+    _sources: Sequence[Node]
+    _sinks: Sequence[Node]
     _n_runs: int
     _estimations_table: DataFrame
     _allowed_groupby: tuple[list[str] | str, ...]
@@ -69,9 +69,9 @@ class Profiler(metaclass=ABCMeta):
     _agg_aliases: dict[str, str | Callable]
 
     def __init__(self,
-                 target_nodes: Sequence[FunctionNode] = (),
-                 sources: Sequence[FunctionNode] = (),
-                 sinks: Sequence[FunctionNode] = (),
+                 target_nodes: Sequence[Node] = (),
+                 sources: Sequence[Node] = (),
+                 sinks: Sequence[Node] = (),
                  n_runs: int = 100
                  ) -> None:
         self._default_agg_funcs = _DEFAULT_AGG_FUNCS
@@ -94,14 +94,14 @@ class Profiler(metaclass=ABCMeta):
                              "or provide `sources` and `sinks` arguments"
                              "to automatically find the target nodes")
 
-    def __child_nodes_gen(self, node: FunctionNode) \
-                            -> Generator[FunctionNode, None, None]:
+    def __child_nodes_gen(self, node: Node) \
+                            -> Generator[Node, None, None]:
         for output in node.outputs.iter_all():
             for child_input in output.child_inputs:
                 yield child_input.node
 
-    def __parent_nodes_gen(self, node: FunctionNode) \
-                            -> Generator[FunctionNode, None, None]:
+    def __parent_nodes_gen(self, node: Node) \
+                            -> Generator[Node, None, None]:
         for input in node.inputs.iter_all():
             yield input.parent_node
 
@@ -112,7 +112,7 @@ class Profiler(metaclass=ABCMeta):
                                  f" {sink} "
                                  "(no paths from sources)")
 
-    def _gather_related_nodes(self) -> set[FunctionNode]:
+    def _gather_related_nodes(self) -> set[Node]:
         """Find all nodes that lie on all possible paths
         between `self._sources` and `self._sinks`
 

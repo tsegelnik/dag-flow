@@ -580,7 +580,7 @@ class Node(NodeBase):
         if recursive:
             self.logger.debug(f"Recursive: {self.name}")
             _fstack.extend(self.gather_all_inputs_touch())
-            self.logger.debug(_fstack)
+            #self.logger.debug(_fstack)
             _fstack.free()
 
         ret = self.eval()
