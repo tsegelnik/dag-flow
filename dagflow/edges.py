@@ -79,7 +79,7 @@ class EdgeContainer:
             self._nonpos_edges[name] = value
         return self
 
-    def make_positional(self, name: str) -> Any:
+    def make_positional(self, name: str, *, index: int | None = None) -> Any:
         try:
             limb = self._kw_edges[name]
         except KeyError as exc:
@@ -88,8 +88,12 @@ class EdgeContainer:
         if limb in self._pos_edges_list:
             raise RuntimeError(f"Limb {name} is already positional")
 
-        self._pos_edges_list.append(limb)
-        self._pos_edges[name] = limb
+        if index is not None:
+            self._pos_edges_list[0] = limb
+            self._pos_edges[name] = limb
+        else:
+            self._pos_edges_list.append(limb)
+            self._pos_edges[name] = limb
         del self._nonpos_edges[name]
         return limb
 

@@ -368,6 +368,9 @@ class Parameters:
     def parameters(self) -> list:
         return self._pars
 
+    def outputs(self) -> tuple[Output,...]:
+        return tuple(par.output for par in self._pars)
+
     @property
     def norm_parameters(self) -> list:
         return self._norm_pars
@@ -408,11 +411,12 @@ class Parameters:
         variable: bool | None = None,
         fixed: bool | None = None,
         label: Mapping[str, str] | None = None,
+        central: float | int | ArrayLike | None = None,
+        sigma: float | int | ArrayLike | None = None,
         **kwargs,
     ) -> Parameters:
         label = {"text": "parameter"} if label is None else dict(label)
         name: str = label.setdefault("name", "parameter")
-        has_constraint = kwargs.get("sigma", None) is not None
 
         if isinstance(value, (float, int)):
             value = (value,)
@@ -425,6 +429,7 @@ class Parameters:
                 f"Parameters.from_numbers: inconsistent values ({value}) and names ({names})"
             )
 
+        has_constraint = sigma is not None
         pars = Parameters(
             names,
             Array(
@@ -439,8 +444,17 @@ class Parameters:
         )
 
         if has_constraint:
+            if central is None:
+                central = value
             pars.set_constraint(
-                GaussianConstraint.from_numbers(parameters=pars, dtype=dtype, label=label, **kwargs)
+                GaussianConstraint.from_numbers(
+                    parameters=pars,
+                    dtype=dtype,
+                    label=label,
+                    central=central,
+                    sigma=sigma,
+                    **kwargs,
+                )
             )
             pars._close()
 

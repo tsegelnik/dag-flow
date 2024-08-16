@@ -594,7 +594,7 @@ else:
                     if node.exception is not None:
                         attr["color"] = "magenta"
                 except AttributeError:
-                    attr["color"] = "forestgreen"
+                    attr["color"] = "yellow"
 
         def _set_style_edge(self, obj, attrin, attr, attrout):
             if isinstance(obj, Input):
@@ -713,14 +713,19 @@ else:
                 with suppress(AttributeError):
                     if node.types_tainted:
                         status.append("types_tainted")
+                with suppress(AttributeError):
                     if node.tainted:
                         status.append("tainted")
+                with suppress(AttributeError):
                     if node.frozen:
                         status.append("frozen")
+                with suppress(AttributeError):
                     if node.frozen_tainted:
                         status.append("frozen_tainted")
+                with suppress(AttributeError):
                     if node.invalid:
                         status.append("invalid")
+                with suppress(AttributeError):
                     if not node.closed:
                         status.append("open")
                 if status:
