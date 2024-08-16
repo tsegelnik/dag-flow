@@ -53,6 +53,10 @@ def test_Jacobian_01(dtype, testname):
     }
     assert allclose(diag(res), 1, atol=factors[dtype] * finfo(dtype).resolution, rtol=0)
 
+    jac.taint()
+    res = jac.outputs[0].data
+    assert allclose(diag(res), 1, atol=factors[dtype] * finfo(dtype).resolution, rtol=0)
+
     savegraph(graph, f"output/{testname}.png")
 
 
