@@ -50,6 +50,7 @@ class Node(NodeBase):
         "fcn",
         "_fcn_chain",
         "_functions",
+        "n_calls",
     )
 
     _name: str
@@ -92,6 +93,7 @@ class Node(NodeBase):
         self._allowed_kw_inputs = tuple(allowed_kw_inputs)
         self._name = name
         self._fd = FlagsDescriptor(children=self.outputs, parents=self.inputs, **kwargs)
+        self._n_calls = 0
 
         self.graph = Graph.current() if graph is None else graph
         if debug is None and self.graph is not None:
@@ -332,6 +334,10 @@ class Node(NodeBase):
     def label(self) -> str | None:
         return self._labels.text
 
+    @property
+    def n_calls(self) -> int:
+        return self._n_calls
+
     #
     # Methods
     #
@@ -571,6 +577,7 @@ class Node(NodeBase):
         pass
 
     def _eval(self):
+        self._n_calls += 1
         return self.fcn()
 
     def eval(self):
