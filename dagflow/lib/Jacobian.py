@@ -28,7 +28,7 @@ class Jacobian(OneToOneNode):
         parameters: Sequence[AnyGaussianParameter] | None = None,
         **kwargs,
     ) -> None:
-        super().__init__(name, **kwargs)
+        super().__init__(name, auto_freeze=True, **kwargs)
         self._scale = scale
 
         self._parameters_list = []  # pyright: ignore
@@ -69,6 +69,10 @@ class Jacobian(OneToOneNode):
                 _do_step(i, parameter, x0 - reldelta, f2, inp, outdata)
                 parameter.value = x0
                 inp.touch()
+
+    def compute(self) -> None:
+        self.unfreeze()
+        self.taint(force_computation=True)
 
 def _do_step(
     icol: int,
