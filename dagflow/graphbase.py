@@ -39,6 +39,11 @@ class GraphBase:
         for node in self._nodes:
             node._unwrap_fcn()
 
+    def touch(self):
+        """Touch all the nodes"""
+        for node in self._nodes:
+            node.touch()
+
     def print(self):
         print(f"Graph consists of {len(self._nodes)} nodes:")
         for node in self._nodes:
