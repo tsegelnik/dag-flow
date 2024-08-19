@@ -62,6 +62,7 @@ class Node(NodeBase):
 
     _metanode: ReferenceType | None
     _fd: FlagsDescriptor
+    _n_calls: int
 
     # Options
     _debug: bool
