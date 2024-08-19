@@ -77,6 +77,11 @@ class Graph(GraphBase):
         if self._label:
             return self._label.format(self._label, nodes=len(self._nodes))
 
+    def touch(self):
+        """Touch all the nodes"""
+        for node in self._nodes:
+            node.touch()
+
     def add_node(self, name, **kwargs):
         """
         Adds a node, if the graph is opened.
