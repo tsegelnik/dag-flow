@@ -91,7 +91,6 @@ class Node(NodeBase):
 
         self._name = name
         self._allowed_kw_inputs = tuple(allowed_kw_inputs)
-        self._name = name
         self._fd = FlagsDescriptor(children=self.outputs, parents=self.inputs, **kwargs)
         self._n_calls = 0
 
