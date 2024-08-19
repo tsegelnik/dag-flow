@@ -212,6 +212,11 @@ def get_label(key: tuple, labelscfg: dict) -> dict:
     return {}
 
 
+def _add_paths_from_labels(paths: list, cfg: NestedMKDict) -> list[str]:
+    for name, cfg_label in cfg.walkdicts(ignorekeys=("value", "central", "sigma", "sigma_percent", "variable")):
+        paths.extend(cfg_label.get("paths"))
+
+
 def iterate_varcfgs(
     cfg: NestedMKDict,
 ) -> Generator[tuple[tuple[str, ...], NestedMKDict], None, None]:
@@ -371,12 +376,15 @@ def _load_parameters(
             kwargs["central"] = (vcentral := [])
             kwargs["sigma"] = (vsigma := [])
             kwargs["names"] = (names := [])
+            paths = []
             for name, vcfg in varcfg.walkdicts(ignorekeys=("label",)):
                 vvalue.append(vcfg["value"])
                 vcentral.append(vcfg["central"])
                 vsigma.append(vcfg["sigma"])
                 names.append(name)
                 processed_cfgs.add(fullkey + name)
+            _add_paths_from_labels(paths, varcfg)
+
 
             labelsub = format_dict(
                 dict(label, name=".".join(fullkey)),
@@ -386,6 +394,7 @@ def _load_parameters(
                 process_keys=label_keys,
             )
             labelsub["index_values"] = list(key + subkey)
+            labelsub["paths"] = paths
             pars[fullkey] = Parameters.from_numbers(label=labelsub, **kwargs)
 
     for key, varcfg in varcfgs.walkdicts(ignorekeys=("label",)):
