@@ -1,29 +1,28 @@
 from __future__ import annotations
 
 from collections import defaultdict
+from contextlib import suppress
 from typing import TYPE_CHECKING, Sequence
 
 from ..metanode import MetaNode
-from ..node import Node
-from ..storage import NodeStorage
 from . import Sum
 from .Cache import Cache
 from .Jacobian import Jacobian
 from .MatrixProductDDt import MatrixProductDDt
+from .MatrixProductDVDt import MatrixProductDVDt
 from .SumMatOrDiag import SumMatOrDiag
 
 if TYPE_CHECKING:
     from collections.abc import Mapping
 
-    from multikeydict.typing import KeyLike
-
-    from .Interpolator import MethodType, OutOfBoundsStrategyType
+    from ..node import Node, Output
 
 
 class CovarianceMatrixGroup(MetaNode):
     __slots__ = (
         "_stat_cov",
         "_dict_jacobian",
+        "_dict_cov_pars",
         "_dict_cov_syst_part",
         "_dict_cov_syst",
         "_dict_cov_full",
@@ -33,6 +32,7 @@ class CovarianceMatrixGroup(MetaNode):
 
     _stat_cov: Node
     _dict_jacobian: dict[str, list[Jacobian]]
+    _dict_cov_pars: dict[str, list[Node | Output]]
     _dict_cov_syst_part: dict[str, list[Node]]
     _dict_cov_syst: dict[str, Node]
     _dict_cov_full: dict[str, Node]
@@ -64,6 +64,7 @@ class CovarianceMatrixGroup(MetaNode):
         name: str,
         parameter_groups: Sequence,
         *,
+        parameter_covariance_matrices: Sequence | None = None,
         label={},
     ) -> Node:
         if name in self._dict_jacobian:
@@ -78,7 +79,17 @@ class CovarianceMatrixGroup(MetaNode):
             self.inputs.make_positional("input", index=0)
             jacobians.append(jacobian)
 
-            vsyst_part = MatrixProductDDt.from_args(f"V syst: {name} ({i})", matrix=jacobian)
+            pars_covmat = None
+            if parameter_covariance_matrices is not None:
+                with suppress(IndexError):
+                    pars_covmat = parameter_covariance_matrices[i]
+
+            if pars_covmat:
+                vsyst_part = MatrixProductDVDt.from_args(
+                    f"V syst: {name} ({i})", left=jacobian, square=pars_covmat
+                )
+            else:
+                vsyst_part = MatrixProductDDt.from_args(f"V syst: {name} ({i})", matrix=jacobian)
             matrices.append(vsyst_part)
 
         if len(matrices) > 1:
@@ -113,8 +124,9 @@ class CovarianceMatrixGroup(MetaNode):
         else:
             self._cov_sum_syst = vsyst_part[0]
 
-        self._cov_sum_full = SumMatOrDiag.from_args(f"V total: {name}", self._stat_cov, self._cov_sum_syst)
+        self._cov_sum_full = SumMatOrDiag.from_args(
+            f"V total: {name}", self._stat_cov, self._cov_sum_syst
+        )
         self._add_node(self._cov_sum_full, outputs_pos=True)
 
         return self._cov_sum_full
-
