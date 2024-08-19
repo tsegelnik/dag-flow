@@ -535,10 +535,10 @@ class Node(NodeBase):
         input = self._add_input(iname, child_output=output, **input_kws)
         return input, output
 
-    def touch(self, force=False):
+    def touch(self, force_computation=False):
         if self.frozen:
             return
-        if not self.tainted and not force:
+        if not self.tainted and not force_computation:
             return
         ret = self.eval()
         self.fd.tainted = False  # self._always_tainted
@@ -597,19 +597,19 @@ class Node(NodeBase):
         self.fd.frozen = False
         if self.frozen_tainted:
             self.fd.frozen_tainted = False
-            self.taint(force=True)
+            self.taint(force_computation=True)
 
-    def taint(self, *, caller: Input | None = None, force: bool = False):
+    def taint(self, *, caller: Input | None = None, force_computation: bool = False):
         self.logger.debug(f"Node '{self.name}': Taint...")
-        if self.tainted and not force:
+        if self.tainted and not force_computation:
             return
         if self.frozen:
             self.fd.frozen_tainted = True
             return
         self.fd.tainted = True
         self._on_taint(caller)
-        ret = self.touch() if (self._immediate or force) else None
-        self.taint_children(force=force)
+        ret = self.touch() if (self._immediate or force_computation) else None
+        self.taint_children(force_computation=force_computation)
         return ret
 
     def taint_children(self, **kwargs):
