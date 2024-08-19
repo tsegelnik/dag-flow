@@ -4,10 +4,11 @@ from collections.abc import Sequence
 from contextlib import suppress
 from typing import TYPE_CHECKING
 
-from numpy import ndarray, array, ndarray, zeros_like
+from numpy import array, ndarray, zeros_like
 
 from .exception import InitializationError
 from .labels import inherit_labels, repr_pretty
+from .lib import Square
 from .lib.Array import Array
 from .lib.Cholesky import Cholesky
 from .lib.CovmatrixFromCormatrix import CovmatrixFromCormatrix
@@ -508,6 +509,7 @@ class GaussianConstraint(Constraint):
         correlation: Node | None = None,
         constrained: bool | None = None,
         free: bool | None = None,
+        provide_covariance: bool = False,
         **_,
     ):
         super().__init__(parameters=parameters)
@@ -553,9 +555,9 @@ class GaussianConstraint(Constraint):
             self._covariance_node >> self._cholesky_node
         elif sigma is not None:
             self._sigma_node = sigma
-            sigma.outputs[0]
-            # self._covariance_node = Square(f"σ²({value_node.name})")
-            # self._sigma_node >> self._covariance_node
+            if provide_covariance:
+                self._covariance_node = Square(f"σ²({value_node.name})")
+                self._sigma_node >> self._covariance_node
         elif covariance is not None:
             self._cholesky_node = Cholesky(f"L({value_node.name})")
             self._sigma_node = self._cholesky_node
@@ -643,7 +645,7 @@ class GaussianConstraint(Constraint):
         sigma: float | Sequence[float],
         label: dict[str, str] | None = None,
         dtype: DTypeLike = "d",
-        correlation: ndarray | None = None,
+        correlation: ndarray | None | Sequence[Sequence[float | int]] = None,
         **kwargs,
     ) -> Parameters:
         label = {"text": "gaussian parameter"} if label is None else dict(label)
@@ -667,7 +669,7 @@ class GaussianConstraint(Constraint):
         )
 
         match correlation:
-            case ndarray():
+            case ndarray() | list() | tuple():
                 node_cor = Array(
                     f"{name}_correlation",
                     array(correlation, dtype=dtype),
