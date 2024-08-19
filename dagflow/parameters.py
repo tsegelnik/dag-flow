@@ -70,12 +70,16 @@ class Parameter:
             self._view = None
         elif make_view:
             self._idx = idx
+            labels = self._common_output.node.labels.copy()
             try:
                 idxtuple = parent._names[idx]
                 idxname = ".".join(idxtuple)
+                labels["paths"] = [labels["paths"][idx]]
             except ValueError:
                 idxname = "???"
                 idxtuple = None
+            except IndexError:
+                pass
             self._view = View(
                 f"{self._common_output.node.name}.{idxname}",
                 self._common_connectible_output,
@@ -83,7 +87,7 @@ class Parameter:
                 length=1,
             )
             self._view.labels.inherit(
-                self._common_output.node.labels,
+                labels,
                 fmtlong=f"{{}} {idxname} [{idx}]",
             )
             # if idxtuple:
