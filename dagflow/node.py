@@ -50,7 +50,7 @@ class Node(NodeBase):
         "fcn",
         "_fcn_chain",
         "_functions",
-        "n_calls",
+        "_n_calls",
     )
 
     _name: str
