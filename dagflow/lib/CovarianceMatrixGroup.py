@@ -130,3 +130,18 @@ class CovarianceMatrixGroup(MetaNode):
         self._add_node(self._cov_sum_full, outputs_pos=True)
 
         return self._cov_sum_full
+
+    def compute_jacobians(self):
+        for jacobians in self._dict_jacobian.values():
+            for jacobian in jacobians:
+                jacobian.compute()
+
+    def update_matrices(self):
+        self._stat_cov.recache()
+        self.compute_jacobians()
+
+        for cov_full in self._dict_cov_full.values():
+            cov_full.touch()
+
+        if self._cov_sum_full:
+            self._cov_sum_full.touch()

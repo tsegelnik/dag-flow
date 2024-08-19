@@ -15,5 +15,4 @@ class Cache(OneToOneNode):
 
     def recache(self) -> None:
         self.unfreeze()
-        self.taint(force=True)
-
+        self.taint(force_computation=True)

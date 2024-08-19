@@ -155,14 +155,27 @@ def test_Jacobian_03(dtype, testname):
         )
         Y >> jac
 
-    res = jac.outputs[0].data
+    dax = 2 * a * x
+
+    output = jac.outputs[0]
+    res = output.data
     factors = {
         "d": [2000, 100, 20],
         "f": [300, 20, 10],
     }
     assert allclose(res[:, 2], 1, atol=factors[dtype][2] * finfo(dtype).resolution, rtol=0)
     assert allclose(res[:, 1], x, atol=factors[dtype][1] * finfo(dtype).resolution, rtol=0)
-    dax = 2 * a * x
+    assert allclose(res[:, 0], dax, atol=factors[dtype][0] * finfo(dtype).resolution, rtol=0)
+
+    assert not jac.tainted
+    output.set(-1.0)
+    assert jac.frozen
+    jac.compute()
+    assert not jac.tainted
+
+    res = jac.outputs[0].data
+    assert allclose(res[:, 2], 1, atol=factors[dtype][2] * finfo(dtype).resolution, rtol=0)
+    assert allclose(res[:, 1], x, atol=factors[dtype][1] * finfo(dtype).resolution, rtol=0)
     assert allclose(res[:, 0], dax, atol=factors[dtype][0] * finfo(dtype).resolution, rtol=0)
 
     savegraph(graph, f"output/{testname}.png", show="full")

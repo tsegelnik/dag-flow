@@ -173,5 +173,24 @@ def test_CovarianceMatrixGroup(dtype, correlated: bool, testname):
     assert allclose(vfull2, vfull_check_23, rtol=factors[dtype] * rtol)
     assert allclose(vfull3, vfull_check_23, rtol=factors[dtype] * rtol)
 
+    assert cm._stat_cov.frozen
+    cm._stat_cov.outputs[0].set(-1)
+    for jacs in cm._dict_jacobian.values():
+        for jac in jacs:
+            assert jac.frozen
+            jac.outputs[0].set(-1)
+
+    for vsysts in cm._dict_cov_syst_part.values():
+        for vsyst in vsysts:
+            vsyst.taint()
+
+    cm.update_matrices()
+
+    jac_AB = cm._dict_jacobian["covmat AB"][0].get_data()
+    jac_CD = cm._dict_jacobian["covmat CD"][0].get_data()
+
+    assert allclose(jac_AB, jac_check_AB, rtol=factors[dtype] * rtol)
+    assert allclose(jac_CD, jac_check_CD, rtol=factors[dtype] * rtol)
+
     graph.touch()
     savegraph(graph, f"output/{testname}.dot", show="full")
