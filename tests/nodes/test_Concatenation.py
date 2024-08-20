@@ -36,6 +36,8 @@ def test_Concatenation_00(debug_graph):
     assert all(data2 == datac[n1 : n1 + n2])
     assert all(data3 == datac[n1 + n2 : n1 + n2 + n3])
 
+    assert concat.sizes==(2,3,1)
+
     inputs[1].taint()
     assert concat.tainted == True
 
