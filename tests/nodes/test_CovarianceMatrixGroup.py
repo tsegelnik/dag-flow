@@ -56,36 +56,37 @@ def test_CovarianceMatrixGroup(dtype, correlated: bool, testname):
         third = Product.from_args("cx", C, X)
         Y = Sum.from_args("f(x)=a³x+b²x+cx+d", first, second, third, D)
 
-        cm = CovarianceMatrixGroup()
-        cm.compute_covariance_for("covmat AB", [pars.norm_parameters[:2]])
-        cm.compute_covariance_for("covmat CD", [pars.norm_parameters[2:]])
+        ignore_duplicates = not correlated
+        cm = CovarianceMatrixGroup(ignore_duplicated_parameters=ignore_duplicates)
+        cm.add_covariance_for("covmat AB", [pars.norm_parameters[:2]])
+        cm.add_covariance_for("covmat CD", [pars.norm_parameters[2:]])
 
         cm2 = CovarianceMatrixGroup()
-        cm2.compute_covariance_for(
+        cm2.add_covariance_for(
             "covmat ABCD",
             [pars.parameters],
             parameter_covariance_matrices=[pars.constraint._covariance_node], # pyright: ignore [reportAttributeAccessIssue]
         )
 
         cm3 = CovarianceMatrixGroup()
-        cm3.compute_covariance_for("covmat ABCD", [pars.norm_parameters])
+        cm3.add_covariance_for("covmat ABCD", [pars.norm_parameters])
 
         if correlated:
-            cm.compute_covariance_sum("covmat ABCD")
+            cm.add_covariance_sum("covmat ABCD")
 
             with raises(RuntimeError):
-                cm.compute_covariance_sum("covmat ABCD")
+                cm.add_covariance_sum("covmat ABCD")
         else:
-            cm.compute_covariance_for(
+            cm.add_covariance_for(
                 "covmat A,B", [pars.norm_parameters[:1], pars.norm_parameters[1:2]]
             )
-            cm.compute_covariance_sum("covmat ABABCD")
+            cm.add_covariance_sum("covmat ABABCD")
 
             with raises(RuntimeError):
-                cm.compute_covariance_sum("covmat ABABCD")
+                cm.add_covariance_sum("covmat ABABCD")
 
         with raises(RuntimeError):
-            cm.compute_covariance_for("covmat AB", [pars.norm_parameters[:2]])
+            cm.add_covariance_for("covmat AB", [pars.norm_parameters[:2]])
 
         Y >> cm
         Y >> cm2

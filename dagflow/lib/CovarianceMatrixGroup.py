@@ -7,6 +7,7 @@ from typing import TYPE_CHECKING, Sequence
 from multikeydict.nestedmkdict import NestedMKDict
 
 from ..metanode import MetaNode
+from ..parameters import GaussianParameter, NormalizedGaussianParameter
 from . import Sum
 from .Cache import Cache
 from .Jacobian import Jacobian
@@ -18,7 +19,6 @@ if TYPE_CHECKING:
     from collections.abc import Mapping
 
     from ..node import Node, Output
-    from ..parameters import GaussianParameter, NormalizedGaussianParameter
 
 
 class CovarianceMatrixGroup(MetaNode):
@@ -31,6 +31,8 @@ class CovarianceMatrixGroup(MetaNode):
         "_dict_cov_full",
         "_cov_sum_syst",
         "_cov_sum_full",
+        "_parameters",
+        "_ignore_duplicated_paramters",
     )
 
     _stat_cov: Cache
@@ -43,7 +45,10 @@ class CovarianceMatrixGroup(MetaNode):
     _cov_sum_syst: Node | None
     _cov_sum_full: Node | None
 
-    def __init__(self, *, labels: Mapping = {}):
+    _parameters: set[GaussianParameter | NormalizedGaussianParameter]
+    _ignore_duplicated_paramters: bool
+
+    def __init__(self, *, labels: Mapping = {}, ignore_duplicated_parameters: bool = False):
         super().__init__()
 
         self._dict_jacobian = defaultdict(list)
@@ -54,6 +59,9 @@ class CovarianceMatrixGroup(MetaNode):
         self._cov_sum_syst = None
         self._cov_sum_full = None
 
+        self._parameters = set()
+        self._ignore_duplicated_paramters = ignore_duplicated_parameters
+
         self._init_stat("stat_cov", label=labels.get("stat_cot", {}))
 
     def _init_stat(self, name: str, *, label={}):
@@ -62,7 +70,10 @@ class CovarianceMatrixGroup(MetaNode):
         self._add_node(self._stat_cov, kw_inputs=("input",), merge_inputs=("input",))
         self.inputs.make_positional("input")
 
-    def compute_covariance_for(
+    def get_parameters_count(self) -> int:
+        return len(self._parameters)
+
+    def add_covariance_for(
         self,
         name: str,
         parameter_groups: (
@@ -84,8 +95,14 @@ class CovarianceMatrixGroup(MetaNode):
 
         jacobians = self._dict_jacobian[name]
         matrices = self._dict_cov_syst_part[name]
-        for i, pars in enumerate(parameter_groups):
-            jacobian = Jacobian(f"Jacobian: {name}", parameters=pars)
+        parameter_groups_clean = self._get_parameter_groups(parameter_groups)
+        npars_total = 0
+        for i, pars in enumerate(parameter_groups_clean):
+            self._check_pars_unique(pars)
+            npars = len(pars)
+            npars_total += npars
+
+            jacobian = Jacobian(f"Jacobian ({npars}): {name}", parameters=pars)
             jacobian()
             self._add_node(jacobian, kw_inputs=("input",), merge_inputs=("input",))
             self.inputs.make_positional("input", index=0)
@@ -98,14 +115,16 @@ class CovarianceMatrixGroup(MetaNode):
 
             if pars_covmat:
                 vsyst_part = MatrixProductDVDt.from_args(
-                    f"V syst: {name} ({i})", left=jacobian, square=pars_covmat
+                    f"V syst ({npars}): {name} ({i})", left=jacobian, square=pars_covmat
                 )
             else:
-                vsyst_part = MatrixProductDDt.from_args(f"V syst: {name} ({i})", matrix=jacobian)
+                vsyst_part = MatrixProductDDt.from_args(
+                    f"V syst ({npars}): {name} ({i})", matrix=jacobian
+                )
             matrices.append(vsyst_part)
 
         if len(matrices) > 1:
-            vsyst = Sum.from_args(f"V syst: {name}", *matrices)
+            vsyst = Sum.from_args(f"V syst ({npars_total}): {name}", *matrices)
             for matrix in matrices:
                 self._add_node(matrix)
             self._add_node(vsyst)
@@ -114,30 +133,32 @@ class CovarianceMatrixGroup(MetaNode):
             self._add_node(vsyst)
         self._dict_cov_syst[name] = vsyst
 
-        vfull = SumMatOrDiag.from_args(f"V total: {name}", self._stat_cov, vsyst)
+        vfull = SumMatOrDiag.from_args(f"V total ({npars_total}): {name}", self._stat_cov, vsyst)
         self._add_node(vfull, outputs_pos=False)
         self._dict_cov_full[name] = vfull
 
         return vfull
 
-    def compute_covariance_sum(
+    def add_covariance_sum(
         self,
-        name: str,
+        name: str = "sum",
         *,
         label={},
     ) -> Node:
         if self._cov_sum_syst is not None:
             raise RuntimeError(f"Sum of covariance matrices already computed")
 
+        npars = len(self._parameters)
+
         vsyst_part = list(self._dict_cov_syst.values())
         if len(vsyst_part) > 1:
-            self._cov_sum_syst = Sum.from_args(f"V syst sum: {name}", *vsyst_part)
+            self._cov_sum_syst = Sum.from_args(f"V syst sum ({npars}): {name}", *vsyst_part)
             self._add_node(self._cov_sum_syst)
         else:
             self._cov_sum_syst = vsyst_part[0]
 
         self._cov_sum_full = SumMatOrDiag.from_args(
-            f"V total: {name}", self._stat_cov, self._cov_sum_syst
+            f"V total ({npars}): {name}", self._stat_cov, self._cov_sum_syst
         )
         self._add_node(self._cov_sum_full, outputs_pos=True)
 
@@ -173,7 +194,7 @@ class CovarianceMatrixGroup(MetaNode):
     ) -> Sequence[Sequence[NormalizedGaussianParameter]] | Sequence[Sequence[GaussianParameter]]:
         match parameter_groups:
             case NormalizedGaussianParameter() | GaussianParameter():
-                return ((parameter_groups,),) # pyright: ignore [reportReturnType]
+                return ((parameter_groups,),)  # pyright: ignore [reportReturnType]
             case [NormalizedGaussianParameter() | GaussianParameter(), *_]:
                 return (parameter_groups,)  # pyright: ignore [reportReturnType]
             case NestedMKDict():
@@ -186,3 +207,16 @@ class CovarianceMatrixGroup(MetaNode):
                 )  # pyright: ignore [reportReturnType]
 
         raise RuntimeError("Invalid parameter_groups type")
+
+    def _check_pars_unique(
+        self, pars: Sequence[NormalizedGaussianParameter] | Sequence[GaussianParameter]
+    ):
+        for par in pars:
+            if not self._ignore_duplicated_paramters and par in self._parameters:
+                break
+
+            self._parameters.add(par)
+        else:
+            return
+
+        raise RuntimeError(f"CovarianceMatrixGroup: duplicated parameter {par!s}")
