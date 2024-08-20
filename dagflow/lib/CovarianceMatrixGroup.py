@@ -4,6 +4,8 @@ from collections import defaultdict
 from contextlib import suppress
 from typing import TYPE_CHECKING, Sequence
 
+from multikeydict.nestedmkdict import NestedMKDict
+
 from ..metanode import MetaNode
 from . import Sum
 from .Cache import Cache
@@ -16,6 +18,7 @@ if TYPE_CHECKING:
     from collections.abc import Mapping
 
     from ..node import Node, Output
+    from ..parameters import GaussianParameter, NormalizedGaussianParameter
 
 
 class CovarianceMatrixGroup(MetaNode):
@@ -62,7 +65,16 @@ class CovarianceMatrixGroup(MetaNode):
     def compute_covariance_for(
         self,
         name: str,
-        parameter_groups: Sequence,
+        parameter_groups: (
+            NormalizedGaussianParameter
+            | GaussianParameter
+            | Sequence[NormalizedGaussianParameter]
+            | Sequence[GaussianParameter]
+            | Sequence[Sequence[NormalizedGaussianParameter]]
+            | Sequence[Sequence[GaussianParameter]]
+            | Sequence[NestedMKDict]
+            | NestedMKDict
+        ),
         *,
         parameter_covariance_matrices: Sequence | None = None,
         label={},
@@ -145,3 +157,32 @@ class CovarianceMatrixGroup(MetaNode):
 
         if self._cov_sum_full:
             self._cov_sum_full.touch()
+
+    def _get_parameter_groups(
+        self,
+        parameter_groups: (
+            NormalizedGaussianParameter
+            | GaussianParameter
+            | Sequence[NormalizedGaussianParameter]
+            | Sequence[GaussianParameter]
+            | Sequence[Sequence[NormalizedGaussianParameter]]
+            | Sequence[Sequence[GaussianParameter]]
+            | Sequence[NestedMKDict]
+            | NestedMKDict
+        ),
+    ) -> Sequence[Sequence[NormalizedGaussianParameter]] | Sequence[Sequence[GaussianParameter]]:
+        match parameter_groups:
+            case NormalizedGaussianParameter() | GaussianParameter():
+                return ((parameter_groups,),) # pyright: ignore [reportReturnType]
+            case [NormalizedGaussianParameter() | GaussianParameter(), *_]:
+                return (parameter_groups,)  # pyright: ignore [reportReturnType]
+            case NestedMKDict():
+                return (tuple(parameter_groups.walkvalues()),)  # pyright: ignore [reportReturnType]
+            case [[NormalizedGaussianParameter() | GaussianParameter(), *_], *_]:
+                return parameter_groups
+            case [NestedMKDict(), *_]:
+                return tuple(
+                    tuple(group.walkvalues()) for group in parameter_groups
+                )  # pyright: ignore [reportReturnType]
+
+        raise RuntimeError("Invalid parameter_groups type")
