@@ -308,7 +308,7 @@ class Parameters:
 
     def __init__(
         self,
-        names: tuple[tuple[str, ...], ...],
+        names: Sequence[Sequence[str] | str],
         value: Node,
         *,
         variable: bool | None = None,
@@ -411,7 +411,7 @@ class Parameters:
     def from_numbers(
         value: float | int | ArrayLike,
         *,
-        names: tuple[tuple[str, ...], ...] = ((),),
+        names: Sequence[Sequence[str] | str] = ((),),
         dtype: DTypeLike = "d",
         variable: bool | None = None,
         fixed: bool | None = None,
@@ -691,7 +691,7 @@ class GaussianConstraint(Constraint):
         )
 
 
-def GaussianParameters(names: tuple[tuple[str]], value: Node, *args, **kwargs) -> Parameters:
+def GaussianParameters(names: Sequence[Sequence[str] | str], value: Node, *args, **kwargs) -> Parameters:
     pars = Parameters(names, value, close=False)
     pars.set_constraint(GaussianConstraint(*args, parameters=pars, **kwargs))
     pars._close()

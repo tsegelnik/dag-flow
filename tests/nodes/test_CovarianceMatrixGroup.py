@@ -64,7 +64,7 @@ def test_CovarianceMatrixGroup(dtype, correlated: bool, testname):
         cm2.compute_covariance_for(
             "covmat ABCD",
             [pars.parameters],
-            parameter_covariance_matrices=[pars.constraint._covariance_node],
+            parameter_covariance_matrices=[pars.constraint._covariance_node], # pyright: ignore [reportAttributeAccessIssue]
         )
 
         cm3 = CovarianceMatrixGroup()
@@ -151,8 +151,8 @@ def test_CovarianceMatrixGroup(dtype, correlated: bool, testname):
         factors = {"d": 0.0, "f": 100}
     rtol = finfo(dtype).resolution
     if not correlated:
-        assert allclose(jac_A, jac_check_A, rtol=factors[dtype] * rtol)
-        assert allclose(jac_B, jac_check_B, rtol=factors[dtype] * rtol)
+        assert allclose(jac_A, jac_check_A, rtol=factors[dtype] * rtol) # pyright: ignore [reportPossiblyUnboundVariable]
+        assert allclose(jac_B, jac_check_B, rtol=factors[dtype] * rtol) # pyright: ignore [reportPossiblyUnboundVariable]
     assert allclose(jac_AB, jac_check_AB, rtol=factors[dtype] * rtol)
     assert allclose(jac_CD, jac_check_CD, rtol=factors[dtype] * rtol)
 
@@ -161,7 +161,7 @@ def test_CovarianceMatrixGroup(dtype, correlated: bool, testname):
 
     assert allclose(vsyst_AB, vsyst_check_AB, rtol=factors[dtype] * rtol)
     if not correlated:
-        assert allclose(vsyst_AcB, vsyst_check_AB, rtol=factors[dtype] * rtol)
+        assert allclose(vsyst_AcB, vsyst_check_AB, rtol=factors[dtype] * rtol) # pyright: ignore [reportPossiblyUnboundVariable]
     assert allclose(vsyst_CD, vsyst_check_CD, rtol=factors[dtype] * rtol)
     assert allclose(vsyst, vsyst_check, rtol=factors[dtype] * rtol)
     assert allclose(vsyst2, vsyst_check_23, rtol=factors[dtype] * rtol)

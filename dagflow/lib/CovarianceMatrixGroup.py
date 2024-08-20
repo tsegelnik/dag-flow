@@ -30,7 +30,7 @@ class CovarianceMatrixGroup(MetaNode):
         "_cov_sum_full",
     )
 
-    _stat_cov: Node
+    _stat_cov: Cache
     _dict_jacobian: dict[str, list[Jacobian]]
     _dict_cov_pars: dict[str, list[Node | Output]]
     _dict_cov_syst_part: dict[str, list[Node]]
