@@ -23,27 +23,21 @@ if TYPE_CHECKING:
 
 class CovarianceMatrixGroup(MetaNode):
     __slots__ = (
-        "_stat_cov",
         "_dict_jacobian",
         "_dict_cov_pars",
         "_dict_cov_syst_part",
         "_dict_cov_syst",
-        "_dict_cov_full",
         "_cov_sum_syst",
-        "_cov_sum_full",
         "_parameters",
         "_ignore_duplicated_paramters",
     )
 
-    _stat_cov: Cache
     _dict_jacobian: dict[str, list[Jacobian]]
     _dict_cov_pars: dict[str, list[Node | Output]]
     _dict_cov_syst_part: dict[str, list[Node]]
     _dict_cov_syst: dict[str, Node]
-    _dict_cov_full: dict[str, Node]
 
     _cov_sum_syst: Node | None
-    _cov_sum_full: Node | None
 
     _parameters: set[GaussianParameter | NormalizedGaussianParameter]
     _ignore_duplicated_paramters: bool
@@ -54,21 +48,11 @@ class CovarianceMatrixGroup(MetaNode):
         self._dict_jacobian = defaultdict(list)
         self._dict_cov_syst_part = defaultdict(list)
         self._dict_cov_syst = {}
-        self._dict_cov_full = {}
 
         self._cov_sum_syst = None
-        self._cov_sum_full = None
 
         self._parameters = set()
         self._ignore_duplicated_paramters = ignore_duplicated_parameters
-
-        self._init_stat("stat_cov", label=labels.get("stat_cot", {}))
-
-    def _init_stat(self, name: str, *, label={}):
-        self._stat_cov = Cache(name, label=label)
-        self._stat_cov()
-        self._add_node(self._stat_cov, kw_inputs=("input",), merge_inputs=("input",))
-        self.inputs.make_positional("input")
 
     def get_parameters_count(self) -> int:
         return len(self._parameters)
@@ -104,8 +88,8 @@ class CovarianceMatrixGroup(MetaNode):
 
             jacobian = Jacobian(f"Jacobian ({npars}): {name}", parameters=pars)
             jacobian()
-            self._add_node(jacobian, kw_inputs=("input",), merge_inputs=("input",))
-            self.inputs.make_positional("input", index=0)
+            self._add_node(jacobian, kw_inputs={"input": "model"}, merge_inputs=("model",))
+            self.inputs.make_positional("model", index=0)
             jacobians.append(jacobian)
 
             pars_covmat = None
@@ -133,11 +117,7 @@ class CovarianceMatrixGroup(MetaNode):
             self._add_node(vsyst)
         self._dict_cov_syst[name] = vsyst
 
-        vfull = SumMatOrDiag.from_args(f"V total ({npars_total}): {name}", self._stat_cov, vsyst)
-        self._add_node(vfull, outputs_pos=False)
-        self._dict_cov_full[name] = vfull
-
-        return vfull
+        return vsyst
 
     def add_covariance_sum(
         self,
@@ -157,12 +137,7 @@ class CovarianceMatrixGroup(MetaNode):
         else:
             self._cov_sum_syst = vsyst_part[0]
 
-        self._cov_sum_full = SumMatOrDiag.from_args(
-            f"V total ({npars}): {name}", self._stat_cov, self._cov_sum_syst
-        )
-        self._add_node(self._cov_sum_full, outputs_pos=True)
-
-        return self._cov_sum_full
+        return self._cov_sum_syst
 
     def compute_jacobians(self):
         for jacobians in self._dict_jacobian.values():
@@ -170,14 +145,13 @@ class CovarianceMatrixGroup(MetaNode):
                 jacobian.compute()
 
     def update_matrices(self):
-        self._stat_cov.recache()
         self.compute_jacobians()
 
-        for cov_full in self._dict_cov_full.values():
-            cov_full.touch()
+        for cov_syst in self._dict_cov_syst.values():
+            cov_syst.touch()
 
-        if self._cov_sum_full:
-            self._cov_sum_full.touch()
+        if self._cov_sum_syst:
+            self._cov_sum_syst.touch()
 
     def _get_parameter_groups(
         self,

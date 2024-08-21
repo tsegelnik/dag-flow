@@ -109,12 +109,6 @@ def test_CovarianceMatrixGroup(dtype, correlated: bool, testname):
     vsyst2 = cm2._dict_cov_syst["covmat ABCD"].get_data()
     vsyst3 = cm3._dict_cov_syst["covmat ABCD"].get_data()
 
-    vfull_AB = cm._dict_cov_full["covmat AB"].get_data()
-    vfull_CD = cm._dict_cov_full["covmat CD"].get_data()
-    vfull = cm._cov_sum_full.get_data()
-    vfull2 = cm2._dict_cov_full["covmat ABCD"].get_data()
-    vfull3 = cm3._dict_cov_full["covmat ABCD"].get_data()
-
     jac_check0 = array(
         [
             3.0 * value[0] ** 2 * x,
@@ -123,8 +117,6 @@ def test_CovarianceMatrixGroup(dtype, correlated: bool, testname):
             0.0 * value[3] ** 0 * x + 1.0,
         ],
     ).T
-
-    vstat = diag(Y.get_data())
 
     jac_check = jac_check0 @ lpar
 
@@ -140,11 +132,6 @@ def test_CovarianceMatrixGroup(dtype, correlated: bool, testname):
     vsyst_check_23 = vsyst_check
     if not correlated:
         vsyst_check = 2.0 * vsyst_check_AB + vsyst_check_CD  # because of using AB and A,B
-
-    vfull_check_AB = vstat + vsyst_check_AB
-    vfull_check_CD = vstat + vsyst_check_CD
-    vfull_check = vstat + vsyst_check
-    vfull_check_23 = vstat + vsyst_check_23
 
     if correlated:
         factors = {"d": 0.0, "f": 10000}
@@ -168,14 +155,6 @@ def test_CovarianceMatrixGroup(dtype, correlated: bool, testname):
     assert allclose(vsyst2, vsyst_check_23, rtol=factors[dtype] * rtol)
     assert allclose(vsyst3, vsyst_check_23, rtol=factors[dtype] * rtol)
 
-    assert allclose(vfull_AB, vfull_check_AB, rtol=factors[dtype] * rtol)
-    assert allclose(vfull_CD, vfull_check_CD, rtol=factors[dtype] * rtol)
-    assert allclose(vfull, vfull_check, rtol=factors[dtype] * rtol)
-    assert allclose(vfull2, vfull_check_23, rtol=factors[dtype] * rtol)
-    assert allclose(vfull3, vfull_check_23, rtol=factors[dtype] * rtol)
-
-    assert cm._stat_cov.frozen
-    cm._stat_cov.outputs[0].set(-1)
     for jacs in cm._dict_jacobian.values():
         for jac in jacs:
             assert jac.frozen
