@@ -104,7 +104,7 @@ class CovarianceMatrixGroup(MetaNode):
             jacobian()
             self._add_node(jacobian, kw_inputs={"input": "model"}, merge_inputs=("model",))
             self.inputs.make_positional("model", index=0)
-            jacobians.append(jacobian.outputs)
+            jacobians.append(jacobian)
 
             pars_covmat = None
             if parameter_covariance_matrices is not None:
