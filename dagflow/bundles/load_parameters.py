@@ -280,7 +280,7 @@ def _load_parameters(
 
     ret = NestedMKDict(
         {
-            "parameter": {
+            "parameters": {
                 "all": {},
                 "constant": {},
                 "free": {},
@@ -293,7 +293,7 @@ def _load_parameters(
                 "nuisance_parts": {},
                 "nuisance": {},
             },
-            "parameter_group": {"all": {}, "constant": {}, "free": {}, "constrained": {}},
+            "parameter_groups": {"all": {}, "constant": {}, "free": {}, "constrained": {}},
         },
         sep=".",
     )
@@ -415,19 +415,19 @@ def _load_parameters(
         ret[("parameter_group",) + targetkey] = par
         ret[("parameter_group", "all") + pathkey] = par
 
-        ptarget = ("parameter",) + targetkey
-        target_all = ("parameter", "all") + pathkey
+        ptarget = ("parameters",) + targetkey
+        target_all = ("parameters", "all") + pathkey
         for subname, subpar in par.iteritems():
             ret[ptarget + subname] = subpar
             ret[target_all + subname] = subpar
             if par.is_constrained:
-                ret[("parameter", "central") + pathkey] = subpar.central_output
+                ret[("parameters", "central") + pathkey] = subpar.central_output
 
         if constraint := par.constraint:
             normpars_i = normpars.setdefault(key[0], [])
             normpars_i.append(constraint.normvalue_final)
 
-            ntarget = ("parameter", "normalized", path) + key
+            ntarget = ("parameters", "normalized", path) + key
             for subname, subpar in par.iteritems_norm():
                 ret[ntarget + subname] = subpar
 
