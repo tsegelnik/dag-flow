@@ -65,7 +65,7 @@ class NodeStorage(NestedMKDict):
 
         if not default_containers:
             return
-        for name in ("parameter", "stat", "nodes", "data", "inputs", "outputs"):
+        for name in ("parameters", "stat", "nodes", "data", "inputs", "outputs"):
             self.child(name)
 
     def plot(self, *args, **kwargs) -> None:
