@@ -5,15 +5,15 @@ from contextlib import suppress
 from typing import TYPE_CHECKING, Sequence
 
 from multikeydict.nestedmkdict import NestedMKDict
+from multikeydict.typing import TupleKey, KeyLike, properkey
 
 from ..metanode import MetaNode
 from ..parameters import GaussianParameter, NormalizedGaussianParameter
+from ..storage import NodeStorage
 from . import Sum
-from .Cache import Cache
 from .Jacobian import Jacobian
 from .MatrixProductDDt import MatrixProductDDt
 from .MatrixProductDVDt import MatrixProductDVDt
-from .SumMatOrDiag import SumMatOrDiag
 
 if TYPE_CHECKING:
     from collections.abc import Mapping
@@ -30,6 +30,7 @@ class CovarianceMatrixGroup(MetaNode):
         "_cov_sum_syst",
         "_parameters",
         "_ignore_duplicated_paramters",
+        "_store_to"
     )
 
     _dict_jacobian: dict[str, list[Jacobian]]
@@ -42,7 +43,15 @@ class CovarianceMatrixGroup(MetaNode):
     _parameters: set[GaussianParameter | NormalizedGaussianParameter]
     _ignore_duplicated_paramters: bool
 
-    def __init__(self, *, labels: Mapping = {}, ignore_duplicated_parameters: bool = False):
+    _store_to: TupleKey | None
+
+    def __init__(
+        self,
+        *,
+        # labels: Mapping = {},
+        store_to: KeyLike | None = None,
+        ignore_duplicated_parameters: bool = False,
+    ):
         super().__init__()
 
         self._dict_jacobian = defaultdict(list)
@@ -53,6 +62,8 @@ class CovarianceMatrixGroup(MetaNode):
 
         self._parameters = set()
         self._ignore_duplicated_paramters = ignore_duplicated_parameters
+
+        self._store_to = properkey(store_to, sep=".") if store_to is not None else None
 
     def get_parameters_count(self) -> int:
         return len(self._parameters)
@@ -72,15 +83,18 @@ class CovarianceMatrixGroup(MetaNode):
         ),
         *,
         parameter_covariance_matrices: Sequence | None = None,
-        label={},
+        # labels: Mapping = {},
     ) -> Node:
         if name in self._dict_jacobian:
             raise RuntimeError(f"Covariance group {name} already defined")
+
+        storage = NodeStorage(default_containers=True) if self._store_to is not None else None
 
         jacobians = self._dict_jacobian[name]
         matrices = self._dict_cov_syst_part[name]
         parameter_groups_clean = self._get_parameter_groups(parameter_groups)
         npars_total = 0
+        ngroups = len(parameter_groups_clean)
         for i, pars in enumerate(parameter_groups_clean):
             self._check_pars_unique(pars)
             npars = len(pars)
@@ -90,7 +104,7 @@ class CovarianceMatrixGroup(MetaNode):
             jacobian()
             self._add_node(jacobian, kw_inputs={"input": "model"}, merge_inputs=("model",))
             self.inputs.make_positional("model", index=0)
-            jacobians.append(jacobian)
+            jacobians.append(jacobian.outputs)
 
             pars_covmat = None
             if parameter_covariance_matrices is not None:
@@ -107,6 +121,19 @@ class CovarianceMatrixGroup(MetaNode):
                 )
             matrices.append(vsyst_part)
 
+            if storage is not None:
+                if ngroups>1:
+                    storage[("nodes",) + self._store_to + ("jacobians", name, f"jacobian_{i:02d}")] = jacobian
+                    storage[("nodes",) + self._store_to + ("covmat_vsyst_parts", name, f"vsyst_{i:02d}")] = vsyst_part
+
+                    storage[("outputs",) + self._store_to + ("jacobians", name, f"jacobian_{i:02d}")] = jacobian.outputs[0]
+                    storage[("outputs",) + self._store_to + ("covmat_vsyst_parts", name, f"vsyst_{i:02d}")] = (
+                        vsyst_part.outputs[0]
+                    )
+                else:
+                    storage[("nodes",) + self._store_to + ("jacobians", name)] = jacobian
+                    storage[("outputs",) + self._store_to + ("jacobians", name)] = jacobian.outputs[0]
+
         if len(matrices) > 1:
             vsyst = Sum.from_args(f"V syst ({npars_total}): {name}", *matrices)
             for matrix in matrices:
@@ -115,15 +142,21 @@ class CovarianceMatrixGroup(MetaNode):
         else:
             vsyst = matrices[0]
             self._add_node(vsyst)
+
         self._dict_cov_syst[name] = vsyst
+        if storage is not None:
+            storage[("nodes",) + self._store_to + ("covmat_syst", name)] = vsyst
+            storage[("outputs",) + self._store_to + ("covmat_syst", name)] = vsyst.outputs[0]
+
+            NodeStorage.update_current(storage, strict=True)
 
         return vsyst
 
     def add_covariance_sum(
         self,
         name: str = "sum",
-        *,
-        label={},
+        # *,
+        # labels: Mapping = {},
     ) -> Node:
         if self._cov_sum_syst is not None:
             raise RuntimeError(f"Sum of covariance matrices already computed")
@@ -136,6 +169,14 @@ class CovarianceMatrixGroup(MetaNode):
             self._add_node(self._cov_sum_syst)
         else:
             self._cov_sum_syst = vsyst_part[0]
+
+        if self._store_to:
+            storage = NodeStorage(default_containers=True)
+
+            storage[("nodes",) + self._store_to + ("covmat_syst", name)] = self._cov_sum_syst
+            storage[("outputs",) + self._store_to + ("covmat_syst", name)] = self._cov_sum_syst.outputs[0]
+
+            NodeStorage.update_current(storage, strict=True)
 
         return self._cov_sum_syst
 
