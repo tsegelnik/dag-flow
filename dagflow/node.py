@@ -570,7 +570,7 @@ class Node(NodeBase):
         return all_inputs
 
     def touch(self, force_computation=False, recursive=True):
-        if self._frozen:
+        if self.frozen:
             return
         if not self.tainted and not force_computation:
             return
