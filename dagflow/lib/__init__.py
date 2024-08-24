@@ -17,6 +17,7 @@ from .Interpolator import Interpolator
 from .InterpolatorGroup import InterpolatorGroup
 from .Jacobian import Jacobian
 from .LinearFunction import LinearFunction
+from .LogProdDiag import LogProdDiag
 from .ManyToOneNode import ManyToOneNode
 from .MatrixProductAB import MatrixProductAB
 from .MatrixProductDDt import MatrixProductDDt
@@ -64,6 +65,7 @@ __all__ = [
     "Log",
     "Log10",
     "Log1p",
+    "LogProdDiag",
     "ManyToOneNode",
     "MatrixProductAB",
     "MatrixProductDDt",
