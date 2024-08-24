@@ -17,7 +17,7 @@ def test_LogProdDiag_00(testname, debug_graph, dtype):
     inL2d2 = log(diag(inV2)).sum()
     inL1d = log(inD).sum()
 
-    with Graph(close=True, debug=debug_graph) as graph:
+    with Graph(close_on_exit=True, debug=debug_graph) as graph:
         V1 = Array("V1", inV1, mode="store")
         V2 = Array("V2", inV2, mode="store")
         D = Array("D", (inD), mode="store")
