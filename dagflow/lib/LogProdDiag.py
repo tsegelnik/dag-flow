@@ -56,10 +56,10 @@ class LogProdDiag(Node):
 
         if ndim == 2:
             self.fcn = self._functions["square"]
-            self.labels.mark = "log|V|→2Σlog(Lᵢᵢ)"
+            self.labels.mark = "2Σlog(Lᵢᵢ)"
         else:
             self.fcn = self._functions["diagonal"]
-            self.labels.mark = "log|D|→2Σlog(Dᵢᵢ)"
+            self.labels.mark = "2Σlog(Dᵢᵢ)"
 
     def _post_allocate(self) -> None:
         inpdd = self.inputs[0].dd
