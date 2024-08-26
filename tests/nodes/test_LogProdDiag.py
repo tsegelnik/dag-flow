@@ -13,9 +13,9 @@ def test_LogProdDiag_00(testname, debug_graph, dtype):
     inV1 = array([[10, 0, 0], [2, 12, 0], [1, 3, 13]], dtype=dtype)
     inV2 = inV1**2
     inD = diag(inV1)
-    inL2d1 = log(diag(inV1)).sum()
-    inL2d2 = log(diag(inV2)).sum()
-    inL1d = log(inD).sum()
+    inL2d1 = 2 * log(diag(inV1)).sum()
+    inL2d2 = 2 * log(diag(inV2)).sum()
+    inL1d = 2 * log(inD).sum()
 
     with Graph(close_on_exit=True, debug=debug_graph) as graph:
         V1 = Array("V1", inV1, mode="store")
