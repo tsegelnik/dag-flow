@@ -25,10 +25,9 @@ class LogProdDiag(Node):
     def __init__(self, *args, **kwargs):
         kwargs.setdefault(
             "missing_input_handler",
-            MissingInputAddPair(input_fmt="matrix", output_fmt="2Σlog(Lᵢᵢ)"),
+            MissingInputAddPair(input_fmt="matrix", output_fmt="log_V"),
         )
         super().__init__(*args, **kwargs)
-        self._labels.setdefault("mark", "log|V|→2Σlog(Lᵢᵢ)")
 
         self._functions.update({"square": self._fcn_square, "diagonal": self._fcn_diagonal})
 
@@ -57,10 +56,10 @@ class LogProdDiag(Node):
 
         if ndim == 2:
             self.fcn = self._functions["square"]
-            self.labels.mark = "2Σlog(Lᵢᵢ)"
+            self.labels.mark = "log|V|→2Σlog(Lᵢᵢ)"
         else:
             self.fcn = self._functions["diagonal"]
-            self.labels.mark = "2Σlog(Dᵢᵢ)"
+            self.labels.mark = "log|D|→2Σlog(Dᵢᵢ)"
 
     def _post_allocate(self) -> None:
         inpdd = self.inputs[0].dd
