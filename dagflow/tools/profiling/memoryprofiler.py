@@ -7,7 +7,7 @@ from pandas import DataFrame
 
 if TYPE_CHECKING:
     from typing import Sequence
-    from dagflow.nodes import FunctionNode
+    from dagflow.node import Node
     from dagflow.input import Input
     from dagflow.output import Output
 
@@ -16,10 +16,11 @@ from .profiler import Profiler
 
 class MemoryProfiler(Profiler):
     def __init__(self,
-                 target_nodes: Sequence[FunctionNode]=[],
+                 target_nodes: Sequence[Node]=(),
                  *,
-                 sources: Sequence[FunctionNode]=[],
-                 sinks: Sequence[FunctionNode]=[]):
+                 sources: Sequence[Node]=(),
+                 sinks: Sequence[Node]=()
+                 ):
         super().__init__(target_nodes, sources, sinks, n_runs=1)
     
     def _touch_nodes(self):

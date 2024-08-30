@@ -8,7 +8,7 @@ from pandas import DataFrame, Series
 import numpy
 
 from .profiler import Profiler
-from dagflow.nodes import FunctionNode
+from dagflow.node import Node
 
 SOURCE_COL_WIDTH = 32
 SINK_COL_WIDTH = 32
@@ -26,10 +26,10 @@ class FrameworkProfiler(Profiler):
     __slots__ = ()
 
     def __init__(self,
-                 target_nodes: Sequence[FunctionNode] = (),
+                 target_nodes: Sequence[Node] = (),
                  *,
-                 sources: Sequence[FunctionNode] = (),
-                 sinks: Sequence[FunctionNode] = (),
+                 sources: Sequence[Node] = (),
+                 sinks: Sequence[Node] = (),
                  n_runs = 100
                  ) -> None:
         super().__init__(target_nodes, sources, sinks, n_runs)
@@ -56,7 +56,7 @@ class FrameworkProfiler(Profiler):
             node.taint()
 
     @staticmethod
-    def fcn_no_computation(node: FunctionNode):
+    def fcn_no_computation(node: Node):
         for input in node.inputs.iter_all():
             input.touch()
 

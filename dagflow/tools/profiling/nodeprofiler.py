@@ -8,7 +8,7 @@ from pandas import DataFrame
 
 from .profiler import Profiler
 if TYPE_CHECKING:
-    from dagflow.nodes import FunctionNode
+    from dagflow.node import Node
 
 _TABLE_COLUMNS = ("node", "type", "name", "time")
 _ALLOWED_GROUPBY = ("node", "type", "name")
@@ -18,17 +18,17 @@ class NodeProfiler(Profiler):
     __slots__ = ()
 
     def __init__(self,
-                 target_nodes: Sequence[FunctionNode] = (),
+                 target_nodes: Sequence[Node] = (),
                  *,
-                 sources: Sequence[FunctionNode] = (),
-                 sinks: Sequence[FunctionNode] = (),
+                 sources: Sequence[Node] = (),
+                 sinks: Sequence[Node] = (),
                  n_runs: int = 10_000
                  ) -> None:
         self._allowed_groupby = _ALLOWED_GROUPBY
         super().__init__(target_nodes, sources, sinks, n_runs)
 
     @classmethod
-    def estimate_node(cls, node: FunctionNode, n_runs: int = 10_000):
+    def estimate_node(cls, node: Node, n_runs: int = 10_000):
         for input in node.inputs.iter_all():
             input.touch()
         return timeit(stmt=node.fcn, number=n_runs)

@@ -5,7 +5,7 @@ from collections import Counter
 import pytest
 
 from dagflow.tools.profiling import NodeProfiler
-from dagflow.nodes import FunctionNode
+from dagflow.node import Node
 
 from test_helpers import graph_0, graph_1
 
@@ -23,7 +23,7 @@ def test_init():
     target_nodes = [a1, a2, p1, s2]
     profiling = NodeProfiler(target_nodes, sources=sources, sinks=sinks)
 
-def check_inputs_taint(node: FunctionNode):
+def check_inputs_taint(node: Node):
     return any(inp.tainted for inp in node.inputs)
 
 def test_estimate_node_g0():
