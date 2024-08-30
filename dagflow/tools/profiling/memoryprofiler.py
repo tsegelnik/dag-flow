@@ -15,12 +15,13 @@ from .profiler import Profiler
 
 
 class MemoryProfiler(Profiler):
-    def __init__(self,
-                 target_nodes: Sequence[Node]=(),
-                 *,
-                 sources: Sequence[Node]=(),
-                 sinks: Sequence[Node]=()
-                 ):
+    def __init__(
+        self,
+        target_nodes: Sequence[Node]=(),
+        *,
+        sources: Sequence[Node]=(),
+        sinks: Sequence[Node]=()
+    ):
         super().__init__(target_nodes, sources, sinks, n_runs=1)
     
     def _touch_nodes(self):
@@ -43,7 +44,7 @@ class MemoryProfiler(Profiler):
                 # If there is an _allocating_input, 
                 #  the `out.data` refers to the child `Input` data.
                 # However if there is no `_allocating_input` 
-                #  and owns_buffer=False (and `out.data` is not `None` of cource)
+                #  and owns_buffer=False (and `out.data` is not `None` of course)
                 #  then it means there is allocated memory for this Output.
                 estimations[out] = out.data_unsafe.nbytes
             else:
@@ -60,15 +61,21 @@ class MemoryProfiler(Profiler):
         # for node in self._target_nodes:
         # TODO: assign to estimation table
 
-    def make_report(self, group_by: str | tuple[str] | None,
-                    agg_funcs: Sequence[str] | None,
-                    sort_by: str | None) -> DataFrame:
+    def make_report(
+        self,
+        group_by: str | tuple[str] | None,
+        agg_funcs: Sequence[str] | None,
+        sort_by: str | None
+    ) -> DataFrame:
         raise NotImplementedError
         return super().make_report(group_by, agg_funcs, sort_by)
     
-    def print_report(self,
-                     rows: int | None,
-                     group_by: str | None,
-                     agg_funcs: Sequence[str] | None, sort_by) -> DataFrame:
+    def print_report(
+        self,
+        rows: int | None,
+        group_by: str | None,
+        agg_funcs: Sequence[str] | None,
+        sort_by
+    ) -> DataFrame:
         raise NotImplementedError
         return super().print_report(rows, group_by, agg_funcs, sort_by)

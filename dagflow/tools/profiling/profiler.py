@@ -68,12 +68,13 @@ class Profiler(metaclass=ABCMeta):
     _column_aliases: dict[str | Callable, str]
     _agg_aliases: dict[str, str | Callable]
 
-    def __init__(self,
-                 target_nodes: Sequence[Node] = (),
-                 sources: Sequence[Node] = (),
-                 sinks: Sequence[Node] = (),
-                 n_runs: int = 100
-                 ) -> None:
+    def __init__(
+        self,
+        target_nodes: Sequence[Node] = (),
+        sources: Sequence[Node] = (),
+        sinks: Sequence[Node] = (),
+        n_runs: int = 100
+    ):
         self._default_agg_funcs = _DEFAULT_AGG_FUNCS
         self._column_aliases = _COLUMN_ALIASES.copy()
         self._agg_aliases = _AGG_ALIASES.copy()
@@ -271,11 +272,12 @@ class Profiler(metaclass=ABCMeta):
                                  f"{self.__possible_agg_values()}")
 
     @abstractmethod
-    def make_report(self,
-                    group_by: str | tuple[str] | None,
-                    agg_funcs: Sequence[str] | None,
-                    sort_by: str | None
-                    ) -> DataFrame:
+    def make_report(
+        self,
+        group_by: str | tuple[str] | None,
+        agg_funcs: Sequence[str] | None,
+        sort_by: str | None
+    ) -> DataFrame:
         """Make a report table. \n
         Note: Since the report table is just a `Pandas.DataFrame`,
         you can call Pandas methods like `.to_csv()` or `to_excel()`
@@ -309,12 +311,13 @@ class Profiler(metaclass=ABCMeta):
         print(tabulate(df.head(rows), headers='keys', tablefmt='psql'))
 
     @abstractmethod
-    def print_report(self,
-                     rows: int | None,
-                     group_by: str | tuple[str] | None,
-                     agg_funcs: Sequence[str] | None,
-                     sort_by: str | None
-                     ) -> DataFrame:
+    def print_report(
+        self,
+        rows: int | None,
+        group_by: str | tuple[str] | None,
+        agg_funcs: Sequence[str] | None,
+        sort_by: str | None
+    ) -> DataFrame:
         """Make report and print it. \n
         Return `Pandas.DataPrame` as report
         ( See: `self.make_report()` )

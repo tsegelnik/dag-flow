@@ -25,13 +25,14 @@ class FrameworkProfiler(Profiler):
     the interaction time between nodes (framework time)"""
     __slots__ = ()
 
-    def __init__(self,
-                 target_nodes: Sequence[Node] = (),
-                 *,
-                 sources: Sequence[Node] = (),
-                 sinks: Sequence[Node] = (),
-                 n_runs = 100
-                 ) -> None:
+    def __init__(
+        self,
+        target_nodes: Sequence[Node] = (),
+        *,
+        sources: Sequence[Node] = (),
+        sinks: Sequence[Node] = (),
+        n_runs = 100
+    ):
         super().__init__(target_nodes, sources, sinks, n_runs)
         self._allowed_groupby = _ALLOWED_GROUPBY
         self.register_agg_func(
@@ -102,19 +103,21 @@ class FrameworkProfiler(Profiler):
         self._estimations_table = df
         return self
 
-    def make_report(self,
-                    group_by = ["source nodes", "sink nodes"],
-                    agg_funcs: Sequence[str] | None = None,
-                    sort_by: str | None = None
-                    ) -> DataFrame:
+    def make_report(
+        self,
+        group_by = ["source nodes", "sink nodes"],
+        agg_funcs: Sequence[str] | None = None,
+        sort_by: str | None = None
+    ) -> DataFrame:
         return super().make_report(group_by, agg_funcs, sort_by)
 
-    def print_report(self,
-                     rows: int | None = 40,
-                     group_by = ["source nodes", "sink nodes"],
-                     agg_funcs: Sequence[str] | None = None,
-                     sort_by: str | None = None
-                     ) -> DataFrame:
+    def print_report(
+        self,
+        rows: int | None = 40,
+        group_by = ["source nodes", "sink nodes"],
+        agg_funcs: Sequence[str] | None = None,
+        sort_by: str | None = None
+    ) -> DataFrame:
         report = self.make_report(group_by, agg_funcs, sort_by)
         print(f"\nFramework Profiling {hex(id(self))}, "
               f"n_runs for given subgraph: {self._n_runs}, "
