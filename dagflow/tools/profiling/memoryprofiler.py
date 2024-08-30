@@ -29,7 +29,8 @@ class MemoryProfiler(Profiler):
             node.eval()
 
     @classmethod
-    def estimate_edges(cls, node):
+    def estimate_edges(cls, node) -> dict[Input | Output, int]:
+        """Return `dict` of sizes for each Input/Output of given `node`"""
         estimations = {}
         inp: Input
         out: Output
@@ -53,13 +54,24 @@ class MemoryProfiler(Profiler):
 
 
     def estimate_all_edges(self, touch=True):
+        """Estimates size of all edges of all `self.target_nodes`.
+        
+        Return current `MemoryProfiler` instance.
+        """
         data_sizes = {}
         if touch:
             self._touch_nodes()
-
-        raise NotImplementedError
-        # for node in self._target_nodes:
-        # TODO: assign to estimation table
+        
+        records = {col: [] for col in ("node", "type", "edge", "size")}
+        for node in self._target_nodes:
+            estimations = self.estimate_edges(node)
+            for edge, size in estimations.items():
+                records["node"].append(node)
+                records["type"].append(type(node).__name__)
+                records["edge"].append(edge)
+                records["size"].append(size)
+        self._estimations_table = DataFrame(records)
+        return self
 
     def make_report(
         self,
