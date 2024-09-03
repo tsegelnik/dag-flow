@@ -598,13 +598,13 @@ class Node(NodeBase):
             raise CriticalError("Unable to freeze tainted node!", node=self)
         self.fd.freeze()
 
-    def unfreeze(self, force: bool = False):
-        if not self.frozen and not force:
+    def unfreeze(self):
+        if not self.frozen:
             return
         self.fd.frozen = False
         if self.frozen_tainted:
             self.fd.frozen_tainted = False
-            self.taint(force_computation=True)
+            self.taint()
 
     def taint(self, *, caller: Input | None = None, force_computation: bool = False):
         self.logger.debug(f"Node '{self.name}': Taint...")
@@ -616,7 +616,7 @@ class Node(NodeBase):
         self.fd.tainted = True
         self._on_taint(caller)
         ret = self.touch() if (self._immediate or force_computation) else None
-        self.taint_children(force_computation=force_computation)
+        self.taint_children()
         return ret
 
     def taint_children(self, **kwargs):
