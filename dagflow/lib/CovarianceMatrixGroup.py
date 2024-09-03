@@ -16,10 +16,18 @@ from .MatrixProductDDt import MatrixProductDDt
 from .MatrixProductDVDt import MatrixProductDVDt
 
 if TYPE_CHECKING:
-    from collections.abc import Mapping
-
     from ..node import Node, Output
 
+CovarianceMatrixParameterType = (
+            NormalizedGaussianParameter
+            | GaussianParameter
+            | Sequence[NormalizedGaussianParameter]
+            | Sequence[GaussianParameter]
+            | Sequence[Sequence[NormalizedGaussianParameter]]
+            | Sequence[Sequence[GaussianParameter]]
+            | Sequence[NestedMKDict]
+            | NestedMKDict
+            )
 
 class CovarianceMatrixGroup(MetaNode):
     __slots__ = (
@@ -71,16 +79,7 @@ class CovarianceMatrixGroup(MetaNode):
     def add_covariance_for(
         self,
         name: str,
-        parameter_groups: (
-            NormalizedGaussianParameter
-            | GaussianParameter
-            | Sequence[NormalizedGaussianParameter]
-            | Sequence[GaussianParameter]
-            | Sequence[Sequence[NormalizedGaussianParameter]]
-            | Sequence[Sequence[GaussianParameter]]
-            | Sequence[NestedMKDict]
-            | NestedMKDict
-        ),
+        parameter_groups: CovarianceMatrixParameterType,
         *,
         parameter_covariance_matrices: Sequence | None = None,
         # labels: Mapping = {},
@@ -159,7 +158,7 @@ class CovarianceMatrixGroup(MetaNode):
         # labels: Mapping = {},
     ) -> Node:
         if self._cov_sum_syst is not None:
-            raise RuntimeError(f"Sum of covariance matrices already computed")
+            raise RuntimeError("Sum of covariance matrices already computed")
 
         npars = len(self._parameters)
 
@@ -196,16 +195,7 @@ class CovarianceMatrixGroup(MetaNode):
 
     def _get_parameter_groups(
         self,
-        parameter_groups: (
-            NormalizedGaussianParameter
-            | GaussianParameter
-            | Sequence[NormalizedGaussianParameter]
-            | Sequence[GaussianParameter]
-            | Sequence[Sequence[NormalizedGaussianParameter]]
-            | Sequence[Sequence[GaussianParameter]]
-            | Sequence[NestedMKDict]
-            | NestedMKDict
-        ),
+        parameter_groups: CovarianceMatrixParameterType,
     ) -> Sequence[Sequence[NormalizedGaussianParameter]] | Sequence[Sequence[GaussianParameter]]:
         match parameter_groups:
             case NormalizedGaussianParameter() | GaussianParameter():

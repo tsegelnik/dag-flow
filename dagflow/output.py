@@ -398,7 +398,7 @@ class Output:
         size = self.dd.size
         ret = {
             "label": self.labels[label_from],
-            "shape": shape[0] if len(shape) == 1 else shape,
+            "shape": shape[0] if shape and len(shape) == 1 else shape,
         }
 
         if size > 1:
