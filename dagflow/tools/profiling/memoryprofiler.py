@@ -30,7 +30,7 @@ class MemoryProfiler(Profiler):
             node.eval()
 
     @classmethod
-    def estimate_edges(cls, node) -> dict[Input | Output, int]:
+    def estimate_node(cls, node) -> dict[Input | Output, int]:
         """Return `dict` of sizes for each Input/Output of given `node`"""
         estimations = {}
         inp: Input
@@ -54,7 +54,7 @@ class MemoryProfiler(Profiler):
         return estimations
 
 
-    def estimate_all_edges(self, touch=True):
+    def estimate_target_nodes(self, touch=True):
         """Estimates size of all edges of all `self.target_nodes`.
         
         Return current `MemoryProfiler` instance.
@@ -65,7 +65,7 @@ class MemoryProfiler(Profiler):
         
         records = {col: [] for col in ("node", "type", "edge", "size")}
         for node in self._target_nodes:
-            estimations = self.estimate_edges(node)
+            estimations = self.estimate_node(node)
             for edge, size in estimations.items():
                 records["node"].append(node)
                 records["type"].append(type(node).__name__)
@@ -73,6 +73,13 @@ class MemoryProfiler(Profiler):
                 records["size"].append(size)
         self._estimations_table = DataFrame(records)
         return self
+    @property
+    def total_size(self):
+        """Return size of all edges of '_target_nodes' in bytes
+        """
+        if not hasattr(self, '_estimations_table'):
+            self.estimate_target_nodes()
+        return self._estimations_table["size"].sum()
 
     def make_report(
         self,

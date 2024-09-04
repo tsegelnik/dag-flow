@@ -310,6 +310,8 @@ class Profiler(metaclass=ABCMeta):
 
     def _print_table(self, df: DataFrame, rows):
         print(tabulate(df.head(rows), headers='keys', tablefmt='psql'))
+        if len(df) > rows:
+            print(f' [!] showing only first {rows} rows ')
 
     @abstractmethod
     def print_report(

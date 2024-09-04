@@ -74,8 +74,7 @@ class NodeProfiler(Profiler):
         print(f"\nNode Profiling {hex(id(self))}, "
               f"n_runs for each node: {self._n_runs}\n"
               f"sort by: `{sort_by or 'default sorting'}`, "
-              f"group by: `{group_by or 'no grouping'}`, "
-              f"max rows displayed: {rows}")
+              f"group by: `{group_by or 'no grouping'}`")
         super()._print_table(report, rows)
         self._print_total_time()
         return report

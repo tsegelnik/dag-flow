@@ -47,13 +47,13 @@ def test_basic_edges_g0():
     # A2 (1 output)
     out: Output = a2.outputs['array'] # 'array' - default name for Array output
     
-    actual_sizes = MemoryProfiler.estimate_edges(a2)
+    actual_sizes = MemoryProfiler.estimate_node(a2)
     o_expected = edge_size(out)
     assert o_expected != 0
     assert o_expected == actual_sizes[out]
 
     # S1 (3 inputs, 2 outputs)
-    actual_sizes = MemoryProfiler.estimate_edges(s1)
+    actual_sizes = MemoryProfiler.estimate_node(s1)
 
     for inp in s1.inputs.iter_all():
         i_expected = edge_size(inp)
@@ -80,10 +80,10 @@ def test_array_store_mods_g0():
     assert edge_size(conn_input) == 0
     assert edge_size(sw_out) != edge_size(conn_input)
 
-    actual_sizes = MemoryProfiler.estimate_edges(a1)
+    actual_sizes = MemoryProfiler.estimate_node(a1)
     assert edge_size(sw_out) == actual_sizes[sw_out]
     
-    actual_sizes = MemoryProfiler.estimate_edges(p1)
+    actual_sizes = MemoryProfiler.estimate_node(p1)
     assert edge_size(conn_input) == actual_sizes[conn_input]
 
     # S0 (2 inputs, 1 output)
@@ -92,6 +92,13 @@ def test_array_store_mods_g0():
     conn_input: Input = s0.inputs[1]
 
     assert conn_input.parent_output == f_out
+def test_estimate_all_edges():
+    g, nodes = graph_0()
+    
+    mp = MemoryProfiler(nodes)
+    mp.estimate_target_nodes()
+    
+    assert hasattr(mp, "_estimations_table")
 
 
 
