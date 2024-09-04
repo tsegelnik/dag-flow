@@ -20,11 +20,14 @@ def test_ArraySum_01(testname, debug_graph, a):
         arra = Array("a", a)
         arra2 = Array("a2", a2)
         arraysum = ArraySum("arraysum")
-        arra >> arraysum
-        arra2 >> arraysum
+        (arra, arra2) >> arraysum
 
     atol = finfo("d").resolution * 2
     assert arraysum.tainted
+    assert allclose(arraysum.get_data(0)[0], array_res, rtol=0, atol=atol)
+    assert allclose(arraysum.get_data(1)[0], array2_res, rtol=0, atol=atol)
+    arraysum.taint()
+    arraysum.touch()
     assert allclose(arraysum.get_data(0)[0], array_res, rtol=0, atol=atol)
     assert allclose(arraysum.get_data(1)[0], array2_res, rtol=0, atol=atol)
     assert arraysum.tainted is False

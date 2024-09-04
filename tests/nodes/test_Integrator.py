@@ -43,6 +43,9 @@ def test_Integrator_rect_center(align, debug_graph, testname):
         ordersX >> integrator("ordersX")
     res = sinf.outputs[1].data - sinf.outputs[0].data
     assert allclose(integrator.outputs[0].data, res, atol=1e-4)
+    integrator.taint()
+    integrator.touch()
+    assert allclose(integrator.outputs[0].data, res, atol=1e-4)
     assert integrator.outputs[0].dd.axes_edges == [edges["array"]]
     savegraph(graph, f"output/{testname}.png")
 
@@ -172,6 +175,9 @@ def test_Integrator_gl2d(debug_graph, testname):
     res = (polyres.outputs[1].data - polyres.outputs[0].data) * (
         polyres.outputs[3].data - polyres.outputs[2].data
     )
+    assert allclose(integrator.outputs[0].data, res, atol=1e-10)
+    integrator.taint()
+    integrator.touch()
     assert allclose(integrator.outputs[0].data, res, atol=1e-10)
     assert integrator.outputs[0].dd.axes_edges == [
         edgesX["array"],

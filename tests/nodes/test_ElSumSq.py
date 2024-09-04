@@ -32,5 +32,8 @@ def test_ElSumSq_01(testname, debug_graph, dtype):
     assert sm.tainted == True
     assert all(output.data == res)
     assert sm.tainted == False
+    sm.taint()
+    sm.touch()
+    assert all(output.data == res)
 
     savegraph(graph, f"output/{testname}.png", show="all")

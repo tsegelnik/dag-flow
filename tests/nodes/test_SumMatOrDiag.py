@@ -1,9 +1,6 @@
 #!/usr/bin/env python
-from numpy import allclose
-from numpy import arange
-from numpy import diag
-from pytest import mark
-from pytest import raises
+from numpy import allclose, arange, diag
+from pytest import mark, raises
 
 from dagflow.exception import TypeFunctionError
 from dagflow.graph import Graph
@@ -14,7 +11,7 @@ from dagflow.lib import SumMatOrDiag
 
 @mark.parametrize("dtype", ("d", "f"))
 def test_SumMatOrDiag_01(dtype, debug_graph):
-    for size in (5, 4):
+    for size in (5, 4, 100):
         array1 = arange(size, dtype=dtype) + 1.0
         array2 = arange(size, dtype=dtype) * 3
         matrix1 = arange(size * size, dtype=dtype).reshape(size, size) + 1.0
@@ -59,9 +56,12 @@ def test_SumMatOrDiag_01(dtype, debug_graph):
                 res = diag(res)
 
             assert sm.tainted
-            output = sm.outputs[0]
-            assert allclose(output.data, res, rtol=0, atol=0)
+            output_data = sm.outputs[0].data
+            assert allclose(output_data, res, rtol=0, atol=0)
             assert not sm.tainted
+            sm.taint()
+            sm.touch()
+            assert allclose(output_data, res, rtol=0, atol=0)
 
         savegraph(
             graph,
