@@ -22,14 +22,14 @@ class DataDescriptor:
 
     __slots__ = (
         "dtype",
-        "shape",
+        "_shape",
         "axes_edges",
         "axes_meshes",
         "edges_inherited",
         "meshes_inherited",
     )
     dtype: DTypeLike  # DTypeLike is already Optional
-    shape: ShapeLike | None
+    _shape: ShapeLike | None
     axes_edges: EdgesLike
     axes_meshes: EdgesLike
 
@@ -53,6 +53,18 @@ class DataDescriptor:
 
         self.edges_inherited = True
         self.meshes_inherited = True
+
+    @property
+    def shape(self) -> ShapeLike | None:
+        return self._shape
+
+    @shape.setter
+    def shape(self, value: ShapeLike | None):
+        if value is None:
+            self._shape = None
+            return
+
+        self._shape = tuple(int(el) for el in value)
 
     def __str__(self):
         return (
