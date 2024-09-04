@@ -349,8 +349,8 @@ class Labels:
                 "_plottitle",
                 "_index_values",
                 "_index_dict",
-                "_path",
-                "_node_hidden"
+                "_paths",
+                "_node_hidden",
             )
         kshort = {"_mark"}
         for _key in inherit:

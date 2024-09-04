@@ -394,23 +394,22 @@ class Output:
         self.node.fd.tainted = False
 
     def to_dict(self, *, label_from: str = "text") -> dict:
-        try:
-            data = self.data
-            shape = data.shape
-        except DagflowError:
-            return {"label": self.labels[label_from], "shape": "?"}
-
+        shape = self.dd.shape
+        size = self.dd.size
         ret = {
             "label": self.labels[label_from],
-            "shape": shape[0] if len(shape) == 1 else shape,
+            "shape": shape[0] if shape and len(shape) == 1 else shape,
         }
 
-        if data.size > 1:
+        if size > 1:
             ret["value"] = "…"
-            return ret
-
-        if data.size > 0:
-            ret["value"] = float(data.ravel()[0])
+        elif size==1:
+            try:
+                data = self.data
+            except DagflowError:
+                ret["value"] = "???"
+            else:
+                ret["value"] = float(data.ravel()[0])
 
         return ret
 

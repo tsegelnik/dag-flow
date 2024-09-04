@@ -25,7 +25,7 @@ def test_parameters_00(mode) -> None:
         sigma_in = sigma_in[:1]
         zeros_in = zeros_in[:1]
 
-    with Graph(debug=False, close=False) as graph:
+    with Graph(debug=False, close_on_exit=False) as graph:
         value = Array("variable", value_in, mode="store_weak", mark="v")
         central = Array("central", central_in, mark="v₀")
 
@@ -104,7 +104,7 @@ def test_parameters_00(mode) -> None:
 def test_parameters_01():
     vals = [1.0, 2.0, 3.0]
     val_init = 0.0
-    with Graph(debug=False, close=False):
+    with Graph(debug=False, close_on_exit=False):
         value = Array("variable", [val_init])
         par = Parameter(parent=None, value_output=value._output)
 

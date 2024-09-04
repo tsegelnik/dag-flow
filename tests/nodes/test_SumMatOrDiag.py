@@ -34,7 +34,7 @@ def test_SumMatOrDiag_01(dtype, debug_graph):
 
         sms = []
 
-        with Graph(close=True, debug=debug_graph) as graph:
+        with Graph(close_on_exit=True, debug=debug_graph) as graph:
             arrays = tuple(
                 Array(f"test {i}", array_in) for i, array_in in enumerate(arrays_in)
             )
@@ -83,7 +83,7 @@ def test_SumMatOrDiag_02(dtype, debug_graph):
     arrays_in = (in_array1, in_array2, in_matrix1, in_matrix2, in_matrix3)
 
     combinations = ((0, 1), (0, 3), (0, 4), (3, 0), (4, 0), (2, 3), (2, 4))
-    with Graph(close=False, debug=debug_graph):
+    with Graph(close_on_exit=False, debug=debug_graph):
         arrays = tuple(
             Array(f"test {i}", array_in) for i, array_in in enumerate(arrays_in)
         )

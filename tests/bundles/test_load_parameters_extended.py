@@ -74,7 +74,7 @@ def test_load_parameters(state, format, parameters, labels, replicate_indices, l
     else:
         storage = _load_parameters_from_dict(format, state, parameters, labels, replicate_indices)
 
-    for key, loaded_parameter in storage("parameter.all").walkitems():
+    for key, loaded_parameter in storage("parameters.all").walkitems():
         parameter, label = _get_parameter_value_label(parameters, labels, key, replicate_indices)
 
         loaded_value = loaded_parameter.to_dict()["value"]
@@ -82,7 +82,7 @@ def test_load_parameters(state, format, parameters, labels, replicate_indices, l
 
         assert parameter == loaded_value, "Loaded value is not equal to initial"
         assert label == loaded_label, "Loaded label is not equal to initial"
-        assert len(storage(f"parameter.{STATE_FORMAT_to_NS[(state, format)]}").keys()) > 0
+        assert len(storage(f"parameters.{STATE_FORMAT_to_NS[(state, format)]}").keys()) > 0
 
 
 @pytest.mark.parametrize("sigma_format", ["sigma_percent", "sigma_relative", "sigma_absolute"])
@@ -109,7 +109,7 @@ def test_load_parameters_constrained(
     else:
         storage = _load_parameters_from_dict(fmt, state, parameters, labels, replicate_indices)
 
-    for key, loaded_parameter in storage("parameter.all").walkitems():
+    for key, loaded_parameter in storage("parameters.all").walkitems():
         parameter, label = _get_parameter_value_label(parameters, labels, key, replicate_indices)
 
         parameter_value, parameter_error = parameter
@@ -133,4 +133,4 @@ def test_load_parameters_constrained(
             ), "Loaded sigma is not equal to initial (percent case)"
         assert parameter_value == loaded_value, "Loaded value is not equal to initial"
         assert f"[norm] {label}" == loaded_label, "Loaded label is not equal to initial"
-        assert len(storage(f"parameter.{STATE_FORMAT_to_NS[(state, fmt)]}").keys()) > 0
+        assert len(storage(f"parameters.{STATE_FORMAT_to_NS[(state, fmt)]}").keys()) > 0

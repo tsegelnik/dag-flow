@@ -25,7 +25,7 @@ def test_MatrixProductAB(dtype: str, diag_left: bool, diag_right: bool):
         right = diag(in_right[:size,:size])
         in_right = diag(right)
 
-    with Graph(close=True) as graph:
+    with Graph(close_on_exit=True) as graph:
         array_left = Array("Left", left)
         array_right = Array("Right", right)
 

@@ -28,7 +28,7 @@ def test_Exponential_01(testname, debug_graph, fcnname, dtype):
     else:
         raise RuntimeError()
 
-    with Graph(close=True, debug=debug_graph) as graph:
+    with Graph(close_on_exit=True, debug=debug_graph) as graph:
         arrays = tuple(
             Array(f"arr_{i}", array_in, label={"text": f"X axis {i}"})
             for i, array_in in enumerate(arrays_in)

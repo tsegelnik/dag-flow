@@ -123,7 +123,7 @@ cfg5 = {
 from pprint import pprint
 def test_load_parameters_v01():
     cfgs = (cfg1, cfg1a, cfg2, cfg3, cfg4, cfg5)
-    with Graph(close=True) as g:
+    with Graph(close_on_exit=True) as g:
         for i, cfg in enumerate(cfgs):
             vars = load_parameters(cfg)
             # print(cfg['state'])

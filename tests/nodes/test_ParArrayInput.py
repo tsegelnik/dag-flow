@@ -19,7 +19,7 @@ def test_ParArrayInput(dtype, parameters_mode, testname):
     values_new = arange(size, dtype=dtype) + 2
     names = tuple(f"par_{i:02d}" for i in range(size))
 
-    with Graph(close=True) as graph:
+    with Graph(close_on_exit=True) as graph:
         pars = Parameters.from_numbers(value=values_initial, names=names, dtype=dtype)
         arr = Array("new values", values_new)
         parinp = ParArrayInput(

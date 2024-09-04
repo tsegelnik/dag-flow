@@ -178,7 +178,7 @@ def get_format_processor(format):
 
 def get_label(key: tuple, labelscfg: dict) -> dict:
     try:
-        ret = labelscfg.any(key)
+        ret = labelscfg.get_any(key)
     except KeyError:
         pass
     else:
@@ -190,7 +190,7 @@ def get_label(key: tuple, labelscfg: dict) -> dict:
     for n in range(1, len(key) + 1):
         subkey = key[:-n]
         try:
-            lcfg = labelscfg.any(subkey)
+            lcfg = labelscfg.get_any(subkey)
         except KeyError:
             continue
 
@@ -210,6 +210,11 @@ def get_label(key: tuple, labelscfg: dict) -> dict:
         return ret
 
     return {}
+
+
+def _add_paths_from_labels(paths: list, cfg: NestedMKDict):
+    for _, cfg_label in cfg.walkdicts(ignorekeys=("value", "central", "sigma", "sigma_percent", "variable")):
+        paths.extend(cfg_label.get("paths"))
 
 
 def iterate_varcfgs(
@@ -275,7 +280,7 @@ def _load_parameters(
 
     ret = NestedMKDict(
         {
-            "parameter": {
+            "parameters": {
                 "all": {},
                 "constant": {},
                 "free": {},
@@ -288,7 +293,7 @@ def _load_parameters(
                 "nuisance_parts": {},
                 "nuisance": {},
             },
-            "parameter_node": {"all": {}, "constant": {}, "free": {}, "constrained": {}},
+            "parameter_groups": {"all": {}, "constant": {}, "free": {}, "constrained": {}},
         },
         sep=".",
     )
@@ -356,7 +361,7 @@ def _load_parameters(
             key_space="",
             process_keys=label_keys,
         )
-        matrix_array = Array("matrixtype", matrix, label=label_mat)
+        matrix_array = Array(matrixtype, matrix, label=label_mat)
 
         for subkey in subkeys:
             fullkey = key + subkey
@@ -371,21 +376,25 @@ def _load_parameters(
             kwargs["central"] = (vcentral := [])
             kwargs["sigma"] = (vsigma := [])
             kwargs["names"] = (names := [])
+            paths = []
             for name, vcfg in varcfg.walkdicts(ignorekeys=("label",)):
                 vvalue.append(vcfg["value"])
                 vcentral.append(vcfg["central"])
                 vsigma.append(vcfg["sigma"])
                 names.append(name)
                 processed_cfgs.add(fullkey + name)
+            _add_paths_from_labels(paths, varcfg)
+
 
             labelsub = format_dict(
-                label,
+                dict(label, name=".".join(fullkey)),
                 subkey=subkey_str,
                 space_key=f" {subkey_str}",
                 key_space=f"{subkey_str} ",
                 process_keys=label_keys,
             )
             labelsub["index_values"] = list(key + subkey)
+            labelsub["paths"] = paths
             pars[fullkey] = Parameters.from_numbers(label=labelsub, **kwargs)
 
     for key, varcfg in varcfgs.walkdicts(ignorekeys=("label",)):
@@ -403,22 +412,22 @@ def _load_parameters(
         else:
             targetkey = ("free",) + pathkey
 
-        ret[("parameter_node",) + targetkey] = par
-        ret[("parameter_node", "all") + pathkey] = par
+        ret[("parameter_group",) + targetkey] = par
+        ret[("parameter_group", "all") + pathkey] = par
 
-        ptarget = ("parameter",) + targetkey
-        target_all = ("parameter", "all") + pathkey
+        ptarget = ("parameters",) + targetkey
+        target_all = ("parameters", "all") + pathkey
         for subname, subpar in par.iteritems():
             ret[ptarget + subname] = subpar
             ret[target_all + subname] = subpar
             if par.is_constrained:
-                ret[("parameter", "central") + pathkey] = subpar.central_output
+                ret[("parameters", "central") + pathkey] = subpar.central_output
 
         if constraint := par.constraint:
             normpars_i = normpars.setdefault(key[0], [])
             normpars_i.append(constraint.normvalue_final)
 
-            ntarget = ("parameter", "normalized", path) + key
+            ntarget = ("parameters", "normalized", path) + key
             for subname, subpar in par.iteritems_norm():
                 ret[ntarget + subname] = subpar
 

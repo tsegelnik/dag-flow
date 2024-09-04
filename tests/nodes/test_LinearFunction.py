@@ -18,7 +18,7 @@ def test_LinearFunction_01(dtype, testname):
     x1 = arange(size, dtype=dtype)
     x2 = -x1
 
-    with Graph(close=True) as graph:
+    with Graph(close_on_exit=True) as graph:
         X1 = Array("x1", x1)
         X2 = Array("x2", x2)
         A = Array("a", array([a], dtype=dtype))

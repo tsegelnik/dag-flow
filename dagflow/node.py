@@ -50,6 +50,7 @@ class Node(NodeBase):
         "fcn",
         "_fcn_chain",
         "_functions",
+        "_n_calls",
     )
 
     _name: str
@@ -61,6 +62,7 @@ class Node(NodeBase):
 
     _metanode: ReferenceType | None
     _fd: FlagsDescriptor
+    _n_calls: int
 
     # Options
     _debug: bool
@@ -90,8 +92,8 @@ class Node(NodeBase):
 
         self._name = name
         self._allowed_kw_inputs = tuple(allowed_kw_inputs)
-        self._name = name
         self._fd = FlagsDescriptor(children=self.outputs, parents=self.inputs, **kwargs)
+        self._n_calls = 0
 
         self.graph = Graph.current() if graph is None else graph
         if debug is None and self.graph is not None:
@@ -125,6 +127,19 @@ class Node(NodeBase):
         return f"{{{self.name}}} {super().__str__()}"
 
     @classmethod
+    def from_args(cls, name, *positional_connectibles, kwargs: Mapping={}, **key_connectibles) -> Node:
+        # TODO:
+        #   - testing
+        #   - keyword connection syntax ([] or ())
+        #   - consistency with make_stored, replicate
+        instance = cls(name, **kwargs)
+        for connectible in positional_connectibles:
+            connectible >> instance
+        for key, connectible in key_connectibles.items():
+            connectible >> instance.inputs[key]
+        return instance
+
+    @classmethod
     def make_stored(
         cls, name: str, *args, label_from: Mapping | None = None, **kwargs
     ) -> tuple[Node | None, "NodeStorage"]:
@@ -132,7 +147,7 @@ class Node(NodeBase):
         if label_from is not None:
             label_from = NestedMKDict(label_from, sep=".")
             try:
-                label = label_from.any(name, object=True)
+                label = label_from.get_any(name, object=True)
             except KeyError as exc:
                 raise RuntimeError(f"Could not find label for {name}") from exc
             kwargs.setdefault("label", label)
@@ -318,6 +333,10 @@ class Node(NodeBase):
 
     def label(self) -> str | None:
         return self._labels.text
+
+    @property
+    def n_calls(self) -> int:
+        return self._n_calls
 
     #
     # Methods
@@ -522,10 +541,10 @@ class Node(NodeBase):
         input = self._add_input(iname, child_output=output, **input_kws)
         return input, output
 
-    def touch(self, force=False):
+    def touch(self, force_computation=False):
         if self.frozen:
             return
-        if not self.tainted and not force:
+        if not self.tainted and not force_computation:
             return
         ret = self.eval()
         self.fd.tainted = False  # self._always_tainted
@@ -558,11 +577,12 @@ class Node(NodeBase):
         pass
 
     def _eval(self):
+        self._n_calls += 1
         return self.fcn()
 
     def eval(self):
         if not self.closed:
-            raise UnclosedGraphError("Cannot evaluate the node!", node=self)
+            raise UnclosedGraphError("Cannot evaluate not closed node!", node=self)
         self.fd.being_evaluated = True
         try:
             ret = self._eval()
@@ -578,25 +598,25 @@ class Node(NodeBase):
             raise CriticalError("Unable to freeze tainted node!", node=self)
         self.fd.freeze()
 
-    def unfreeze(self, force: bool = False):
-        if not self.frozen and not force:
+    def unfreeze(self):
+        if not self.frozen:
             return
         self.fd.frozen = False
         if self.frozen_tainted:
             self.fd.frozen_tainted = False
-            self.taint(force=True)
+            self.taint()
 
-    def taint(self, *, caller: Input | None = None, force: bool = False):
+    def taint(self, *, caller: Input | None = None, force_computation: bool = False):
         self.logger.debug(f"Node '{self.name}': Taint...")
-        if self.tainted and not force:
+        if self.tainted and not force_computation:
             return
         if self.frozen:
             self.fd.frozen_tainted = True
             return
         self.fd.tainted = True
         self._on_taint(caller)
-        ret = self.touch() if (self._immediate or force) else None
-        self.taint_children(force=force)
+        ret = self.touch() if (self._immediate or force_computation) else None
+        self.taint_children()
         return ret
 
     def taint_children(self, **kwargs):

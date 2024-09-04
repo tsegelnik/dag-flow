@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-from orderedset import OrderedSet
+from ordered_set import OrderedSet
 
 from multikeydict.nestedmkdict import NestedMKDict
 from multikeydict.typing import Key, KeyLike, TupleKey
@@ -65,7 +65,7 @@ class NodeStorage(NestedMKDict):
 
         if not default_containers:
             return
-        for name in ("parameter", "stat", "nodes", "data", "inputs", "outputs"):
+        for name in ("parameters", "stat", "nodes", "data", "inputs", "outputs"):
             self.child(name)
 
     def plot(self, *args, **kwargs) -> None:

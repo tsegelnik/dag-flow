@@ -1,4 +1,4 @@
-from .arithmetic import Division, Product, Sum
+from .arithmetic import Division, Product, Sqrt, Square, Sum
 from .Array import Array
 from .ArraySum import ArraySum
 from .BinCenter import BinCenter
@@ -17,8 +17,10 @@ from .Interpolator import Interpolator
 from .InterpolatorGroup import InterpolatorGroup
 from .Jacobian import Jacobian
 from .LinearFunction import LinearFunction
+from .LogProdDiag import LogProdDiag
 from .ManyToOneNode import ManyToOneNode
 from .MatrixProductAB import MatrixProductAB
+from .MatrixProductDDt import MatrixProductDDt
 from .MatrixProductDVDt import MatrixProductDVDt
 from .MeshToEdges import MeshToEdges
 from .NormalizeCorrelatedVars import NormalizeCorrelatedVars
@@ -63,8 +65,10 @@ __all__ = [
     "Log",
     "Log10",
     "Log1p",
+    "LogProdDiag",
     "ManyToOneNode",
     "MatrixProductAB",
+    "MatrixProductDDt",
     "MatrixProductDVDt",
     "MeshToEdges",
     "NormalizeCorrelatedVars",
@@ -75,6 +79,8 @@ __all__ = [
     "RenormalizeDiag",
     "SegmentIndex",
     "Sin",
+    "Sqrt",
+    "Square",
     "Sum",
     "SumMatOrDiag",
     "SumSq",

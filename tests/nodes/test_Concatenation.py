@@ -14,7 +14,7 @@ def test_Concatenation_00(debug_graph):
     array3 = [6.0]
     arrays = (array1, array2, array3)
     array = concatenate(arrays)
-    with Graph(debug=debug_graph, close=True) as graph:
+    with Graph(debug=debug_graph, close_on_exit=True) as graph:
         inputs = [Array("array", array, mode="fill") for array in arrays]
         concat = Concatenation("concat")
         inputs >> concat
@@ -36,6 +36,8 @@ def test_Concatenation_00(debug_graph):
     assert all(data2 == datac[n1 : n1 + n2])
     assert all(data3 == datac[n1 + n2 : n1 + n2 + n3])
 
+    assert concat.sizes==(2,3,1)
+
     inputs[1].taint()
     assert concat.tainted == True
 
@@ -48,7 +50,7 @@ def test_Concatenation_01(debug_graph):
     array3 = linspace(10, 20, 100)
     arrays = (array1, array2, array3)
     array = concatenate(arrays)
-    with Graph(debug=debug_graph, close=True) as graph:
+    with Graph(debug=debug_graph, close_on_exit=True) as graph:
         inputs = [Array("array", array, mode="fill") for array in arrays]
         concat = Concatenation("concat")
         inputs >> concat

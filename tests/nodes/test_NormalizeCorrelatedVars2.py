@@ -33,7 +33,7 @@ def test_NormalizeCorrelatedVars2_00(dtype):
     inOffset = array((-10.0, 20.0, 30.0), dtype=dtype)
     inVec = inCentral + inOffset
     inNorm = full_like(inVec, -100)
-    with Graph(close=True) as graph:
+    with Graph(close_on_exit=True) as graph:
         var_matrix = Array('var_matrix', inV)
         var_diag = Array('var_diag', inD)
         Lmatrix = Cholesky('cholesky 1d')

@@ -12,7 +12,7 @@ from dagflow.typefunctions import check_inputs_number
 
 
 def test_inputs_number_00(debug_graph):
-    with Graph(close=True, debug=debug_graph):
+    with Graph(close_on_exit=True, debug=debug_graph):
         node = Dummy("node")
     with raises(TypeFunctionError):
         check_has_inputs(node)
@@ -20,7 +20,7 @@ def test_inputs_number_00(debug_graph):
 
 
 def test_inputs_number_01(testname, debug_graph):
-    with Graph(close=True, debug=debug_graph) as graph:
+    with Graph(close_on_exit=True, debug=debug_graph) as graph:
         arr1 = Array("arr1", [1, 2, 3])
         arr2 = Array("arr2", [3, 2, 1])
         ssum = Sum("sum")

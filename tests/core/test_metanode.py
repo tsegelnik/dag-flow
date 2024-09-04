@@ -15,7 +15,7 @@ def test_metanode_strategy_leading_node(testname):
     data2 = np.linspace(1, 2, 11, dtype="d") * np.pi
     data3 = np.linspace(2, 3, 11, dtype="d") * np.pi
     data4 = np.linspace(3, 4, 11, dtype="d") * np.pi
-    with Graph(close=True) as graph:
+    with Graph(close_on_exit=True) as graph:
         metanode = MetaNode()
         arr1 = Array("x1", data1)
         arr2 = Array("x2", data2)
@@ -45,7 +45,7 @@ def test_metanode_strategy_new_node(testname):
     data1 = np.linspace(0, 1, 11, dtype="d") * np.pi
     data2 = np.linspace(1, 2, 11, dtype="d") * np.pi
     data3 = np.linspace(2, 3, 11, dtype="d") * np.pi
-    with Graph(close=True) as graph:
+    with Graph(close_on_exit=True) as graph:
         metanode = MetaNode(strategy="NewNode", new_node_cls=Cos)
         arr1 = Array("x1", data1)
         arr2 = Array("x2", data2)

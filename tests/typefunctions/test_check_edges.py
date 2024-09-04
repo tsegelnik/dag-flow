@@ -25,7 +25,7 @@ from dagflow.typefunctions import copy_input_edges_to_output
     ),
 )
 def test_edges_00(testname, debug_graph, data, edgesdata):
-    with Graph(close=True, debug=debug_graph) as graph:
+    with Graph(close_on_exit=True, debug=debug_graph) as graph:
         edges = Array("edges", edgesdata).outputs["array"]
         arr1 = Array("arr1", array(data), edges=edges)
         arr2 = Array("arr2", 2 * array(data), edges=edges)
@@ -55,7 +55,7 @@ def test_edges_00(testname, debug_graph, data, edgesdata):
     ),
 )
 def test_edges_01(testname, debug_graph, data, edgesdataX, edgesdataY):
-    with Graph(close=True, debug=debug_graph) as graph:
+    with Graph(close_on_exit=True, debug=debug_graph) as graph:
         edgesX = Array("edgesX", edgesdataX).outputs["array"]
         edgesY = Array("edgesY", edgesdataY).outputs["array"]
         edges = [edgesX, edgesY]

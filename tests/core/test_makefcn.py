@@ -19,7 +19,7 @@ def test_makefcn_safe(testname, pass_params, pass_output):
     vals_new = [3.0, 4.0]
     names = ("a", "b")
 
-    with Graph(close=True) as graph:
+    with Graph(close_on_exit=True) as graph:
         pars = Parameters.from_numbers(value=vals_in, names=names)
         storage = NodeStorage(
             {"parameters": {"all": {"a": pars._pars[0], "b": {"IDX1": pars._pars[1]}}}}
@@ -63,7 +63,7 @@ def test_makefcn_nonsafe(testname, pass_params, pass_output):
     vals_new = [3.0, 4.0]
     names = ("a", "b.IDX1")
 
-    with Graph(close=True) as graph:
+    with Graph(close_on_exit=True) as graph:
         pars = Parameters.from_numbers(value=vals_in, names=names)
         storage = NodeStorage(
             {"parameters": {"all": {"a": pars._pars[0], "b": {"IDX1": pars._pars[1]}}}}

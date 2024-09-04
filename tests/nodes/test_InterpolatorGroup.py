@@ -36,7 +36,7 @@ def test_InterpolatorGroup(debug_graph, testname):
     xlabel = "Nodes for the interpolator"
     seed(10)
     metaint = MetaNode()
-    with Graph(debug=debug_graph, close=True) as graph:
+    with Graph(debug=debug_graph, close_on_exit=True) as graph:
         nc, nf = 10, 20
         coarseX = linspace(0, 10, nc + 1)
         fineX = linspace(-2, 12, nf + 1)

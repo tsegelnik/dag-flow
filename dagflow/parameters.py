@@ -7,7 +7,8 @@ from typing import TYPE_CHECKING
 from numpy import array, ndarray, zeros_like
 
 from .exception import InitializationError
-from .labels import inherit_labels
+from .labels import inherit_labels, repr_pretty
+from .lib import Square
 from .lib.Array import Array
 from .lib.Cholesky import Cholesky
 from .lib.CovmatrixFromCormatrix import CovmatrixFromCormatrix
@@ -69,10 +70,12 @@ class Parameter:
             self._view = None
         elif make_view:
             self._idx = idx
+            labels = self._common_output.node.labels.copy()
             try:
                 idxtuple = parent._names[idx]
                 idxname = ".".join(idxtuple)
-            except ValueError:
+                labels["paths"] = [labels["paths"][idx]]
+            except (ValueError, IndexError):
                 idxname = "???"
                 idxtuple = None
             self._view = View(
@@ -82,11 +85,11 @@ class Parameter:
                 length=1,
             )
             self._view.labels.inherit(
-                self._common_output.node.labels,
+                labels,
                 fmtlong=f"{{}} {idxname} [{idx}]",
             )
-            if idxtuple:
-                self._view.labels.index_values.extend(idxtuple)
+            # if idxtuple:
+            #     self._view.labels.index_values.extend(idxtuple)
             self._value_output = self._view.outputs[0]
             self._connectible_output = self._value_output
         else:
@@ -98,6 +101,8 @@ class Parameter:
 
     def __str__(self) -> str:
         return f"par v={self.value}"
+
+    _repr_pretty_ = repr_pretty
 
     @property
     def value(self) -> float | int:
@@ -245,6 +250,9 @@ class NormalizedGaussianParameter(Parameter):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, make_view=False, **kwargs)
 
+    def __str__(self) -> str:
+        return f"ngpar v={self.value}"
+
     @property
     def central(self) -> float:
         return 0.0
@@ -290,7 +298,7 @@ class Parameters:
     _value_node: Node
     _pars: list[Parameter]
     _names: tuple[tuple[str, ...], ...]
-    _norm_pars: list[Parameter]
+    _norm_pars: list[NormalizedGaussianParameter]
 
     _is_variable: bool
 
@@ -298,7 +306,7 @@ class Parameters:
 
     def __init__(
         self,
-        names: tuple[tuple[str, ...], ...],
+        names: Sequence[Sequence[str] | str],
         value: Node,
         *,
         variable: bool | None = None,
@@ -363,6 +371,9 @@ class Parameters:
     def parameters(self) -> list:
         return self._pars
 
+    def outputs(self) -> tuple[Output, ...]:
+        return tuple(par.output for par in self._pars)
+
     @property
     def norm_parameters(self) -> list:
         return self._norm_pars
@@ -398,16 +409,17 @@ class Parameters:
     def from_numbers(
         value: float | int | ArrayLike,
         *,
-        names: tuple[tuple[str, ...], ...] = ((),),
+        names: Sequence[Sequence[str] | str] = ((),),
         dtype: DTypeLike = "d",
         variable: bool | None = None,
         fixed: bool | None = None,
         label: Mapping[str, str] | None = None,
+        central: float | int | ArrayLike | None = None,
+        sigma: float | int | ArrayLike | None = None,
         **kwargs,
     ) -> Parameters:
         label = {"text": "parameter"} if label is None else dict(label)
         name: str = label.setdefault("name", "parameter")
-        has_constraint = kwargs.get("sigma", None) is not None
 
         if isinstance(value, (float, int)):
             value = (value,)
@@ -420,6 +432,7 @@ class Parameters:
                 f"Parameters.from_numbers: inconsistent values ({value}) and names ({names})"
             )
 
+        has_constraint = sigma is not None
         pars = Parameters(
             names,
             Array(
@@ -434,8 +447,17 @@ class Parameters:
         )
 
         if has_constraint:
+            if central is None:
+                central = value
             pars.set_constraint(
-                GaussianConstraint.from_numbers(parameters=pars, dtype=dtype, label=label, **kwargs)
+                GaussianConstraint.from_numbers(
+                    parameters=pars,
+                    dtype=dtype,
+                    label=label,
+                    central=central,
+                    sigma=sigma,
+                    **kwargs,
+                )
             )
             pars._close()
 
@@ -462,7 +484,7 @@ class GaussianConstraint(Constraint):
     central: Output
     sigma: Output
     normvalue: Output
-    sigma_total: Output
+    sigma_total: Output | None
 
     normvalue_final: Output
 
@@ -489,6 +511,7 @@ class GaussianConstraint(Constraint):
         correlation: Node | None = None,
         constrained: bool | None = None,
         free: bool | None = None,
+        provide_covariance: bool = False,
         **_,
     ):
         super().__init__(parameters=parameters)
@@ -534,6 +557,9 @@ class GaussianConstraint(Constraint):
             self._covariance_node >> self._cholesky_node
         elif sigma is not None:
             self._sigma_node = sigma
+            if provide_covariance:
+                self._covariance_node = Square(f"σ²({value_node.name})")
+                self._sigma_node >> self._covariance_node
         elif covariance is not None:
             self._cholesky_node = Cholesky(f"L({value_node.name})")
             self._sigma_node = self._cholesky_node
@@ -572,7 +598,7 @@ class GaussianConstraint(Constraint):
         self.central >> self._norm_node.inputs["central"]
         self.sigma >> self._norm_node.inputs["matrix"]
 
-        for nodename in ("_cholesky_node", "_covariance_node", "_norm_node"):
+        for nodename in ("_cholesky_node", "_covariance_node", "_norm_node", "_sigma_node"):
             if cnode := getattr(self, nodename):
                 cnode.labels.inherit(self._pars._value_node.labels, fields=("index_values",))
 
@@ -621,8 +647,9 @@ class GaussianConstraint(Constraint):
         sigma: float | Sequence[float],
         label: dict[str, str] | None = None,
         dtype: DTypeLike = "d",
+        correlation: ndarray | Node | Sequence[Sequence[float | int]] | None = None,
         **kwargs,
-    ) -> Parameters:
+    ) -> GaussianConstraint:
         label = {"text": "gaussian parameter"} if label is None else dict(label)
         name = label.setdefault("name", "parameter")
 
@@ -635,22 +662,41 @@ class GaussianConstraint(Constraint):
             f"{name}_central",
             array(central, dtype=dtype),
             label=inherit_labels(label, fmtlong="central: {}", fmtshort="c({})"),
-            mode="store_weak",
         )
 
         node_sigma = Array(
             f"{name}_sigma",
             array(sigma, dtype=dtype),
             label=inherit_labels(label, fmtlong="sigma: {}", fmtshort="σ({})"),
-            mode="store_weak",
         )
 
-        return GaussianConstraint(central=node_central, sigma=node_sigma, **kwargs)
+        match correlation:
+            case ndarray() | list() | tuple():
+                node_cor = Array(
+                    f"{name}_correlation",
+                    array(correlation, dtype=dtype),
+                    label=inherit_labels(label, fmtlong="correlations: {}", fmtshort="C({})"),
+                )
+            case Node():
+                node_cor = correlation
+            case None:
+                node_cor = None
+            case _:
+                raise RuntimeError(f"Unknown type for correlation: {type(correlation).__name__}")
+
+        return GaussianConstraint(
+            central=node_central, sigma=node_sigma, correlation=node_cor, **kwargs
+        )
 
 
-def GaussianParameters(names: tuple[tuple[str]], value: Node, *args, **kwargs) -> Parameters:
+def GaussianParameters(
+    names: Sequence[Sequence[str] | str], value: Node, *args, **kwargs
+) -> Parameters:
     pars = Parameters(names, value, close=False)
     pars.set_constraint(GaussianConstraint(*args, parameters=pars, **kwargs))
     pars._close()
 
     return pars
+
+
+AnyGaussianParameter = GaussianParameter | NormalizedGaussianParameter

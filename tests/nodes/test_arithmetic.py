@@ -1,24 +1,21 @@
 #!/usr/bin/env python
-from numpy import arange
-from numpy import sum
+
+import numpy
+from numpy import allclose, arange, linspace, sum
 from pytest import mark
 
+from dagflow import lib
 from dagflow.graph import Graph
 from dagflow.graphviz import savegraph
-from dagflow.lib import Array
-from dagflow.lib import Division
-from dagflow.lib import Product
-from dagflow.lib import Sum
+from dagflow.lib import Array, Division, Product, Sum
 
 
 @mark.parametrize("dtype", ("d", "f"))
 def test_Sum_01(testname, debug_graph, dtype):
     arrays_in = tuple(arange(12, dtype=dtype) * i for i in (1, 2, 3))
 
-    with Graph(close=True, debug=debug_graph) as graph:
-        arrays = tuple(
-            Array(f"arr_{i}", array_in) for i, array_in in enumerate(arrays_in)
-        )
+    with Graph(close_on_exit=True, debug=debug_graph) as graph:
+        arrays = tuple(Array(f"arr_{i}", array_in) for i, array_in in enumerate(arrays_in))
         sm = Sum("sum")
         arrays >> sm
 
@@ -44,10 +41,8 @@ def test_Sum_01(testname, debug_graph, dtype):
 def test_Product_01(testname, debug_graph, dtype):
     arrays_in = tuple(arange(12, dtype=dtype) * i for i in (1, 2, 3))
 
-    with Graph(close=True, debug=debug_graph) as graph:
-        arrays = tuple(
-            Array(f"arr_{i}", array_in) for i, array_in in enumerate(arrays_in)
-        )
+    with Graph(close_on_exit=True, debug=debug_graph) as graph:
+        arrays = tuple(Array(f"arr_{i}", array_in) for i, array_in in enumerate(arrays_in))
         prod = Product("prod")
         arrays >> prod
 
@@ -72,10 +67,8 @@ def test_Product_01(testname, debug_graph, dtype):
 def test_Division_01(testname, debug_graph, dtype):
     arrays_in = tuple(arange(12, dtype=dtype) * i + 1 for i in (1, 2, 3))
 
-    with Graph(close=True, debug=debug_graph) as graph:
-        arrays = tuple(
-            Array(f"arr_{i}", array_in) for i, array_in in enumerate(arrays_in)
-        )
+    with Graph(close_on_exit=True, debug=debug_graph) as graph:
+        arrays = tuple(Array(f"arr_{i}", array_in) for i, array_in in enumerate(arrays_in))
         div = Division("division")
         arrays >> div
 
@@ -94,3 +87,32 @@ def test_Division_01(testname, debug_graph, dtype):
     assert div.tainted == False
 
     savegraph(graph, f"output/{testname}.png")
+
+
+@mark.parametrize("dtype", ("d", "f"))
+@mark.parametrize("fcnname", ("square", "sqrt"))
+def test_Powers_01(testname, debug_graph, fcnname, dtype):
+    fcn_np = getattr(numpy, fcnname)
+    fcn_node = getattr(lib, fcnname.capitalize())
+    if fcnname in ("square"):
+        arrays_in = tuple(linspace(-10, 10, 101, dtype=dtype) * i for i in (1, 2, 3))
+    else:
+        arrays_in = tuple(linspace(0, 10, 101, dtype=dtype) * i for i in (1, 2, 3))
+
+    with Graph(close_on_exit=True, debug=debug_graph) as graph:
+        arrays = tuple(
+            Array(f"arr_{i}", array_in, label={"text": f"X axis {i}"})
+            for i, array_in in enumerate(arrays_in)
+        )
+        node = fcn_node(fcnname)
+        arrays >> node
+
+    outputs = node.outputs
+    ress = fcn_np(arrays_in)
+
+    assert node.tainted == True
+    assert all(output.dd.dtype == dtype for output in outputs)
+    assert allclose(tuple(outputs.iter_data()), ress, rtol=0, atol=0)
+    assert node.tainted == False
+
+    savegraph(graph, f"output/{testname}.png", show="full")

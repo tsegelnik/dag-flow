@@ -114,7 +114,7 @@ class NodeBase:
 
     def __rshift__(
         self,
-        other: Input | Node | Sequence[Input] | Mapping[str, Output] | NestedMKDict,
+        other: Input | Node | NodeBase | Sequence[Input] | Mapping[str, Output] | NestedMKDict,
     ):
         """
         self >> other
@@ -138,10 +138,8 @@ class NodeBase:
                     raise ConnectionError(f"Unable to find input {name}", node=self) from e
                 else:
                     output >> input
-        elif isinstance(other, Node):
-            return rshift(self, other)
         elif isinstance(other, NodeBase):
-            self.__rshift_sequence(tuple(iter(other)))
+            return rshift(self, other)
         else:
             raise ConnectionError(f"Unsupported >>RHS type: {type(other)}", node=self)
 

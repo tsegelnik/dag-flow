@@ -13,7 +13,7 @@ def test_cache_copy(testname, debug_graph, dtype):
     array_in_1 = linspace(-10, 10, 101, dtype=dtype)
     array_in_2 = geomspace(0.00001, 10, 101, dtype=dtype)
 
-    with Graph(close=True, debug=debug_graph) as graph:
+    with Graph(close_on_exit=True, debug=debug_graph) as graph:
         array1 = Array("arr1", array_in_1)
         array2 = Array("arr2", array_in_2)
 

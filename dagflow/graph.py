@@ -14,28 +14,31 @@ class Graph(GraphBase):
     __slots__ = (
         "_label",
         "_name",
-        "_close",
+        "_close_on_exit",
         "_strict",
         "_closed",
+        "_nodes_closed",
         "_debug",
         "_logger",
     )
 
     _label: str | None
     _name: str
-    _close: bool
+    _close_on_exit: bool
     _closed: bool
+    _nodes_closed: bool
     _debug: bool
     _logger: Logger
 
-    def __init__(self, *args, close: bool = False, strict: bool = True, **kwargs):
+    def __init__(self, *args, close_on_exit: bool = False, strict: bool = True, **kwargs):
         super().__init__(*args)
         self._label = kwargs.pop("label", None)
         self._name = kwargs.pop("name", "graph")
         self._debug = kwargs.pop("debug", False)
-        self._close = close
+        self._close_on_exit = close_on_exit
         self._strict = strict
         self._closed = False
+        self._nodes_closed = False
         # init or get default logger
         self._logger = get_logger(
             filename=kwargs.pop("logfile", None),
@@ -80,17 +83,19 @@ class Graph(GraphBase):
         It is possible to pass the node class via the `nodeclass` arg
         (default: `Node`)
         """
-        if not self.closed:
-            from .node import Node
+        if self.closed:
+            raise ClosedGraphError(node=name)
 
-            return kwargs.pop("nodeclass", Node)(name, graph=self, **kwargs)
-        raise ClosedGraphError(node=name)
+        from .node import Node
+
+        return kwargs.pop("nodeclass", Node)(name, graph=self, **kwargs)
 
     def add_nodes(self, nodes, **kwargs):
         """Adds nodes"""
-        if not self.closed:
-            return (self.add_node(node, **kwargs) for node in nodes)
-        raise ClosedGraphError(node=nodes)
+        if self.closed:
+            raise ClosedGraphError(node=nodes)
+
+        return tuple(self.add_node(node, **kwargs) for node in nodes)
 
     def print(self):
         print(f"Graph with {len(self._nodes)} nodes")
@@ -102,22 +107,28 @@ class Graph(GraphBase):
         if self._closed:
             return True
         self.logger.debug(f"Graph '{self.name}': Closing...")
+
+        if self._nodes_closed:
+            nodes_to_process = self._new_nodes
+        else:
+            nodes_to_process = self._nodes
+
         self.logger.debug(f"Graph '{self.name}': Update types...")
-        for node in self._nodes:
+        for node in nodes_to_process:
             try:
                 node.update_types()
             except ClosingError:
                 if strict:
                     raise
         self.logger.debug(f"Graph '{self.name}': Allocate memory...")
-        for node in self._nodes:
+        for node in nodes_to_process:
             try:
                 node.allocate(**kwargs)
             except ClosingError:
                 if strict:
                     raise
         self.logger.debug(f"Graph '{self.name}': Closing nodes...")
-        for node in self._nodes:
+        for node in nodes_to_process:
             try:
                 self._closed = node.close(**kwargs)
             except ClosingError:
@@ -127,6 +138,10 @@ class Graph(GraphBase):
                 break
         else:
             self._closed = True
+
+        self._clear_new_nodes_list()
+        self._nodes_closed = True
+
         if strict and not self._closed:
             raise UnclosedGraphError("The graph is still open!")
         self.logger.debug(
@@ -134,15 +149,31 @@ class Graph(GraphBase):
         )
         return self._closed
 
-    def open(self, force: bool = False) -> bool:
+    def open(
+        self,
+        force: bool = False,
+        *,
+        close_on_exit: bool = True,
+        open_nodes: bool = False
+    ) -> Graph:
         """Opens the graph recursively"""
+        self._close_on_exit = close_on_exit
+
         if not self._closed and not force:
-            return True
+            return self
+
         self.logger.debug(f"Graph '{self.name}': Opening...")
-        self._closed = not all(node.open(force) for node in self._nodes)
+
+        if open_nodes:
+            self._closed = not all(node.open(force) for node in self._nodes)
+            self._nodes_closed = False
+        else:
+            self._closed = False
+
         if self._closed:
-            raise UnclosedGraphError("The graph is still open!")
-        return not self._closed
+            raise UnclosedGraphError("The graph is still closed!")
+
+        return self
 
     def build_index_dict(self, index):
         for node in self:
@@ -166,7 +197,7 @@ class Graph(GraphBase):
         if exc_val is not None:
             raise exc_val
 
-        if self._close:
+        if self._close_on_exit:
             self.close(strict=self._strict)
 
 

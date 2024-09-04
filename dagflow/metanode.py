@@ -172,6 +172,7 @@ class MetaNode(NodeBase):
         *,
         inputs_pos: bool = False,
         outputs_pos: bool = False,
+        outputs_pos_fmt: str | None = None,
         kw_inputs: TPairsOrDict = [],
         kw_inputs_optional: TPairsOrDict = [],
         kw_outputs: TPairsOrDict = [],
@@ -191,7 +192,7 @@ class MetaNode(NodeBase):
         if inputs_pos:
             self._import_pos_inputs(node)
         if outputs_pos:
-            self._import_pos_outputs(node)
+            self._import_pos_outputs(node, namefmt = outputs_pos_fmt)
         self._import_kw_inputs(node, kw_inputs, merge=merge_inputs)
         if kw_inputs_optional:
             self._import_kw_inputs(node, kw_inputs_optional, merge=merge_inputs, optional=True)
@@ -216,7 +217,13 @@ class MetaNode(NodeBase):
         for input in node.inputs:
             self.inputs.add(input, positional=True, keyword=keyword)
 
-    def _import_pos_outputs(self, node: Node, *, keyword: bool = True) -> None:
+    def _import_pos_outputs(
+        self,
+        node: Node,
+        *,
+        namefmt: str | None = None,
+        keyword: bool = True
+    ) -> None:
         if self._strategy == "LeadingNode" and self.leading_node is not None:
             keyword = False
         elif self._node_outputs_pos is not None:
@@ -224,7 +231,12 @@ class MetaNode(NodeBase):
         else:
             self._node_outputs_pos = node
         for output in node.outputs:
-            self.outputs.add(output, positional=True, keyword=keyword)
+            self.outputs.add(
+                output,
+                positional=True,
+                name = namefmt and namefmt.format(output.name),
+                keyword=keyword
+            )
 
     def _import_kw_inputs(
         self,

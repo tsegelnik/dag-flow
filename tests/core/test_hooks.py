@@ -34,7 +34,7 @@ class ThreeInputsSum(ManyToOneNode):
 
 
 def test_00(debug_graph):
-    with Graph(debug=debug_graph, close=True):
+    with Graph(debug=debug_graph, close_on_exit=True):
         arr = Array("arr", arange(3, dtype="i"))  # [0, 1, 2]
         node = ThreeInputsSum("threesum")
         for _ in range(3):
@@ -46,7 +46,7 @@ def test_00(debug_graph):
 
 
 def test_01(debug_graph):
-    with Graph(debug=debug_graph, close=True):
+    with Graph(debug=debug_graph, close_on_exit=True):
         arr = Array("arr", arange(3, dtype="i"))  # [0, 1, 2]
         ws = WeightedSum("weightedsum")
         (arr, arr) >> ws

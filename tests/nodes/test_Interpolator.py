@@ -28,7 +28,7 @@ def test_interpolation_linear_01(debug_graph, testname, k, b, fine_x_mode):
 
     ycX = k * coarseX + b
 
-    with Graph(debug=debug_graph, close=True) as graph:
+    with Graph(debug=debug_graph, close_on_exit=True) as graph:
         coarse = Array("coarse", coarseX)
         fine = Array("fine", fineX)
         yc = Array("yc", ycX)
@@ -58,7 +58,7 @@ def test_interpolation_linear_02(debug_graph, testname):
     fineX = linspace(-0.1, 0.1, nf + 1)
     shuffle(fineX)
 
-    with Graph(debug=debug_graph, close=True) as graph:
+    with Graph(debug=debug_graph, close_on_exit=True) as graph:
         coarse = Array("coarse", coarseX)
         fine = Array("fine", fineX)
         ssin = Sin("sin")
@@ -89,7 +89,7 @@ def test_interpolation_ndim(debug_graph, testname, shape):
     fineX = linspace(-0.1, 0.1, nf).reshape(shape)
     shuffle(fineX)
 
-    with Graph(debug=debug_graph, close=True) as graph:
+    with Graph(debug=debug_graph, close_on_exit=True) as graph:
         coarse = Array("coarse", coarseX)
         fine = Array("fine", fineX)
         ssin = Sin("sin")
@@ -131,7 +131,7 @@ def test_interpolation_log_01(debug_graph, testname, k, b, fine_x_mode):
 
     ycX = log(k * coarseX + b)
 
-    with Graph(debug=debug_graph, close=True) as graph:
+    with Graph(debug=debug_graph, close_on_exit=True) as graph:
         coarse = Array("coarse", coarseX)
         fine = Array("fine", fineX)
         yc = Array("yc", ycX)
@@ -173,7 +173,7 @@ def test_interpolation_logx_01(debug_graph, testname, k, b, fine_x_mode):
     shuffle(fineX)
     ycX = k * log(coarseX) + b
 
-    with Graph(debug=debug_graph, close=True) as graph:
+    with Graph(debug=debug_graph, close_on_exit=True) as graph:
         coarse = Array("coarse", coarseX)
         fine = Array("fine", fineX)
         yc = Array("yc", ycX)
@@ -214,7 +214,7 @@ def test_interpolation_exp_01(debug_graph, testname, k, b, fine_x_mode):
     shuffle(fineX)
     ycX = exp(k * coarseX + b)
 
-    with Graph(debug=debug_graph, close=True) as graph:
+    with Graph(debug=debug_graph, close_on_exit=True) as graph:
         coarse = Array("coarse", coarseX)
         fine = Array("fine", fineX)
         yc = Array("yc", ycX)
@@ -264,7 +264,7 @@ def test_interpolation_lrn_01(debug_graph, testname, k, b, method: str, fine_x_m
 
     shuffle(fineX)
 
-    with Graph(debug=debug_graph, close=True) as graph:
+    with Graph(debug=debug_graph, close_on_exit=True) as graph:
         coarse = Array("coarse", coarseX)
         fine = Array("fine", fineX)
         yc = Array("yc", ycX)
@@ -330,7 +330,7 @@ def test_interpolation_extrapolation_strategy(debug_graph, testname, k, strategy
     shuffle(fineX)
     ycX = k * coarseX + b
 
-    with Graph(debug=debug_graph, close=True) as graph:
+    with Graph(debug=debug_graph, close_on_exit=True) as graph:
         coarse = Array("coarse", coarseX)
         fine = Array("fine", fineX)
         yc = Array("yc", ycX)
@@ -374,7 +374,7 @@ def test_interpolation_exception_01(debug_graph):
     from random import choice
     from string import ascii_lowercase
 
-    with Graph(debug=debug_graph, close=False):
+    with Graph(debug=debug_graph, close_on_exit=False):
         with raises(InitializationError):
             Interpolator(
                 "interpolator",
@@ -403,7 +403,7 @@ def test_interpolation_exception_02(debug_graph):
     fineX = linspace(-2, 12, nf + 1)
     ycX = k * coarseX + b
 
-    with Graph(debug=debug_graph, close=True):
+    with Graph(debug=debug_graph, close_on_exit=True):
         coarse = Array("coarse", coarseX)
         fine = Array("fine", fineX)
         yc = Array("yc", ycX)

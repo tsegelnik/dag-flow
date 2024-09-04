@@ -24,7 +24,7 @@ def test_Trigonometry_01(testname, debug_graph, fcnname, dtype):
     else:
         arrays_in = tuple(linspace(-1, 1, 101, dtype=dtype)/i for i in (1, 2, 3))
 
-    with Graph(close=True, debug=debug_graph) as graph:
+    with Graph(close_on_exit=True, debug=debug_graph) as graph:
         arrays = tuple(
             Array(f"arr_{i}", array_in, label={
                 'text': f'X axis {i}'

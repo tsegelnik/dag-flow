@@ -5,7 +5,7 @@ latexdatax
 matplotlib
 numba
 numpy
-orderedset
+ordered-set
 pandas
 pygraphviz
 pytest

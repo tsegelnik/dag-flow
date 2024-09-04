@@ -22,10 +22,9 @@ if TYPE_CHECKING:
 
 class MatrixProductDVDt(Node):
     """
-    Compute matrix product `C=L@D@Lᵀ`,
-    where `L` is a matrix and `D` is a diagonal matrix (maybe 1d array).
-
-    The node refers to the LDLT decomposition.
+    Compute matrix product `C=D@V@Dᵀ`,
+    where `D` is a matrix and `V` is a square matrix.
+    `V` maybe 1d array representing the diagonal of the diagonal matrix.
     """
 
     __slots__ = ("_left", "_square", "_out", "_buffer")
@@ -41,7 +40,7 @@ class MatrixProductDVDt(Node):
         self._square = self._add_input("square")
         self._out = self._add_output("result")
         self._functions.update({"diagonal": self._fcn_diagonal, "square": self._fcn_square})
-        self._labels.setdefault("mark", "LDLᵀ")
+        self._labels.setdefault("mark", "DVDᵀ")
 
     def _fcn_diagonal(self):
         left = self._left.data

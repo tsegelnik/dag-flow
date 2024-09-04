@@ -19,7 +19,7 @@ from dagflow.lib.RenormalizeDiag import RenormalizeDiag
 def test_RenormalizeDiag(testname, debug_graph, ndiag, dtype, mode, scale, debug=True):
     size = 4
     matrix = arange(size**2, dtype=dtype).reshape(size, size)
-    with Graph(close=True, debug=debug_graph) as graph:
+    with Graph(close_on_exit=True, debug=debug_graph) as graph:
         array_matrix = Array("matrix", matrix)
         scale_diag = Array("scale", [scale])
 

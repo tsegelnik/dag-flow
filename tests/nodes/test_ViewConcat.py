@@ -27,7 +27,7 @@ def test_ViewConcat_00(closemode):
     array = np.concatenate((array1, array2, array3))
     arrays = (array1, array2, array3)
     n1, n2, _ = (a.size for a in arrays)
-    with Graph(debug=debug, close=closegraph) as graph:
+    with Graph(debug=debug, close_on_exit=closegraph) as graph:
         inputs = [Array('array', array, mode='fill') for array in arrays]
         concat = ViewConcat("concat")
         view = View("view")
