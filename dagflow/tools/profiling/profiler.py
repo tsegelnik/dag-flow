@@ -55,6 +55,7 @@ class Profiler(metaclass=ABCMeta):
         "_estimations_table",
         "_allowed_groupby",
         "_default_agg_funcs",
+        "_default_sort_col",
         "_agg_aliases",
         "_column_aliases"
     )
@@ -65,6 +66,7 @@ class Profiler(metaclass=ABCMeta):
     _estimations_table: DataFrame
     _allowed_groupby: tuple[list[str] | str, ...]
     _default_agg_funcs: tuple[str | Callable, ...]
+    _default_sort_col: str
     _column_aliases: dict[str | Callable, str]
     _agg_aliases: dict[str, str | Callable]
 
@@ -274,13 +276,13 @@ class Profiler(metaclass=ABCMeta):
     @abstractmethod
     def make_report(
         self,
-        group_by: str | tuple[str] | None,
+        group_by: str | list[str] | None,
         agg_funcs: Sequence[str] | None,
         sort_by: str | None
     ) -> DataFrame:
         """Make a report table. \n
         Note: Since the report table is just a `Pandas.DataFrame`,
-        you can call Pandas methods like `.to_csv()` or `to_excel()`
+        you can call Pandas methods like `.to_csv()` or `.to_excel()`
         to export your data in appropriate format.
         """
         if not agg_funcs:
@@ -289,15 +291,14 @@ class Profiler(metaclass=ABCMeta):
         sort_by = self._col_from_alias(sort_by)
         report = self._estimations_table.copy()
         if group_by is None:
-            report.sort_values(sort_by or 'time', ascending=False,
-                               ignore_index=True, inplace=True)
+            sort_by = sort_by or self._default_sort_col
         else:
             grouped = report.groupby(group_by, as_index=False)
             report = self._aggregate_df(grouped, group_by, agg_funcs)
             if sort_by is None:
                 sort_by = self._col_from_alias( agg_funcs[0] )
-            report.sort_values(sort_by, ascending=False,
-                               ignore_index=True, inplace=True)
+        report.sort_values(sort_by, ascending=False,
+                           ignore_index=True, inplace=True)
         return report
 
     def _normalize(self, df: DataFrame) -> DataFrame:
@@ -314,7 +315,7 @@ class Profiler(metaclass=ABCMeta):
     def print_report(
         self,
         rows: int | None,
-        group_by: str | tuple[str] | None,
+        group_by: str | list[str] | None,
         agg_funcs: Sequence[str] | None,
         sort_by: str | None
     ) -> DataFrame:

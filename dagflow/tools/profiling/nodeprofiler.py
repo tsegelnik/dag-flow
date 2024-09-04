@@ -24,8 +24,9 @@ class NodeProfiler(Profiler):
         sinks: Sequence[Node] = (),
         n_runs: int = 10_000
     ):
-        self._allowed_groupby = _ALLOWED_GROUPBY
         super().__init__(target_nodes, sources, sinks, n_runs)
+        self._allowed_groupby = _ALLOWED_GROUPBY
+        self._default_sort_col = "time"
 
     @classmethod
     def estimate_node(cls, node: Node, n_runs: int = 10_000):

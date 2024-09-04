@@ -23,7 +23,8 @@ class MemoryProfiler(Profiler):
         sinks: Sequence[Node]=()
     ):
         super().__init__(target_nodes, sources, sinks, n_runs=1)
-    
+        self._default_sort_col = 'size'
+
     def _touch_nodes(self):
         for node in self._target_nodes:
             node.eval()
@@ -75,7 +76,7 @@ class MemoryProfiler(Profiler):
 
     def make_report(
         self,
-        group_by: str | tuple[str] | None,
+        group_by: str | list[str] | None,
         agg_funcs: Sequence[str] | None,
         sort_by: str | None
     ) -> DataFrame:
@@ -85,9 +86,9 @@ class MemoryProfiler(Profiler):
     def print_report(
         self,
         rows: int | None,
-        group_by: str | None,
+        group_by: str | list[str] | None,
         agg_funcs: Sequence[str] | None,
-        sort_by
+        sort_by: str | None
     ) -> DataFrame:
         raise NotImplementedError
         return super().print_report(rows, group_by, agg_funcs, sort_by)

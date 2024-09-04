@@ -42,6 +42,7 @@ class FrameworkProfiler(Profiler):
             column_name='t_single_by_node'
             )
         self._default_agg_funcs = ("count", "single", "sum", "t_single_by_node")
+        self._default_sort_col = "time"
         if not (self._sources and self._sinks):
             self._reveal_source_sink()
 
