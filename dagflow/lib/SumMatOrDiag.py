@@ -16,6 +16,7 @@ from ..typefunctions import (
 
 @njit(cache=True)
 def _settodiag1(inarray: NDArray, outmatrix: NDArray):
+    outmatrix[:] = 0
     for i in range(inarray.size):
         outmatrix[i, i] = inarray[i]
 

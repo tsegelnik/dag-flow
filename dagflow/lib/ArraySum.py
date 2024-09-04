@@ -29,4 +29,4 @@ class ArraySum(OneToOneNode):
 
     def _fcn(self):
         for inp, out in zip(self.inputs, self.outputs):
-            out.data[0] = inp.data.sum()
+            out.data[:] = inp.data.sum()

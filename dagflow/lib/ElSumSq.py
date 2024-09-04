@@ -16,7 +16,7 @@ def _sumsq(data: NDArray, out: NDArray):
     sm = 0.0
     for v in data:
         sm += v * v
-    out[0] += sm
+    out[:] += sm
 
 
 class ElSumSq(Node):
@@ -31,7 +31,7 @@ class ElSumSq(Node):
 
     def _fcn(self):
         out = self.outputs["result"].data
-        out[0] = 0.0
+        out[:] = 0.0
         for _input in self.inputs.iter_data():
             _sumsq(_input, out)
 

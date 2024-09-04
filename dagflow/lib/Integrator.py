@@ -44,6 +44,7 @@ def _integrate2d(result: NDArray, data: NDArray, ordersX: NDArray, ordersY: NDAr
     puts the result into `result`. The 2-dimensional version of integration.
     """
     iprev = 0
+    result[:] = 0
     for i, orderx in enumerate(ordersX):
         inext = iprev + orderx
         jprev = 0
@@ -63,6 +64,7 @@ def _integrate2to1d(result: NDArray, data: NDArray, orders: NDArray):
     .. note:: Note that the x dimension drop uses a matrix transpose before
     """
     iprev = 0
+    result[:] = 0
     for i, orderx in enumerate(orders):
         inext = iprev + orderx
         result[i] = data[iprev:inext, :].sum()
