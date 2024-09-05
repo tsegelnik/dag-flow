@@ -1,4 +1,3 @@
-#!/usr/bin/env python
 
 from numpy import allclose, geomspace, linspace
 from pytest import mark

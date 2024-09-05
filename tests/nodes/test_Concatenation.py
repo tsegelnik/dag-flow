@@ -1,4 +1,3 @@
-#!/usr/bin/env python
 from numpy import concatenate
 from numpy import linspace
 

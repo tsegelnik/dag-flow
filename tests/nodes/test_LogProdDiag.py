@@ -1,4 +1,3 @@
-#!/usr/bin/env python
 from numpy import allclose, array, diag, log, finfo
 from pytest import mark, raises
 

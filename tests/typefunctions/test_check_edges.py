@@ -1,4 +1,3 @@
-#!/usr/bin/env python
 from numpy import array
 from pytest import mark
 

@@ -1,4 +1,3 @@
-#!/usr/bin/env python
 from numpy import array
 from numpy import floating
 from numpy import integer

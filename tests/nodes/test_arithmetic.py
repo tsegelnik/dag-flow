@@ -1,4 +1,3 @@
-#!/usr/bin/env python
 
 import numpy
 from numpy import allclose, arange, linspace, sum

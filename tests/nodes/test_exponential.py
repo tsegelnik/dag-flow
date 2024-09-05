@@ -1,4 +1,3 @@
-#!/usr/bin/env python
 import numpy
 from matplotlib.pyplot import close
 from numpy import allclose

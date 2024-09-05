@@ -1,4 +1,3 @@
-#!/usr/bin/env python
 from numpy import allclose, arange, diag
 from pytest import mark, raises
 

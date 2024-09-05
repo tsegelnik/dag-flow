@@ -1,4 +1,3 @@
-#!/usr/bin/env python
 from numpy import array, allclose
 from pytest import mark
 

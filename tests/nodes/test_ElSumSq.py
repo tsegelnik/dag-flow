@@ -1,4 +1,3 @@
-#!/usr/bin/env python
 from numpy import arange
 from numpy import sum
 from pytest import mark

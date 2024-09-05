@@ -1,4 +1,3 @@
-#!/usr/bin/env python
 from matplotlib import pyplot as plt
 from numpy import allclose, finfo, geomspace, linspace, ndarray, ones_like, zeros_like
 from pytest import mark
