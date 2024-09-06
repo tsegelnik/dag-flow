@@ -212,8 +212,8 @@ def get_label(key: tuple, labelscfg: dict) -> dict:
     return {}
 
 
-def _add_paths_from_labels(paths: list, cfg: NestedMKDict) -> list[str]:
-    for name, cfg_label in cfg.walkdicts(ignorekeys=("value", "central", "sigma", "sigma_percent", "variable")):
+def _add_paths_from_labels(paths: list, cfg: NestedMKDict):
+    for _, cfg_label in cfg.walkdicts(ignorekeys=("value", "central", "sigma", "sigma_percent", "variable")):
         paths.extend(cfg_label.get("paths"))
 
 

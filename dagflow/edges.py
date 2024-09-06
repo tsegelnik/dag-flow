@@ -131,7 +131,7 @@ class EdgeContainer:
         return self._all_edges
 
     @property
-    def pos_edges(self) -> list:
+    def pos_edges(self) -> dict:
         return self._pos_edges
 
     @property

@@ -75,11 +75,9 @@ class Parameter:
                 idxtuple = parent._names[idx]
                 idxname = ".".join(idxtuple)
                 labels["paths"] = [labels["paths"][idx]]
-            except ValueError:
+            except (ValueError, IndexError):
                 idxname = "???"
                 idxtuple = None
-            except IndexError:
-                pass
             self._view = View(
                 f"{self._common_output.node.name}.{idxname}",
                 self._common_connectible_output,
@@ -649,9 +647,9 @@ class GaussianConstraint(Constraint):
         sigma: float | Sequence[float],
         label: dict[str, str] | None = None,
         dtype: DTypeLike = "d",
-        correlation: ndarray | None | Sequence[Sequence[float | int]] = None,
+        correlation: ndarray | Node | Sequence[Sequence[float | int]] | None = None,
         **kwargs,
-    ) -> Parameters:
+    ) -> GaussianConstraint:
         label = {"text": "gaussian parameter"} if label is None else dict(label)
         name = label.setdefault("name", "parameter")
 
@@ -691,7 +689,9 @@ class GaussianConstraint(Constraint):
         )
 
 
-def GaussianParameters(names: Sequence[Sequence[str] | str], value: Node, *args, **kwargs) -> Parameters:
+def GaussianParameters(
+    names: Sequence[Sequence[str] | str], value: Node, *args, **kwargs
+) -> Parameters:
     pars = Parameters(names, value, close=False)
     pars.set_constraint(GaussianConstraint(*args, parameters=pars, **kwargs))
     pars._close()

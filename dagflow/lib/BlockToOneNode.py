@@ -177,8 +177,6 @@ class BlockToOneNode(Node):
         instance = None
         outname = ("",)
 
-        input_names = cls._input_names()
-
         path = properkey(fullname, sep=".")
 
         def fcn_outer_before(outkey: TupleKey):
@@ -188,7 +186,8 @@ class BlockToOneNode(Node):
             nodes[outname] = instance
 
         def fcn(iarg: int, inkey: TupleKey, outkey: TupleKey):
-            nonlocal inputs, instance, input_names
+            nonlocal inputs, instance
+            input_names = instance._input_names()
             for iname in input_names:
                 input = instance()
                 inputs[path + (iname,) + inkey] = input
