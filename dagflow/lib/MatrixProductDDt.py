@@ -8,8 +8,6 @@ from ..node import Node
 from ..typefunctions import check_input_dimension, eval_output_dtype
 
 if TYPE_CHECKING:
-    from numpy.typing import NDArray
-
     from ..input import Input
     from ..output import Output
 

@@ -8,8 +8,6 @@ from .node import Node
 from .nodebase import NodeBase
 
 if TYPE_CHECKING:
-    from collections.abc import Callable
-
     from .input import Input
 
 TStrOrPair = str | tuple[str, str]
