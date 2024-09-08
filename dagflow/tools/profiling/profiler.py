@@ -1,48 +1,19 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, overload
+from typing import TYPE_CHECKING
 from collections import deque
 from abc import ABCMeta, abstractmethod
 
-from pandas import DataFrame, Series, Index
-import numpy
+from pandas import DataFrame, Index
 from tabulate import tabulate
 
 if TYPE_CHECKING:
     from dagflow.node import Node
     from collections.abc import Generator, Sequence, Iterable
+    from pandas.api.typing import DataFrameGroupBy
+    from collections.abc import Callable
 
-from collections.abc import Callable
 
-
-# prefix `t_` - time notation
-# columnt aliases for aggrigate functions
-_COLUMN_ALIASES: dict[str | Callable, str] = {
-    "mean": "t_single",
-    "single": "t_single",
-    "t_mean": "t_single",
-    "median": "t_median",
-    "sum": "t_sum",
-    "std": "t_std",
-    "t_count": "count",
-    "min": "t_min",
-    "max": "t_max",
-    "var": "t_var",
-}
-_AGG_ALIASES: dict[str, str | Callable] = {
-    "single": "mean",
-    "t_single": "mean",
-    "t_mean": "mean",
-    "t_median": "median",
-    "t_sum": "sum",
-    "t_std": "std",
-    "t_count": "count",
-    "t_min": "min",
-    "t_max": "max",
-    "t_var": "var",
-}
-
-_DEFAULT_AGG_FUNCS = ("count", "single", "sum", "%_of_total")
 
 
 class Profiler(metaclass=ABCMeta):
@@ -66,7 +37,7 @@ class Profiler(metaclass=ABCMeta):
     _estimations_table: DataFrame
     _allowed_groupby: tuple[list[str] | str, ...]
     _default_agg_funcs: tuple[str | Callable, ...]
-    _default_sort_col: str
+    _primary_col: str
     _column_aliases: dict[str | Callable, str]
     _agg_aliases: dict[str, str | Callable]
 
@@ -77,14 +48,6 @@ class Profiler(metaclass=ABCMeta):
         sinks: Sequence[Node] = (),
         n_runs: int = 100
     ):
-        self._default_agg_funcs = _DEFAULT_AGG_FUNCS
-        self._column_aliases = _COLUMN_ALIASES.copy()
-        self._agg_aliases = _AGG_ALIASES.copy()
-        self.register_agg_func(
-            func=self._t_presentage, 
-            aliases=['%_of_total', 'percentage', 't_percentage'],
-            column_name='%_of_total'
-            )
         self._sources = sources
         self._sinks = sinks
         self._n_runs = n_runs
@@ -216,24 +179,18 @@ class Profiler(metaclass=ABCMeta):
         """
         return self._agg_aliases.get(alias, alias)
 
-    def _total_estimations_time(self):
-        return self._estimations_table['time'].sum()
-        
-    def _t_presentage(self, _s: Series) -> Series:
-        """User-defined aggregate function
-        to calculate the percentage
-        of group given as `pandas.Series`.
-        """
-        total = self._total_estimations_time()
-        return Series({'%_of_total': numpy.sum(_s) * 100 / total})
-
-    def _aggregate_df(self, grouped_df, grouped_by, agg_funcs) -> DataFrame:
-        """Apply pandas built-in (given as `str`) 
-        and user-defined (given as `Callable`) functions
-        to the `'time'` column of the grouped data (`DataFrameGroupBy` object)
+    def _aggregate_df(
+            self, 
+            grouped_df: DataFrameGroupBy, 
+            grouped_by: str | list[str],
+            agg_funcs: Sequence[str]
+        ) -> DataFrame:
+        """Apply pandas built-ins functions and user-defined functions
+        (given as their aliases) on the `self._primary_col` column
+        of the grouped data `grouped_df`
         """
         agg_funcs = self._aggs_from_aliases(agg_funcs)
-        df = grouped_df.agg({'time': agg_funcs})
+        df = grouped_df.agg({self._primary_col: agg_funcs})
         # grouped_by can be ["col1", "col2", ...] or "col"
         if isinstance(grouped_by, list):
             new_columns = grouped_by.copy()
@@ -248,7 +205,7 @@ class Profiler(metaclass=ABCMeta):
         """Return set of all possible values for `agg_funcs` argument
         of `make_report` and `print_report` methods.
 
-        Helper function for `_check_report_consistency`
+        Helper method for `_check_report_consistency`
         """
         values = set(self._agg_aliases.keys())
         for agg_name in self._agg_aliases.values():
@@ -291,7 +248,7 @@ class Profiler(metaclass=ABCMeta):
         sort_by = self._col_from_alias(sort_by)
         report = self._estimations_table.copy()
         if group_by is None:
-            sort_by = sort_by or self._default_sort_col
+            sort_by = sort_by or self._primary_col
         else:
             grouped = report.groupby(group_by, as_index=False)
             report = self._aggregate_df(grouped, group_by, agg_funcs)
@@ -300,13 +257,6 @@ class Profiler(metaclass=ABCMeta):
         report.sort_values(sort_by, ascending=False,
                            ignore_index=True, inplace=True)
         return report
-
-    def _normalize(self, df: DataFrame) -> DataFrame:
-        """Normalize time by `self.n_runs`"""
-        for c in df.columns:
-            if c.startswith('t_') or c == 'time':
-                df[c] /= self._n_runs
-        return df
 
     def _print_table(self, df: DataFrame, rows):
         print(tabulate(df.head(rows), headers='keys', tablefmt='psql'))

@@ -6,13 +6,13 @@ from collections.abc import Sequence
 
 from pandas import DataFrame
 
-from .profiler import Profiler
+from .timerprofiler import TimerProfiler
 if TYPE_CHECKING:
     from dagflow.node import Node
 
 _ALLOWED_GROUPBY = ("node", "type", "name")
 
-class NodeProfiler(Profiler):
+class NodeProfiler(TimerProfiler):
     """Profiling class for estimating the time of individual nodes"""
     __slots__ = ()
 
@@ -26,7 +26,7 @@ class NodeProfiler(Profiler):
     ):
         super().__init__(target_nodes, sources, sinks, n_runs)
         self._allowed_groupby = _ALLOWED_GROUPBY
-        self._default_sort_col = "time"
+        self._primary_col = "time"
 
     @classmethod
     def estimate_node(cls, node: Node, n_runs: int = 10_000):
@@ -38,7 +38,7 @@ class NodeProfiler(Profiler):
         records = {col: [] for col in ("node", "type", "name", "time")}
         for node in self._target_nodes:
             estimations = self.estimate_node(node, self._n_runs)
-            records["node"].append(node)
+            records["node"].append(str(node))
             records["type"].append(type(node).__name__)
             records["name"].append(node.name)
             records["time"].append(estimations)

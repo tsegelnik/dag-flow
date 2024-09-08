@@ -1,5 +1,5 @@
-# to see output of this file you need use -s flag:
-#       pytest -s ./test/tools/test_nodeprofiler.py
+# to see the output from this file you need to use -s flag:
+#       pytest -s ./tests/tools/profiling/test_nodeprofiler.py
 from collections import Counter
 
 import pytest
@@ -57,8 +57,9 @@ def test_make_report_g0():
     profiling.estimate_target_nodes().make_report()
 
     profiling.make_report(group_by=None)
-
+    profiling.make_report(group_by="node")
     profiling.make_report(group_by="name")
+    profiling.make_report(group_by="type")
 
     with pytest.raises(ValueError) as excinfo:
         profiling.make_report(group_by="something wrong")

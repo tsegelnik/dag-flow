@@ -7,7 +7,7 @@ from textwrap import shorten
 from pandas import DataFrame, Series
 import numpy
 
-from .profiler import Profiler
+from .timerprofiler import TimerProfiler
 from dagflow.node import Node
 
 SOURCE_COL_WIDTH = 32
@@ -20,7 +20,7 @@ _ALLOWED_GROUPBY = (
     "sink nodes",
 )
 
-class FrameworkProfiler(Profiler):
+class FrameworkProfiler(TimerProfiler):
     """Profiler class that used to estimate
     the interaction time between nodes (framework time)"""
     __slots__ = ()
@@ -42,7 +42,7 @@ class FrameworkProfiler(Profiler):
             column_name='t_single_by_node'
             )
         self._default_agg_funcs = ("count", "single", "sum", "t_single_by_node")
-        self._default_sort_col = "time"
+        self._primary_col = "time"
         if not (self._sources and self._sinks):
             self._reveal_source_sink()
 
