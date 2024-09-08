@@ -1,15 +1,16 @@
-# to see output of this file you need use -s flag:
-#       pytest -s ./test/tools/profiling/test_memoryprofiler.py
+# to see the output from this file you need to use -s flag:
+#       pytest -s ./tests/tools/profiling/test_memoryprofiler.py
 from __future__ import annotations
-import types
-from collections import Counter
+
 from typing import TYPE_CHECKING
 from functools import reduce
 from operator import mul
+from itertools import chain
+
+from pandas import DataFrame
 
 from dagflow.tools.profiling import MemoryProfiler
 from dagflow.input import Input
-from dagflow.lib import Array
 from test_helpers import graph_0, graph_1
 
 
@@ -18,22 +19,22 @@ if TYPE_CHECKING:
     from dagflow.input import Input
     from numpy.typing import NDArray
 
-def calc_numpy_size(data: NDArray):
+def calc_numpy_size(data: NDArray) -> int:
     """Size of Numpy's `NDArray` in bytes"""
     length = reduce(mul, data.shape)
     return length * data.dtype.itemsize
 
-def get_input_size(inp: Input):
+def get_input_size(inp: Input) -> int:
     if inp.owns_buffer:
         return calc_numpy_size(inp.own_data)
     return 0
 
-def get_output_size(out: Output):
+def get_output_size(out: Output) -> int:
     if out.owns_buffer or (out.has_data and out._allocating_input is None):
         return calc_numpy_size(out.data_unsafe)
     return 0
 
-def edge_size(edge: Output | Input):
+def edge_size(edge: Output | Input) -> int:
     """Return size of `edge` data in bytes"""
     if isinstance(edge, Input):
         return get_input_size(edge)
@@ -92,13 +93,73 @@ def test_array_store_mods_g0():
     conn_input: Input = s0.inputs[1]
 
     assert conn_input.parent_output == f_out
-def test_estimate_all_edges():
-    g, nodes = graph_0()
     
+def test_estimate_all_edges():
+    for graph in (graph_0, graph_1):
+        _, nodes = graph()
+        
+        mp = MemoryProfiler(nodes)
+        mp.estimate_target_nodes()
+        
+        assert hasattr(mp, "_estimations_table")
+        
+        # check if "size" column exists and it is not empty
+        assert len(mp._estimations_table["size"]) > 0
+        
+        expected = 0
+        for node in nodes:
+            for edge in chain(node.inputs, node.outputs):
+                expected += edge_size(edge)
+        actual = mp._estimations_table["size"].sum()
+        
+        assert expected == actual, (
+            "expected and actual sizes of all edges does not match"
+            )
+        
+def test_total_size_property():
+    _, nodes = graph_0()
+
     mp = MemoryProfiler(nodes)
     mp.estimate_target_nodes()
     
-    assert hasattr(mp, "_estimations_table")
+    assert sum(mp._estimations_table["size"]) == mp.total_size
+    
+def test_make_report():
+    _, nodes = graph_0()
+
+    mp = MemoryProfiler(nodes).estimate_target_nodes()
+    report = mp.make_report()
+    
+    assert isinstance(report, DataFrame)
+
+def test_print_report_g0():
+    _, nodes = graph_0()
+    
+    mp = MemoryProfiler(nodes).estimate_target_nodes()
+    mp.print_report(40, group_by=None, sort_by='type', agg_funcs=None)
+    mp.print_report()
+    
+    mp = MemoryProfiler(nodes).estimate_target_nodes()
+    mp.print_report()
+    
+    mp.print_report(group_by="node", agg_funcs=("sum", "mean"), sort_by="sum")
+    
+    # "single" also means "mean"
+    mp.print_report(group_by="type", agg_funcs=["var", "single"])
+    
+    mp.print_report(group_by="edge")
+    
+    
+def test_chain_methods_g1():
+    _, nodes = graph_1()
+    
+    report = MemoryProfiler(nodes).estimate_target_nodes().print_report()
+    assert isinstance(report, DataFrame)
+    
+    report = MemoryProfiler(nodes).estimate_target_nodes().make_report()
+    assert isinstance(report, DataFrame)
+
+
 
 
 

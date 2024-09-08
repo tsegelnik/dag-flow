@@ -1,17 +1,45 @@
 from __future__ import annotations
 
-from collections.abc import Sequence
 from typing import TYPE_CHECKING
 
 from pandas import DataFrame
 
 if TYPE_CHECKING:
-    from typing import Sequence
+    from collections.abc import Sequence, Callable
     from dagflow.node import Node
     from dagflow.input import Input
     from dagflow.output import Output
 
 from .profiler import Profiler
+
+# prefix `s_` - size notation
+# columnt aliases for aggrigate functions
+_COLUMN_ALIASES: dict[str | Callable, str] = {
+    "mean": "size_single",
+    "single": "size_single",
+    "size_mean": "size_single",
+    "median": "size_median",
+    "sum": "size_sum",
+    "std": "size_std",
+    "size_count": "count",
+    "min": "size_min",
+    "max": "size_max",
+    "var": "size_var",
+}
+_AGG_ALIASES: dict[str, str | Callable] = {
+    "single": "mean",
+    "size_single": "mean",
+    "size_mean": "mean",
+    "size_median": "median",
+    "size_sum": "sum",
+    "size_std": "std",
+    "size_count": "count",
+    "size_min": "min",
+    "size_max": "max",
+    "size_var": "var",
+}
+
+_DEFAULT_AGG_FUNCS = ("count", "sum")
 
 
 class MemoryProfiler(Profiler):
@@ -22,8 +50,13 @@ class MemoryProfiler(Profiler):
         sources: Sequence[Node]=(),
         sinks: Sequence[Node]=()
     ):
+        self._default_agg_funcs = _DEFAULT_AGG_FUNCS
+        self._column_aliases = _COLUMN_ALIASES.copy()
+        self._agg_aliases = _AGG_ALIASES.copy()
+
+        self._primary_col = "size"
+
         super().__init__(target_nodes, sources, sinks, n_runs=1)
-        self._default_sort_col = 'size'
 
     def _touch_nodes(self):
         for node in self._target_nodes:
@@ -67,12 +100,13 @@ class MemoryProfiler(Profiler):
         for node in self._target_nodes:
             estimations = self.estimate_node(node)
             for edge, size in estimations.items():
-                records["node"].append(node)
+                records["node"].append(str(node))
                 records["type"].append(type(node).__name__)
-                records["edge"].append(edge)
+                records["edge"].append(str(edge))
                 records["size"].append(size)
         self._estimations_table = DataFrame(records)
         return self
+    
     @property
     def total_size(self):
         """Return size of all edges of '_target_nodes' in bytes
@@ -83,19 +117,28 @@ class MemoryProfiler(Profiler):
 
     def make_report(
         self,
-        group_by: str | list[str] | None,
-        agg_funcs: Sequence[str] | None,
-        sort_by: str | None
+        group_by: str | list[str] | None = "type",
+        agg_funcs: Sequence[str] | None = None,
+        sort_by: str | None = None
     ) -> DataFrame:
-        raise NotImplementedError
         return super().make_report(group_by, agg_funcs, sort_by)
     
     def print_report(
         self,
-        rows: int | None,
-        group_by: str | list[str] | None,
-        agg_funcs: Sequence[str] | None,
-        sort_by: str | None
+        rows: int | None = 40,
+        group_by: str | list[str] | None = "type",
+        agg_funcs: Sequence[str] | None = None,
+        sort_by: str | None = None
     ) -> DataFrame:
-        raise NotImplementedError
-        return super().print_report(rows, group_by, agg_funcs, sort_by)
+        # TODO: add default args
+        # TODO: test group_by
+        report = self.make_report(group_by, agg_funcs, sort_by)
+        print(f"\nMemory Profiling {hex(id(self))}, "
+              f"sort by: `{sort_by or 'default sorting'}`, "
+              f"group by: `{group_by or 'no grouping'}`")
+        self._print_table(report, rows)
+        size_bytes = self.total_size
+        print(f"TOTAL SIZE:\t{size_bytes} bytes\n"
+              f"\t\t{size_bytes / 2 ** 10} Kbytes\n"
+              f"\t\t{size_bytes / 2 ** 20} Mbytes")
+        return report
