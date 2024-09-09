@@ -21,7 +21,7 @@ _COLUMN_ALIASES: dict[str | Callable, str] = {
     "median": "size_median",
     "sum": "size_sum",
     "std": "size_std",
-    "size_count": "count",
+    "count": "node_count",
     "min": "size_min",
     "max": "size_max",
     "var": "size_var",
@@ -33,16 +33,19 @@ _AGG_ALIASES: dict[str, str | Callable] = {
     "size_median": "median",
     "size_sum": "sum",
     "size_std": "std",
-    "size_count": "count",
+    "node_count": "count",
     "size_min": "min",
     "size_max": "max",
     "size_var": "var",
 }
 
+#TODO remove aggregate by edge
+
 _DEFAULT_AGG_FUNCS = ("count", "sum")
 
 
 class MemoryProfiler(Profiler):
+    __slots__ = ()
     def __init__(
         self,
         target_nodes: Sequence[Node]=(),
@@ -53,9 +56,7 @@ class MemoryProfiler(Profiler):
         self._default_agg_funcs = _DEFAULT_AGG_FUNCS
         self._column_aliases = _COLUMN_ALIASES.copy()
         self._agg_aliases = _AGG_ALIASES.copy()
-
         self._primary_col = "size"
-
         super().__init__(target_nodes, sources, sinks, n_runs=1)
 
     def _touch_nodes(self):
@@ -74,11 +75,11 @@ class MemoryProfiler(Profiler):
             else:
                 estimations[inp] = 0
         for out in node.outputs.iter_all():
-            if (out.has_data 
+            if (out.has_data
                 and (out.owns_buffer or out._allocating_input is None)):
-                # If there is an _allocating_input, 
+                # If there is an _allocating_input,
                 #  the `out.data` refers to the child `Input` data.
-                # However if there is no `_allocating_input` 
+                # However if there is no `_allocating_input`
                 #  and owns_buffer=False (and `out.data` is not `None` of course)
                 #  then it means there is allocated memory for this Output.
                 estimations[out] = out.data_unsafe.nbytes
@@ -86,27 +87,26 @@ class MemoryProfiler(Profiler):
                 estimations[out] = 0
         return estimations
 
+    def estimate_target_nodes(self, touch=False):
+        """Estimate size of edges of all `self.target_nodes`.
+        Only those edges that own memory (size != 0) are taken into account.
 
-    def estimate_target_nodes(self, touch=True):
-        """Estimates size of all edges of all `self.target_nodes`.
-        
         Return current `MemoryProfiler` instance.
         """
-        data_sizes = {}
         if touch:
             self._touch_nodes()
-        
-        records = {col: [] for col in ("node", "type", "edge", "size")}
+
+        records = {col: [] for col in ("node", "type", "edge_count", "size")}
         for node in self._target_nodes:
             estimations = self.estimate_node(node)
-            for edge, size in estimations.items():
-                records["node"].append(str(node))
-                records["type"].append(type(node).__name__)
-                records["edge"].append(str(edge))
-                records["size"].append(size)
+            sizes = tuple(size for _, size in estimations.items() if size)
+            records["node"].append(str(node))
+            records["type"].append(type(node).__name__)
+            records["edge_count"].append(len(sizes))
+            records["size"].append(sum(sizes))
         self._estimations_table = DataFrame(records)
         return self
-    
+
     @property
     def total_size(self):
         """Return size of all edges of '_target_nodes' in bytes
@@ -122,7 +122,18 @@ class MemoryProfiler(Profiler):
         sort_by: str | None = None
     ) -> DataFrame:
         return super().make_report(group_by, agg_funcs, sort_by)
-    
+
+    def _present_in_units(self, value, separator='\n\t') -> str:
+        """Convert the `value` in bytes to kilobytes, and megabytes
+
+        Return formatted string, where the values separated by `separator`:
+        """
+        return separator.join((
+            f"{value:.1f} bytes",
+            f"{value / 2 ** 10:.1f} Kbytes",
+            f"{value / 2 ** 20:.1f} Mbytes",
+        ))
+
     def print_report(
         self,
         rows: int | None = 40,
@@ -130,15 +141,17 @@ class MemoryProfiler(Profiler):
         agg_funcs: Sequence[str] | None = None,
         sort_by: str | None = None
     ) -> DataFrame:
-        # TODO: add default args
-        # TODO: test group_by
         report = self.make_report(group_by, agg_funcs, sort_by)
         print(f"\nMemory Profiling {hex(id(self))}, "
               f"sort by: `{sort_by or 'default sorting'}`, "
               f"group by: `{group_by or 'no grouping'}`")
-        self._print_table(report, rows)
+        # There is a float formatting: since profiler works with bytes,
+        #  it makes no sense to print more than one decimal places of float
+        self._print_table(report, rows, float_fmt=".1f")
         size_bytes = self.total_size
-        print(f"TOTAL SIZE:\t{size_bytes} bytes\n"
-              f"\t\t{size_bytes / 2 ** 10} Kbytes\n"
-              f"\t\t{size_bytes / 2 ** 20} Mbytes")
+        print(f"TOTAL SIZE:")
+        print(f"\t{self._present_in_units(size_bytes)}")
+        s_node = size_bytes / len(self._target_nodes)
+        print(f"TOTAL SIZE / node count:")
+        print(f"\t{self._present_in_units(s_node)}")
         return report

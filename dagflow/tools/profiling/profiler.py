@@ -14,8 +14,6 @@ if TYPE_CHECKING:
     from collections.abc import Callable
 
 
-
-
 class Profiler(metaclass=ABCMeta):
     """Base Profiler Class."""
     __slots__ = (
@@ -26,7 +24,7 @@ class Profiler(metaclass=ABCMeta):
         "_estimations_table",
         "_allowed_groupby",
         "_default_agg_funcs",
-        "_default_sort_col",
+        "_primary_col",
         "_agg_aliases",
         "_column_aliases"
     )
@@ -56,14 +54,16 @@ class Profiler(metaclass=ABCMeta):
         elif sources and sinks:
             self._target_nodes = list(self._gather_related_nodes())
         else:
-            raise ValueError("You shoud provide profiler with `target_nodes` "
-                             "or provide `sources` and `sinks` arguments"
-                             "to automatically find the target nodes")
-        
+            raise ValueError(
+                "You shoud provide profiler with `target_nodes` "
+                "or provide `sources` and `sinks` arguments"
+                "to automatically find the target nodes"
+            )
+
     @property
     def n_runs(self) -> int:
         return self._n_runs
-    
+
     @n_runs.setter
     def n_runs(self, value):
         self._n_runs = value
@@ -82,9 +82,10 @@ class Profiler(metaclass=ABCMeta):
     def __check_reachable(self, nodes_gathered):
         for sink in self._sinks:
             if sink not in nodes_gathered:
-                raise ValueError("One of the `sinks` nodes is unreachable:"
-                                 f" {sink} "
-                                 "(no paths from sources)")
+                raise ValueError(
+                    f"One of the `sinks` nodes is unreachable: {sink} "
+                    "(no paths from sources)"
+                )
 
     def _gather_related_nodes(self) -> set[Node]:
         """Find all nodes that lie on all possible paths
@@ -144,9 +145,9 @@ class Profiler(metaclass=ABCMeta):
     def register_agg_func(self, func, aliases, column_name):
         """Add user-defined function for the Profiler
         for using it on a grouped data.
-        
+
         Note: The function is called for each group
-        in the grouped DataFrame separately 
+        in the grouped DataFrame separately
         """
         for al in aliases:
             self._agg_aliases[al] = func
@@ -158,20 +159,20 @@ class Profiler(metaclass=ABCMeta):
         otherwise return the same strings.
         """
         return [self._column_aliases.get(al, al) for al in aliases]
-        
+
     def _col_from_alias(self, alias: str | Callable | None) -> str | None:
         """Return the column name if an alias exists,
         otherwise return the same object.
         """
         return self._column_aliases.get(alias, alias)
-    
+
     def _aggs_from_aliases(self, aliases: Iterable[str | Callable]) \
                                                 -> list[str | Callable]:
         """Return aggregate function names if aliases exists,
         otherwise return the same object.
         """
         return [self._agg_aliases.get(al, al) for al in aliases]
-    
+
     def _agg_from_alias(self, alias: str | Callable | None) \
                                             -> str | Callable | None:
         """Return aggregate function name if an alias exists,
@@ -180,12 +181,12 @@ class Profiler(metaclass=ABCMeta):
         return self._agg_aliases.get(alias, alias)
 
     def _aggregate_df(
-            self, 
-            grouped_df: DataFrameGroupBy, 
+            self,
+            grouped_df: DataFrameGroupBy,
             grouped_by: str | list[str],
             agg_funcs: Sequence[str]
         ) -> DataFrame:
-        """Apply pandas built-ins functions and user-defined functions
+        """Apply pandas built-ins and user-defined aggregate functions
         (given as their aliases) on the `self._primary_col` column
         of the grouped data `grouped_df`
         """
@@ -200,7 +201,7 @@ class Profiler(metaclass=ABCMeta):
         new_columns += self._cols_from_aliases(agg_funcs)
         df.columns = Index(new_columns)
         return df
-    
+
     def __possible_agg_values(self):
         """Return set of all possible values for `agg_funcs` argument
         of `make_report` and `print_report` methods.
@@ -258,8 +259,16 @@ class Profiler(metaclass=ABCMeta):
                            ignore_index=True, inplace=True)
         return report
 
-    def _print_table(self, df: DataFrame, rows):
-        print(tabulate(df.head(rows), headers='keys', tablefmt='psql'))
+    def _print_table(self, df: DataFrame, rows, *, float_fmt="g", int_fmt=","):
+        print(
+            tabulate(
+                tabular_data=df.head(rows),
+                headers='keys',
+                tablefmt='psql',
+                floatfmt=float_fmt,
+                intfmt=int_fmt,
+            )
+        )
         if len(df) > rows:
             print(f' [!] showing only first {rows} rows ')
 

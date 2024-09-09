@@ -44,6 +44,13 @@ _DEFAULT_AGG_FUNCS = ("count", "single", "sum", "%_of_total")
 
 
 class TimerProfiler(Profiler):
+    """Base class for time-related profiling.
+
+    It is not designed to be used directly,
+    you should consider `NodeProfiler` or `FrameworkProfiler`.
+    """
+    __slots__ = ()
+
     def __init__(
         self,
         target_nodes: Sequence[Node] = (),
@@ -55,12 +62,12 @@ class TimerProfiler(Profiler):
         self._column_aliases = _COLUMN_ALIASES.copy()
         self._agg_aliases = _AGG_ALIASES.copy()
         self.register_agg_func(
-            func=self._t_presentage, 
+            func=self._t_presentage,
             aliases=['%_of_total', 'percentage', 't_percentage'],
             column_name='%_of_total'
             )
         super().__init__(target_nodes, sources, sinks, n_runs)
-        
+
     def _t_presentage(self, _s: Series) -> Series:
         """User-defined aggregate function
         to calculate the percentage
@@ -71,7 +78,7 @@ class TimerProfiler(Profiler):
 
     def _total_estimations_time(self):
         return self._estimations_table['time'].sum()
-    
+
     def _normalize(self, df: DataFrame) -> DataFrame:
         """Normalize `time` by `self.n_runs`"""
         for c in df.columns:

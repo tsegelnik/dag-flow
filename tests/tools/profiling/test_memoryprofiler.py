@@ -147,7 +147,7 @@ def test_print_report_g0():
     # "single" also means "mean"
     mp.print_report(group_by="type", agg_funcs=["var", "single"])
     
-    mp.print_report(group_by="edge")
+    mp.print_report(group_by="edge_count")
     
     
 def test_chain_methods_g1():
