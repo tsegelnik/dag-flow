@@ -3,8 +3,7 @@ from __future__ import annotations
 from enum import IntEnum
 from typing import TYPE_CHECKING, Literal
 
-from numba import float64, int32, njit, void
-from numba.core.types import FunctionType
+from numba import njit
 from numpy import double, exp, integer, log
 
 from ..exception import InitializationError
@@ -36,6 +35,7 @@ class ExtrapolationStrategy(IntEnum):
 
 MethodType = Literal["linear", "log", "logx", "exp", "left", "right", "nearest"]
 OutOfBoundsStrategyType = Literal["constant", "nearestedge", "extrapolate"]
+
 
 class Interpolator(Node):
     """
@@ -86,7 +86,7 @@ class Interpolator(Node):
     _indices: Input
     _result: Output
 
-    _methods: dict[str,Callable]
+    _methods: dict[str, Callable]
     _method: Callable
     _methodname: str
 
@@ -221,21 +221,7 @@ class Interpolator(Node):
         )
 
 
-@njit(
-    void(
-        FunctionType(float64(float64, float64, float64, float64, float64)),
-        float64[:],
-        float64[:],
-        float64[:],
-        int32[:],
-        float64[:],
-        float64,
-        int32,
-        int32,
-        float64,
-    ),
-    cache=True,
-)
+@njit(cache=True)
 def _interpolation(
     method: Callable[[float, float, float, float, float], float],
     coarse: NDArray[double],
@@ -288,9 +274,9 @@ def _interpolation(
                     yc[1],
                     fine[i],
                 )
-        elif has_last_y or j<nseg: # interpolate
+        elif has_last_y or j < nseg:  # interpolate
             result[i] = method(coarse[j - 1], coarse[j], yc[j - 1], yc[j], fine[i])
-        else: # interpolate
+        else:  # interpolate
             result[i] = method(coarse[j - 1], coarse[j], yc[j - 1], yc[j - 1], fine[i])
 
 

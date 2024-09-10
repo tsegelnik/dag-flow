@@ -16,9 +16,9 @@ if TYPE_CHECKING:
 def _binedges(centers: NDArray[double], edges: NDArray[double]) -> None:
     ncenters = len(centers)
     for i in range(1, ncenters):
-        edges[i] = (centers[i - 1] + centers[i]) / 2.0
+        edges[i] = (centers[i - 1] + centers[i]) * 0.5
     edges[0] = 2.0 * centers[0] - edges[1]
-    edges[ncenters] = 2 * centers[ncenters - 1] - edges[ncenters - 1]
+    edges[ncenters] = 2.0 * centers[ncenters - 1] - edges[ncenters - 1]
 
 
 class MeshToEdges(OneToOneNode):

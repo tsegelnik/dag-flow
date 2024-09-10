@@ -16,7 +16,7 @@ if TYPE_CHECKING:
 def _bincenter(edges: NDArray[double], centers: NDArray[double]) -> None:
     nbins = len(centers)
     for i in range(nbins):
-        centers[i] = (edges[i] + edges[i + 1]) / 2.0
+        centers[i] = (edges[i] + edges[i + 1]) * 0.5
 
 
 class BinCenter(OneToOneNode):
