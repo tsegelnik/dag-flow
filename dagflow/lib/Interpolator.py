@@ -280,7 +280,7 @@ def _interpolation(
             result[i] = method(coarse[j - 1], coarse[j], yc[j - 1], yc[j - 1], fine[i])
 
 
-@njit(cache=True)
+@njit(cache=True, inline="always")
 def _linear_interpolation(
     coarse0: float,
     coarse1: float,
@@ -291,7 +291,7 @@ def _linear_interpolation(
     return yc0 + (fine - coarse0) * (yc1 - yc0) / (coarse1 - coarse0)
 
 
-@njit(cache=True)
+@njit(cache=True, inline="always")
 def _log_interpolation(
     coarse0: float,
     coarse1: float,
@@ -302,7 +302,7 @@ def _log_interpolation(
     return log(exp(yc0) + (fine - coarse0) * (exp(yc1) - exp(yc0)) / (coarse1 - coarse0))
 
 
-@njit(cache=True)
+@njit(cache=True, inline="always")
 def _logx_interpolation(
     coarse0: float,
     coarse1: float,
@@ -313,7 +313,7 @@ def _logx_interpolation(
     return yc0 + log(fine / coarse0) * (yc1 - yc0) / log(coarse1 / coarse0)
 
 
-@njit(cache=True)
+@njit(cache=True, inline="always")
 def _exp_interpolation(
     coarse0: float,
     coarse1: float,
@@ -324,7 +324,7 @@ def _exp_interpolation(
     return yc0 * exp((coarse0 - fine) * log(yc0 / yc1) / (coarse1 - coarse0))
 
 
-@njit(cache=True)
+@njit(cache=True, inline="always")
 def _left_interpolation(
     coarse0: float,
     coarse1: float,
@@ -335,7 +335,7 @@ def _left_interpolation(
     return yc0
 
 
-@njit(cache=True)
+@njit(cache=True, inline="always")
 def _right_interpolation(
     coarse0: float,
     coarse1: float,
@@ -346,7 +346,7 @@ def _right_interpolation(
     return yc1
 
 
-@njit(cache=True)
+@njit(cache=True, inline="always")
 def _nearest_interpolation(
     coarse0: float,
     coarse1: float,
