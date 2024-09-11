@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from collections.abc import Callable, Sequence
+from collections.abc import Sequence
 from typing import TYPE_CHECKING, Literal
 
 from .exception import CriticalError, InitializationError
@@ -8,6 +8,8 @@ from .node import Node
 from .nodebase import NodeBase
 
 if TYPE_CHECKING:
+    from collections.abc import Callable
+
     from .input import Input
 
 TStrOrPair = str | tuple[str, str]
