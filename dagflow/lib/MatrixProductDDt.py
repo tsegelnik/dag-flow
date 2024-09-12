@@ -8,8 +8,6 @@ from ..node import Node
 from ..typefunctions import check_input_dimension, eval_output_dtype
 
 if TYPE_CHECKING:
-    from numpy.typing import NDArray
-
     from ..input import Input
     from ..output import Output
 
@@ -19,11 +17,10 @@ class MatrixProductDDt(Node):
     Compute matrix product `C=D@Dᵀ`.
     """
 
-    __slots__ = ("_matrix", "_out", "_buffer")
+    __slots__ = ("_matrix", "_out",)
 
     _matrix: Input
     _out: Output
-    _buffer: NDArray
 
     def __init__(self, *args, **kwargs) -> None:
         super().__init__(*args, **kwargs, allowed_kw_inputs=("matrix",))

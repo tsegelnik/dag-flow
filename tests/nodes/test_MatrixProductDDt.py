@@ -1,5 +1,4 @@
-#!/usr/bin/env python
-import numpy as np
+from numpy import array, allclose
 from pytest import mark
 
 from dagflow.graph import Graph
@@ -9,7 +8,7 @@ from dagflow.lib import Array, MatrixProductDDt
 
 @mark.parametrize("dtype", ("d", "f"))
 def test_MatrixProductDVDt_2d(dtype):
-    left = np.array([[1, 2, 3], [3, 4, 5]], dtype=dtype)
+    left = array([[1, 2, 3], [3, 4, 5]], dtype=dtype)
 
     with Graph(close_on_exit=True) as graph:
         l_array = Array("Left", left)
@@ -20,7 +19,7 @@ def test_MatrixProductDVDt_2d(dtype):
     desired = left @ left.T
     actual = prod.get_data("result")
 
-    assert np.allclose(desired, actual, atol=0, rtol=0)
+    assert allclose(desired, actual, atol=0, rtol=0)
 
     savegraph(graph, f"output/test_MatrixProductDDt_2d_{dtype}.png")
 

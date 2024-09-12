@@ -1,4 +1,3 @@
-#!/usr/bin/env python
 from dagflow.typefunctions import MethodSequenceCaller
 
 

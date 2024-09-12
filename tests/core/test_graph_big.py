@@ -1,4 +1,3 @@
-#!/usr/bin/env python
 from dagflow.graph import Graph
 from dagflow.graphviz import GraphDot
 from dagflow.lib.Dummy import Dummy

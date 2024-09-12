@@ -1,4 +1,3 @@
-#!/usr/bin/env python
 from pytest import mark
 from numpy import allclose, square
 

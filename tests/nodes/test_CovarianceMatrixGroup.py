@@ -1,4 +1,3 @@
-#!/usr/bin/env python
 
 from numpy import allclose, arange, array, diag, finfo
 from numpy.linalg import cholesky

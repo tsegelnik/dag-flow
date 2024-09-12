@@ -1,4 +1,3 @@
-#!/usr/bin/env python
 """Test missing input handlers"""
 from contextlib import suppress
 

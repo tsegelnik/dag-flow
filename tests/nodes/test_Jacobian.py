@@ -1,4 +1,3 @@
-#!/usr/bin/env python
 
 from numpy import allclose, arange, array, diag, finfo, ones
 from pytest import mark
@@ -46,7 +45,7 @@ def test_Jacobian_01(dtype, testname):
         valueslist >> parsconcat
         parsconcat >> jac
 
-    res = jac.outputs[0].data
+    res = jac.outputs[0].data[:]
     factors = {
         "d": 30,
         "f": 10,
@@ -54,8 +53,8 @@ def test_Jacobian_01(dtype, testname):
     assert allclose(diag(res), 1, atol=factors[dtype] * finfo(dtype).resolution, rtol=0)
 
     jac.taint()
-    res = jac.outputs[0].data
-    assert allclose(diag(res), 1, atol=factors[dtype] * finfo(dtype).resolution, rtol=0)
+    new_res = jac.outputs[0].data
+    assert allclose(new_res, res, atol=factors[dtype] * finfo(dtype).resolution, rtol=0)
 
     savegraph(graph, f"output/{testname}.png")
 
