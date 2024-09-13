@@ -127,7 +127,9 @@ class Node(NodeBase):
         return f"{{{self.name}}} {super().__str__()}"
 
     @classmethod
-    def from_args(cls, name, *positional_connectibles, kwargs: Mapping={}, **key_connectibles) -> Node:
+    def from_args(
+        cls, name, *positional_connectibles, kwargs: Mapping = {}, **key_connectibles
+    ) -> Node:
         # TODO:
         #   - testing
         #   - keyword connection syntax ([] or ())
@@ -537,17 +539,6 @@ class Node(NodeBase):
         input = self._add_input(iname, child_output=output, **input_kws)
         return input, output
 
-    def touch(self, force_computation=False):
-        if self.frozen:
-            return
-        if not self.tainted and not force_computation:
-            return
-        ret = self.eval()
-        self.fd.tainted = False  # self._always_tainted
-        if self._auto_freeze:
-            self.fd.frozen = True
-        return ret
-
     def _stash_fcn(self):
         self._fcn_chain.append(self.fcn)
         return self.fcn
@@ -572,20 +563,33 @@ class Node(NodeBase):
     def _fcn(self):
         pass
 
-    def _eval(self):
-        self._n_calls += 1
-        return self.fcn()
-
     def eval(self):
         if not self.closed:
             raise UnclosedGraphError("Cannot evaluate not closed node!", node=self)
         self.fd.being_evaluated = True
         try:
-            ret = self._eval()
+            self._n_calls += 1
+            self.fcn()
         except DagflowError as exc:
             raise exc
         self.fd.being_evaluated = False
-        return ret
+
+    def touch(self, force_computation=False):
+        if (not self.tainted and not force_computation) or self.frozen:
+            return
+        if not self.closed:
+            raise UnclosedGraphError("Cannot evaluate not closed node!", node=self)
+        self.fd.being_evaluated = True
+        try:
+            self.fcn()
+        except DagflowError as exc:
+            raise exc
+        else:
+            self._n_calls += 1
+            self.fd.tainted = False
+            if self._auto_freeze:
+                self.fd.frozen = True
+        self.fd.being_evaluated = False
 
     def freeze(self):
         if self.frozen:
@@ -603,11 +607,7 @@ class Node(NodeBase):
             self.taint()
 
     def taint(
-        self,
-        *,
-        caller: Input | None = None,
-        force: bool = False,
-        force_computation: bool = False
+        self, *, caller: Input | None = None, force: bool = False, force_computation: bool = False
     ):
         self.logger.debug(f"Node '{self.name}': Taint...")
         if self.tainted and not force:
