@@ -655,6 +655,8 @@ class Node(NodeBase):
         if not self.fd.types_tainted:
             return True
         self._fd.allocated = False
+        # TODO: causes problems with nodes, that are allocated and closed prior the graph being closed
+        # Need a mechanism to request reallocation
         if recursive:
             self.logger.debug(f"Node '{self.name}': Trigger recursive update types...")
             for input in self.inputs.iter_all():
