@@ -5,7 +5,7 @@ from contextlib import suppress
 from typing import TYPE_CHECKING, Sequence
 
 from multikeydict.nestedmkdict import NestedMKDict
-from multikeydict.typing import TupleKey, KeyLike, properkey
+from multikeydict.typing import KeyLike, TupleKey, properkey
 
 from ..metanode import MetaNode
 from ..parameters import GaussianParameter, NormalizedGaussianParameter
@@ -16,18 +16,21 @@ from .MatrixProductDDt import MatrixProductDDt
 from .MatrixProductDVDt import MatrixProductDVDt
 
 if TYPE_CHECKING:
+    from typing import Mapping
+
     from ..node import Node, Output
 
 CovarianceMatrixParameterType = (
-            NormalizedGaussianParameter
-            | GaussianParameter
-            | Sequence[NormalizedGaussianParameter]
-            | Sequence[GaussianParameter]
-            | Sequence[Sequence[NormalizedGaussianParameter]]
-            | Sequence[Sequence[GaussianParameter]]
-            | Sequence[NestedMKDict]
-            | NestedMKDict
-            )
+    NormalizedGaussianParameter
+    | GaussianParameter
+    | Sequence[NormalizedGaussianParameter]
+    | Sequence[GaussianParameter]
+    | Sequence[Sequence[NormalizedGaussianParameter]]
+    | Sequence[Sequence[GaussianParameter]]
+    | Sequence[NestedMKDict]
+    | NestedMKDict
+)
+
 
 class CovarianceMatrixGroup(MetaNode):
     __slots__ = (
@@ -38,7 +41,8 @@ class CovarianceMatrixGroup(MetaNode):
         "_cov_sum_syst",
         "_parameters",
         "_ignore_duplicated_paramters",
-        "_store_to"
+        "_store_to",
+        "_jacobian_kwargs"
     )
 
     _dict_jacobian: dict[str, list[Jacobian]]
@@ -53,12 +57,15 @@ class CovarianceMatrixGroup(MetaNode):
 
     _store_to: TupleKey | None
 
+    _jacobian_kwargs: Mapping
+
     def __init__(
         self,
         *,
         # labels: Mapping = {},
         store_to: KeyLike | None = None,
         ignore_duplicated_parameters: bool = False,
+        jacobian_kwargs: Mapping = {}
     ):
         super().__init__()
 
@@ -72,6 +79,8 @@ class CovarianceMatrixGroup(MetaNode):
         self._ignore_duplicated_paramters = ignore_duplicated_parameters
 
         self._store_to = properkey(store_to, sep=".") if store_to is not None else None
+
+        self._jacobian_kwargs = jacobian_kwargs
 
     def get_parameters_count(self) -> int:
         return len(self._parameters)
@@ -99,7 +108,9 @@ class CovarianceMatrixGroup(MetaNode):
             npars = len(pars)
             npars_total += npars
 
-            jacobian = Jacobian(f"Jacobian ({npars}): {name}", parameters=pars)
+            jacobian = Jacobian(
+                f"Jacobian ({npars}): {name}", parameters=pars, **self._jacobian_kwargs
+            )
             jacobian()
             self._add_node(jacobian, kw_inputs={"input": "model"}, merge_inputs=("model",))
             self.inputs.make_positional("model", index=0)
@@ -121,17 +132,27 @@ class CovarianceMatrixGroup(MetaNode):
             matrices.append(vsyst_part)
 
             if storage is not None:
-                if ngroups>1:
-                    storage[("nodes",) + self._store_to + ("jacobians", name, f"jacobian_{i:02d}")] = jacobian
-                    storage[("nodes",) + self._store_to + ("covmat_vsyst_parts", name, f"vsyst_{i:02d}")] = vsyst_part
+                if ngroups > 1:
+                    storage[
+                        ("nodes",) + self._store_to + ("jacobians", name, f"jacobian_{i:02d}")
+                    ] = jacobian
+                    storage[
+                        ("nodes",) + self._store_to + ("covmat_vsyst_parts", name, f"vsyst_{i:02d}")
+                    ] = vsyst_part
 
-                    storage[("outputs",) + self._store_to + ("jacobians", name, f"jacobian_{i:02d}")] = jacobian.outputs[0]
-                    storage[("outputs",) + self._store_to + ("covmat_vsyst_parts", name, f"vsyst_{i:02d}")] = (
-                        vsyst_part.outputs[0]
-                    )
+                    storage[
+                        ("outputs",) + self._store_to + ("jacobians", name, f"jacobian_{i:02d}")
+                    ] = jacobian.outputs[0]
+                    storage[
+                        ("outputs",)
+                        + self._store_to
+                        + ("covmat_vsyst_parts", name, f"vsyst_{i:02d}")
+                    ] = vsyst_part.outputs[0]
                 else:
                     storage[("nodes",) + self._store_to + ("jacobians", name)] = jacobian
-                    storage[("outputs",) + self._store_to + ("jacobians", name)] = jacobian.outputs[0]
+                    storage[("outputs",) + self._store_to + ("jacobians", name)] = jacobian.outputs[
+                        0
+                    ]
 
         if len(matrices) > 1:
             vsyst = Sum.from_args(f"V syst ({npars_total}): {name}", *matrices)
@@ -173,7 +194,9 @@ class CovarianceMatrixGroup(MetaNode):
             storage = NodeStorage(default_containers=True)
 
             storage[("nodes",) + self._store_to + ("covmat_syst", name)] = self._cov_sum_syst
-            storage[("outputs",) + self._store_to + ("covmat_syst", name)] = self._cov_sum_syst.outputs[0]
+            storage[("outputs",) + self._store_to + ("covmat_syst", name)] = (
+                self._cov_sum_syst.outputs[0]
+            )
 
             NodeStorage.update_current(storage, strict=True)
 
