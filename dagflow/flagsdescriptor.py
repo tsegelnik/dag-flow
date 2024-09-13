@@ -109,8 +109,10 @@ class FlagsDescriptor:
             child.taint_children(**kwargs)
 
     def taint_type(self, force: bool = False):
+        if self.types_tainted and not force:
+            return
         self.types_tainted = True
         self.tainted = True
         self.frozen = False
         for child in self.children:
-            child.taint_children_type(force)
+            child.taint_children_type(force=force)

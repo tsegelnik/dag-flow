@@ -254,10 +254,6 @@ class Node(NodeBase):
         return self.fd.tainted
 
     @property
-    def types_tainted(self) -> bool:
-        return self.fd.types_tainted
-
-    @property
     def frozen_tainted(self) -> bool:
         return self.fd.frozen_tainted
 
@@ -606,9 +602,15 @@ class Node(NodeBase):
             self.fd.frozen_tainted = False
             self.taint()
 
-    def taint(self, *, caller: Input | None = None, force_computation: bool = False):
+    def taint(
+        self,
+        *,
+        caller: Input | None = None,
+        force: bool = False,
+        force_computation: bool = False
+    ):
         self.logger.debug(f"Node '{self.name}': Taint...")
-        if self.tainted and not force_computation:
+        if self.tainted and not force:
             return
         if self.frozen:
             self.fd.frozen_tainted = True
@@ -616,19 +618,17 @@ class Node(NodeBase):
         self.fd.tainted = True
         self._on_taint(caller)
         ret = self.touch() if (self._immediate or force_computation) else None
-        self.taint_children()
+        self.taint_children(force=force)
         return ret
 
     def taint_children(self, **kwargs):
         self.fd.taint_children(**kwargs)
 
-    def taint_type(self, force: bool = False):
+    def taint_type(self, **kwargs):
         self.logger.debug(f"Node '{self.name}': Taint types...")
         if self.closed:
             raise ClosedGraphError("Unable to taint type", node=self)
-        if self.types_tainted and not force:
-            return
-        self.fd.taint_type(force)
+        self.fd.taint_type(**kwargs)
 
     def print(self):
         print(f"Node {self._name}: →[{len(self.inputs)}],[{len(self.outputs)}]→")
@@ -652,8 +652,9 @@ class Node(NodeBase):
         pass
 
     def update_types(self, recursive: bool = True):
-        if not self.types_tainted:
+        if not self.fd.types_tainted:
             return True
+        self._fd.allocated = False
         if recursive:
             self.logger.debug(f"Node '{self.name}': Trigger recursive update types...")
             for input in self.inputs.iter_all():

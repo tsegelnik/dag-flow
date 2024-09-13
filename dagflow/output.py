@@ -191,9 +191,9 @@ class Output:
     ):
         if self.closed:
             raise ClosedGraphError("Unable to set output data.", node=self._node, output=self)
-        if self._data is not None and not override:
-            # NOTE: this will fail during reallocation
-            raise AllocationError("Output already has data.", node=self._node, output=self)
+        # if self._data is not None and not override:
+        #     # NOTE: this will fail during reallocation
+        #     raise AllocationError("Output already has data.", node=self._node, output=self)
         if owns_buffer:
             forbid_reallocation = True
         elif forbid_reallocation is None:
@@ -206,6 +206,9 @@ class Output:
                 node=self._node,
                 output=self,
             )
+
+        if self.dd.dtype!=data.dtype or self.dd.shape!=data.shape:
+            self.node.taint_type()
 
         self._data = data
         self.dd.dtype = data.dtype
@@ -350,8 +353,8 @@ class Output:
                     self._set_data(idata, owns_buffer=False, override=True)
                 return True
 
-        if self.has_data:
-            return True
+        # if self.has_data:
+        #     return True
 
         if self.dd.shape is None or self.dd.dtype is None:
             raise AllocationError(
