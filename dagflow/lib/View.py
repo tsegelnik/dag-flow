@@ -51,6 +51,10 @@ class View(Node):
         """A output takes this function to determine the dtype and shape"""
         copy_from_input_to_output(self, 0, 0)
 
+        if self._length is not None:
+            dd = self.outputs[0].dd
+            dd.shape=(self._length,)+dd.shape[1:]
+
     def _post_allocate(self) -> None:
         _input = self.inputs[0]
         output = self.outputs[0]
