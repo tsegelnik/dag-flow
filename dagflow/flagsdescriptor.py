@@ -20,6 +20,7 @@ class FlagsDescriptor:
         "closed",
         "allocated",
         "needs_reallocation",
+        "needs_postallocate",
         "being_evaluated",
         "types_tainted",
         "_children",
@@ -34,6 +35,7 @@ class FlagsDescriptor:
     closed: bool
     allocated: bool
     needs_reallocation: bool
+    needs_postallocate: bool
     being_evaluated: bool
     types_tainted: bool
     # observers and observed
@@ -58,6 +60,7 @@ class FlagsDescriptor:
         self.being_evaluated = False
         self.types_tainted = True
         self.needs_reallocation = False
+        self.needs_postallocate = False
 
     def __str__(self) -> str:
         return ", ".join(f"{slot}={getattr(self, slot)}" for slot in self.__slots__)

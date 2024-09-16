@@ -685,7 +685,7 @@ class Node(NodeBase):
         self.logger.debug(f"Node '{self.name}': Allocate memory on outputs")
         output_reassigned = self.outputs.allocate()
         self.logger.debug(f"Node '{self.name}': Post allocate")
-        if input_reassigned or output_reassigned:
+        if input_reassigned or output_reassigned or self._fd.needs_postallocate:
             self._post_allocate()
         self._fd.allocated = True
         self._fd.needs_reallocation = False
