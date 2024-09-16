@@ -9,9 +9,9 @@ from .datadescriptor import DataDescriptor
 from .edges import EdgeContainer
 from .exception import (
     AllocationError,
+    CalculationError,
     ClosedGraphError,
     ConnectionError,
-    CalculationError,
     DagflowError,
     InitializationError,
     UnclosedGraphError,
@@ -207,7 +207,7 @@ class Output:
                 output=self,
             )
 
-        if self.dd.dtype!=data.dtype or self.dd.shape!=data.shape:
+        if not self.dd.consistent_with(data):
             self.node.taint_type()
 
         self._data = data
@@ -330,16 +330,17 @@ class Output:
     def connected(self):
         return bool(self._child_inputs)
 
-    def allocate(self, **kwargs):
+    def allocate(self, **kwargs) -> bool:
+        """returns True if data was reassigned"""
         if not self._allocatable:
-            return True
+            return False
 
         if self._allocating_input:
             _input = self._allocating_input
             _input.allocate(recursive=False)
             if _input.has_data:
                 idata = _input._own_data
-                if idata.shape != self.dd.shape or idata.dtype != self.dd.dtype:
+                if not self.dd.consistent_with(idata):
                     raise AllocationError(
                         "Input's data shape/type is inconsistent",
                         node=self._node,
@@ -353,8 +354,8 @@ class Output:
                     self._set_data(idata, owns_buffer=False, override=True)
                 return True
 
-        # if self.has_data:
-        #     return True
+        if (data := self._data) is not None and self.dd.consistent_with(data):
+            return False
 
         if self.dd.shape is None or self.dd.dtype is None:
             raise AllocationError(
@@ -362,6 +363,7 @@ class Output:
                 node=self._node,
                 output=self,
             )
+
         try:
             data = zeros(self.dd.shape, self.dd.dtype, **kwargs)
             self._set_data(data, owns_buffer=True)
@@ -406,7 +408,7 @@ class Output:
 
         if size > 1:
             ret["value"] = "…"
-        elif size==1:
+        elif size == 1:
             try:
                 data = self.data
             except DagflowError:

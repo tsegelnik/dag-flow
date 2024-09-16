@@ -654,7 +654,6 @@ class Node(NodeBase):
     def update_types(self, recursive: bool = True):
         if not self.fd.types_tainted:
             return True
-        self._fd.allocated = False
         # TODO: causes problems with nodes, that are allocated and closed prior the graph being closed
         # Need a mechanism to request reallocation
         if recursive:
@@ -667,8 +666,10 @@ class Node(NodeBase):
         self._typefunc()
         self.fd.types_tainted = False
 
+        self._fd.needs_reallocation = True
+
     def allocate(self, recursive: bool = True):
-        if self.allocated:
+        if self._fd.allocated and not self._fd.needs_reallocation:
             return True
         if recursive:
             self.logger.debug(f"Node '{self.name}': Trigger recursive memory allocation...")
@@ -680,14 +681,14 @@ class Node(NodeBase):
                 if not parent_node.allocate(recursive):
                     return False
         self.logger.debug(f"Node '{self.name}': Allocate memory on inputs")
-        if not self.inputs.allocate():
-            raise AllocationError("Cannot allocate memory for inputs!", node=self)
+        input_reassigned = self.inputs.allocate()
         self.logger.debug(f"Node '{self.name}': Allocate memory on outputs")
-        if not self.outputs.allocate():
-            raise AllocationError("Cannot allocate memory for outputs!", node=self)
+        output_reassigned = self.outputs.allocate()
         self.logger.debug(f"Node '{self.name}': Post allocate")
-        self._post_allocate()
-        self.fd.allocated = True
+        if input_reassigned or output_reassigned:
+            self._post_allocate()
+        self._fd.allocated = True
+        self._fd.needs_reallocation = False
         return True
 
     def close(

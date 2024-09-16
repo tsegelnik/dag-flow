@@ -107,7 +107,12 @@ class EdgeContainer:
         return [self.make_positional(name) for name in names]
 
     def allocate(self) -> bool:
-        return all(edge.allocate() for edge in self._all_edges.values())
+        """returns True if any data was reassigned"""
+        data_reassigned = False
+        for edge in self._all_edges.values():
+            data_reassigned |= edge.allocate()
+
+        return data_reassigned
 
     def __getitem__(self, key):
         if isinstance(key, str):
