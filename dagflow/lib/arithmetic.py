@@ -1,7 +1,4 @@
-from typing import Callable
-
 from numpy import add, copyto, divide, multiply, sqrt, square
-from numpy.typing import NDArray
 
 from .ManyToOneNode import ManyToOneNode
 from .OneToOneNode import OneToOneNode
@@ -10,17 +7,7 @@ from .OneToOneNode import OneToOneNode
 class Sum(ManyToOneNode):
     """Sum of all the inputs together"""
 
-    __slots__ = (
-        "_input_node_callbacks",
-        "_input_data0",
-        "_input_data",
-        "_output_data",
-    )
-
-    _input_node_callbacks: list[Callable]
-    _input_data0: NDArray
-    _input_data: list[NDArray]
-    _output_data: NDArray
+    __slots__ = ()
 
     def __init__(self, *args, **kwargs):
         kwargs.setdefault("broadcastable", True)
@@ -28,26 +15,13 @@ class Sum(ManyToOneNode):
         self._labels.setdefault("mark", "Σ")
 
     def _fcn(self):
-        for callback in self._input_node_callbacks:
+        for callback in self._input_nodes_callbacks:
             callback()
 
-        copyto(self._output_data, self._input_data0)
-        for input_data in self._input_data:
-            add(self._output_data, input_data, out=self._output_data)
-
-    def _post_allocate(self):
-        self._input_node_callbacks = []
-        self._input_data = []
-        for input in self.inputs:
-            node = input.parent_node
-            if not node in self._input_node_callbacks:
-                self._input_node_callbacks.append(node.touch)
-
-            self._input_data.append(input.data_unsafe)
-
-        self._input_data0, self._input_data = self._input_data[0], self._input_data[1:]
-        self._output_data = self.outputs["result"].data_unsafe
-
+        output_data = self._output_data
+        copyto(output_data, self._input_data0)
+        for input_data in self._input_data_other:
+            add(output_data, input_data, out=output_data)
 
 class Product(ManyToOneNode):
     """Product of all the inputs together"""
@@ -60,10 +34,13 @@ class Product(ManyToOneNode):
         self._labels.setdefault("mark", "Π")
 
     def _fcn(self):
-        out = self.outputs["result"].data
-        copyto(out, self.inputs[0].data)
-        for _input in self.inputs[1:]:
-            multiply(out, _input.data, out=out)
+        for callback in self._input_nodes_callbacks:
+            callback()
+
+        output_data = self._output_data
+        copyto(output_data, self._input_data0)
+        for _input_data in self._input_data_other:
+            multiply(output_data, _input_data, out=output_data)
 
 
 class Division(ManyToOneNode):
@@ -81,10 +58,13 @@ class Division(ManyToOneNode):
         self._labels.setdefault("mark", "÷")
 
     def _fcn(self):
-        out = self.outputs[0].data
-        copyto(out, self.inputs[0].data.copy())
-        for _input in self.inputs[1:]:
-            divide(out, _input.data, out=out)
+        for callback in self._input_nodes_callbacks:
+            callback()
+
+        output_data = self._output_data
+        copyto(output_data, self._input_data0)
+        for _input_data in self._input_data_other:
+            divide(self._output_data, _input_data, out=self._output_data)
 
 
 class Square(OneToOneNode):
@@ -97,8 +77,11 @@ class Square(OneToOneNode):
         self._labels.setdefault("mark", "x²")
 
     def _fcn(self):
-        for inp, out in zip(self.inputs, self.outputs):
-            square(inp.data, out=out.data)
+        for callback in self._input_nodes_callbacks:
+            callback()
+
+        for input_data, output_data in self._input_output_data:
+            square(input_data, out=output_data)
 
 
 class Sqrt(OneToOneNode):
@@ -111,5 +94,8 @@ class Sqrt(OneToOneNode):
         self._labels.setdefault("mark", "√x")
 
     def _fcn(self):
-        for inp, out in zip(self.inputs, self.outputs):
-            sqrt(inp.data, out=out.data)
+        for callback in self._input_nodes_callbacks:
+            callback()
+
+        for input_data, output_data in self._input_output_data:
+            sqrt(input_data, out=output_data)

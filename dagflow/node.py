@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Callable
 from weakref import ref as weakref
 
 from multikeydict.typing import KeyLike, properkey
@@ -51,6 +51,7 @@ class Node(NodeBase):
         "_fcn_chain",
         "_functions",
         "_n_calls",
+        "_input_nodes_callbacks",
     )
 
     _name: str
@@ -69,6 +70,8 @@ class Node(NodeBase):
     _auto_freeze: bool
     _immediate: bool
     # _always_tainted: bool
+
+    _input_nodes_callbacks: list[Callable]
 
     def __init__(
         self,
@@ -119,6 +122,8 @@ class Node(NodeBase):
         self._fcn_chain = []  # do we need a chain of functions?
         self._functions: dict[Any, Callable] = {"default": self._fcn}
         self.fcn = self._functions["default"]
+
+        self._input_nodes_callbacks = []
 
         if kwargs:
             raise InitializationError(f"Unparsed arguments: {kwargs}!")
@@ -649,7 +654,12 @@ class Node(NodeBase):
         """A node method to be called on taint"""
 
     def _post_allocate(self):
-        pass
+        self._input_nodes_callbacks = []
+
+        for input in self.inputs.iter_all():
+            node = input.parent_node
+            if not node in self._input_nodes_callbacks:
+                self._input_nodes_callbacks.append(node.touch)
 
     def update_types(self, recursive: bool = True):
         if not self.fd.types_tainted:
