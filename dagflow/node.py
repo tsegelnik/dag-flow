@@ -6,7 +6,6 @@ from weakref import ref as weakref
 from multikeydict.typing import KeyLike, properkey
 
 from .exception import (
-    AllocationError,
     ClosedGraphError,
     ClosingError,
     CriticalError,
@@ -26,7 +25,7 @@ from .nodebase import NodeBase
 from .output import Output
 
 if TYPE_CHECKING:
-    from collections.abc import Callable, Mapping, Sequence
+    from collections.abc import Mapping, Sequence
     from typing import Any
     from weakref import ReferenceType
 

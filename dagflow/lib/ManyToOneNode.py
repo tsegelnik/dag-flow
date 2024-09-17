@@ -88,10 +88,7 @@ class ManyToOneNode(Node):
     def _post_allocate(self):
         super()._post_allocate()
 
-        self._input_data = []
-        for input in self.inputs:
-            self._input_data.append(input.data_unsafe)
-
+        self._input_data = [input.data_unsafe for input in self.inputs]
         self._input_data0, self._input_data_other = self._input_data[0], self._input_data[1:]
         self._output_data = self.outputs["result"].data_unsafe
 

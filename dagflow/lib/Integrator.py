@@ -7,7 +7,6 @@ from numpy import empty, floating, integer, multiply
 
 from ..exception import TypeFunctionError
 from ..inputhandler import MissingInputAddPair
-from ..node import Node
 from ..typefunctions import (
     check_has_inputs,
     check_input_dimension,

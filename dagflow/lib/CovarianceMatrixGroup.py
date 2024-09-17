@@ -42,7 +42,7 @@ class CovarianceMatrixGroup(MetaNode):
         "_parameters",
         "_ignore_duplicated_paramters",
         "_store_to",
-        "_jacobian_kwargs"
+        "_jacobian_kwargs",
     )
 
     _dict_jacobian: dict[str, list[Jacobian]]
@@ -65,7 +65,7 @@ class CovarianceMatrixGroup(MetaNode):
         # labels: Mapping = {},
         store_to: KeyLike | None = None,
         ignore_duplicated_parameters: bool = False,
-        jacobian_kwargs: Mapping = {}
+        jacobian_kwargs: Mapping = {},
     ):
         super().__init__()
 
@@ -158,10 +158,10 @@ class CovarianceMatrixGroup(MetaNode):
             vsyst = Sum.from_args(f"V syst ({npars_total}): {name}", *matrices)
             for matrix in matrices:
                 self._add_node(matrix)
-            self._add_node(vsyst)
         else:
             vsyst = matrices[0]
-            self._add_node(vsyst)
+
+        self._add_node(vsyst)
 
         self._dict_cov_syst[name] = vsyst
         if storage is not None:
