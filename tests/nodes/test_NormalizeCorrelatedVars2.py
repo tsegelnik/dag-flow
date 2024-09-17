@@ -101,10 +101,12 @@ def test_NormalizeCorrelatedVars2_00(dtype):
     assert allclose(inVec, back_matrix, atol=0, rtol=0)
     assert allclose(inVec, back_diag, atol=0, rtol=0)
 
+    inZeros = zeros_like(inVec)
+    inOnes = ones_like(inVec)
+
     #
     # Set norm value
     #
-    inZeros = zeros_like(inVec)
     normvalue1d.set(inZeros)
     normvalue2d.set(inZeros)
     back_matrix = norm2d.get_data(0)
@@ -119,7 +121,6 @@ def test_NormalizeCorrelatedVars2_00(dtype):
     #
     # Set normvalue
     #
-    inOnes = ones_like(inVec)
     normvalue1d.set(inOnes)
     normvalue2d.set(inOnes)
     back_matrix = norm2d.get_data(0)
@@ -132,6 +133,39 @@ def test_NormalizeCorrelatedVars2_00(dtype):
     assert allclose(inOnes, norm_diag, atol=0, rtol=0)
     assert allclose(checkMatrixOnes, back_matrix, atol=0, rtol=0)
     assert allclose(checkDiagOnes, back_diag, atol=0, rtol=0)
+
+    #
+    # Set value and norm value
+    #
+    value1d.set(inCentral)
+    value2d.set(inCentral)
+    normvalue1d.set(inOnes)
+    normvalue2d.set(inOnes)
+    back_matrix = norm2d.get_data(0)
+    back_diag = norm1d.get_data(0)
+    norm_matrix = norm2d.get_data(1)
+    norm_diag = norm1d.get_data(1)
+    assert allclose(inOnes, norm_matrix, atol=0, rtol=0)
+    assert allclose(inOnes, norm_diag, atol=0, rtol=0)
+    assert not allclose(inCentral, back_matrix, atol=0, rtol=0)
+    assert not allclose(inCentral, back_diag, atol=0, rtol=0)
+
+    #
+    # Set value and norm value
+    #
+    normvalue1d.set(inOnes)
+    normvalue2d.set(inOnes)
+    value1d.set(inCentral)
+    value2d.set(inCentral)
+    back_matrix = norm2d.get_data(0)
+    back_diag = norm1d.get_data(0)
+    norm_matrix = norm2d.get_data(1)
+    norm_diag = norm1d.get_data(1)
+    assert not allclose(inOnes, norm_matrix, atol=0, rtol=0)
+    assert not allclose(inOnes, norm_diag, atol=0, rtol=0)
+    assert allclose(inCentral, back_matrix, atol=0, rtol=0)
+    assert allclose(inCentral, back_diag, atol=0, rtol=0)
+
 
     #
     # Set value (with immediate flag)

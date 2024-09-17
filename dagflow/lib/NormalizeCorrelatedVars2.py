@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-from numpy import add, copyto, divide, matmul, multiply, ndarray, subtract, zeros
+from numpy import add, divide, matmul, multiply, subtract, zeros
 from scipy.linalg import solve_triangular
 
 from ..node import Node
@@ -16,6 +16,8 @@ from ..typefunctions import (
 )
 
 if TYPE_CHECKING:
+    from numpy.typing import NDArray
+
     from ..input import Input
     from ..output import Output
 
@@ -33,23 +35,29 @@ class NormalizeCorrelatedVars2(Node):
         "_ndim",
         "_matrix",
         "_central",
-        "_input_value",
-        "_input_normvalue",
-        "_output_value",
-        "_output_normvalue",
-        "_valuedata",
-        "_normvaluedata",
+        "_value",
+        "_normvalue",
+        "_matrix_input",
+        "_central_input",
+        "_value_input",
+        "_normvalue_input",
+        "_value_output",
+        "_normvalue_output",
     )
 
     _ndim: str
-    _matrix: Input
-    _central: Input
-    _input_value: Input
-    _input_normvalue: Input
-    _output_value: Output
-    _output_normvalue: Output
-    _valuedata: ndarray
-    _normvaluedata: ndarray
+    _matrix: NDArray
+    _central: NDArray
+    _value: NDArray
+    _normvalue: NDArray
+
+    _matrix_input: Input
+    _central_input: Input
+    _value_input: Input
+    _normvalue_input: Input
+
+    _value_output: Output
+    _normvalue_output: Output
 
     def __init__(self, *args, **kwargs) -> None:
         super().__init__(
@@ -62,18 +70,19 @@ class NormalizeCorrelatedVars2(Node):
                 "normvalue",
             ),
         )
+        self._fd.needs_postallocate = True
         self._labels.setdefault("mark", "c↔u")
 
-        self._matrix = self._add_input("matrix", positional=False)
-        self._central = self._add_input("central", positional=False)
+        self._matrix_input = self._add_input("matrix", positional=False)
+        self._central_input = self._add_input("central", positional=False)
 
-        self._input_value, self._output_value = self._add_pair(
+        self._value_input, self._value_output = self._add_pair(
             "value",
             "value",
             input_kws={"allocatable": True},
             output_kws={"forbid_reallocation": True, "allocatable": False},
         )
-        self._input_normvalue, self._output_normvalue = self._add_pair(
+        self._normvalue_input, self._normvalue_output = self._add_pair(
             "normvalue",
             "normvalue",
             input_kws={"allocatable": True},
@@ -90,58 +99,38 @@ class NormalizeCorrelatedVars2(Node):
         )
 
     def _fcn_forward_2d(self):
-        self.inputs.touch()
-        L = self._matrix.data
-        central = self._central.data
-        input_value = self._input_value.data
-        output_value = self._output_value.data
-        output_normvalue = self._output_normvalue.data
+        for callback in self._input_nodes_callbacks:
+            callback()
 
-        subtract(input_value, central, out=output_normvalue)
+        subtract(self._value, self._central, out=self._normvalue)
         solve_triangular(
-            L,
-            output_normvalue,
+            self._matrix,
+            self._normvalue,
             lower=True,
             overwrite_b=True,
             check_finite=False,
         )
-        copyto(output_value, input_value)
 
     def _fcn_backward_2d(self):
-        self.inputs.touch()
-        L = self._matrix.data
-        central = self._central.data
-        input_normvalue = self._input_normvalue.data
-        output_value = self._output_value.data
-        output_normvalue = self._output_normvalue.data
+        for callback in self._input_nodes_callbacks:
+            callback()
 
-        matmul(L, input_normvalue, out=output_value)
-        add(output_value, central, out=output_value)
-        copyto(output_normvalue, input_normvalue)
+        matmul(self._matrix, self._normvalue, out=self._value)
+        add(self._value, self._central, out=self._value)
 
     def _fcn_forward_1d(self):
-        self.inputs.touch()
-        Ldiag = self._matrix.data
-        central = self._central.data
-        input_value = self._input_value.data
-        output_value = self._output_value.data
-        output_normvalue = self._output_normvalue.data
+        for callback in self._input_nodes_callbacks:
+            callback()
 
-        subtract(input_value, central, out=output_normvalue)
-        divide(output_normvalue, Ldiag, out=output_normvalue)
-        copyto(output_value, input_value)
+        subtract(self._value, self._central, out=self._normvalue)
+        divide(self._normvalue, self._matrix, out=self._normvalue)
 
     def _fcn_backward_1d(self):
-        self.inputs.touch()
-        Ldiag = self._matrix.data
-        central = self._central.data
-        input_normvalue = self._input_normvalue.data
-        output_value = self._output_value.data
-        output_normvalue = self._output_normvalue.data
+        for callback in self._input_nodes_callbacks:
+            callback()
 
-        multiply(Ldiag, input_normvalue, out=output_value)
-        add(output_value, central, out=output_value)
-        copyto(output_normvalue, input_normvalue)
+        multiply(self._matrix, self._normvalue, out=self._value)
+        add(self._value, self._central, out=self._value)
 
     def _on_taint(self, caller: Input) -> None:
         """Choose the function to call based on the modified input:
@@ -153,7 +142,7 @@ class NormalizeCorrelatedVars2(Node):
             - implement partial taintflag propagation
             - value should not be tainted on sigma/central modificantion
         """
-        if caller is self._input_normvalue:
+        if caller is self._normvalue_input:
             self.fcn = self._functions[f"backward_{self._ndim}"]
         else:
             self.fcn = self._functions[f"forward_{self._ndim}"]
@@ -167,7 +156,7 @@ class NormalizeCorrelatedVars2(Node):
         copy_from_input_to_output(self, slice(None), slice(None))
 
         self.labels.inherit(
-            self._input_value.parent_node.labels,
+            self._value_input.parent_node.labels,
             fmtlong="[norm] {}",
             fmtshort="n({})",
         )
@@ -175,14 +164,20 @@ class NormalizeCorrelatedVars2(Node):
         self._ndim = f"{ndim}d"
         self.fcn = self._functions[f"forward_{self._ndim}"]
 
-        self._valuedata = zeros(shape=self._input_value.dd.shape, dtype=self._input_value.dd.dtype)
-        self._normvaluedata = zeros(
-            shape=self._input_normvalue.dd.shape,
-            dtype=self._input_normvalue.dd.dtype,
+        self._value = zeros(shape=self._value_input.dd.shape, dtype=self._value_input.dd.dtype)
+        self._normvalue = zeros(
+            shape=self._normvalue_input.dd.shape,
+            dtype=self._normvalue_input.dd.dtype,
         )
-        self._input_value.set_own_data(self._valuedata, owns_buffer=False)
-        self._input_normvalue.set_own_data(self._normvaluedata, owns_buffer=False)
-        self._output_value._set_data(self._valuedata, owns_buffer=False, forbid_reallocation=True)
-        self._output_normvalue._set_data(
-            self._normvaluedata, owns_buffer=False, forbid_reallocation=True
+        self._value_input.set_own_data(self._value, owns_buffer=False)
+        self._normvalue_input.set_own_data(self._normvalue, owns_buffer=False)
+        self._value_output._set_data(self._value, owns_buffer=False, forbid_reallocation=True)
+        self._normvalue_output._set_data(
+            self._normvalue, owns_buffer=False, forbid_reallocation=True
         )
+
+    def _post_allocate(self):
+        super()._post_allocate()
+
+        self._matrix = self.inputs["matrix"].data_unsafe
+        self._central = self.inputs["central"].data_unsafe
