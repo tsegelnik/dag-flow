@@ -73,6 +73,11 @@ class Interpolator(Node):
         "_underflow",
         "_overflow",
         "_fillvalue",
+        "_y_input",
+        "_coarse_input",
+        "_fine_input",
+        "_indices_input",
+        "_result_output",
         "_y",
         "_coarse",
         "_fine",
@@ -80,11 +85,17 @@ class Interpolator(Node):
         "_result",
     )
 
-    _y: Input
-    _coarse: Input
-    _fine: Input
-    _indices: Input
-    _result: Output
+    _y_input: Input
+    _coarse_input: Input
+    _fine_input: Input
+    _indices_input: Input
+    _result_output: Output
+
+    _y: NDArray
+    _coarse: NDArray
+    _fine: NDArray
+    _indices: NDArray
+    _result: NDArray
 
     _methods: dict[str, Callable]
     _method: Callable
@@ -135,11 +146,11 @@ class Interpolator(Node):
         self._overflow = overflow
         self._fillvalue = fillvalue
         # inputs/outputs
-        self._y = self._add_input("y")
-        self._coarse = self._add_input("coarse", positional=False)
-        self._fine = self._add_input("fine", positional=False)
-        self._indices = self._add_input("indices", positional=False)
-        self._result = self._add_output("result")
+        self._y_input = self._add_input("y")
+        self._coarse_input = self._add_input("coarse", positional=False)
+        self._fine_input = self._add_input("fine", positional=False)
+        self._indices_input = self._add_input("indices", positional=False)
+        self._result_output = self._add_output("result")
 
     @property
     def methods(self) -> dict:
@@ -176,14 +187,14 @@ class Interpolator(Node):
         check_input_dimension(self, ("coarse", "y"), 1)
         check_input_dtype(self, "indices", "i")
 
-        ncoarse = self._coarse.dd.shape[0]
+        ncoarse = self._coarse_input.dd.shape[0]
         if self._methodname == "left":
             check_input_shape(self, "y", (ncoarse,), (ncoarse - 1,))
         else:
             check_input_shape(self, "y", (ncoarse,))
-        check_input_shape(self, "fine", self._indices.dd.shape)
+        check_input_shape(self, "fine", self._indices_input.dd.shape)
         copy_from_input_to_output(self, "fine", "result")
-        if self._fine.dd.dim == 1:
+        if self._fine_input.dd.dim == 1:
             assign_output_axes_from_inputs(
                 self, "fine", "result", assign_meshes=True, ignore_assigned=False
             )
@@ -199,21 +210,27 @@ class Interpolator(Node):
                 ignore_inconsistent_number_of_meshes=True,
             )
 
+    def _post_allocate(self):
+        super()._post_allocate()
+
+        self._y = self._y_input.data_unsafe.ravel()
+        self._coarse = self._coarse_input.data_unsafe.ravel()
+        self._fine = self._fine_input.data_unsafe.ravel()
+        self._indices = self._indices_input.data_unsafe.ravel()
+        self._result = self._result_output.data_unsafe.ravel()
+
     def _fcn(self):
         """Runs interpolation method chosen within `method` arg"""
-        coarse = self._coarse.data.ravel()
-        yc = self._y.data.ravel()
-        fine = self._fine.data.ravel()
-        indices = self._indices.data.ravel()
-        out = self._result.data.ravel()
+        for callback in self._input_nodes_callbacks:
+            callback()
 
         _interpolation(
             self._method,
-            coarse,
-            yc,
-            fine,
-            indices,
-            out,
+            self._coarse,
+            self._y,
+            self._fine,
+            self._indices,
+            self._result,
             self.tolerance,
             self.strategies[self.underflow],
             self.strategies[self.overflow],
@@ -235,7 +252,7 @@ def _interpolation(
     fillvalue: float,
 ) -> None:
     nseg = coarse.size - 1
-    has_last_y = coarse.size == yc.size
+    has_last_y_input = coarse.size == yc.size
     for i, j in enumerate(indices):
         if abs(fine[i] - coarse[j]) < tolerance:
             # get precise value from coarse
@@ -245,7 +262,7 @@ def _interpolation(
                 result[i] = fillvalue
             elif overflow == ExtrapolationStrategy.nearestedge:  # nearestedge
                 result[i] = yc[nseg]
-            elif has_last_y:  # extrapolate
+            elif has_last_y_input:  # extrapolate
                 result[i] = method(
                     coarse[nseg - 1],
                     coarse[nseg],
@@ -274,7 +291,7 @@ def _interpolation(
                     yc[1],
                     fine[i],
                 )
-        elif has_last_y or j < nseg:  # interpolate
+        elif has_last_y_input or j < nseg:  # interpolate
             result[i] = method(coarse[j - 1], coarse[j], yc[j - 1], yc[j], fine[i])
         else:  # interpolate
             result[i] = method(coarse[j - 1], coarse[j], yc[j - 1], yc[j - 1], fine[i])
