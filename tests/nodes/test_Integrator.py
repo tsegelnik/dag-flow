@@ -125,8 +125,9 @@ def test_Integrator_gl1d(debug_graph, testname):
 
 def test_Integrator_gl2d(debug_graph, testname):
     class Polynomial1(ManyToOneNode):
+        scale = 1.0
         def _fcn(self):
-            self.outputs["result"].data[:] = vecF0(self.inputs[1].data) * vecF0(
+            self.outputs["result"].data[:] = self.scale*vecF0(self.inputs[1].data) * vecF0(
                 self.inputs[0].data
             )
             return list(self.outputs.iter_data())
@@ -171,6 +172,7 @@ def test_Integrator_gl2d(debug_graph, testname):
         poly0.outputs[0] >> integrator
         ordersX >> integrator("ordersX")
         ordersY >> integrator("ordersY")
+
     res = (polyres.outputs[1].data - polyres.outputs[0].data) * (
         polyres.outputs[3].data - polyres.outputs[2].data
     )
@@ -206,6 +208,10 @@ def test_Integrator_gl2d(debug_graph, testname):
 
     for _ in range(7):
         close()
+
+    poly0.scale = 2.2
+    poly0.taint()
+    assert allclose(integrator.outputs[0].data, res*poly0.scale, atol=1e-10)
 
     savegraph(graph, f"output/{testname}.png")
 
