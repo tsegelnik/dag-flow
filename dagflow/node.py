@@ -615,13 +615,13 @@ class Node(NodeBase):
         self, *, caller: Input | None = None, force: bool = False, force_computation: bool = False
     ):
         self.logger.debug(f"Node '{self.name}': Taint...")
+        self._on_taint(caller)
         if self.tainted and not force:
             return
         if self.frozen:
             self.fd.frozen_tainted = True
             return
         self.fd.tainted = True
-        self._on_taint(caller)
         ret = self.touch() if (self._immediate or force_computation) else None
         self.taint_children(force=force)
         return ret
