@@ -19,6 +19,8 @@ class FlagsDescriptor:
         "invalid",
         "closed",
         "allocated",
+        "needs_reallocation",
+        "needs_postallocate",
         "being_evaluated",
         "types_tainted",
         "_children",
@@ -32,6 +34,8 @@ class FlagsDescriptor:
     invalid: bool
     closed: bool
     allocated: bool
+    needs_reallocation: bool
+    needs_postallocate: bool
     being_evaluated: bool
     types_tainted: bool
     # observers and observed
@@ -44,25 +48,19 @@ class FlagsDescriptor:
         *,
         children: Outputs,
         parents: Inputs,
-        tainted: bool = True,
-        frozen: bool = False,
-        frozen_tainted: bool = False,
-        invalid: bool = False,
-        closed: bool = False,
-        allocated: bool = False,
-        being_evaluated: bool = False,
-        types_tainted: bool = True,
     ) -> None:
         self._children = children
         self._parents = parents
-        self.tainted = tainted
-        self.frozen = frozen
-        self.frozen_tainted = frozen_tainted
-        self.invalid = invalid
-        self.closed = closed
-        self.allocated = allocated
-        self.being_evaluated = being_evaluated
-        self.types_tainted = types_tainted
+        self.tainted = True
+        self.frozen = False
+        self.frozen_tainted = False
+        self.invalid = False
+        self.closed = False
+        self.allocated = False
+        self.being_evaluated = False
+        self.types_tainted = True
+        self.needs_reallocation = False
+        self.needs_postallocate = False
 
     def __str__(self) -> str:
         return ", ".join(f"{slot}={getattr(self, slot)}" for slot in self.__slots__)
@@ -109,8 +107,10 @@ class FlagsDescriptor:
             child.taint_children(**kwargs)
 
     def taint_type(self, force: bool = False):
+        if self.types_tainted and not force:
+            return
         self.types_tainted = True
         self.tainted = True
         self.frozen = False
         for child in self.children:
-            child.taint_children_type(force)
+            child.taint_children_type(force=force)

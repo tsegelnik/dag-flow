@@ -7,7 +7,6 @@ from numpy import empty, floating, integer, multiply
 
 from ..exception import TypeFunctionError
 from ..inputhandler import MissingInputAddPair
-from ..node import Node
 from ..typefunctions import (
     check_has_inputs,
     check_input_dimension,
@@ -16,6 +15,7 @@ from ..typefunctions import (
     check_input_shape,
     check_input_subtype,
 )
+from .OneToOneNode import OneToOneNode
 
 if TYPE_CHECKING:
     from numpy.typing import NDArray
@@ -69,7 +69,7 @@ def _integrate2to1d(result: NDArray, data: NDArray, orders: NDArray):
         iprev = inext
 
 
-class Integrator(Node):
+class Integrator(OneToOneNode):
     """
     self.inputs:
         `i`: points to integrate
@@ -100,20 +100,33 @@ class Integrator(Node):
     .. _Numba: https://numba.pydata.org
     """
 
-    __slots__ = ("__buffer", "_dropdim", "_ordersX", "_ordersY", "_weights")
+    __slots__ = (
+        "__buffer",
+        "_dropdim",
+        "_ordersX_input",
+        "_ordersY_input",
+        "_weights_input",
+        "_ordersX",
+        "_ordersY",
+        "_weights",
+    )
 
     __buffer: NDArray
     _dropdim: bool
-    _ordersX: Input
-    _ordersY: Input
-    _weights: Input
+    _ordersX_input: Input
+    _ordersY_input: Input | None
+    _weights_input: Input
+    _ordersX: NDArray
+    _ordersY: NDArray | None
+    _weights: NDArray
+
 
     def __init__(self, *args, dropdim: bool = True, **kwargs):
         kwargs.setdefault("missing_input_handler", MissingInputAddPair())
         super().__init__(*args, **kwargs, allowed_kw_inputs=("ordersX", "ordersY", "weights"))
         self._dropdim = dropdim
-        self._weights = self._add_input("weights", positional=False)
-        self._ordersX = self._add_input("ordersX", positional=False)
+        self._weights_input = self._add_input("weights", positional=False)
+        self._ordersX_input = self._add_input("ordersX", positional=False)
         self._functions.update(
             {
                 1: self._fcn_1d,
@@ -123,6 +136,9 @@ class Integrator(Node):
             }
         )
         self.labels.setdefault("mark", "∫")
+
+        self._ordersY_input = None
+        self._ordersY = None
 
     @property
     def dropdim(self) -> bool:
@@ -139,8 +155,8 @@ class Integrator(Node):
         check_has_inputs(self, "weights")
 
         input0 = self.inputs[0]
-        self._ordersY = self.inputs.get("ordersY", None)
-        dim = 1 if self._ordersY is None else 2
+        self._ordersY_input = self.inputs.get("ordersY", None)
+        dim = 1 if self._ordersY_input is None else 2
         if (ndim := len(input0.dd.shape)) != dim:
             raise TypeFunctionError(
                 f"The Integrator works only with {dim}d self.inputs, but the first is {ndim}d!",
@@ -152,9 +168,9 @@ class Integrator(Node):
         dtype = input0.dd.dtype
         check_input_dtype(self, (slice(None), "weights"), dtype)
 
-        edgeslenX, edgesX = self.__check_orders("ordersX", input0.dd.shape[0])
+        edgeslenX, edgesX = self.__check_orders_input("ordersX", input0.dd.shape[0])
         if dim == 2:
-            edgeslenY, edgesY = self.__check_orders("ordersY", input0.dd.shape[1])
+            edgeslenY, edgesY = self.__check_orders_input("ordersY", input0.dd.shape[1])
             if self.dropdim and edgeslenY == 2:  # drop Y dimension
                 shape = (edgeslenX - 1,)
                 edges = [edgesX]
@@ -178,7 +194,7 @@ class Integrator(Node):
             output.dd.axes_edges = edges
             # TODO: copy axes_meshes?
 
-    def __check_orders(self, name: str, shape: ShapeLike) -> tuple:
+    def __check_orders_input(self, name: str, shape: ShapeLike) -> tuple:
         """
         The method checks dimension (==1) of the input `name`, type (==`integer`),
         and `sum(orders) == len(input)`
@@ -201,38 +217,53 @@ class Integrator(Node):
 
     def _post_allocate(self):
         """Allocates the `buffer` within `weights`"""
-        weights = self._weights.dd
+        super()._post_allocate()
+        weights = self._weights_input.dd
         self.__buffer = empty(shape=weights.shape, dtype=weights.dtype)
+
+        self._weights = self._weights_input.data_unsafe
+        self._ordersX = self._ordersX_input.data_unsafe
+        self._ordersY = self._ordersY_input.data_unsafe if self._ordersY_input else None
 
     def _fcn_1d(self):
         """1d version of integration function"""
-        weights = self._weights.data
-        ordersX = self._ordersX.data
-        for _input, output in zip(self.inputs.iter_data(), self.outputs.iter_data()):
-            multiply(_input, weights, out=self.__buffer)
-            _integrate1d(output, self.__buffer, ordersX)
+        for callback in self._input_nodes_callbacks:
+            callback()
+
+        for input, output in self._input_output_data:
+            multiply(input, self._weights, out=self.__buffer)
+            _integrate1d(output, self.__buffer, self._ordersX)
 
     def _fcn_2d(self):
         """2d version of integration function"""
-        weights = self._weights.data  # (n, m)
-        ordersX = self._ordersX.data  # (n, )
-        ordersY = self._ordersY.data  # (m, )
-        for _input, output in zip(self.inputs.iter_data(), self.outputs.iter_data()):
-            multiply(_input, weights, out=self.__buffer)
-            _integrate2d(output, self.__buffer, ordersX, ordersY)
+        for callback in self._input_nodes_callbacks:
+            callback()
+
+        # weights - (n, m)
+        # ordersX - (n, )
+        # ordersY - (m, )
+        for input, output in self._input_output_data:
+            multiply(input, self._weights, out=self.__buffer)
+            _integrate2d(output, self.__buffer, self._ordersX, self._ordersY)
 
     def _fcn_21d_x(self):
         """21d version of integration function where x-axis is dropped"""
-        weights = self._weights.data  # (1, m)
-        ordersY = self._ordersY.data  # (m, )
-        for _input, output in zip(self.inputs.iter_data(), self.outputs.iter_data()):
-            multiply(_input, weights, out=self.__buffer)
-            _integrate2to1d(output, self.__buffer.T, ordersY)
+        for callback in self._input_nodes_callbacks:
+            callback()
+
+        # weights - (1, m)
+        # ordersY - (m, )
+        for input, output in self._input_output_data:
+            multiply(input, self._weights, out=self.__buffer)
+            _integrate2to1d(output, self.__buffer.T, self._ordersY)
 
     def _fcn_21d_y(self):
         """21d version of integration function where y-axis is dropped"""
-        weights = self._weights.data  # (m, 1)
-        ordersX = self._ordersX.data  # (m, )
-        for _input, output in zip(self.inputs.iter_data(), self.outputs.iter_data()):
-            multiply(_input, weights, out=self.__buffer)
-            _integrate2to1d(output, self.__buffer, ordersX)
+        for callback in self._input_nodes_callbacks:
+            callback()
+
+        # weights - (m, 1)
+        # ordersX - (m, )
+        for input, output in self._input_output_data:
+            multiply(input, self._weights, out=self.__buffer)
+            _integrate2to1d(output, self.__buffer, self._ordersX)

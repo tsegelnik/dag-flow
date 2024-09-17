@@ -2,6 +2,8 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
+from numpy.typing import NDArray
+
 from multikeydict.typing import properkey
 
 from ..inputhandler import MissingInputAddPair
@@ -25,11 +27,15 @@ class OneToOneNode(Node):
     The abstract node with an output for every positional input
     """
 
-    __slots__ = ()
+    __slots__ = ("_input_output_data",)
+
+    _input_output_data: list[tuple[NDArray, NDArray]]
 
     def __init__(self, *args, **kwargs):
         kwargs.setdefault("missing_input_handler", MissingInputAddPair())
         super().__init__(*args, **kwargs)
+
+        self._input_output_data = []
 
     def _typefunc(self) -> None:
         """A output takes this function to determine the dtype and shape"""
@@ -38,6 +44,11 @@ class OneToOneNode(Node):
         assign_outputs_axes_from_inputs(
             self, slice(None), slice(None), assign_meshes=True, ignore_assigned=True, ignore_Nd=True
         )
+
+    def _post_allocate(self):
+        super()._post_allocate()
+        for input, output in zip(self.inputs, self.outputs):
+            self._input_output_data.append((input.data_unsafe, output.data_unsafe))
 
     @classmethod
     def replicate(

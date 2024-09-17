@@ -26,12 +26,13 @@ def test_Sum_01(testname, debug_graph, dtype):
     assert all(output.data == res)
     assert sm.tainted == False
 
-    arrays_in = (arrays_in[1],) + arrays_in[1:]
-    res = sum(arrays_in, axis=0)
-    assert arrays[0].set(arrays[1].get_data())
-    assert sm.tainted == True
-    assert all(output.data == res)
-    assert sm.tainted == False
+    for i in range(len(arrays_in)):
+        arrays_in[i][:]=2.3 * (i+2)**2 + i
+        res = arrays_in[0] + arrays_in[1] + arrays_in[2]
+        arrays[i].outputs[0].set(2.3 * (i+2)**2 + i)
+        assert sm.tainted == True
+        assert all(output.data == res)
+        assert sm.tainted == False
 
     savegraph(graph, f"output/{testname}.png")
 
@@ -52,12 +53,13 @@ def test_Product_01(testname, debug_graph, dtype):
     assert (output.data == res).all()
     assert prod.tainted == False
 
-    arrays_in = (arrays_in[1],) + arrays_in[1:]
-    res = arrays_in[0] * arrays_in[1] * arrays_in[2]
-    assert arrays[0].set(arrays[1].get_data())
-    assert prod.tainted == True
-    assert all(output.data == res)
-    assert prod.tainted == False
+    for i in range(len(arrays_in)):
+        arrays_in[i][:]=2.3 * (i+2)**2 + i
+        res = arrays_in[0] * arrays_in[1] * arrays_in[2]
+        arrays[i].outputs[0].set(2.3 * (i+2)**2 + i)
+        assert prod.tainted == True
+        assert all(output.data == res)
+        assert prod.tainted == False
 
     savegraph(graph, f"output/{testname}.png")
 
@@ -78,12 +80,13 @@ def test_Division_01(testname, debug_graph, dtype):
     assert (output.data == res).all()
     assert div.tainted == False
 
-    arrays_in = (arrays_in[1],) + arrays_in[1:]
-    res = arrays_in[0] / arrays_in[1] / arrays_in[2]
-    assert arrays[0].set(arrays[1].get_data())
-    assert div.tainted == True
-    assert all(output.data == res)
-    assert div.tainted == False
+    for i in range(len(arrays_in)):
+        arrays_in[i][:]=2.3 * (i+2)**2 + i
+        res = arrays_in[0] / arrays_in[1] / arrays_in[2]
+        arrays[i].outputs[0].set(2.3 * (i+2)**2 + i)
+        assert div.tainted == True
+        assert all(output.data == res)
+        assert div.tainted == False
 
     savegraph(graph, f"output/{testname}.png")
 
@@ -113,5 +116,14 @@ def test_Powers_01(testname, debug_graph, fcnname, dtype):
     assert all(output.dd.dtype == dtype for output in outputs)
     assert allclose(tuple(outputs.iter_data()), ress, rtol=0, atol=0)
     assert node.tainted == False
+
+    for i in range(len(arrays_in)):
+        arrays_in[i][:]=2.3 * (i+2)**2 + i
+        ress = fcn_np(arrays_in)
+        arrays[i].outputs[0].set(2.3 * (i+2)**2 + i)
+        assert node.tainted == True
+        assert all(output.dd.dtype == dtype for output in outputs)
+        assert allclose(tuple(outputs.iter_data()), ress, rtol=0, atol=0)
+        assert node.tainted == False
 
     savegraph(graph, f"output/{testname}.png", show="full")

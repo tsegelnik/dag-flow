@@ -245,8 +245,11 @@ class Input:
         return rshift(other, self)
 
     def allocate(self, **kwargs) -> bool:
-        if not self._allocatable or self.has_data:
-            return True
+        """returns True if data was reassigned"""
+        if not self._allocatable or (
+            (data := self._own_data) is not None and self.own_dd.consistent_with(data)
+        ):
+            return False
 
         if self.own_dd.shape is None or self.own_dd.dtype is None:
             raise AllocationError(

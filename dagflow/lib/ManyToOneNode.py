@@ -2,6 +2,8 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
+from numpy.typing import NDArray
+
 from multikeydict.typing import properkey
 
 from ..inputhandler import MissingInputAddOne
@@ -28,10 +30,21 @@ class ManyToOneNode(Node):
     which is the result of some function of all the positional inputs
     """
 
-    __slots__ = ("_broadcastable", "_check_edges_contents")
+    __slots__ = (
+        "_broadcastable",
+        "_check_edges_contents",
+        "_input_data0",
+        "_input_data_other",
+        "_input_data",
+        "_output_data",
+    )
 
     _broadcastable: bool
     _check_edges_contents: bool
+
+    _input_data0: NDArray
+    _input_data: list[NDArray]
+    _output_data: NDArray
 
     def __init__(
         self,
@@ -48,6 +61,10 @@ class ManyToOneNode(Node):
         self._add_output(output_name)
         self._broadcastable = broadcastable
         self._check_edges_contents = check_edges_contents
+
+        self._input_data0 = None # pyright: ignore [reportAttributeAccessIssue]
+        self._input_data = []
+        self._output_data = None # pyright: ignore [reportAttributeAccessIssue]
 
     @staticmethod
     def _input_names() -> tuple[str, ...]:
@@ -67,6 +84,13 @@ class ManyToOneNode(Node):
             prefer_input_with_edges=True,
         )  # copy shape to result
         eval_output_dtype(self, AllPositionals, "result")  # eval dtype of result
+
+    def _post_allocate(self):
+        super()._post_allocate()
+
+        self._input_data = [input.data_unsafe for input in self.inputs]
+        self._input_data0, self._input_data_other = self._input_data[0], self._input_data[1:]
+        self._output_data = self.outputs["result"].data_unsafe
 
     @classmethod
     def replicate(

@@ -15,11 +15,13 @@ class Sum(ManyToOneNode):
         self._labels.setdefault("mark", "Σ")
 
     def _fcn(self):
-        out = self.outputs["result"].data
-        copyto(out, self.inputs[0].data)
-        for _input in self.inputs[1:]:
-            add(out, _input.data, out=out)
+        for callback in self._input_nodes_callbacks:
+            callback()
 
+        output_data = self._output_data
+        copyto(output_data, self._input_data0)
+        for input_data in self._input_data_other:
+            add(output_data, input_data, out=output_data)
 
 class Product(ManyToOneNode):
     """Product of all the inputs together"""
@@ -32,10 +34,13 @@ class Product(ManyToOneNode):
         self._labels.setdefault("mark", "Π")
 
     def _fcn(self):
-        out = self.outputs["result"].data
-        copyto(out, self.inputs[0].data)
-        for _input in self.inputs[1:]:
-            multiply(out, _input.data, out=out)
+        for callback in self._input_nodes_callbacks:
+            callback()
+
+        output_data = self._output_data
+        copyto(output_data, self._input_data0)
+        for _input_data in self._input_data_other:
+            multiply(output_data, _input_data, out=output_data)
 
 
 class Division(ManyToOneNode):
@@ -53,10 +58,13 @@ class Division(ManyToOneNode):
         self._labels.setdefault("mark", "÷")
 
     def _fcn(self):
-        out = self.outputs[0].data
-        copyto(out, self.inputs[0].data.copy())
-        for _input in self.inputs[1:]:
-            divide(out, _input.data, out=out)
+        for callback in self._input_nodes_callbacks:
+            callback()
+
+        output_data = self._output_data
+        copyto(output_data, self._input_data0)
+        for _input_data in self._input_data_other:
+            divide(self._output_data, _input_data, out=self._output_data)
 
 
 class Square(OneToOneNode):
@@ -69,8 +77,11 @@ class Square(OneToOneNode):
         self._labels.setdefault("mark", "x²")
 
     def _fcn(self):
-        for inp, out in zip(self.inputs, self.outputs):
-            square(inp.data, out=out.data)
+        for callback in self._input_nodes_callbacks:
+            callback()
+
+        for input_data, output_data in self._input_output_data:
+            square(input_data, out=output_data)
 
 
 class Sqrt(OneToOneNode):
@@ -83,5 +94,8 @@ class Sqrt(OneToOneNode):
         self._labels.setdefault("mark", "√x")
 
     def _fcn(self):
-        for inp, out in zip(self.inputs, self.outputs):
-            sqrt(inp.data, out=out.data)
+        for callback in self._input_nodes_callbacks:
+            callback()
+
+        for input_data, output_data in self._input_output_data:
+            sqrt(input_data, out=output_data)

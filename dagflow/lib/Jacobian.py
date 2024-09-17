@@ -72,7 +72,7 @@ class Jacobian(OneToOneNode):
 
     def compute(self) -> None:
         self.unfreeze()
-        self.taint(force_computation=True)
+        self.touch(force_computation=True)
 
 def _do_step(
     icol: int,

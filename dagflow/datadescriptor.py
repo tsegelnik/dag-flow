@@ -119,3 +119,7 @@ class DataDescriptor:
                 raise RuntimeError(f"Invalid axis index {axis}") from e
 
         return None
+
+    def consistent_with(self, array: NDArray):
+        return array.shape==self._shape and array.dtype==self.dtype
+

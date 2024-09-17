@@ -115,18 +115,20 @@ class Graph(GraphBase):
 
         self.logger.debug(f"Graph '{self.name}': Update types...")
         for node in nodes_to_process:
-            try:
-                node.update_types()
-            except ClosingError:
-                if strict:
-                    raise
+            if not node.closed:
+                try:
+                    node.update_types()
+                except ClosingError:
+                    if strict:
+                        raise
         self.logger.debug(f"Graph '{self.name}': Allocate memory...")
         for node in nodes_to_process:
-            try:
-                node.allocate(**kwargs)
-            except ClosingError:
-                if strict:
-                    raise
+            if not node.closed:
+                try:
+                    node.allocate(**kwargs)
+                except ClosingError:
+                    if strict:
+                        raise
         self.logger.debug(f"Graph '{self.name}': Closing nodes...")
         for node in nodes_to_process:
             try:

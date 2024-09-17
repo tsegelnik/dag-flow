@@ -1,12 +1,11 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Callable
 from weakref import ref as weakref
 
 from multikeydict.typing import KeyLike, properkey
 
 from .exception import (
-    AllocationError,
     ClosedGraphError,
     ClosingError,
     CriticalError,
@@ -26,7 +25,7 @@ from .nodebase import NodeBase
 from .output import Output
 
 if TYPE_CHECKING:
-    from collections.abc import Callable, Mapping, Sequence
+    from collections.abc import Mapping, Sequence
     from typing import Any
     from weakref import ReferenceType
 
@@ -51,6 +50,7 @@ class Node(NodeBase):
         "_fcn_chain",
         "_functions",
         "_n_calls",
+        "_input_nodes_callbacks",
     )
 
     _name: str
@@ -69,6 +69,8 @@ class Node(NodeBase):
     _auto_freeze: bool
     _immediate: bool
     # _always_tainted: bool
+
+    _input_nodes_callbacks: list[Callable]
 
     def __init__(
         self,
@@ -120,6 +122,8 @@ class Node(NodeBase):
         self._functions: dict[Any, Callable] = {"default": self._fcn}
         self.fcn = self._functions["default"]
 
+        self._input_nodes_callbacks = []
+
         if kwargs:
             raise InitializationError(f"Unparsed arguments: {kwargs}!")
 
@@ -127,7 +131,9 @@ class Node(NodeBase):
         return f"{{{self.name}}} {super().__str__()}"
 
     @classmethod
-    def from_args(cls, name, *positional_connectibles, kwargs: Mapping={}, **key_connectibles) -> Node:
+    def from_args(
+        cls, name, *positional_connectibles, kwargs: Mapping = {}, **key_connectibles
+    ) -> Node:
         # TODO:
         #   - testing
         #   - keyword connection syntax ([] or ())
@@ -252,10 +258,6 @@ class Node(NodeBase):
     @property
     def tainted(self) -> bool:
         return self.fd.tainted
-
-    @property
-    def types_tainted(self) -> bool:
-        return self.fd.types_tainted
 
     @property
     def frozen_tainted(self) -> bool:
@@ -541,17 +543,6 @@ class Node(NodeBase):
         input = self._add_input(iname, child_output=output, **input_kws)
         return input, output
 
-    def touch(self, force_computation=False):
-        if self.frozen:
-            return
-        if not self.tainted and not force_computation:
-            return
-        ret = self.eval()
-        self.fd.tainted = False  # self._always_tainted
-        if self._auto_freeze:
-            self.fd.frozen = True
-        return ret
-
     def _stash_fcn(self):
         self._fcn_chain.append(self.fcn)
         return self.fcn
@@ -576,20 +567,33 @@ class Node(NodeBase):
     def _fcn(self):
         pass
 
-    def _eval(self):
-        self._n_calls += 1
-        return self.fcn()
-
     def eval(self):
         if not self.closed:
             raise UnclosedGraphError("Cannot evaluate not closed node!", node=self)
         self.fd.being_evaluated = True
         try:
-            ret = self._eval()
+            self._n_calls += 1
+            self.fcn()
         except DagflowError as exc:
             raise exc
         self.fd.being_evaluated = False
-        return ret
+
+    def touch(self, force_computation=False):
+        if (not self.tainted and not force_computation) or self.frozen:
+            return
+        if not self.closed:
+            raise UnclosedGraphError("Cannot evaluate not closed node!", node=self)
+        self.fd.being_evaluated = True
+        try:
+            self.fcn()
+        except DagflowError as exc:
+            raise exc
+        else:
+            self._n_calls += 1
+            self.fd.tainted = False
+            if self._auto_freeze:
+                self.fd.frozen = True
+        self.fd.being_evaluated = False
 
     def freeze(self):
         if self.frozen:
@@ -606,29 +610,29 @@ class Node(NodeBase):
             self.fd.frozen_tainted = False
             self.taint()
 
-    def taint(self, *, caller: Input | None = None, force_computation: bool = False):
+    def taint(
+        self, *, caller: Input | None = None, force: bool = False, force_computation: bool = False
+    ):
         self.logger.debug(f"Node '{self.name}': Taint...")
-        if self.tainted and not force_computation:
+        self._on_taint(caller)
+        if self.tainted and not force:
             return
         if self.frozen:
             self.fd.frozen_tainted = True
             return
         self.fd.tainted = True
-        self._on_taint(caller)
         ret = self.touch() if (self._immediate or force_computation) else None
-        self.taint_children()
+        self.taint_children(force=force)
         return ret
 
     def taint_children(self, **kwargs):
         self.fd.taint_children(**kwargs)
 
-    def taint_type(self, force: bool = False):
+    def taint_type(self, **kwargs):
         self.logger.debug(f"Node '{self.name}': Taint types...")
         if self.closed:
             raise ClosedGraphError("Unable to taint type", node=self)
-        if self.types_tainted and not force:
-            return
-        self.fd.taint_type(force)
+        self.fd.taint_type(**kwargs)
 
     def print(self):
         print(f"Node {self._name}: →[{len(self.inputs)}],[{len(self.outputs)}]→")
@@ -649,11 +653,18 @@ class Node(NodeBase):
         """A node method to be called on taint"""
 
     def _post_allocate(self):
-        pass
+        self._input_nodes_callbacks = []
+
+        for input in self.inputs.iter_all():
+            node = input.parent_node
+            if not node in self._input_nodes_callbacks:
+                self._input_nodes_callbacks.append(node.touch)
 
     def update_types(self, recursive: bool = True):
-        if not self.types_tainted:
+        if not self.fd.types_tainted:
             return True
+        # TODO: causes problems with nodes, that are allocated and closed prior the graph being closed
+        # Need a mechanism to request reallocation
         if recursive:
             self.logger.debug(f"Node '{self.name}': Trigger recursive update types...")
             for input in self.inputs.iter_all():
@@ -664,8 +675,10 @@ class Node(NodeBase):
         self._typefunc()
         self.fd.types_tainted = False
 
+        self._fd.needs_reallocation = True
+
     def allocate(self, recursive: bool = True):
-        if self.allocated:
+        if self._fd.allocated and not self._fd.needs_reallocation:
             return True
         if recursive:
             self.logger.debug(f"Node '{self.name}': Trigger recursive memory allocation...")
@@ -677,14 +690,14 @@ class Node(NodeBase):
                 if not parent_node.allocate(recursive):
                     return False
         self.logger.debug(f"Node '{self.name}': Allocate memory on inputs")
-        if not self.inputs.allocate():
-            raise AllocationError("Cannot allocate memory for inputs!", node=self)
+        input_reassigned = self.inputs.allocate()
         self.logger.debug(f"Node '{self.name}': Allocate memory on outputs")
-        if not self.outputs.allocate():
-            raise AllocationError("Cannot allocate memory for outputs!", node=self)
+        output_reassigned = self.outputs.allocate()
         self.logger.debug(f"Node '{self.name}': Post allocate")
-        self._post_allocate()
-        self.fd.allocated = True
+        if input_reassigned or output_reassigned or self._fd.needs_postallocate:
+            self._post_allocate()
+        self._fd.allocated = True
+        self._fd.needs_reallocation = False
         return True
 
     def close(
