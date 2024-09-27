@@ -10,7 +10,7 @@ from .IntegratorSampler import IntegratorSampler
 if TYPE_CHECKING:
     from collections.abc import Mapping
 
-    from multikeydict.typing import KeyLike
+    from multikeydict.typing import Key
 
     from ..node import Node
     from .IntegratorSampler import ModeType
@@ -86,9 +86,13 @@ class IntegratorGroup(MetaNode):
             "y": "mesh_y",
         },
         labels: Mapping = {},
-        replicate_outputs: tuple[KeyLike, ...] = ((),),
+        replicate_outputs: tuple[Key, ...] = ((),),
+        single_node: bool = False,
         dropdim: bool = True,
     ) -> tuple["IntegratorGroup", "NodeStorage"]:
+        #
+        # TODO: call Integrator.replicate
+        #
         storage = NodeStorage(default_containers=True)
         nodes = storage("nodes")
         inputs = storage("inputs")
@@ -103,15 +107,25 @@ class IntegratorGroup(MetaNode):
         outputs[key_sampler + (names["y"],)] = integrators._sampler.outputs["y"]
 
         label_int = labels.get("integrator", {})
+        integrator = None
+        need_new_instance = not single_node
         for key in replicate_outputs:
             if isinstance(key, str):
                 key = (key,)
             name = ".".join(key_integrator + key)
-            integrator = integrators._add_integrator(
-                name, label_int, positionals=False, dropdim=dropdim
-            )
-            nodes[key_integrator + key] = integrator
-            # NOTE: it is need to create an input and add to the storage
+
+            if need_new_instance:
+                integrator = integrators._add_integrator(
+                    name, label_int, positionals=False, dropdim=dropdim
+                )
+                nodes[key_integrator + key] = integrator
+            elif integrator is None:
+                integrator = integrators._add_integrator(
+                    name, label_int, positionals=False, dropdim=dropdim
+                )
+                nodes[key_integrator] = integrator
+
+            # NOTE: it is needed to create an input and add to the storage
             integrator()
             inputs[key_integrator + key] = integrator.inputs[-1]
             outputs[key_integrator + key] = integrator.outputs[-1]
@@ -119,3 +133,4 @@ class IntegratorGroup(MetaNode):
         NodeStorage.update_current(storage, strict=True)
 
         return integrators, storage
+

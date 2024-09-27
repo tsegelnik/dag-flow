@@ -221,6 +221,7 @@ class Interpolator(Node):
 
     def _fcn(self):
         """Runs interpolation method chosen within `method` arg"""
+        # TODO: inherit from OneToOneNode, loop inputs
         for callback in self._input_nodes_callbacks:
             callback()
 
