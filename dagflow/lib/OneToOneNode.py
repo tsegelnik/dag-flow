@@ -138,7 +138,7 @@ class OneToOneNode(Node):
                 instance = cls(".".join(outname), **kwargs)
                 nodes[outname] = instance
 
-                obj >> instance  # pyright: ignore [reportUnusedExpression]
+                obj >> instance
 
                 iter_inputs = instance.inputs.iter_all_items()
                 ninputs = instance.inputs.len_all()

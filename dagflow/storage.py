@@ -192,6 +192,8 @@ class NodeStorage(NestedMKDict):
             labels, subkey = get_label(key)
             if labels is None:
                 continue
+            if isinstance(labels, NestedMKDict):
+                labels = labels.object
             logger.log(DEBUG, "... found")
 
             if isinstance(object, Node):

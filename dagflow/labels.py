@@ -128,7 +128,13 @@ class Labels:
         d = LoadYaml(path)
         self.update(d)
 
-    def update(self, d: dict[str, str]):
+    def update(self, d: dict[str, str | dict[str, str]]):
+        match d:
+            case {"group": {} as group, **rest} if not rest:
+                d = group
+                for k, v in d.items():
+                    d[k] = v.format(space_key="")
+
         for k, v in d.items():
             setattr(self, k, v)
 
