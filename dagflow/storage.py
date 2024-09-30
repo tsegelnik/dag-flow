@@ -46,6 +46,7 @@ def _fillna(df: DataFrame, columnname: str, replacement: str):
     newcol = column.fillna(replacement)
     df[columnname] = newcol
 
+
 class NodeStorage(NestedMKDict):
     __slots__ = ("_remove_connected_inputs",)
     _remove_connected_inputs: bool
@@ -73,6 +74,7 @@ class NodeStorage(NestedMKDict):
 
     def __setitem__(self, key: KeyLike, item: Any) -> None:
         from .parameters import Parameter, Parameters
+
         match item:
             case Node() | Output() | Parameter() | Parameters():
                 logger.log(INFO3, f"Set {self.joinkey(key)}")
@@ -199,10 +201,7 @@ class NodeStorage(NestedMKDict):
             if isinstance(object, Node):
                 object.labels.update(labels)
             elif isinstance(object, Output):
-                if (
-                    object.labels is object.node.labels
-                    and len(object.node.outputs) != 1
-                ):
+                if object.labels is object.node.labels and len(object.node.outputs) != 1:
                     object.labels = object.node.labels.copy()
                 object.labels.update(labels)
 
@@ -220,24 +219,20 @@ class NodeStorage(NestedMKDict):
 
     def remove_connected_inputs(self, key: Key = ()):
         source = self(key)
-        def connected(input: Input | tuple[Input,...]):
+
+        def connected(input: Input | tuple[Input, ...]):
             match input:
                 case Input():
                     return input.connected()
                 case tuple():
                     return all(inp.connected() for inp in input)
 
-        to_remove = [
-            key
-            for key, input in source.walkitems()
-            if connected(input)
-        ]
+        to_remove = [key for key, input in source.walkitems() if connected(input)]
         for key in to_remove:
             source.delete_with_parents(key)
         for key, dct in tuple(source.walkdicts()):
             if not dct:
                 source.delete_with_parents(key)
-
 
     #
     # Converters
@@ -257,7 +252,7 @@ class NodeStorage(NestedMKDict):
 
         df.insert(4, "sigma_rel_perc", df["sigma"])
         sigma_rel_perc = df["sigma"] / df["central"] * 100.0
-        sigma_rel_perc[df["central"]==0] = nan
+        sigma_rel_perc[df["central"] == 0] = nan
         df["sigma_rel_perc"] = sigma_rel_perc
 
         for key in ("central", "sigma", "sigma_rel_perc"):
@@ -294,6 +289,7 @@ class NodeStorage(NestedMKDict):
                 pass
             case "auto":
                 from sys import stdout
+
                 if stdout.isatty():
                     truncate = get_terminal_size().columns
                 else:
@@ -322,9 +318,7 @@ class NodeStorage(NestedMKDict):
     def to_datax(self, filename: str, **kwargs) -> None:
         data = self.to_dict(**kwargs)
         include = ("value", "central", "sigma", "sigma_rel_perc")
-        odict = {
-            ".".join(k): v for k, v in data.walkitems() if (k and k[-1] in include)
-        }
+        odict = {".".join(k): v for k, v in data.walkitems() if (k and k[-1] in include)}
         logger.log(INFO1, f"Write: {filename}")
         datax(filename, **odict)
 
@@ -409,9 +403,7 @@ class PlotVisitor(NestedMKDictVisitor):
         elif self._folder is not None:
             self._kwargs["close"] = False
 
-    def _try_start_join(
-        self, key: TupleKey
-    ) -> tuple[tuple[str] | None, str | None, bool]:
+    def _try_start_join(self, key: TupleKey) -> tuple[tuple[str] | None, str | None, bool]:
         key_set = OrderedSet(key)
         need_new_figure = True
         if self._currently_active_overlay is None:
@@ -446,10 +438,7 @@ class PlotVisitor(NestedMKDictVisitor):
             return mkfig(), key, None, True
 
         index_major, index_minor, need_new_figure = self._try_start_join(key)
-        if (
-            need_new_figure
-            or (fig := self._active_figures.get(tuple(index_major))) is None
-        ):
+        if need_new_figure or (fig := self._active_figures.get(tuple(index_major))) is None:
             return mkfig(index_major), index_major, index_minor, True
 
         sca(ax := fig.axes[0])
@@ -494,10 +483,7 @@ class PlotVisitor(NestedMKDictVisitor):
             self._currently_active_overlay = None
             return
 
-        if (
-            self._currently_active_overlay
-            and not self._currently_active_overlay.intersection(key)
-        ):
+        if self._currently_active_overlay and not self._currently_active_overlay.intersection(key):
             self._close_figures()
             self._currently_active_overlay = None
 

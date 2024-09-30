@@ -2,6 +2,8 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
+from multikeydict.typing import properkey
+
 from ..metanode import MetaNode
 from ..storage import NodeStorage
 from .Integrator import Integrator
@@ -101,6 +103,9 @@ class IntegratorGroup(MetaNode):
         integrators = cls(mode, bare=True)
         key_integrator = (names["integrator"],)
         key_sampler = (names["sampler"],)
+        key_meta = (f"{key_integrator[0]}_meta",)
+
+        nodes[key_meta] = integrators
 
         integrators._init_sampler(mode, names["sampler"], labels.get("sampler", {}))
         outputs[key_sampler + (names["x"],)] = integrators._sampler.outputs["x"]
@@ -110,8 +115,7 @@ class IntegratorGroup(MetaNode):
         integrator = None
         need_new_instance = not single_node
         for key in replicate_outputs:
-            if isinstance(key, str):
-                key = (key,)
+            key = properkey(key)
             name = ".".join(key_integrator + key)
 
             if need_new_instance:
@@ -133,4 +137,3 @@ class IntegratorGroup(MetaNode):
         NodeStorage.update_current(storage, strict=True)
 
         return integrators, storage
-
