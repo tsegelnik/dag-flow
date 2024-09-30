@@ -2,6 +2,8 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
+from multikeydict.typing import properkey
+
 from ..metanode import MetaNode
 from ..node import Node
 from ..storage import NodeStorage
@@ -17,19 +19,24 @@ if TYPE_CHECKING:
 
 
 class InterpolatorGroup(MetaNode):
-    __slots__ = ("_indexer",)
+    __slots__ = (
+        "_indexer",
+        "_interpolators",
+    )
 
     _indexer: Node
+    _interpolators: list[Node]
 
     def __init__(self, *, bare: bool = False, labels: Mapping = {}, **kwargs):
         super().__init__()
+        self._interpolators = []
         if bare:
             return
 
-        self._init_indexer("indexer", label=labels.get("indexer", {}))
+        self._add_indexer("indexer", label=labels.get("indexer", {}))
         self._add_interpolator("interpolator", label=labels.get("interpolator", {}), **kwargs)
 
-    def _init_indexer(self, name: str, *, label={}):
+    def _add_indexer(self, name: str, *, label={}):
         self._indexer = SegmentIndex(name, label=label)
         self._add_node(
             self._indexer,
@@ -49,14 +56,16 @@ class InterpolatorGroup(MetaNode):
         fillvalue: float = 0.0,
         label={},
     ) -> Interpolator:
-        interpolator = Interpolator(
-            name,
-            method=method,
-            tolerance=tolerance,
-            underflow=underflow,
-            overflow=overflow,
-            fillvalue=fillvalue,
-            label=label,
+        self._interpolators.append(
+            interpolator := Interpolator(
+                name,
+                method=method,
+                tolerance=tolerance,
+                underflow=underflow,
+                overflow=overflow,
+                fillvalue=fillvalue,
+                label=label,
+            )
         )
         self._indexer.outputs["indices"] >> interpolator("indices")
 
@@ -81,6 +90,8 @@ class InterpolatorGroup(MetaNode):
         },
         labels: Mapping = {},
         *,
+        replicate_xcoarse: bool = False,
+        # replicate_ycoarse: bool = True,
         replicate_outputs: tuple[KeyLike, ...] = ((),),
         **kwargs,
     ) -> tuple["InterpolatorGroup", "NodeStorage"]:
@@ -89,23 +100,45 @@ class InterpolatorGroup(MetaNode):
         inputs = storage("inputs")
         outputs = storage("outputs")
 
-        interpolators = cls(bare=True)
+        interpolators = None
+        key_interpolator = None
 
-        interpolators._init_indexer(names["indexer"], label=labels.get("indexer", {}))
+        def newgroup(key=()):
+            nonlocal interpolators, key_interpolator
+
+            interpolators = cls(bare=True)
+            interpolators._add_indexer(names["indexer"], label=labels.get("indexer", {}))
+            key_interpolator = (names["interpolator"],)
+
+            key_meta = (f"{key_interpolator[0]}_meta",) + key
+            nodes[key_meta] = interpolators
+
+            key_indexer = (names["indexer"],) + key
+            nodes[key_indexer] = interpolators._indexer
+
         label_int = labels.get("interpolator", {})
         for key in replicate_outputs:
-            if isinstance(key, str):
-                key = (key,)
-            name = ".".join((names["interpolator"],) + key)
+            key = properkey(key)
+            if replicate_xcoarse:
+                newgroup(key)
+            elif interpolators is None:
+                newgroup()
+
+            name = ".".join(key_interpolator + key)
             interpolator = interpolators._add_interpolator(
                 name, method, label=label_int, positionals=False, **kwargs
             )
             nodes[name] = interpolator
-            inputs.child(names["interpolator"])[("ycoarse",) + key] = interpolator.inputs["y"]
-            outputs[name] = interpolator.outputs[0]
+            inputs.child(key_interpolator)[("ycoarse",) + key] = interpolator.inputs["y"]
+            outputs[name] = interpolator.outputs[-1]
 
-        inputs.child(names["interpolator"])["xcoarse"] = interpolators.inputs["coarse"]
-        inputs.child(names["interpolator"])["xfine"] = interpolators.inputs["fine"]
+            if replicate_xcoarse:
+                inputs.child(key_interpolator)[("xcoarse",) + key] = interpolators.inputs["coarse"]
+                inputs.child(key_interpolator)[("xfine",) + key] = interpolators.inputs["fine"]
+
+        if not replicate_xcoarse:
+            inputs.child(key_interpolator)["xcoarse"] = interpolators.inputs["coarse"]
+            inputs.child(key_interpolator)["xfine"] = interpolators.inputs["fine"]
 
         NodeStorage.update_current(storage, strict=True)
 
