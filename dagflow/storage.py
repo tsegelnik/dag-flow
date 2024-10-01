@@ -273,6 +273,7 @@ class NodeStorage(NestedMKDict):
 
     def to_string(self, **kwargs) -> str:
         df = self.to_df()
+        kwargs.setdefault("index", False)
         return df.to_string(**kwargs)
 
     def to_table(
@@ -280,6 +281,7 @@ class NodeStorage(NestedMKDict):
     ) -> str:
         df = self.to_df(**df_kwargs)
         kwargs.setdefault("headers", df.columns)
+        kwargs.setdefault("showindex", False)
         ret = tabulate(df, **kwargs)
 
         match truncate:
