@@ -1,5 +1,3 @@
-# to see the output from this file you need to use -s flag:
-#       pytest -s ./tests/tools/profiling/test_nodeprofiler.py
 from collections import Counter
 
 import pytest
@@ -98,7 +96,7 @@ def test_make_report_g1():
                           sort_by='count')
     profiling.make_report(agg_funcs=['min', 'count', 'single'],
                           sort_by=None)
-    
+
 def test_print_report_g1_1():
     g, _ = graph_1()
     target_nodes = g._nodes
@@ -123,7 +121,7 @@ def test_print_report_g1_2():
         profiling.estimate_target_nodes()
         profiling.print_report(agg_funcs=['single', 'count',
                                           'sum', 'percentage'])
-        
+
 def test_print_report_g1_3():
     g, _ = graph_1()
     target_nodes = g._nodes

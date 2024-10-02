@@ -47,7 +47,7 @@ class NodeProfiler(TimerProfiler):
 
     def make_report(
         self,
-        group_by: str | tuple[str] | None = "type",
+        group_by: str | list[str] | None = "type",
         agg_funcs: Sequence[str] | None = None,
         sort_by: str | None = None,
         normilize: bool = True
@@ -66,7 +66,7 @@ class NodeProfiler(TimerProfiler):
     def print_report(
         self,
         rows: int | None = 40,
-        group_by: str | None = "type",
+        group_by: str | list[str] | None = "type",
         agg_funcs: Sequence[str] | None = None,
         sort_by: str | None = None
     ) -> DataFrame:

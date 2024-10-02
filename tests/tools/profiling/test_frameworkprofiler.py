@@ -1,5 +1,3 @@
-# to see the output from this file you need to use -s flag:
-#       pytest -s ./tests/tools/profiling/test_frameworkprofiler
 import types
 from collections import Counter
 

@@ -106,7 +106,7 @@ class FrameworkProfiler(TimerProfiler):
 
     def make_report(
         self,
-        group_by = ["source nodes", "sink nodes"],
+        group_by: str | list[str] | None = ["source nodes", "sink nodes"],
         agg_funcs: Sequence[str] | None = None,
         sort_by: str | None = None
     ) -> DataFrame:
@@ -115,7 +115,7 @@ class FrameworkProfiler(TimerProfiler):
     def print_report(
         self,
         rows: int | None = 40,
-        group_by = ["source nodes", "sink nodes"],
+        group_by: str | list[str] | None = ["source nodes", "sink nodes"],
         agg_funcs: Sequence[str] | None = None,
         sort_by: str | None = None
     ) -> DataFrame:

@@ -13,7 +13,7 @@ if TYPE_CHECKING:
 from .profiler import Profiler
 
 # prefix `s_` - size notation
-# columnt aliases for aggrigate functions
+# columnt aliases for aggregate functions
 _COLUMN_ALIASES: dict[str | Callable, str] = {
     "mean": "size_single",
     "single": "size_single",
@@ -39,12 +39,16 @@ _AGG_ALIASES: dict[str, str | Callable] = {
     "size_var": "var",
 }
 
-#TODO remove aggregate by edge
-
 _DEFAULT_AGG_FUNCS = ("count", "sum")
 
 
 class MemoryProfiler(Profiler):
+    """Memory Profiler.
+
+    It helps to estimate the size of edges of the given nodes.
+    All estimations are performed in bytes and only those edges
+    that own memory (size != 0) are taken into account.
+    """
     __slots__ = ()
     def __init__(
         self,
