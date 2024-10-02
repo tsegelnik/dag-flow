@@ -12,9 +12,8 @@ def test_init_g0(monkeypatch):
     a0, a1, a2, a3, p0, p1, s0, s1, s2, s3, l_matrix, mdvdt = nodes
 
     target_nodes = [p1, s1, s2]
-    profiling = Profiler(target_nodes, n_runs=10000)
+    profiling = Profiler(target_nodes)
     assert profiling._target_nodes == target_nodes
-    assert profiling._n_runs == 10000
     assert profiling._sources == profiling._sinks == ()
 
     sources, sinks = [a2, a3], [s3]

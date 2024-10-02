@@ -61,7 +61,7 @@ class MemoryProfiler(Profiler):
         self._column_aliases = _COLUMN_ALIASES.copy()
         self._agg_aliases = _AGG_ALIASES.copy()
         self._primary_col = "size"
-        super().__init__(target_nodes, sources, sinks, n_runs=1)
+        super().__init__(target_nodes, sources, sinks)
 
     def _touch_nodes(self):
         for node in self._target_nodes:

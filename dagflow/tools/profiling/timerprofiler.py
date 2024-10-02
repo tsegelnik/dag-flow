@@ -49,7 +49,8 @@ class TimerProfiler(Profiler):
     It is not designed to be used directly,
     you should consider `NodeProfiler` or `FrameworkProfiler`.
     """
-    __slots__ = ()
+    __slots__ = ("_n_runs",)
+    _n_runs: int
 
     def __init__(
         self,
@@ -61,12 +62,21 @@ class TimerProfiler(Profiler):
         self._default_agg_funcs = _DEFAULT_AGG_FUNCS
         self._column_aliases = _COLUMN_ALIASES.copy()
         self._agg_aliases = _AGG_ALIASES.copy()
+        self._n_runs = n_runs
         self.register_agg_func(
             func=self._t_presentage,
             aliases=['%_of_total', 'percentage', 't_percentage'],
             column_name='%_of_total'
             )
-        super().__init__(target_nodes, sources, sinks, n_runs)
+        super().__init__(target_nodes, sources, sinks)
+
+    @property
+    def n_runs(self) -> int:
+        return self._n_runs
+
+    @n_runs.setter
+    def n_runs(self, value):
+        self._n_runs = value
 
     def _t_presentage(self, _s: Series) -> Series:
         """User-defined aggregate function

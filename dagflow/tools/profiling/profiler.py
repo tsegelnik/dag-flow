@@ -20,7 +20,6 @@ class Profiler(metaclass=ABCMeta):
         "_target_nodes",
         "_sources",
         "_sinks",
-        "_n_runs",
         "_estimations_table",
         "_allowed_groupby",
         "_default_agg_funcs",
@@ -31,7 +30,6 @@ class Profiler(metaclass=ABCMeta):
     _target_nodes: Sequence[Node]
     _sources: Sequence[Node]
     _sinks: Sequence[Node]
-    _n_runs: int
     _estimations_table: DataFrame
     _allowed_groupby: tuple[list[str] | str, ...]
     _default_agg_funcs: tuple[str | Callable, ...]
@@ -44,11 +42,9 @@ class Profiler(metaclass=ABCMeta):
         target_nodes: Sequence[Node] = (),
         sources: Sequence[Node] = (),
         sinks: Sequence[Node] = (),
-        n_runs: int = 100
     ):
         self._sources = sources
         self._sinks = sinks
-        self._n_runs = n_runs
         if target_nodes:
             self._target_nodes = target_nodes
         elif sources and sinks:
@@ -59,14 +55,6 @@ class Profiler(metaclass=ABCMeta):
                 "or provide `sources` and `sinks` arguments"
                 "to automatically find the target nodes"
             )
-
-    @property
-    def n_runs(self) -> int:
-        return self._n_runs
-
-    @n_runs.setter
-    def n_runs(self, value):
-        self._n_runs = value
 
     def __child_nodes_gen(self, node: Node) -> Generator[Node, None, None]:
         """Access to the child nodes of the given node via the generator"""

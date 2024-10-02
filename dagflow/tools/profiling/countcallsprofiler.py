@@ -41,7 +41,7 @@ class CountCallsProfiler(Profiler):
         sources: Sequence[Node] = (),
         sinks: Sequence[Node] = (),
     ):
-        super().__init__(target_nodes, sources, sinks, n_runs=1)
+        super().__init__(target_nodes, sources, sinks)
         self._primary_col = "calls"
         self._default_agg_funcs = ("count", "mean", "sum")
         self._agg_aliases = _AGG_ALIASES.copy()
