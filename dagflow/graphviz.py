@@ -11,6 +11,7 @@ from .input import Input
 from .logger import INFO1, logger
 from .node import Node
 from .output import Output
+from .storage import NodeStorage
 
 if TYPE_CHECKING:
     from collections.abc import Mapping, Sequence
@@ -22,7 +23,10 @@ try:
     import pygraphviz as G
 except ImportError:
     GraphDot = None
-    savegraph = None
+
+    def savegraph(args, **kwargs):
+        pass
+
 else:
 
     def savegraph(graph, *args, **kwargs):
@@ -198,7 +202,7 @@ else:
             keep_direction: bool = False,
             **kwargs,
         ) -> GraphDot:
-            node0=nodes[0]
+            node0 = nodes[0]
 
             gd = cls(None, *args, **kwargs)
             label = [node0.name]
@@ -639,8 +643,9 @@ else:
         def set_label(self, label: str):
             self._graph.graph_attr["label"] = label
 
-        def savegraph(self, fname):
-            logger.log(INFO1, f"Write: {fname}")
+        def savegraph(self, fname, *, quiet: bool=False):
+            if not quiet:
+                logger.log(INFO1, f"Write: {fname}")
             if fname.endswith(".dot"):
                 self._graph.write(fname)
             else:
