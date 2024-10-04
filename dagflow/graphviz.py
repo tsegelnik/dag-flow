@@ -446,14 +446,19 @@ else:
             if self._node_is_filtered(nodedag):
                 return
             vnode = self.get_id(output, "_mid")
-            self._graph.add_node(
-                vnode, label="", shape="cds", width=0.1, height=0.1, color="forestgreen", weight=10
-            )
+
+            edge_added = False
             for input in output.child_inputs:
                 if self._add_edge(nodedag, output, input, vtarget=vnode):
+                    edge_added = True
                     break
             for input in output.child_inputs:
-                self._add_edge(nodedag, output, input, vsource=vnode)
+                edge_added |= self._add_edge(nodedag, output, input, vsource=vnode)
+
+            if edge_added:
+                self._graph.add_node(
+                    vnode, label="", shape="cds", width=0.1, height=0.1, color="forestgreen", weight=10
+                )
 
         def _add_edges_multi_few(self, iout: int, nodedag, output):
             if self._node_is_filtered(nodedag):
