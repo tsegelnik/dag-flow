@@ -80,13 +80,14 @@ else:
         def __init__(
             self,
             graph_or_node: Graph | Node | None,
+            *,
             graphattr: dict = {},
             edgeattr: dict = {},
             nodeattr: dict = {},
             show: Sequence | str = ["type", "mark", "label"],
             filter: Mapping[str, Sequence[str | int]] = {},
             label: str | None = None,
-            **kwargs,
+            agraph_kwargs: Mapping = {},
         ):
             if show == "full" or "full" in show:
                 self._show = {
@@ -133,7 +134,7 @@ else:
             self._nodes_open_input = {}
             self._nodes_open_output = {}
             self._edges: dict[str, EdgeDef] = {}
-            self._graph = G.AGraph(directed=True, strict=False, **kwargs)
+            self._graph = G.AGraph(directed=True, strict=False, **agraph_kwargs)
 
             if graphattr:
                 self._graph.graph_attr.update(graphattr)
