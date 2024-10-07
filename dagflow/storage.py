@@ -82,27 +82,38 @@ class NodeStorage(NestedMKDict):
     ):
         from .graphviz import GraphDot
         from os import makedirs
-        from os.path import dirname
 
         items = list(self.walkitems())
         nitems = len(items)
+        folder0 = folder
         for i, (key, node) in enumerate(items):
             if not isinstance(node, Node):
                 continue
-
-            path = "/".join(key).replace(".", "_")
-            filename = f"{folder}/{path}.dot"
-            makedirs(dirname(filename), exist_ok=True)
 
             if not isinstance(node, Node):
                 continue
             if not node.labels.index_in_mask(accept_index):
                 continue
 
-            gd = GraphDot.from_nodes([node], mindepth=mindepth, maxdepth=maxdepth, **kwargs)
-            gd.savegraph(filename, quiet=True)
+            stem, index = [], []
+            index_values = node.labels.index_values
+            for skey in key:
+                if skey in index_values:
+                    index.append(skey)
+                else:
+                    stem.append(skey)
+            if stem:
+                stem, index = stem[:-1], stem[-1:]+index
 
-            logger.log(INFO1, f"Write: {filename} [{i+1}/{nitems}]")
+            folder = folder0 + "/" + "/".join(stem).replace(".", "_")
+            filename = "_".join(index).replace(".", "_")
+            makedirs(folder, exist_ok=True)
+            fullname = f"{folder}/{filename}.dot"
+
+            gd = GraphDot.from_nodes([node], mindepth=mindepth, maxdepth=maxdepth, **kwargs)
+            gd.savegraph(fullname, quiet=True)
+
+            logger.log(INFO1, f"Write: {fullname} [{i+1}/{nitems}]")
 
     def __setitem__(self, key: KeyLike, item: Any) -> None:
         from .parameters import Parameter, Parameters
