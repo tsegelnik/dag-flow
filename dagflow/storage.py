@@ -72,7 +72,14 @@ class NodeStorage(NestedMKDict):
     def plot(self, *args, **kwargs) -> None:
         self.visit(PlotVisitor(*args, **kwargs))
 
-    def savegraphs(self, folder: str, mindepth: int = -2, maxdepth: int = 2, **kwargs):
+    def savegraphs(
+        self,
+        folder: str,
+        mindepth: int = -2,
+        maxdepth: int = 2,
+        accept_index: Mapping[str, str | int | Container[str | int]] | None = None,
+        **kwargs
+    ):
         from .graphviz import GraphDot
         from os import makedirs
         from os.path import dirname
@@ -86,6 +93,11 @@ class NodeStorage(NestedMKDict):
             path = "/".join(key).replace(".", "_")
             filename = f"{folder}/{path}.dot"
             makedirs(dirname(filename), exist_ok=True)
+
+            if not isinstance(node, Node):
+                continue
+            if not node.labels.index_in_mask(accept_index):
+                continue
 
             gd = GraphDot.from_nodes([node], mindepth=mindepth, maxdepth=maxdepth, **kwargs)
             gd.savegraph(filename, quiet=True)

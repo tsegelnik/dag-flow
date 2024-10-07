@@ -568,15 +568,9 @@ else:
             if node.labels.node_hidden:
                 return True
 
-            index = node.labels.index_dict
-            for category, list_accepted in self._filter.items():
-                if (
-                    (idxnum := index.get(category)) is not None
-                    and idxnum[0] not in list_accepted
-                    and idxnum[1] not in list_accepted
-                ):
-                    self._filtered_nodes.add(node)
-                    return True
+            if not node.labels.index_in_mask(self._filter):
+                self._filtered_nodes.add(node)
+                return True
 
             return False
 

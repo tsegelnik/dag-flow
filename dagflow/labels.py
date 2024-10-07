@@ -6,7 +6,7 @@ from typing import TYPE_CHECKING
 from .tools.schema import LoadYaml
 
 if TYPE_CHECKING:
-    from collections.abc import Callable, Mapping, Sequence
+    from collections.abc import Callable, Container, Mapping, Sequence
     from typing import Any
 
 
@@ -152,6 +152,30 @@ class Labels:
     @property
     def index_dict(self) -> dict[str, tuple[str, int]]:
         return self._index_dict
+
+    def index_in_mask(self, accepted_items: Mapping[str, str | int | Container[str | int]] | None) -> bool:
+        if accepted_items is None:
+            return True
+
+        index = self.index_dict
+        for category, accepted_list in accepted_items.items():
+            if (idxnum := index.get(category)) is None:
+                continue
+
+            if isinstance(accepted_list, str):
+                if (
+                    idxnum[0] != accepted_list  # key value
+                    and idxnum[1] != accepted_list  # key index
+                ):
+                    return False
+            else:
+                if (
+                    idxnum[0] not in accepted_list  # key value
+                    and idxnum[1] not in accepted_list  # key index
+                ):
+                    return False
+
+        return True
 
     @index_dict.setter
     def index_dict(self, index_dict: dict[str, tuple[str, int]]):
