@@ -205,10 +205,16 @@ class NodeStorage(NestedMKDict):
 
         def get_label(key):
             try:
-                # if strict:
-                #     labels = source.pop(key, delete_parents=True)
-                # else:
-                labels = source(key)
+                nkey = key+("node",)
+                labels = source.get_dict(nkey)
+            except (KeyError, TypeError):
+                pass
+            else:
+                processed_keys_set.add(nkey)
+                return labels, None
+
+            try:
+                labels = source.get_dict(key)
             except (KeyError, TypeError):
                 pass
             else:
@@ -220,7 +226,7 @@ class NodeStorage(NestedMKDict):
             while keyleft:
                 groupkey = keyleft + ["group"]
                 try:
-                    labels = source(groupkey)
+                    labels = source.get_dict(groupkey)
                 except (KeyError, TypeError):
                     keyright.insert(0, keyleft.pop())
                 else:
