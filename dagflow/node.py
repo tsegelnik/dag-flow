@@ -561,15 +561,15 @@ class Node(NodeBase):
 
         def gather_inputs(node):
             for inp in node.inputs:
-                if inp not in all_inputs:
-                    all_inputs.append(inp.touch)
-                    if (pnode:=inp.parent_node):
+                if (pnode:=inp.parent_node):
+                    if pnode._fd.tainted == True and inp not in all_inputs:
+                        all_inputs.append(inp.touch)
                         gather_inputs(pnode)
 
         gather_inputs(self)
         return all_inputs
 
-    def touch(self, force_computation=False, recursive=True):
+    def touch(self, force_computation=False, recursive=False):
         if self.frozen:
             return
         if not self.tainted and not force_computation:
