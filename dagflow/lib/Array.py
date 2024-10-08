@@ -93,6 +93,7 @@ class Array(Node):
         name,
         value: Number,
         *,
+        store: bool = False,
         edges: Output | Sequence[Output] | Node,
         dtype: DTypeLike = None,
         **kwargs,
@@ -107,7 +108,11 @@ class Array(Node):
         else:
             raise RuntimeError("Invalid edges specification")
         array = full(shape, value, dtype=dtype)
-        return cls.make_stored(name, array, edges=edges, **kwargs)
+
+        if store:
+            return cls.make_stored(name, array, edges=edges, **kwargs)
+
+        return cls(name, array, edges=edges, **kwargs)
 
     @classmethod
     def from_storage(
