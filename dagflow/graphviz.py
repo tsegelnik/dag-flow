@@ -331,7 +331,7 @@ else:
         ) -> None:
             if self._node_is_filtered(node):
                 return
-            if node in visited_nodes and not ignore_visit:
+            if depth!=0 and node in visited_nodes and not ignore_visit:
                 return
             visited_nodes.add(node)
             if including_self and not self._add_node_only(
