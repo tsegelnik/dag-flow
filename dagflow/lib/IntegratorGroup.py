@@ -110,6 +110,7 @@ class IntegratorGroup(MetaNode):
         integrators._init_sampler(mode, names["sampler"], labels.get("sampler", {}))
         outputs[key_sampler + (names["x"],)] = integrators._sampler.outputs["x"]
         outputs[key_sampler + (names["y"],)] = integrators._sampler.outputs["y"]
+        nodes[key_sampler] = integrators._sampler
 
         label_int = labels.get("integrator", {})
         integrator = None
