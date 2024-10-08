@@ -101,15 +101,15 @@ class IntegratorGroup(MetaNode):
         outputs = storage("outputs")
 
         integrators = cls(mode, bare=True)
-        key_integrator = (names["integrator"],)
-        key_sampler = (names["sampler"],)
-        key_meta = (f"{key_integrator[0]}_meta",)
+        key_integrator = tuple(names["integrator"].split("."))
+        key_sampler = names["sampler"].split(".")
+        key_meta = f"{key_integrator[0]}_meta".split(".")
 
         nodes[key_meta] = integrators
 
         integrators._init_sampler(mode, names["sampler"], labels.get("sampler", {}))
-        outputs[key_sampler + (names["x"],)] = integrators._sampler.outputs["x"]
-        outputs[key_sampler + (names["y"],)] = integrators._sampler.outputs["y"]
+        outputs[key_sampler + names["x"].split(".")] = integrators._sampler.outputs["x"]
+        outputs[key_sampler + names["y"].split(".")] = integrators._sampler.outputs["y"]
         nodes[key_sampler] = integrators._sampler
 
         label_int = labels.get("integrator", {})
