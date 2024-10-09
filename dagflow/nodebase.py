@@ -131,13 +131,14 @@ class NodeBase:
         elif isinstance(other, Sequence):
             self.__rshift_sequence(other)
         elif isinstance(other, (Mapping, NestedMKDict)):
-            for name, output in self.outputs.iter_kw_items():
-                try:
-                    input = other[name]
-                except KeyError as e:
-                    raise ConnectionError(f"Unable to find input {name}", node=self) from e
-                else:
-                    output >> input
+            raise RuntimeError("Outdated logick. Reimplement!")
+            # for name, output in self.outputs.iter_kw_items():
+            #     try:
+            #         input = other[name]
+            #     except KeyError as e:
+            #         raise ConnectionError(f"Unable to find input {name}", node=self) from e
+            #     else:
+            #         output >> input
         elif isinstance(other, NodeBase):
             return rshift(self, other)
         else:

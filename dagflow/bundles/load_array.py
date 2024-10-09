@@ -80,7 +80,7 @@ def load_array(
     storage = NodeStorage(default_containers=True)
     with storage:
         for key, array in data.items():
-            Array.make_stored(name + key, array, **array_kwargs)
+            Array.make_stored(".".join(name + key), array, **array_kwargs)
 
     NodeStorage.update_current(storage, strict=True)
 

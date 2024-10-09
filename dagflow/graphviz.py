@@ -22,7 +22,10 @@ try:
     import pygraphviz as G
 except ImportError:
     GraphDot = None
-    savegraph = None
+
+    def savegraph(args, **kwargs):
+        pass
+
 else:
 
     def savegraph(graph, *args, **kwargs):
@@ -76,13 +79,14 @@ else:
         def __init__(
             self,
             graph_or_node: Graph | Node | None,
+            *,
             graphattr: dict = {},
             edgeattr: dict = {},
             nodeattr: dict = {},
             show: Sequence | str = ["type", "mark", "label"],
             filter: Mapping[str, Sequence[str | int]] = {},
             label: str | None = None,
-            **kwargs,
+            agraph_kwargs: Mapping = {},
         ):
             if show == "full" or "full" in show:
                 self._show = {
@@ -129,7 +133,7 @@ else:
             self._nodes_open_input = {}
             self._nodes_open_output = {}
             self._edges: dict[str, EdgeDef] = {}
-            self._graph = G.AGraph(directed=True, strict=False, **kwargs)
+            self._graph = G.AGraph(directed=True, strict=False, **agraph_kwargs)
 
             if graphattr:
                 self._graph.graph_attr.update(graphattr)
@@ -198,7 +202,7 @@ else:
             keep_direction: bool = False,
             **kwargs,
         ) -> GraphDot:
-            node0=nodes[0]
+            node0 = nodes[0]
 
             gd = cls(None, *args, **kwargs)
             label = [node0.name]
@@ -253,9 +257,14 @@ else:
                 return False
             # print(f"{depth=: 2d}: {node.name}")
 
-            if depth > 0 or num_in_range(node.outputs[0].dd.size, minsize):
-                self._add_node(node, depth=depth)
-                return True
+            try:
+                o0size = node.outputs[0].dd.size
+            except IndexError:
+                pass
+            else:
+                if depth > 0 or num_in_range(o0size, minsize):
+                    self._add_node(node, depth=depth)
+                    return True
 
             return False
 
@@ -326,7 +335,7 @@ else:
         ) -> None:
             if self._node_is_filtered(node):
                 return
-            if node in visited_nodes and not ignore_visit:
+            if depth!=0 and node in visited_nodes and not ignore_visit:
                 return
             visited_nodes.add(node)
             if including_self and not self._add_node_only(
@@ -442,14 +451,19 @@ else:
             if self._node_is_filtered(nodedag):
                 return
             vnode = self.get_id(output, "_mid")
-            self._graph.add_node(
-                vnode, label="", shape="cds", width=0.1, height=0.1, color="forestgreen", weight=10
-            )
+
+            edge_added = False
             for input in output.child_inputs:
                 if self._add_edge(nodedag, output, input, vtarget=vnode):
+                    edge_added = True
                     break
             for input in output.child_inputs:
-                self._add_edge(nodedag, output, input, vsource=vnode)
+                edge_added |= self._add_edge(nodedag, output, input, vsource=vnode)
+
+            if edge_added:
+                self._graph.add_node(
+                    vnode, label="", shape="cds", width=0.1, height=0.1, color="forestgreen", weight=10
+                )
 
         def _add_edges_multi_few(self, iout: int, nodedag, output):
             if self._node_is_filtered(nodedag):
@@ -559,42 +573,40 @@ else:
             if node.labels.node_hidden:
                 return True
 
-            index = node.labels.index_dict
-            for category, list_accepted in self._filter.items():
-                if (
-                    (idxnum := index.get(category)) is not None
-                    and idxnum[0] not in list_accepted
-                    and idxnum[1] not in list_accepted
-                ):
-                    self._filtered_nodes.add(node)
-                    return True
+            if not node.labels.index_in_mask(self._filter):
+                self._filtered_nodes.add(node)
+                return True
 
             return False
 
         def _set_style_node(self, node, attr):
             if node is None:
                 attr["color"] = "gray"
-            else:
-                try:
-                    if node.invalid:
-                        attr["color"] = "black"
-                    elif node.being_evaluated:
-                        attr["color"] = "gold"
-                    elif node.tainted:
-                        attr["color"] = "red"
-                    elif node.frozen_tainted:
-                        attr["color"] = "blue"
-                    elif node.frozen:
-                        attr["color"] = "cyan"
-                    elif node.immediate:
-                        attr["color"] = "green"
-                    else:
-                        attr["color"] = "forestgreen"
+                return
 
-                    if node.exception is not None:
-                        attr["color"] = "magenta"
-                except AttributeError:
-                    attr["color"] = "yellow"
+            try:
+                if node.invalid:
+                    attr["color"] = "black"
+                elif node.being_evaluated:
+                    attr["color"] = "gold"
+                elif node.tainted:
+                    attr["color"] = "red"
+                elif node.frozen_tainted:
+                    attr["color"] = "blue"
+                elif node.frozen:
+                    attr["color"] = "cyan"
+                elif node.immediate:
+                    attr["color"] = "green"
+                else:
+                    attr["color"] = "forestgreen"
+
+                if node.exception is not None:
+                    attr["color"] = "magenta"
+            except AttributeError:
+                attr["color"] = "yellow"
+
+            if attr.get("depth")=="0":
+                attr["penwidth"] = 2
 
         def _set_style_edge(self, obj, attrin, attr, attrout):
             if isinstance(obj, Input):
@@ -639,8 +651,9 @@ else:
         def set_label(self, label: str):
             self._graph.graph_attr["label"] = label
 
-        def savegraph(self, fname):
-            logger.log(INFO1, f"Write: {fname}")
+        def savegraph(self, fname, *, quiet: bool=False):
+            if not quiet:
+                logger.log(INFO1, f"Write: {fname}")
             if fname.endswith(".dot"):
                 self._graph.write(fname)
             else:

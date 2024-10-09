@@ -2,6 +2,8 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
+from multikeydict.typing import properkey
+
 from ..metanode import MetaNode
 from ..storage import NodeStorage
 from .Integrator import Integrator
@@ -10,7 +12,7 @@ from .IntegratorSampler import IntegratorSampler
 if TYPE_CHECKING:
     from collections.abc import Mapping
 
-    from multikeydict.typing import KeyLike
+    from multikeydict.typing import Key
 
     from ..node import Node
     from .IntegratorSampler import ModeType
@@ -86,32 +88,49 @@ class IntegratorGroup(MetaNode):
             "y": "mesh_y",
         },
         labels: Mapping = {},
-        replicate_outputs: tuple[KeyLike, ...] = ((),),
+        replicate_outputs: tuple[Key, ...] = ((),),
+        single_node: bool = False,
         dropdim: bool = True,
     ) -> tuple["IntegratorGroup", "NodeStorage"]:
+        #
+        # TODO: call Integrator.replicate
+        #
         storage = NodeStorage(default_containers=True)
         nodes = storage("nodes")
         inputs = storage("inputs")
         outputs = storage("outputs")
 
         integrators = cls(mode, bare=True)
-        key_integrator = (names["integrator"],)
-        key_sampler = (names["sampler"],)
+        key_integrator = tuple(names["integrator"].split("."))
+        key_sampler = names["sampler"].split(".")
+        key_meta = f"{key_integrator[0]}_meta".split(".")
+
+        nodes[key_meta] = integrators
 
         integrators._init_sampler(mode, names["sampler"], labels.get("sampler", {}))
-        outputs[key_sampler + (names["x"],)] = integrators._sampler.outputs["x"]
-        outputs[key_sampler + (names["y"],)] = integrators._sampler.outputs["y"]
+        outputs[key_sampler + names["x"].split(".")] = integrators._sampler.outputs["x"]
+        outputs[key_sampler + names["y"].split(".")] = integrators._sampler.outputs["y"]
+        nodes[key_sampler] = integrators._sampler
 
         label_int = labels.get("integrator", {})
+        integrator = None
+        need_new_instance = not single_node
         for key in replicate_outputs:
-            if isinstance(key, str):
-                key = (key,)
+            key = properkey(key)
             name = ".".join(key_integrator + key)
-            integrator = integrators._add_integrator(
-                name, label_int, positionals=False, dropdim=dropdim
-            )
-            nodes[key_integrator + key] = integrator
-            # NOTE: it is need to create an input and add to the storage
+
+            if need_new_instance:
+                integrator = integrators._add_integrator(
+                    name, label_int, positionals=False, dropdim=dropdim
+                )
+                nodes[key_integrator + key] = integrator
+            elif integrator is None:
+                integrator = integrators._add_integrator(
+                    name, label_int, positionals=False, dropdim=dropdim
+                )
+                nodes[key_integrator] = integrator
+
+            # NOTE: it is needed to create an input and add to the storage
             integrator()
             inputs[key_integrator + key] = integrator.inputs[-1]
             outputs[key_integrator + key] = integrator.outputs[-1]

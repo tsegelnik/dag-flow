@@ -17,7 +17,7 @@ if TYPE_CHECKING:
     from matplotlib.axes import Axes
     from typing import TYPE_CHECKING, Any, Literal
 
-    from collections.abc import Mapping, MutableSet, Sequence
+    from collections.abc import Mapping, MutableSet, Sequence, Container
 
 from LaTeXDatax import datax
 from numpy import nan, ndarray
@@ -46,6 +46,7 @@ def _fillna(df: DataFrame, columnname: str, replacement: str):
     newcol = column.fillna(replacement)
     df[columnname] = newcol
 
+
 class NodeStorage(NestedMKDict):
     __slots__ = ("_remove_connected_inputs",)
     _remove_connected_inputs: bool
@@ -71,8 +72,50 @@ class NodeStorage(NestedMKDict):
     def plot(self, *args, **kwargs) -> None:
         self.visit(PlotVisitor(*args, **kwargs))
 
+    def savegraphs(
+        self,
+        folder: str,
+        mindepth: int = -2,
+        maxdepth: int = 2,
+        accept_index: Mapping[str, str | int | Container[str | int]] | None = None,
+        **kwargs,
+    ):
+        from os import makedirs
+
+        from .graphviz import GraphDot
+
+        items = list(self.walkitems())
+        nitems = len(items)
+        folder0 = folder
+        for i, (key, node) in enumerate(items):
+            if not isinstance(node, Node):
+                continue
+            if not node.labels.index_in_mask(accept_index):
+                continue
+
+            stem, index = [], []
+            index_values = node.labels.index_values
+            for skey in key:
+                if skey in index_values:
+                    index.append(skey)
+                else:
+                    stem.append(skey)
+            if stem:
+                stem, index = stem[:-1], stem[-1:] + index
+
+            folder = f"{folder0}/{'/'.join(stem).replace('.', '_')}"
+            filename = "_".join(index).replace(".", "_")
+            makedirs(folder, exist_ok=True)
+            fullname = f"{folder}/{filename}.dot"
+
+            gd = GraphDot.from_nodes([node], mindepth=mindepth, maxdepth=maxdepth, **kwargs)
+            gd.savegraph(fullname, quiet=True)
+
+            logger.log(INFO1, f"Write: {fullname} [{i+1}/{nitems}]")
+
     def __setitem__(self, key: KeyLike, item: Any) -> None:
         from .parameters import Parameter, Parameters
+
         match item:
             case Node() | Output() | Parameter() | Parameters():
                 logger.log(INFO3, f"Set {self.joinkey(key)}")
@@ -160,10 +203,16 @@ class NodeStorage(NestedMKDict):
 
         def get_label(key):
             try:
-                # if strict:
-                #     labels = source.pop(key, delete_parents=True)
-                # else:
-                labels = source(key)
+                nkey = key + ("node",)
+                labels = source.get_dict(nkey)
+            except (KeyError, TypeError):
+                pass
+            else:
+                processed_keys_set.add(nkey)
+                return labels, None
+
+            try:
+                labels = source.get_dict(key)
             except (KeyError, TypeError):
                 pass
             else:
@@ -175,7 +224,7 @@ class NodeStorage(NestedMKDict):
             while keyleft:
                 groupkey = keyleft + ["group"]
                 try:
-                    labels = source(groupkey)
+                    labels = source.get_dict(groupkey)
                 except (KeyError, TypeError):
                     keyright.insert(0, keyleft.pop())
                 else:
@@ -192,15 +241,14 @@ class NodeStorage(NestedMKDict):
             labels, subkey = get_label(key)
             if labels is None:
                 continue
+            if isinstance(labels, NestedMKDict):
+                labels = labels.object
             logger.log(DEBUG, "... found")
 
             if isinstance(object, Node):
                 object.labels.update(labels)
             elif isinstance(object, Output):
-                if (
-                    object.labels is object.node.labels
-                    and len(object.node.outputs) != 1
-                ):
+                if object.labels is object.node.labels and len(object.node.outputs) != 1:
                     object.labels = object.node.labels.copy()
                 object.labels.update(labels)
 
@@ -218,24 +266,20 @@ class NodeStorage(NestedMKDict):
 
     def remove_connected_inputs(self, key: Key = ()):
         source = self(key)
-        def connected(input: Input | tuple[Input,...]):
+
+        def connected(input: Input | tuple[Input, ...]):
             match input:
                 case Input():
                     return input.connected()
                 case tuple():
                     return all(inp.connected() for inp in input)
 
-        to_remove = [
-            key
-            for key, input in source.walkitems()
-            if connected(input)
-        ]
+        to_remove = [key for key, input in source.walkitems() if connected(input)]
         for key in to_remove:
             source.delete_with_parents(key)
         for key, dct in tuple(source.walkdicts()):
             if not dct:
                 source.delete_with_parents(key)
-
 
     #
     # Converters
@@ -255,7 +299,7 @@ class NodeStorage(NestedMKDict):
 
         df.insert(4, "sigma_rel_perc", df["sigma"])
         sigma_rel_perc = df["sigma"] / df["central"] * 100.0
-        sigma_rel_perc[df["central"]==0] = nan
+        sigma_rel_perc[df["central"] == 0] = nan
         df["sigma_rel_perc"] = sigma_rel_perc
 
         for key in ("central", "sigma", "sigma_rel_perc"):
@@ -276,6 +320,7 @@ class NodeStorage(NestedMKDict):
 
     def to_string(self, **kwargs) -> str:
         df = self.to_df()
+        kwargs.setdefault("index", False)
         return df.to_string(**kwargs)
 
     def to_table(
@@ -283,6 +328,7 @@ class NodeStorage(NestedMKDict):
     ) -> str:
         df = self.to_df(**df_kwargs)
         kwargs.setdefault("headers", df.columns)
+        kwargs.setdefault("showindex", False)
         ret = tabulate(df, **kwargs)
 
         match truncate:
@@ -292,6 +338,7 @@ class NodeStorage(NestedMKDict):
                 pass
             case "auto":
                 from sys import stdout
+
                 if stdout.isatty():
                     truncate = get_terminal_size().columns
                 else:
@@ -320,9 +367,7 @@ class NodeStorage(NestedMKDict):
     def to_datax(self, filename: str, **kwargs) -> None:
         data = self.to_dict(**kwargs)
         include = ("value", "central", "sigma", "sigma_rel_perc")
-        odict = {
-            ".".join(k): v for k, v in data.walkitems() if (k and k[-1] in include)
-        }
+        odict = {".".join(k): v for k, v in data.walkitems() if (k and k[-1] in include)}
         logger.log(INFO1, f"Write: {filename}")
         datax(filename, **odict)
 
@@ -407,9 +452,7 @@ class PlotVisitor(NestedMKDictVisitor):
         elif self._folder is not None:
             self._kwargs["close"] = False
 
-    def _try_start_join(
-        self, key: TupleKey
-    ) -> tuple[tuple[str] | None, str | None, bool]:
+    def _try_start_join(self, key: TupleKey) -> tuple[tuple[str] | None, str | None, bool]:
         key_set = OrderedSet(key)
         need_new_figure = True
         if self._currently_active_overlay is None:
@@ -444,10 +487,7 @@ class PlotVisitor(NestedMKDictVisitor):
             return mkfig(), key, None, True
 
         index_major, index_minor, need_new_figure = self._try_start_join(key)
-        if (
-            need_new_figure
-            or (fig := self._active_figures.get(tuple(index_major))) is None
-        ):
+        if need_new_figure or (fig := self._active_figures.get(tuple(index_major))) is None:
             return mkfig(index_major), index_major, index_minor, True
 
         sca(ax := fig.axes[0])
@@ -492,10 +532,7 @@ class PlotVisitor(NestedMKDictVisitor):
             self._currently_active_overlay = None
             return
 
-        if (
-            self._currently_active_overlay
-            and not self._currently_active_overlay.intersection(key)
-        ):
+        if self._currently_active_overlay and not self._currently_active_overlay.intersection(key):
             self._close_figures()
             self._currently_active_overlay = None
 
