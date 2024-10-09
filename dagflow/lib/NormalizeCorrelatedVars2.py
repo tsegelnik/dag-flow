@@ -70,7 +70,7 @@ class NormalizeCorrelatedVars2(Node):
                 "normvalue",
             ),
         )
-        self._fd.needs_postallocate = True
+        self._fd.needs_post_allocate = True
         self._labels.setdefault("mark", "c↔u")
 
         self._matrix_input = self._add_input("matrix", positional=False)

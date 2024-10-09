@@ -10,7 +10,7 @@ class Proxy(ManyToOneNode):
     def __init__(self, *args, **kwargs):
         self._idx = 0
         super().__init__(*args, **kwargs)
-        self._fd.needs_postallocate = True
+        self._fd.needs_post_allocate = True
         self._labels.setdefault("mark", "proxy")
 
     def _fcn(self):
