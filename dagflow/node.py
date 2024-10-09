@@ -438,6 +438,7 @@ class Node(NodeBase):
         self.inputs.add(inp, positional=positional, keyword=keyword)
         if self._graph:
             self._graph._add_input(inp)
+        self._fd.allocated = False
         return inp
 
     def add_output(
