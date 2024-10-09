@@ -3,6 +3,7 @@ from __future__ import annotations
 from .exception import ClosedGraphError, ClosingError, InitializationError, UnclosedGraphError
 from .graphbase import GraphBase
 from .logger import Logger, get_logger
+from .functionstack import FunctionStack
 
 
 class Graph(GraphBase):
@@ -20,6 +21,7 @@ class Graph(GraphBase):
         "_nodes_closed",
         "_debug",
         "_logger",
+        "_fstack"
     )
 
     _label: str | None
@@ -29,6 +31,7 @@ class Graph(GraphBase):
     _nodes_closed: bool
     _debug: bool
     _logger: Logger
+    _fstack: list #FunctionStack
 
     def __init__(self, *args, close_on_exit: bool = False, strict: bool = True, **kwargs):
         super().__init__(*args)
@@ -39,6 +42,7 @@ class Graph(GraphBase):
         self._strict = strict
         self._closed = False
         self._nodes_closed = False
+        self._fstack = []# FunctionStack()
         # init or get default logger
         self._logger = get_logger(
             filename=kwargs.pop("logfile", None),

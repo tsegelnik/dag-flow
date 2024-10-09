@@ -23,7 +23,6 @@ from .labels import Labels
 from .logger import Logger, get_logger
 from .nodebase import NodeBase
 from .output import Output
-from .functionstack import _fstack
 
 if TYPE_CHECKING:
     from collections.abc import Mapping, Sequence
@@ -32,7 +31,7 @@ if TYPE_CHECKING:
 
     from .metanode import MetaNode
     from .storage import NodeStorage
-
+    from .functionstack import FunctionStack
 
 class Node(NodeBase):
     __slots__ = (
@@ -52,6 +51,7 @@ class Node(NodeBase):
         "_functions",
         "_n_calls",
         "_input_nodes_callbacks",
+        "_fstack"
     )
 
     _name: str
@@ -60,6 +60,7 @@ class Node(NodeBase):
     _graph: Graph | None
     _exception: str | None
     _logger: Logger
+    _fstack: list#"FunctionStack"
 
     _metanode: ReferenceType | None
     _fd: FlagsDescriptor
@@ -99,6 +100,7 @@ class Node(NodeBase):
         self._n_calls = 0
 
         self.graph = Graph.current() if graph is None else graph
+        self._fstack = self.graph._fstack
         if debug is None and self.graph is not None:
             self._debug = self.graph.debug
         else:
@@ -557,31 +559,43 @@ class Node(NodeBase):
         return all_inputs
 
     def gather_all_inputs_touch(self):
-        all_inputs = []
-
         def gather_inputs(node):
-            for inp in node.inputs:
-                if (pnode:=inp.parent_node):
-                    if pnode._fd.tainted == True and inp not in all_inputs:
-                        all_inputs.append(inp.touch)
-                        gather_inputs(pnode)
+            if not node.fd.tainted or self.frozen or node in self._fstack:
+                return
+            for input in node.inputs:
+                inode = input._parent_output._node
+                fd = inode.fd
+                if fd.tainted and not fd.frozen and inode not in self._fstack:
+                    gather_inputs(inode)
+                    #self._fstack.append(inode)
+            #if node not in self._fstack:
+            #    self._fstack.append(node)
+            self._fstack.append(node)
 
+        if not self.fd.tainted or self.fd.frozen:
+            return
         gather_inputs(self)
-        return all_inputs
 
-    def touch(self, force_computation=False, recursive=False):
+    def touch(self, force_computation=False, recursive=True):
+        if recursive:
+            #self.logger.debug(f"Recursive: {self.name}")
+            self.gather_all_inputs_touch()
+            #self._fstack.extend(self.gather_all_inputs_touch())
+            #self.logger.debug(self._fstack)
+            #self._fstack.free()
+            for obj in self._fstack:
+                obj._touch()
+                self._fstack.remove(obj)
+        else:
+            self._touch(force_computation=force_computation)
+    
+    def _touch(self, force_computation=False):
         if self.frozen:
             return
         if not self.tainted and not force_computation:
             return
 
-        self.logger.debug(f"Node '{self.name}': Touch")
-
-        if recursive:
-            self.logger.debug(f"Recursive: {self.name}")
-            _fstack.extend(self.gather_all_inputs_touch())
-            #self.logger.debug(_fstack)
-            _fstack.free()
+        #self.logger.debug(f"Node '{self.name}': Touch")
 
         ret = self.eval()
         self.fd.tainted = False  # self._always_tainted
@@ -622,23 +636,6 @@ class Node(NodeBase):
             self.fcn()
         except DagflowError as exc:
             raise exc
-        self.fd.being_evaluated = False
-
-    def touch(self, force_computation=False):
-        if (not self.tainted and not force_computation) or self.frozen:
-            return
-        if not self.closed:
-            raise UnclosedGraphError("Cannot evaluate not closed node!", node=self)
-        self.fd.being_evaluated = True
-        try:
-            self.fcn()
-        except DagflowError as exc:
-            raise exc
-        else:
-            self._n_calls += 1
-            self.fd.tainted = False
-            if self._auto_freeze:
-                self.fd.frozen = True
         self.fd.being_evaluated = False
 
     def freeze(self):
@@ -704,7 +701,7 @@ class Node(NodeBase):
         for input in self.inputs.iter_all():
             node = input.parent_node
             if not node in self._input_nodes_callbacks:
-                self._input_nodes_callbacks.append(node.touch)
+                self._input_nodes_callbacks.append(node._touch)
 
     def update_types(self, recursive: bool = True):
         if not self.fd.types_tainted:
