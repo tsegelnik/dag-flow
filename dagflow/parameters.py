@@ -584,23 +584,32 @@ class GaussianConstraint(Constraint):
         else:
             normmark = "norm"
         self._normvalue_node = Array(
-            f"[norm] {value_node.name}",
+            f"normal unit: {value_node.name}",
             zeros_like(self.central._data),
             mark=normmark,
             mode="store_weak",
         )
         self._normvalue_node.labels.inherit(
-            self._pars._value_node.labels, fmtlong="[norm] {}", fmtshort="n({})"
+            self._pars._value_node.labels, fmtlong="normal unit: {}", fmtshort="n({})"
         )
         self.normvalue = self._normvalue_node.outputs[0]
 
-        self._norm_node = NormalizeCorrelatedVars2(f"[norm] {value_node.name}", immediate=True)
+        self._norm_node = NormalizeCorrelatedVars2(f"normal unit {value_node.name}", immediate=True)
         self.central >> self._norm_node.inputs["central"]
         self.sigma >> self._norm_node.inputs["matrix"]
 
+        fmts = {
+                "_cholesky_node": ("Cholesky: {}", "L({})"),
+                "_covariance_node": ("Cholesky: {}", "L({})"),
+                "_normvalue_node": ("normal unit: {}", "n({})")
+                }
         for nodename in ("_cholesky_node", "_covariance_node", "_norm_node", "_sigma_node"):
             if cnode := getattr(self, nodename):
                 cnode.labels.inherit(self._pars._value_node.labels, fields=("index_values",))
+        for nodename in ("_cholesky_node", "_covariance_node", "_normvalue_node"):
+            if (cnode := getattr(self, nodename)) is not None:
+                fmtlong, fmtshort = fmts[nodename]
+                cnode.labels.inherit(self._pars._value_node.labels, fmtlong=fmtlong, fmtshort=fmtshort)
 
         (parameters.value, self.normvalue) >> self._norm_node
         self.normvalue_final = self._norm_node.outputs["normvalue"]

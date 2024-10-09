@@ -197,11 +197,13 @@ def get_label(key: tuple, labelscfg: dict) -> dict:
         if not subkey and "text" not in lcfg:
             break
 
-        key_str = ".".join(key[n - 1 :])
+        rightkey = key[n - 1 :]
+        key_str = ".".join(rightkey)
         ret = format_dict(
             lcfg,
             key_str,
             key=key_str,
+            index=rightkey,
             space_key=f" {key_str}",
             key_space=f"{key_str} ",
             process_keys=label_keys,
@@ -213,7 +215,9 @@ def get_label(key: tuple, labelscfg: dict) -> dict:
 
 
 def _add_paths_from_labels(paths: list, cfg: NestedMKDict):
-    for _, cfg_label in cfg.walkdicts(ignorekeys=("value", "central", "sigma", "sigma_percent", "variable")):
+    for _, cfg_label in cfg.walkdicts(
+        ignorekeys=("value", "central", "sigma", "sigma_percent", "variable")
+    ):
         paths.extend(cfg_label.get("paths"))
 
 
@@ -329,7 +333,8 @@ def _load_parameters(
 
             label = format_dict(
                 label_local.copy(),
-                subkey=key_str,
+                index=subkey,
+                key=subkey_str,
                 space_key=f" {subkey_str}",
                 key_space=f"{subkey_str} ",
                 process_keys=label_keys,
@@ -357,6 +362,7 @@ def _load_parameters(
         label_mat = format_dict(
             label_mat,
             key="",
+            index=(),
             space_key="",
             key_space="",
             process_keys=label_keys,
@@ -385,10 +391,11 @@ def _load_parameters(
                 processed_cfgs.add(fullkey + name)
             _add_paths_from_labels(paths, varcfg)
 
-
             labelsub = format_dict(
                 dict(label, name=".".join(fullkey)),
                 subkey=subkey_str,
+                index=subkey,
+                key=subkey_str,
                 space_key=f" {subkey_str}",
                 key_space=f"{subkey_str} ",
                 process_keys=label_keys,

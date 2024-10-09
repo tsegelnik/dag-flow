@@ -254,7 +254,9 @@ class NodeStorage(NestedMKDict):
 
             if subkey:
                 skey = ".".join(subkey)
-                object.labels.format(space_key=f" {skey}", key_space=f"{skey} ")
+                object.labels.format(
+                    index=subkey, key=skey, space_key=f" {skey}", key_space=f"{skey} "
+                )
 
         if strict:
             for key in processed_keys_set:

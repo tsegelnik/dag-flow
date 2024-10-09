@@ -133,7 +133,7 @@ class Labels:
             case {"group": {} as group, **rest} if not rest:
                 d = group
                 for k, v in d.items():
-                    d[k] = v.format(space_key="")
+                    d[k] = v.format(space_key="", key_space="", key="", index=())
 
         for k, v in d.items():
             setattr(self, k, v)
@@ -153,7 +153,9 @@ class Labels:
     def index_dict(self) -> dict[str, tuple[str, int]]:
         return self._index_dict
 
-    def index_in_mask(self, accepted_items: Mapping[str, str | int | Container[str | int]] | None) -> bool:
+    def index_in_mask(
+        self, accepted_items: Mapping[str, str | int | Container[str | int]] | None
+    ) -> bool:
         if accepted_items is None:
             return True
 
