@@ -43,6 +43,7 @@ class ManyToOneNode(Node):
     _check_edges_contents: bool
 
     _input_data0: NDArray
+    _input_data_other: list[NDArray]
     _input_data: list[NDArray]
     _output_data: NDArray
 
@@ -63,6 +64,7 @@ class ManyToOneNode(Node):
         self._check_edges_contents = check_edges_contents
 
         self._input_data0 = None # pyright: ignore [reportAttributeAccessIssue]
+        self._input_data_other = []
         self._input_data = []
         self._output_data = None # pyright: ignore [reportAttributeAccessIssue]
 
