@@ -11,7 +11,6 @@ from .input import Input
 from .logger import INFO1, logger
 from .node import Node
 from .output import Output
-from .storage import NodeStorage
 
 if TYPE_CHECKING:
     from collections.abc import Mapping, Sequence
@@ -258,9 +257,14 @@ else:
                 return False
             # print(f"{depth=: 2d}: {node.name}")
 
-            if depth > 0 or num_in_range(node.outputs[0].dd.size, minsize):
-                self._add_node(node, depth=depth)
-                return True
+            try:
+                o0size = node.outputs[0].dd.size
+            except IndexError:
+                pass
+            else:
+                if depth > 0 or num_in_range(o0size, minsize):
+                    self._add_node(node, depth=depth)
+                    return True
 
             return False
 
@@ -578,27 +582,31 @@ else:
         def _set_style_node(self, node, attr):
             if node is None:
                 attr["color"] = "gray"
-            else:
-                try:
-                    if node.invalid:
-                        attr["color"] = "black"
-                    elif node.being_evaluated:
-                        attr["color"] = "gold"
-                    elif node.tainted:
-                        attr["color"] = "red"
-                    elif node.frozen_tainted:
-                        attr["color"] = "blue"
-                    elif node.frozen:
-                        attr["color"] = "cyan"
-                    elif node.immediate:
-                        attr["color"] = "green"
-                    else:
-                        attr["color"] = "forestgreen"
+                return
 
-                    if node.exception is not None:
-                        attr["color"] = "magenta"
-                except AttributeError:
-                    attr["color"] = "yellow"
+            try:
+                if node.invalid:
+                    attr["color"] = "black"
+                elif node.being_evaluated:
+                    attr["color"] = "gold"
+                elif node.tainted:
+                    attr["color"] = "red"
+                elif node.frozen_tainted:
+                    attr["color"] = "blue"
+                elif node.frozen:
+                    attr["color"] = "cyan"
+                elif node.immediate:
+                    attr["color"] = "green"
+                else:
+                    attr["color"] = "forestgreen"
+
+                if node.exception is not None:
+                    attr["color"] = "magenta"
+            except AttributeError:
+                attr["color"] = "yellow"
+
+            if attr.get("depth")=="0":
+                attr["penwidth"] = 2
 
         def _set_style_edge(self, obj, attrin, attr, attrout):
             if isinstance(obj, Input):

@@ -17,7 +17,7 @@ if TYPE_CHECKING:
     from matplotlib.axes import Axes
     from typing import TYPE_CHECKING, Any, Literal
 
-    from collections.abc import Mapping, MutableSet, Sequence
+    from collections.abc import Mapping, MutableSet, Sequence, Container
 
 from LaTeXDatax import datax
 from numpy import nan, ndarray
@@ -78,18 +78,16 @@ class NodeStorage(NestedMKDict):
         mindepth: int = -2,
         maxdepth: int = 2,
         accept_index: Mapping[str, str | int | Container[str | int]] | None = None,
-        **kwargs
+        **kwargs,
     ):
-        from .graphviz import GraphDot
         from os import makedirs
+
+        from .graphviz import GraphDot
 
         items = list(self.walkitems())
         nitems = len(items)
         folder0 = folder
         for i, (key, node) in enumerate(items):
-            if not isinstance(node, Node):
-                continue
-
             if not isinstance(node, Node):
                 continue
             if not node.labels.index_in_mask(accept_index):
@@ -103,9 +101,9 @@ class NodeStorage(NestedMKDict):
                 else:
                     stem.append(skey)
             if stem:
-                stem, index = stem[:-1], stem[-1:]+index
+                stem, index = stem[:-1], stem[-1:] + index
 
-            folder = folder0 + "/" + "/".join(stem).replace(".", "_")
+            folder = f"{folder0}/{'/'.join(stem).replace('.', '_')}"
             filename = "_".join(index).replace(".", "_")
             makedirs(folder, exist_ok=True)
             fullname = f"{folder}/{filename}.dot"
@@ -205,7 +203,7 @@ class NodeStorage(NestedMKDict):
 
         def get_label(key):
             try:
-                nkey = key+("node",)
+                nkey = key + ("node",)
                 labels = source.get_dict(nkey)
             except (KeyError, TypeError):
                 pass

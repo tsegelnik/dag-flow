@@ -131,7 +131,7 @@ class NodeBase:
         elif isinstance(other, Sequence):
             self.__rshift_sequence(other)
         elif isinstance(other, (Mapping, NestedMKDict)):
-            raise RuntimerError("Outdated logick. Reimplement!")
+            raise RuntimeError("Outdated logick. Reimplement!")
             # for name, output in self.outputs.iter_kw_items():
             #     try:
             #         input = other[name]
