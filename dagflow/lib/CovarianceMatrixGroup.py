@@ -109,7 +109,7 @@ class CovarianceMatrixGroup(MetaNode):
             npars_total += npars
 
             jacobian = Jacobian(
-                f"Jacobian ({npars}): {name}", parameters=pars, **self._jacobian_kwargs
+                f"Jacobian ({npars} pars): {name}", parameters=pars, **self._jacobian_kwargs
             )
             jacobian()
             self._add_node(jacobian, kw_inputs={"input": "model"}, merge_inputs=("model",))
