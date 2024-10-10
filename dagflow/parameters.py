@@ -86,7 +86,7 @@ class Parameter:
             )
             self._view.labels.inherit(
                 labels,
-                fmtlong=f"{{}} {idxname} [{idx}]",
+                fmtlong=f"{{}}\\nparameter {idx}: {idxname}",
             )
             # if idxtuple:
             #     self._view.labels.index_values.extend(idxtuple)
