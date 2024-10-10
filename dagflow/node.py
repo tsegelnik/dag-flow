@@ -438,6 +438,7 @@ class Node(NodeBase):
         self.inputs.add(inp, positional=positional, keyword=keyword)
         if self._graph:
             self._graph._add_input(inp)
+        self._fd.allocated = False
         return inp
 
     def add_output(
@@ -694,7 +695,7 @@ class Node(NodeBase):
         self.logger.debug(f"Node '{self.name}': Allocate memory on outputs")
         output_reassigned = self.outputs.allocate()
         self.logger.debug(f"Node '{self.name}': Post allocate")
-        if input_reassigned or output_reassigned or self._fd.needs_postallocate:
+        if input_reassigned or output_reassigned or self._fd.needs_post_allocate:
             self._post_allocate()
         self._fd.allocated = True
         self._fd.needs_reallocation = False

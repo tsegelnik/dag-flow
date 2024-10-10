@@ -141,9 +141,10 @@ class Input:
             child_output.parent_input = self
 
     def set_parent_output(self, parent_output: Output, force: bool = False) -> None:
-        if not self.closed:
-            return self._set_parent_output(parent_output, force)
-        raise ClosedGraphError(input=self, node=self.node, output=parent_output)
+        if self.closed:
+            raise ClosedGraphError(input=self, node=self.node, output=parent_output)
+
+        return self._set_parent_output(parent_output, force)
 
     def _set_parent_output(self, parent_output: Output, force: bool = False) -> None:
         if self.connected() and not force:

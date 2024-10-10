@@ -277,7 +277,7 @@ class Output:
                 )
             self._allocating_input = input
         self._child_inputs.append(input)
-        input._set_parent_output(self)
+        input.set_parent_output(self)
         return input
 
     def deep_iter_outputs(self, disconnected_only=False):
