@@ -324,8 +324,8 @@ class Output:
         for input in self._child_inputs:
             input.taint_type(**kwargs)
 
-    def touch(self, recursive=False):
-        return self._node.touch(recursive=recursive)
+    def touch(self):
+        return self._node.touch()
 
     def connected(self):
         return bool(self._child_inputs)

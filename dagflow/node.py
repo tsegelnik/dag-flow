@@ -3,6 +3,8 @@ from __future__ import annotations
 from typing import TYPE_CHECKING, Callable
 from weakref import ref as weakref
 
+from numpy import empty
+
 from multikeydict.typing import KeyLike, properkey
 
 from .exception import (
@@ -27,11 +29,12 @@ from .output import Output
 if TYPE_CHECKING:
     from collections.abc import Mapping, Sequence
     from typing import Any
+    from numpy.typing import NDArray
     from weakref import ReferenceType
 
     from .metanode import MetaNode
     from .storage import NodeStorage
-    from .functionstack import FunctionStack
+
 
 class Node(NodeBase):
     __slots__ = (
@@ -51,7 +54,6 @@ class Node(NodeBase):
         "_functions",
         "_n_calls",
         "_input_nodes_callbacks",
-        "_fstack"
     )
 
     _name: str
@@ -60,7 +62,6 @@ class Node(NodeBase):
     _graph: Graph | None
     _exception: str | None
     _logger: Logger
-    _fstack: list#"FunctionStack"
 
     _metanode: ReferenceType | None
     _fd: FlagsDescriptor
@@ -100,7 +101,6 @@ class Node(NodeBase):
         self._n_calls = 0
 
         self.graph = Graph.current() if graph is None else graph
-        self._fstack = self.graph._fstack
         if debug is None and self.graph is not None:
             self._debug = self.graph.debug
         else:
@@ -343,6 +343,14 @@ class Node(NodeBase):
     def n_calls(self) -> int:
         return self._n_calls
 
+    @property
+    def _fstack(self) -> NDArray:
+        return self._graph._fstack
+
+    @_fstack.setter
+    def _fstack(self, val) -> None:
+        self._graph._fstack = val
+
     #
     # Methods
     #
@@ -546,57 +554,39 @@ class Node(NodeBase):
         input = self._add_input(iname, child_output=output, **input_kws)
         return input, output
 
-    def gather_all_inputs(self):
-        all_inputs = set()  # Using a set to avoid duplicates
-
-        def gather_inputs(node):
-            for input_node in node.inputs:
-                if input_node not in all_inputs:
-                    all_inputs.add(input_node)
-                    gather_inputs(input_node)
-
-        gather_inputs(self)
-        return all_inputs
-
-    def gather_all_inputs_touch(self):
-        def gather_inputs(node):
-            if not node.fd.tainted or self.frozen or node in self._fstack:
-                return
-            for input in node.inputs:
-                inode = input._parent_output._node
-                fd = inode.fd
-                if fd.tainted and not fd.frozen and inode not in self._fstack:
-                    gather_inputs(inode)
-                    #self._fstack.append(inode)
-            #if node not in self._fstack:
-            #    self._fstack.append(node)
-            self._fstack.append(node)
-
-        if not self.fd.tainted or self.fd.frozen:
-            return
-        gather_inputs(self)
-
-    def touch(self, force_computation=False, recursive=True):
-        if recursive:
-            #self.logger.debug(f"Recursive: {self.name}")
-            self.gather_all_inputs_touch()
-            #self._fstack.extend(self.gather_all_inputs_touch())
-            #self.logger.debug(self._fstack)
-            #self._fstack.free()
-            for obj in self._fstack:
-                obj._touch()
-                self._fstack.remove(obj)
-        else:
-            self._touch(force_computation=force_computation)
-    
-    def _touch(self, force_computation=False):
+    def touch(self, force_computation=False):
+        # self.logger.debug(f"Node '{self.name}': Touch")
         if self.frozen:
             return
         if not self.tainted and not force_computation:
             return
 
-        #self.logger.debug(f"Node '{self.name}': Touch")
+        if not self.graph.closed:
+            # NOTE: in this case we don't know the acutual length of the graph,
+            #       then we must allocate memory in a runtime!
+            self._fstack = empty(len(self._graph._nodes), dtype="O")
 
+        self._fstack[0] = self
+        i = 1
+        for obj in self._fstack:
+            if obj is None:
+                break
+            for inp in obj.inputs:
+                node = inp._parent_output._node
+                if node.tainted:
+                    self._fstack[i] = node
+                    i += 1
+
+        for obj in reversed(self._fstack[:i]):
+            obj.__touch()
+        self._fstack[:i] = None
+
+    def _touch(self):
+        if self.frozen or not self.tainted:
+            return
+        self.__touch()
+
+    def __touch(self):
         ret = self.eval()
         self.fd.tainted = False  # self._always_tainted
         if self._auto_freeze:
@@ -664,7 +654,7 @@ class Node(NodeBase):
             self.fd.frozen_tainted = True
             return
         self.fd.tainted = True
-        ret = self.touch() if (self._immediate or force_computation) else None
+        ret = self.__touch() if (self._immediate or force_computation) else None
         self.taint_children(force=force)
         return ret
 
@@ -700,7 +690,7 @@ class Node(NodeBase):
 
         for input in self.inputs.iter_all():
             node = input.parent_node
-            if not node in self._input_nodes_callbacks:
+            if node not in self._input_nodes_callbacks:
                 self._input_nodes_callbacks.append(node._touch)
 
     def update_types(self, recursive: bool = True):

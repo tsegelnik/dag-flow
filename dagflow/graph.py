@@ -1,9 +1,14 @@
 from __future__ import annotations
+from typing import TYPE_CHECKING
+
+from numpy import empty
 
 from .exception import ClosedGraphError, ClosingError, InitializationError, UnclosedGraphError
 from .graphbase import GraphBase
 from .logger import Logger, get_logger
-from .functionstack import FunctionStack
+
+if TYPE_CHECKING:
+    from numpy.typing import NDArray
 
 
 class Graph(GraphBase):
@@ -31,7 +36,7 @@ class Graph(GraphBase):
     _nodes_closed: bool
     _debug: bool
     _logger: Logger
-    _fstack: list #FunctionStack
+    _fstack: NDArray
 
     def __init__(self, *args, close_on_exit: bool = False, strict: bool = True, **kwargs):
         super().__init__(*args)
@@ -42,7 +47,7 @@ class Graph(GraphBase):
         self._strict = strict
         self._closed = False
         self._nodes_closed = False
-        self._fstack = []# FunctionStack()
+        self._fstack = empty(0, dtype="O")
         # init or get default logger
         self._logger = get_logger(
             filename=kwargs.pop("logfile", None),
@@ -112,12 +117,8 @@ class Graph(GraphBase):
             return True
         self.logger.debug(f"Graph '{self.name}': Closing...")
 
-        if self._nodes_closed:
-            nodes_to_process = self._new_nodes
-        else:
-            nodes_to_process = self._nodes
-
         self.logger.debug(f"Graph '{self.name}': Update types...")
+        nodes_to_process = self._new_nodes if self._nodes_closed else self._nodes
         for node in nodes_to_process:
             if not node.closed:
                 try:
@@ -125,6 +126,7 @@ class Graph(GraphBase):
                 except ClosingError:
                     if strict:
                         raise
+
         self.logger.debug(f"Graph '{self.name}': Allocate memory...")
         for node in nodes_to_process:
             if not node.closed:
@@ -133,6 +135,7 @@ class Graph(GraphBase):
                 except ClosingError:
                     if strict:
                         raise
+
         self.logger.debug(f"Graph '{self.name}': Closing nodes...")
         for node in nodes_to_process:
             try:
@@ -150,6 +153,7 @@ class Graph(GraphBase):
 
         if strict and not self._closed:
             raise UnclosedGraphError("The graph is still open!")
+        self._fstack = empty(len(self._nodes), dtype="O")
         self.logger.debug(
             f"Graph '{self.name}': The graph {self._closed and 'is closed' or 'failed to close'}!"
         )
