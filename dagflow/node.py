@@ -565,6 +565,7 @@ class Node(NodeBase):
             # NOTE: in this case we don't know the acutual length of the graph,
             #       then we must allocate memory in a runtime!
             self._fstack = empty(len(self._graph._nodes), dtype="O")
+        # if the graph is closed, the _fstack is already allocated
 
         self._fstack[0] = self
         i = 1
