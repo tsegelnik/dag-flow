@@ -94,19 +94,25 @@ class Array(Node):
         value: Number,
         *,
         store: bool = False,
-        edges: Output | Sequence[Output] | Node,
+        edges: Output | Sequence[Output] | Node | None = None,
+        shape: int | tuple[int] |  None = None,
         dtype: DTypeLike = None,
         **kwargs,
     ):
-        if isinstance(edges, Output):
-            shape = (edges.dd.shape[0] - 1,)
-        elif isinstance(edges, Node):
-            output = edges.outputs[0]
-            shape = (output.dd.shape[0] - 1,)
-        elif isinstance(edges, Sequence):
-            shape = tuple(output.dd.shape[0] - 1 for output in edges)
-        else:
-            raise RuntimeError("Invalid edges specification")
+        if (shape is None)==(edges is None):
+            raise RuntimeError("Array: should specify either shape or edges, but not both.")
+        match edges:
+            case Output():
+                shape = (edges.dd.shape[0] - 1,)
+            case Node():
+                output = edges.outputs[0]
+                shape = (output.dd.shape[0] - 1,)
+            case Sequence():
+                shape = tuple(output.dd.shape[0] - 1 for output in edges)
+            case None:
+                pass
+            case _:
+                raise RuntimeError("Invalid edges specification")
         array = full(shape, value, dtype=dtype)
 
         if store:
