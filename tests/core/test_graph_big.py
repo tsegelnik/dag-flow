@@ -170,7 +170,7 @@ def test_graph_big_01():
     plot()
     plot()
     D.open()
-    D.close()
+    D.close(close_children=True)
     plot()
     plot()
     final.data

@@ -102,10 +102,13 @@ class Graph(GraphBase):
         for node in self._nodes:
             node.print()
 
-    def close(self, *, strict: bool = True, **kwargs) -> bool:
+    def close(self, *, strict: bool = True, force: bool = False, **kwargs) -> bool:
         """Closes the graph"""
-        if self._closed:
-            return True
+        if force:
+            self._nodes_closed = False
+        else:
+            if self._closed:
+                return True
         self.logger.debug(f"Graph '{self.name}': Closing...")
 
         if self._nodes_closed:
@@ -152,11 +155,7 @@ class Graph(GraphBase):
         return self._closed
 
     def open(
-        self,
-        force: bool = False,
-        *,
-        close_on_exit: bool = True,
-        open_nodes: bool = False
+        self, force: bool = False, *, close_on_exit: bool = True, open_nodes: bool = False
     ) -> Graph:
         """Opens the graph recursively"""
         self._close_on_exit = close_on_exit

@@ -705,6 +705,7 @@ class Node(NodeBase):
         self,
         recursive: bool = True,
         strict: bool = True,
+        close_children = False,
         together: Sequence["Node"] = [],
     ) -> bool:
         # Caution: `together` list should not be written in!
@@ -736,6 +737,12 @@ class Node(NodeBase):
         self.fd.closed = self.fd.allocated
         if strict and not self.closed:
             raise ClosingError(node=self)
+
+        if close_children:
+            for output in self.outputs:
+                for input in output.child_inputs:
+                    input.node.close(close_children=True, strict=strict)
+
         self.logger.debug(f"Node '{self.name}': {self.closed and 'closed' or 'failed to close'}")
         return self.closed
 
