@@ -270,7 +270,7 @@ class Labels:
 
     @property
     def latex(self) -> str | None:
-        return self._latex
+        return self._latex or self._text
 
     @latex.setter
     def latex(self, value: str):
