@@ -569,18 +569,31 @@ class Node(NodeBase):
 
         self._fstack[0] = self
         i = 1
-        for obj in self._fstack:
-            if obj is None:
-                break
-            for inp in obj.inputs:
+        j = 0
+        while j < i:
+            for inp in self._fstack[j].inputs:
                 node = inp._parent_output._node
                 if node.tainted:
                     self._fstack[i] = node
                     i += 1
+            j += 1
+        while i > 0:
+            i -= 1
+            self._fstack[i].__touch()
 
-        for obj in reversed(self._fstack[:i]):
-            obj.__touch()
-        self._fstack[:i] = None
+        ####################
+        # Other implementation
+        ####################
+        # for j, obj in enumerate(self._fstack):
+        #    if j >= i:
+        #        break
+        #    for inp in obj.inputs:
+        #        node = inp._parent_output._node
+        #        if node.tainted:
+        #            self._fstack[i] = node
+        #            i += 1
+        # for obj in reversed(self._fstack[:i]):
+        #    obj.__touch()
 
     def _touch(self):
         if self.frozen or not self.tainted:
