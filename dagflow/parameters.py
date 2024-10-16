@@ -352,7 +352,7 @@ class Parameters:
             if npars > 1:
                 for i in range(npars):
                     ilabel = label.get(names[i], {})
-                    self._pars.extend(Parameter(self.value, i, label=ilabel, parent=self))
+                    self._pars.append(Parameter(self.value, i, label=ilabel, parent=self))
             elif npars == 1:
                 self._pars.append(Parameter(self.value, label=label, parent=self))
             else:
