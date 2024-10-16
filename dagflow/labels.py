@@ -48,6 +48,27 @@ def format_dict(
     return ret
 
 
+def mapping_append_lists(dct: dict, key: str, lst: list):
+    if not isinstance(dct, dict):
+        return
+
+    def patch(dct, index_values):
+        oldlist = dct.get(key, [])
+        newlist = list(lst)
+        for name in oldlist:
+            if not name in newlist:
+                newlist.append(name)
+        dct[key] = newlist
+
+    has_subdicts = False
+    for v in dct.values():
+        if isinstance(v, dict):
+            mapping_append_lists(v, key, lst)
+            has_subdicts = True
+
+    if not has_subdicts:
+        patch(dct, lst)
+
 def repr_pretty(self, p, cycle):
     """Pretty repr for IPython. To be used as __repr__ method"""
     p.text("..." if cycle else str(self))
@@ -377,6 +398,7 @@ class Labels:
         fmtlong: str | Callable | None = None,
         fmtshort: str | Callable | None = None,
         fields: Sequence[str] = [],
+        fields_exclude: Container[str] = [],
         fmtextra: Mapping[str, str] = {},
     ):
         fmtlong = _make_formatter(fmtlong)
@@ -399,6 +421,8 @@ class Labels:
             )
         kshort = {"_mark"}
         for _key in inherit:
+            if _key[1:] in fields_exclude:
+                continue
             if isinstance(source, Labels):
                 label = getattr(source, _key, None)
             elif isinstance(source, Mapping):
@@ -434,6 +458,7 @@ def inherit_labels(
     *,
     fmtlong: str | Callable,
     fmtshort: str | Callable,
+    fields_exclude: Container[str] = [],
 ) -> dict:
     if destination is None:
         destination = {}
@@ -444,6 +469,8 @@ def inherit_labels(
     kshort = {"mark"}
     kskip = {"key", "name"}
     for k, v in source.items():
+        if k in fields_exclude:
+            continue
         if k in kskip:
             continue
         if isinstance(v, str):

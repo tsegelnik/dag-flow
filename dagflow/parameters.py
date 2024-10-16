@@ -95,9 +95,8 @@ class Parameter:
             self._view.labels.inherit(
                 label,
                 fmtlong=f"{{}} (par {idx}: {idxname})",
-                fmtextra = {
-                    "graph": f"{{source.text}}\\nparameter {idx}: {idxname}"
-                    }
+                fmtextra={"graph": f"{{source.text}}\\nparameter {idx}: {idxname}"},
+                fields_exclude={"paths"},
             )
             # if idxtuple:
             #     self._view.labels.index_values.extend(idxtuple)
@@ -323,7 +322,7 @@ class Parameters:
         variable: bool | None = None,
         fixed: bool | None = None,
         close: bool = True,
-        label: Mapping = {}
+        label: Mapping = {},
     ):
         self._value_node = value
         try:
@@ -457,7 +456,7 @@ class Parameters:
                 label=grouplabel,
                 mode="store_weak",
             ),
-            label = label,
+            label=label,
             fixed=fixed,
             variable=variable,
             close=not has_constraint,
@@ -606,8 +605,7 @@ class GaussianConstraint(Constraint):
             mark=normmark,
             mode="store_weak",
         )
-        self._normvalue_node.labels.inherit(
-            self._pars._value_node.labels)
+        self._normvalue_node.labels.inherit(self._pars._value_node.labels, fields_exclude={"paths"})
         self.normvalue = self._normvalue_node.outputs[0]
 
         self._norm_node = NormalizeCorrelatedVars2("{value_node.name}", immediate=True)
@@ -615,17 +613,22 @@ class GaussianConstraint(Constraint):
         self.sigma >> self._norm_node.inputs["matrix"]
 
         fmts = {
-                "_cholesky_node": ("Cholesky: {}", "L({})"),
-                "_covariance_node": ("Cholesky: {}", "L({})"),
-                "_normvalue_node": ("{}", "{}")
-                }
+            "_cholesky_node": ("Cholesky: {}", "L({})"),
+            "_covariance_node": ("Covariance: {}", "V({})"),
+            "_normvalue_node": ("{}", "{}"),
+        }
         for nodename in ("_cholesky_node", "_covariance_node", "_norm_node", "_sigma_node"):
             if cnode := getattr(self, nodename):
                 cnode.labels.inherit(self._pars._value_node.labels, fields=("index_values",))
         for nodename in ("_cholesky_node", "_covariance_node", "_normvalue_node"):
             if (cnode := getattr(self, nodename)) is not None:
                 fmtlong, fmtshort = fmts[nodename]
-                cnode.labels.inherit(self._pars._value_node.labels, fmtlong=fmtlong, fmtshort=fmtshort)
+                cnode.labels.inherit(
+                    self._pars._value_node.labels,
+                    fmtlong=fmtlong,
+                    fmtshort=fmtshort,
+                    fields_exclude={"paths"},
+                )
 
         (parameters.value, self.normvalue) >> self._norm_node
         self.normvalue_final = self._norm_node.outputs["normvalue"]
@@ -686,13 +689,13 @@ class GaussianConstraint(Constraint):
         node_central = Array(
             f"{name}_central",
             array(central, dtype=dtype),
-            label=inherit_labels(label, fmtlong="central: {}", fmtshort="c({})"),
+            label=inherit_labels(label, fmtlong="central: {}", fmtshort="c({})", fields_exclude={"paths"}),
         )
 
         node_sigma = Array(
             f"{name}_sigma",
             array(sigma, dtype=dtype),
-            label=inherit_labels(label, fmtlong="sigma: {}", fmtshort="σ({})"),
+            label=inherit_labels(label, fmtlong="sigma: {}", fmtshort="σ({})", fields_exclude={"paths"}),
         )
 
         match correlation:
@@ -700,10 +703,11 @@ class GaussianConstraint(Constraint):
                 node_cor = Array(
                     f"{name}_correlation",
                     array(correlation, dtype=dtype),
-                    label=inherit_labels(label, fmtlong="correlations: {}", fmtshort="C({})"),
+                    label=inherit_labels(label, fmtlong="correlations: {}", fmtshort="C({})", fields_exclude={"paths"}),
                 )
             case Node():
                 node_cor = correlation
+                node_cor.labels.inherit(label, fmtlong="correlations: {}", fmtshort="C({})", fields_exclude={"paths"})
             case None:
                 node_cor = None
             case _:

@@ -11,7 +11,7 @@ from multikeydict.nestedmkdict import NestedMKDict
 from multikeydict.typing import properkey
 
 from ..exception import InitializationError
-from ..labels import format_dict, inherit_labels
+from ..labels import mapping_append_lists, format_dict, inherit_labels
 from ..storage import NodeStorage
 from ..tools.schema import IsStrSeqOrStr, LoadFileWithExt, LoadYaml, MakeLoaderPy, NestedSchema
 
@@ -176,29 +176,31 @@ def get_format_processor(format):
         return process_var_percent
 
 
-def get_label(key: tuple, labelscfg: dict) -> dict:
-    try:
-        ret = labelscfg.get_any(key)
-    except KeyError:
-        pass
-    else:
-        ret["index_values"] = list(key)
-        if isinstance(ret, NestedMKDict):
-            ret = ret.object
-        return dict(ret)
+def get_label(key: tuple, labelscfg: dict, *, group_only: bool=False) -> dict:
+    if not group_only:
+        try:
+            ret = labelscfg.get_any(key)
+        except KeyError:
+            pass
+        else:
+            if isinstance(ret, NestedMKDict):
+                ret = ret.object
+            return dict(ret)
 
+    lcfg = None
     for n in range(1, len(key) + 1):
         subkey = key[:-n]
         try:
             lcfg = labelscfg.get_dict(subkey+("group",))
         except KeyError:
-            try:
-                lcfg = labelscfg.get_any(subkey)
-            except KeyError:
-                continue
+            if not group_only:
+                try:
+                    lcfg = labelscfg.get_any(subkey)
+                except KeyError:
+                    continue
 
-        if not subkey and "text" not in lcfg:
-            break
+        if not subkey and (lcfg is None or "text" not in lcfg):
+            return {}
 
         rightkey = key[n - 1 :]
         key_str = ".".join(rightkey)
@@ -211,7 +213,6 @@ def get_label(key: tuple, labelscfg: dict) -> dict:
             key_space=f"{key_str} ",
             process_keys=label_keys,
         )
-        ret["index_values"] = list(key)
         return ret
 
     return {}
@@ -354,7 +355,7 @@ def _load_parameters(
     pars = NestedMKDict({})
     for key, corrcfg in cfg.get_dict("correlations").walkdicts():
         label = get_label(key, cfg.get_dict("labels"))
-        label_mat0 = get_label(key + ("group",), cfg.get_dict("labels"))
+        label_mat0 = get_label(key, cfg.get_dict("labels"), group_only=True)
 
         matrixtype = corrcfg["matrix_type"]
         matrix = corrcfg["matrix"]
@@ -404,8 +405,8 @@ def _load_parameters(
                 key_space=f"{subkey_str} ",
                 process_keys=label_keys,
             )
-            labelsub["index_values"] = list(key + subkey)
-            labelsub["paths"] = paths
+            mapping_append_lists(labelsub, "index_values", subkey)
+            mapping_append_lists(labelsub, "paths", paths)
             pars[fullkey] = Parameters.from_numbers(label=labelsub, **kwargs)
 
     for key, varcfg in varcfgs.walkdicts(ignorekeys=("label",)):
