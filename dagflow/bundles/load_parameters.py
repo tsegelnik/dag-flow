@@ -190,9 +190,12 @@ def get_label(key: tuple, labelscfg: dict) -> dict:
     for n in range(1, len(key) + 1):
         subkey = key[:-n]
         try:
-            lcfg = labelscfg.get_any(subkey)
+            lcfg = labelscfg.get_dict(subkey+("group",))
         except KeyError:
-            continue
+            try:
+                lcfg = labelscfg.get_any(subkey)
+            except KeyError:
+                continue
 
         if not subkey and "text" not in lcfg:
             break
