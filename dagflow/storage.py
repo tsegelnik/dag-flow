@@ -353,7 +353,14 @@ class NodeStorage(NestedMKDict):
 
         return ret
 
-    def to_latex(
+    def to_text_file(self, filename: str, **kwargs):
+        table = self.to_table(**kwargs)
+
+        with open(filename, "w") as out:
+            logger.log(INFO1, f"Write: {filename}")
+            out.write(table)
+
+    def to_latex_file(
         self, filename: str | None = None, *, return_df: bool = False, **kwargs
     ) -> str | tuple[str, DataFrame]:
         df = self.to_df(label_from="latex", **kwargs)
@@ -635,7 +642,7 @@ class ParametersVisitor(NestedMKDictVisitor):
             {
                 "path": f"group: {'.'.join(self._path)} [{len(self._localdata)}]",
                 "shape": len(self._localdata),
-                "label": "group",
+                "label": "[group]",
             }
         )
         self._data_list.extend(self._localdata)

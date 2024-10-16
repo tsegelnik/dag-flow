@@ -86,7 +86,10 @@ class Parameter:
             )
             self._view.labels.inherit(
                 labels,
-                fmtlong=f"{{}}\\nparameter {idx}: {idxname}",
+                fmtlong=f"{{}} (par {idx}: {idxname})",
+                fmtextra = {
+                    "graph": f"{{source.text}}\\nparameter {idx}: {idxname}"
+                    }
             )
             # if idxtuple:
             #     self._view.labels.index_values.extend(idxtuple)
@@ -590,18 +593,17 @@ class GaussianConstraint(Constraint):
             mode="store_weak",
         )
         self._normvalue_node.labels.inherit(
-            self._pars._value_node.labels, fmtlong="normal unit: {}", fmtshort="n({})"
-        )
+            self._pars._value_node.labels)
         self.normvalue = self._normvalue_node.outputs[0]
 
-        self._norm_node = NormalizeCorrelatedVars2(f"normal unit {value_node.name}", immediate=True)
+        self._norm_node = NormalizeCorrelatedVars2("{value_node.name}", immediate=True)
         self.central >> self._norm_node.inputs["central"]
         self.sigma >> self._norm_node.inputs["matrix"]
 
         fmts = {
                 "_cholesky_node": ("Cholesky: {}", "L({})"),
                 "_covariance_node": ("Cholesky: {}", "L({})"),
-                "_normvalue_node": ("normal unit: {}", "n({})")
+                "_normvalue_node": ("{}", "{}")
                 }
         for nodename in ("_cholesky_node", "_covariance_node", "_norm_node", "_sigma_node"):
             if cnode := getattr(self, nodename):

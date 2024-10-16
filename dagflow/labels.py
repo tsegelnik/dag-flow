@@ -53,9 +53,13 @@ def _make_formatter(fmt: str | Callable | dict | None) -> Callable:
     if isinstance(fmt, str):
         return fmt.format
     elif isinstance(fmt, dict):
-        return lambda s: fmt.get(s, s)
+        def formatter(s, **_):
+            return fmt.get(s, s)
+        return formatter
     elif fmt is None:
-        return lambda s: s
+        def formatter(s, **_):
+            return s
+        return formatter
 
     return fmt
 
@@ -365,6 +369,7 @@ class Labels:
         fmtlong: str | Callable | None = None,
         fmtshort: str | Callable | None = None,
         fields: Sequence[str] = [],
+        fmtextra: Mapping[str,str] = {}
     ):
         fmtlong = _make_formatter(fmtlong)
         fmtshort = _make_formatter(fmtshort)
@@ -391,7 +396,8 @@ class Labels:
                 continue
             match label:
                 case str():
-                    newv = fmtshort(label) if _key in kshort else fmtlong(label)
+                    formatter = fmtshort if _key in kshort else fmtlong
+                    newv = formatter(label, source=source)
                     if newv is not None:
                         self[_key] = newv
                 case tuple() | {} | []:
@@ -399,6 +405,13 @@ class Labels:
                 case _:
                     self[_key] = label
 
+        for key, fmt in fmtextra.items():
+            _key = f"_{key}"
+            if getattr(self, _key) is not None:
+                continue
+
+            formatter = _make_formatter(fmt)
+            self[_key] = formatter(source=source)
 
 def inherit_labels(
     source: dict,

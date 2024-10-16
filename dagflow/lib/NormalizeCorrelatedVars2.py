@@ -157,8 +157,8 @@ class NormalizeCorrelatedVars2(Node):
 
         self.labels.inherit(
             self._value_input.parent_node.labels,
-            fmtlong="normal unit: {}",
-            fmtshort="n({})",
+            fmtlong="{}",
+            fmtshort="{}",
         )
 
         self._ndim = f"{ndim}d"
