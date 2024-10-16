@@ -52,6 +52,7 @@ class Parameter:
         parent: Parameters,
         connectible: Output | None = None,
         labelfmt: str = "{}",
+        label: Mapping = {},
         make_view: bool = True,
     ):
         self._parent = parent
@@ -70,14 +71,21 @@ class Parameter:
             self._view = None
         elif make_view:
             self._idx = idx
-            labels = self._common_output.node.labels.copy()
+            label_parent = self._common_output.node.labels.copy()
+            if not label:
+                label = label_parent
             try:
                 idxtuple = parent._names[idx]
                 idxname = ".".join(idxtuple)
-                labels["paths"] = [labels["paths"][idx]]
             except (ValueError, IndexError):
                 idxname = "???"
                 idxtuple = None
+
+            try:
+                label["paths"] = [label_parent["paths"][idx]]
+            except (KeyError, IndexError):
+                pass
+
             self._view = View(
                 f"{self._common_output.node.name}.{idxname}",
                 self._common_connectible_output,
@@ -85,7 +93,7 @@ class Parameter:
                 length=1,
             )
             self._view.labels.inherit(
-                labels,
+                label,
                 fmtlong=f"{{}} (par {idx}: {idxname})",
                 fmtextra = {
                     "graph": f"{{source.text}}\\nparameter {idx}: {idxname}"
@@ -315,6 +323,7 @@ class Parameters:
         variable: bool | None = None,
         fixed: bool | None = None,
         close: bool = True,
+        label: Mapping = {}
     ):
         self._value_node = value
         try:
@@ -341,9 +350,11 @@ class Parameters:
 
             npars = self.value._data.size
             if npars > 1:
-                self._pars.extend(Parameter(self.value, i, parent=self) for i in range(npars))
+                for i in range(npars):
+                    ilabel = label.get(names[i], {})
+                    self._pars.extend(Parameter(self.value, i, label=ilabel, parent=self))
             elif npars == 1:
-                self._pars.append(Parameter(self.value, parent=self))
+                self._pars.append(Parameter(self.value, label=label, parent=self))
             else:
                 raise RuntimeError("Do not know how to handle 0 parameters")
 
@@ -424,6 +435,8 @@ class Parameters:
         label = {"text": "parameter"} if label is None else dict(label)
         name: str = label.setdefault("name", "parameter")
 
+        grouplabel = label.get("group", label)
+
         if isinstance(value, (float, int)):
             value = (value,)
         elif not isinstance(value, (Sequence, ndarray)):
@@ -441,9 +454,10 @@ class Parameters:
             Array(
                 name,
                 array(value, dtype=dtype),
-                label=label,
+                label=grouplabel,
                 mode="store_weak",
             ),
+            label = label,
             fixed=fixed,
             variable=variable,
             close=not has_constraint,
@@ -456,7 +470,7 @@ class Parameters:
                 GaussianConstraint.from_numbers(
                     parameters=pars,
                     dtype=dtype,
-                    label=label,
+                    label=grouplabel,
                     central=central,
                     sigma=sigma,
                     **kwargs,

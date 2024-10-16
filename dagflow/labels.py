@@ -1,12 +1,12 @@
 from __future__ import annotations
 
 from pathlib import Path
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Mapping
 
 from .tools.schema import LoadYaml
 
 if TYPE_CHECKING:
-    from collections.abc import Callable, Container, Mapping, Sequence
+    from collections.abc import Callable, Container, Sequence
     from typing import Any
 
 
@@ -14,7 +14,7 @@ def format_latex(k: str, s: str | Any, /, *args, protect_latex: bool = True, **k
     if not isinstance(s, str):
         return s
 
-    if protect_latex and (k == "latex" and "$" in s) or "{" not in s:
+    if protect_latex and (k == "latex" and "$" in s) or "{" not in s:  # }
         return s
 
     return s.format(*args, **kwargs)
@@ -31,17 +31,21 @@ def format_dict(
     if isinstance(dct, str):
         return {"text": format_latex("", dct, *args, **kwargs)}
 
-    if process_keys is None:
-        return {
-            k: format_latex(k, v, *args, protect_latex=protect_latex, **kwargs)
-            for k, v in dct.items()
-        }
+    ret = {}
+    for key, value in dct.items():
+        match value:
+            case dict():
+                ret[key] = format_dict(
+                    value, *args, process_keys=process_keys, protect_latex=protect_latex, **kwargs
+                )
+            case str():
+                if process_keys and key not in process_keys:
+                    continue
+                ret[key] = format_latex(key, value, *args, protect_latex=protect_latex, **kwargs)
+            case _:
+                ret[key] = value
 
-    return {
-        k: format_latex(k, v, *args, protect_latex=protect_latex, **kwargs)
-        for k, v in dct.items()
-        if k in process_keys
-    }
+    return ret
 
 
 def repr_pretty(self, p, cycle):
@@ -53,12 +57,16 @@ def _make_formatter(fmt: str | Callable | dict | None) -> Callable:
     if isinstance(fmt, str):
         return fmt.format
     elif isinstance(fmt, dict):
+
         def formatter(s, **_):
             return fmt.get(s, s)
+
         return formatter
     elif fmt is None:
+
         def formatter(s, **_):
             return s
+
         return formatter
 
     return fmt
@@ -365,11 +373,11 @@ class Labels:
 
     def inherit(
         self,
-        source: Labels,
+        source: Labels | Mapping,
         fmtlong: str | Callable | None = None,
         fmtshort: str | Callable | None = None,
         fields: Sequence[str] = [],
-        fmtextra: Mapping[str,str] = {}
+        fmtextra: Mapping[str, str] = {},
     ):
         fmtlong = _make_formatter(fmtlong)
         fmtshort = _make_formatter(fmtshort)
@@ -391,7 +399,13 @@ class Labels:
             )
         kshort = {"_mark"}
         for _key in inherit:
-            label = getattr(source, _key, None)
+            if isinstance(source, Labels):
+                label = getattr(source, _key, None)
+            elif isinstance(source, Mapping):
+                key = _key[1:]
+                label = source.get(key, None)
+            else:
+                raise ValueError(source)
             if label is None:
                 continue
             match label:
@@ -412,6 +426,7 @@ class Labels:
 
             formatter = _make_formatter(fmt)
             self[_key] = formatter(source=source)
+
 
 def inherit_labels(
     source: dict,

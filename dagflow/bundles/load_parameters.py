@@ -227,8 +227,8 @@ def _add_paths_from_labels(paths: list, cfg: NestedMKDict):
 def iterate_varcfgs(
     cfg: NestedMKDict,
 ) -> Generator[tuple[tuple[str, ...], NestedMKDict], None, None]:
-    parameterscfg = cfg("parameters")
-    labelscfg = cfg("labels")
+    parameterscfg = cfg.get_dict("parameters")
+    labelscfg = cfg.get_dict("labels")
     form = cfg["format"]
 
     hascentral = "central" in form
@@ -246,8 +246,8 @@ from ..parameters import Parameters
 
 
 def check_correlations_consistent(cfg: NestedMKDict) -> None:
-    parscfg = cfg("parameters")
-    for key, corrcfg in cfg("correlations").walkdicts():
+    parscfg = cfg.get_dict("parameters")
+    for key, corrcfg in cfg.get_dict("correlations").walkdicts():
         # processed_cfgs.add(varcfg)
         names = corrcfg["names"]
         try:
@@ -352,14 +352,15 @@ def _load_parameters(
 
     processed_cfgs = set()
     pars = NestedMKDict({})
-    for key, corrcfg in cfg("correlations").walkdicts():
-        label = get_label(key + ("group",), cfg("labels"))
+    for key, corrcfg in cfg.get_dict("correlations").walkdicts():
+        label = get_label(key, cfg.get_dict("labels"))
+        label_mat0 = get_label(key + ("group",), cfg.get_dict("labels"))
 
         matrixtype = corrcfg["matrix_type"]
         matrix = corrcfg["matrix"]
         mark_matrix = "C" if matrixtype == "correlation" else "V"
         label_mat = inherit_labels(
-            label, fmtlong=f"{matrixtype.capitalize()} matrix: {{}}", fmtshort=mark_matrix + "({})"
+            label_mat0, fmtlong=f"{matrixtype.capitalize()} matrix: {{}}", fmtshort=mark_matrix + "({})"
         )
         label_mat["mark"] = mark_matrix
         label_mat = format_dict(
