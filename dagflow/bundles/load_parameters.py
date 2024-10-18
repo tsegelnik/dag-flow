@@ -291,17 +291,20 @@ def _load_parameters(
             "parameters": {
                 "all": {},
                 "constant": {},
+                "variable": {},
                 "free": {},
                 "central": {},
                 "constrained": {},
                 "normalized": {},
             },
             "correlations": {},
-            "stat": {
-                "nuisance_parts": {},
-                "nuisance": {},
+            "parameter_groups": {
+                "all": {},
+                "constant": {},
+                "variable": {},
+                "free": {},
+                "constrained": {}
             },
-            "parameter_groups": {"all": {}, "constant": {}, "free": {}, "constrained": {}},
         },
         sep=".",
     )
@@ -423,6 +426,9 @@ def _load_parameters(
             targetkey = ("constant",) + pathkey
         else:
             targetkey = ("free",) + pathkey
+
+        if not par.is_fixed:
+            ret[("parameters", "variable") + pathkey] = par
 
         ret[("parameter_group",) + targetkey] = par
         ret[("parameter_group", "all") + pathkey] = par
