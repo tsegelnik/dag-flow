@@ -271,6 +271,14 @@ class NormalizedGaussianParameter(Parameter):
     def sigma(self) -> float:
         return 1.0
 
+    @property
+    def normvalue(self) -> float:
+        return self.value
+
+    @normvalue.setter
+    def normvalue(self, normvalue: float):
+        self.value = normvalue
+
     def to_dict(self, **kwargs) -> dict:
         dct = super().to_dict(**kwargs)
         dct.update(
