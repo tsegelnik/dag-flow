@@ -1,14 +1,17 @@
 """Test missing input handlers"""
+
 from contextlib import suppress
 
 from dagflow.graph import Graph
 from dagflow.graphviz import savegraph
-from dagflow.inputhandler import MissingInputAdd
-from dagflow.inputhandler import MissingInputAddEach
-from dagflow.inputhandler import MissingInputAddOne
-from dagflow.inputhandler import MissingInputAddPair
-from dagflow.inputhandler import MissingInputFail
-from dagflow.lib.Dummy import Dummy
+from dagflow.inputhandler import (
+    MissingInputAdd,
+    MissingInputAddEach,
+    MissingInputAddOne,
+    MissingInputAddPair,
+    MissingInputFail,
+)
+from dagflow.lib.debug import Dummy
 
 # TODO: add a test for MissingInputAddEachN
 

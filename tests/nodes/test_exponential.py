@@ -1,22 +1,27 @@
-import numpy
 from matplotlib.pyplot import close
-from numpy import allclose
-from numpy import finfo
-from numpy import linspace
+from numpy import allclose, exp, expm1, finfo, linspace, log, log1p, log10
 from pytest import mark
 
-from dagflow import lib
 from dagflow.graph import Graph
 from dagflow.graphviz import savegraph
-from dagflow.lib import Array
+from dagflow.lib.base import Array
+from dagflow.lib.exponential import Exp, Expm1, Log, Log1p, Log10
 from dagflow.plot import plot_auto
+
+fcnnames = ("exp", "expm1", "log", "log1p", "log10")
+fcns = (exp, expm1, log, log1p, log10)
+fcndict = dict(zip(fcnnames, fcns))
+
+nodes = (Exp, Expm1, Log, Log1p, Log10)
+nodedict = dict(zip(fcnnames, nodes))
 
 
 @mark.parametrize("dtype", ("d", "f"))
-@mark.parametrize("fcnname", ("exp", "expm1", "log", "log1p", "log10"))
+@mark.parametrize("fcnname", fcnnames)
 def test_Exponential_01(testname, debug_graph, fcnname, dtype):
-    fcn_np = getattr(numpy, fcnname)
-    fcn_node = getattr(lib, fcnname.capitalize())
+    fcn_np = fcndict[fcnname]
+    fcn_node = nodedict[fcnname]
+
     n = 101
     if "m1" in fcnname or "1p" in fcnname:
         arrays_in = tuple(linspace(-0.3, 0.3, n, dtype=dtype) * i for i in (1, 2, 3))

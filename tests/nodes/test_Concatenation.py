@@ -1,10 +1,8 @@
-from numpy import concatenate
-from numpy import linspace
+from numpy import concatenate, linspace
 
 from dagflow.graph import Graph
 from dagflow.graphviz import savegraph
-from dagflow.lib import Array
-from dagflow.lib import Concatenation
+from dagflow.lib.base import Array, Concatenation
 
 
 def test_Concatenation_00(debug_graph):
@@ -35,7 +33,7 @@ def test_Concatenation_00(debug_graph):
     assert all(data2 == datac[n1 : n1 + n2])
     assert all(data3 == datac[n1 + n2 : n1 + n2 + n3])
 
-    assert concat.sizes==(2,3,1)
+    assert concat.sizes == (2, 3, 1)
 
     inputs[1].taint()
     assert concat.tainted == True

@@ -1,14 +1,12 @@
-
 from numpy import allclose, arange, array, diag, finfo, ones
 from pytest import mark
 
 from dagflow.graph import Graph
 from dagflow.graphviz import savegraph
-from dagflow.lib import Product, Sum
-from dagflow.lib.Array import Array
-from dagflow.lib.Concatenation import Concatenation
-from dagflow.lib.Jacobian import Jacobian
-from dagflow.lib.LinearFunction import LinearFunction
+from dagflow.lib.arithmetic import Product, Sum
+from dagflow.lib.base import Array, Concatenation
+from dagflow.lib.calculus import Jacobian
+from dagflow.lib.linear_algebra import LinearFunction
 from dagflow.parameters import GaussianParameter
 
 

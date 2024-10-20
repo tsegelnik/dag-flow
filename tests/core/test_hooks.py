@@ -1,14 +1,11 @@
-from numpy import arange
-from numpy import copyto
+from numpy import arange, copyto
 from pytest import raises
 
-from dagflow.exception import CriticalError
-from dagflow.exception import ReconnectionError
-from dagflow.exception import UnclosedGraphError
+from dagflow.exception import CriticalError, ReconnectionError, UnclosedGraphError
 from dagflow.graph import Graph
-from dagflow.lib import Array
-from dagflow.lib.ManyToOneNode import ManyToOneNode
-from dagflow.lib import WeightedSum
+from dagflow.lib.base import Array
+from dagflow.lib.abstract import ManyToOneNode
+from dagflow.lib.sums import WeightedSum
 
 
 class ThreeInputsSum(ManyToOneNode):

@@ -1,10 +1,9 @@
-
 from numpy import allclose, geomspace, linspace
 from pytest import mark
 
 from dagflow.graph import Graph
 from dagflow.graphviz import savegraph
-from dagflow.lib import Array, Cache, Copy
+from dagflow.lib.base import Array, Cache, Copy
 
 
 @mark.parametrize("dtype", ("d", "f"))

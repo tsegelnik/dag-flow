@@ -1,7 +1,7 @@
 from numpy import add, copyto, divide, multiply, sqrt, square
 
-from .ManyToOneNode import ManyToOneNode
-from .OneToOneNode import OneToOneNode
+from .abstract import ManyToOneNode
+from .abstract import OneToOneNode
 
 
 class Sum(ManyToOneNode):

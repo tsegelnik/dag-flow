@@ -1,6 +1,6 @@
 from numpy import arccos, arcsin, arctan, cos, sin, tan
 
-from .OneToOneNode import OneToOneNode
+from .abstract import OneToOneNode
 
 
 class Cos(OneToOneNode):

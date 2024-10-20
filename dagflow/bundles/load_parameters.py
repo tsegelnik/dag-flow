@@ -12,8 +12,8 @@ from multikeydict.typing import properkey
 
 from ..exception import InitializationError
 from ..labels import format_dict, inherit_labels, mapping_append_lists
-from ..lib import Array
-from ..lib.ElSumSq import ElSumSq
+from ..lib.base import Array
+from ..lib.sums import ElSumSq
 from ..parameters import Parameters
 from ..storage import NodeStorage
 from ..tools.schema import IsStrSeqOrStr, LoadFileWithExt, LoadYaml, MakeLoaderPy, NestedSchema

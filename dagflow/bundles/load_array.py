@@ -6,7 +6,7 @@ from schema import And, Optional, Or, Schema, Use
 
 from multikeydict.typing import strkey
 
-from ..lib.Array import Array
+from ..lib.base import Array
 from ..logger import INFO3, logger
 from ..storage import NodeStorage
 from ..tools.schema import (

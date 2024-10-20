@@ -4,7 +4,7 @@ from numpy import allclose, square
 from dagflow.exception import CriticalError
 from dagflow.graph import Graph
 from dagflow.graphviz import savegraph
-from dagflow.lib import Array
+from dagflow.lib.base import Array
 from dagflow.parameters import GaussianParameters, Parameter
 
 

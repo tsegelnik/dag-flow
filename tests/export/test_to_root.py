@@ -1,10 +1,9 @@
-from numpy import arange
-from numpy import meshgrid
+from numpy import arange, meshgrid
 from pytest import mark
 
 from dagflow.graph import Graph
 from dagflow.graphviz import savegraph
-from dagflow.lib import Array
+from dagflow.lib.base import Array
 from dagflow.storage import NodeStorage
 
 @mark.skip(reason="no way of currently testing this")

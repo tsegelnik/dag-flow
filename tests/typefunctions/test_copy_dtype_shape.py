@@ -3,15 +3,16 @@ from pytest import mark
 
 from dagflow.graph import Graph
 from dagflow.graphviz import savegraph
-from dagflow.inputhandler import MissingInputAddEach
-from dagflow.inputhandler import MissingInputAddOne
-from dagflow.lib import Array
-from dagflow.lib.Dummy import Dummy
-from dagflow.typefunctions import AllPositionals
-from dagflow.typefunctions import copy_from_input_to_output
-from dagflow.typefunctions import copy_input_dtype_to_output
-from dagflow.typefunctions import copy_input_shape_to_outputs
-from dagflow.typefunctions import eval_output_dtype
+from dagflow.inputhandler import MissingInputAddEach, MissingInputAddOne
+from dagflow.lib.base import Array
+from dagflow.lib.debug import Dummy
+from dagflow.typefunctions import (
+    AllPositionals,
+    copy_from_input_to_output,
+    copy_input_dtype_to_output,
+    copy_input_shape_to_outputs,
+    eval_output_dtype,
+)
 
 
 @mark.parametrize(

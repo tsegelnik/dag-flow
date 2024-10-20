@@ -1,9 +1,10 @@
-from numpy import array, allclose
+from numpy import allclose, array
 from pytest import mark
 
 from dagflow.graph import Graph
 from dagflow.graphviz import savegraph
-from dagflow.lib import Array, MatrixProductDDt
+from dagflow.lib.base import Array
+from dagflow.lib.linear_algebra import MatrixProductDDt
 
 
 @mark.parametrize("dtype", ("d", "f"))
@@ -22,4 +23,3 @@ def test_MatrixProductDVDt_2d(dtype):
     assert allclose(desired, actual, atol=0, rtol=0)
 
     savegraph(graph, f"output/test_MatrixProductDDt_2d_{dtype}.png")
-

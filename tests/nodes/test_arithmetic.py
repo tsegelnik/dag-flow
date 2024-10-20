@@ -1,12 +1,10 @@
-
-import numpy
-from numpy import allclose, arange, linspace, sum
+from numpy import allclose, arange, linspace, sqrt, square, sum
 from pytest import mark
 
-from dagflow import lib
 from dagflow.graph import Graph
 from dagflow.graphviz import savegraph
-from dagflow.lib import Array, Division, Product, Sum
+from dagflow.lib.arithmetic import Division, Product, Sqrt, Square, Sum
+from dagflow.lib.base import Array
 
 
 @mark.parametrize("dtype", ("d", "f"))
@@ -27,9 +25,9 @@ def test_Sum_01(testname, debug_graph, dtype):
     assert sm.tainted == False
 
     for i in range(len(arrays_in)):
-        arrays_in[i][:]=2.3 * (i+2)**2 + i
+        arrays_in[i][:] = 2.3 * (i + 2) ** 2 + i
         res = arrays_in[0] + arrays_in[1] + arrays_in[2]
-        arrays[i].outputs[0].set(2.3 * (i+2)**2 + i)
+        arrays[i].outputs[0].set(2.3 * (i + 2) ** 2 + i)
         assert sm.tainted == True
         assert all(output.data == res)
         assert sm.tainted == False
@@ -54,9 +52,9 @@ def test_Product_01(testname, debug_graph, dtype):
     assert prod.tainted == False
 
     for i in range(len(arrays_in)):
-        arrays_in[i][:]=2.3 * (i+2)**2 + i
+        arrays_in[i][:] = 2.3 * (i + 2) ** 2 + i
         res = arrays_in[0] * arrays_in[1] * arrays_in[2]
-        arrays[i].outputs[0].set(2.3 * (i+2)**2 + i)
+        arrays[i].outputs[0].set(2.3 * (i + 2) ** 2 + i)
         assert prod.tainted == True
         assert all(output.data == res)
         assert prod.tainted == False
@@ -81,9 +79,9 @@ def test_Division_01(testname, debug_graph, dtype):
     assert div.tainted == False
 
     for i in range(len(arrays_in)):
-        arrays_in[i][:]=2.3 * (i+2)**2 + i
+        arrays_in[i][:] = 2.3 * (i + 2) ** 2 + i
         res = arrays_in[0] / arrays_in[1] / arrays_in[2]
-        arrays[i].outputs[0].set(2.3 * (i+2)**2 + i)
+        arrays[i].outputs[0].set(2.3 * (i + 2) ** 2 + i)
         assert div.tainted == True
         assert all(output.data == res)
         assert div.tainted == False
@@ -92,25 +90,27 @@ def test_Division_01(testname, debug_graph, dtype):
 
 
 @mark.parametrize("dtype", ("d", "f"))
-@mark.parametrize("fcnname", ("square", "sqrt"))
-def test_Powers_01(testname, debug_graph, fcnname, dtype):
-    fcn_np = getattr(numpy, fcnname)
-    fcn_node = getattr(lib, fcnname.capitalize())
-    if fcnname in ("square"):
+@mark.parametrize("fcn", (square, sqrt))
+def test_Powers_01(testname, debug_graph, fcn, dtype):
+    if fcn == square:
         arrays_in = tuple(linspace(-10, 10, 101, dtype=dtype) * i for i in (1, 2, 3))
+        cls = Square
+        name = "Square"
     else:
         arrays_in = tuple(linspace(0, 10, 101, dtype=dtype) * i for i in (1, 2, 3))
+        cls = Sqrt
+        name = "Sqrt"
 
     with Graph(close_on_exit=True, debug=debug_graph) as graph:
         arrays = tuple(
             Array(f"arr_{i}", array_in, label={"text": f"X axis {i}"})
             for i, array_in in enumerate(arrays_in)
         )
-        node = fcn_node(fcnname)
+        node = cls(name)
         arrays >> node
 
     outputs = node.outputs
-    ress = fcn_np(arrays_in)
+    ress = fcn(arrays_in)
 
     assert node.tainted == True
     assert all(output.dd.dtype == dtype for output in outputs)
@@ -118,9 +118,9 @@ def test_Powers_01(testname, debug_graph, fcnname, dtype):
     assert node.tainted == False
 
     for i in range(len(arrays_in)):
-        arrays_in[i][:]=2.3 * (i+2)**2 + i
-        ress = fcn_np(arrays_in)
-        arrays[i].outputs[0].set(2.3 * (i+2)**2 + i)
+        arrays_in[i][:] = 2.3 * (i + 2) ** 2 + i
+        ress = fcn(arrays_in)
+        arrays[i].outputs[0].set(2.3 * (i + 2) ** 2 + i)
         assert node.tainted == True
         assert all(output.dd.dtype == dtype for output in outputs)
         assert allclose(tuple(outputs.iter_data()), ress, rtol=0, atol=0)

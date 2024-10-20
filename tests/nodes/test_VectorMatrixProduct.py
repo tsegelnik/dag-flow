@@ -1,12 +1,10 @@
-from numpy import allclose
-from numpy import arange
-from numpy import diag
+from numpy import allclose, arange, diag
 from pytest import mark
 
 from dagflow.graph import Graph
 from dagflow.graphviz import savegraph
-from dagflow.lib import Array
-from dagflow.lib import VectorMatrixProduct
+from dagflow.lib.base import Array
+from dagflow.lib.linear_algebra import VectorMatrixProduct
 
 
 @mark.parametrize("dtype", ("d", "f"))

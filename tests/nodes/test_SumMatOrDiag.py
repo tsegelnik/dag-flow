@@ -4,8 +4,8 @@ from pytest import mark, raises
 from dagflow.exception import TypeFunctionError
 from dagflow.graph import Graph
 from dagflow.graphviz import savegraph
-from dagflow.lib import Array
-from dagflow.lib import SumMatOrDiag
+from dagflow.lib.base import Array
+from dagflow.lib.sums import SumMatOrDiag
 
 
 @mark.parametrize("dtype", ("d", "f"))
@@ -31,9 +31,7 @@ def test_SumMatOrDiag_01(dtype, debug_graph):
         sms = []
 
         with Graph(close_on_exit=True, debug=debug_graph) as graph:
-            arrays = tuple(
-                Array(f"test {i}", array_in) for i, array_in in enumerate(arrays_in)
-            )
+            arrays = tuple(Array(f"test {i}", array_in) for i, array_in in enumerate(arrays_in))
 
             for cmb in combinations:
                 sm = SumMatOrDiag(f"sum {cmb}")
@@ -76,16 +74,12 @@ def test_SumMatOrDiag_02(dtype, debug_graph):
     in_array2 = arange(size + 1, dtype=dtype)  # 1
     in_matrix1 = arange(size**2, dtype=dtype).reshape(size, size)
     in_matrix2 = arange(size * (size + 1), dtype=dtype).reshape(size, size + 1)  # 3
-    in_matrix3 = arange((size + 1) * (size + 1), dtype=dtype).reshape(
-        size + 1, size + 1
-    )  # 4
+    in_matrix3 = arange((size + 1) * (size + 1), dtype=dtype).reshape(size + 1, size + 1)  # 4
     arrays_in = (in_array1, in_array2, in_matrix1, in_matrix2, in_matrix3)
 
     combinations = ((0, 1), (0, 3), (0, 4), (3, 0), (4, 0), (2, 3), (2, 4))
     with Graph(close_on_exit=False, debug=debug_graph):
-        arrays = tuple(
-            Array(f"test {i}", array_in) for i, array_in in enumerate(arrays_in)
-        )
+        arrays = tuple(Array(f"test {i}", array_in) for i, array_in in enumerate(arrays_in))
 
         for i1, i2 in combinations:
             sm = SumMatOrDiag("sum")

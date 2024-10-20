@@ -1,15 +1,11 @@
-from numpy import allclose
-from numpy import arange
-from numpy import finfo
-from numpy import linspace
-from pytest import mark
-from pytest import raises
+from numpy import allclose, arange, finfo, linspace
+from pytest import mark, raises
 
 from dagflow.exception import TypeFunctionError
 from dagflow.graph import Graph
 from dagflow.graphviz import savegraph
-from dagflow.lib import Array
-from dagflow.lib import PartialSums
+from dagflow.lib.base import Array
+from dagflow.lib.sums import PartialSums
 
 
 @mark.parametrize("a", (arange(12, dtype="d") * i for i in (1, 2, 3)))

@@ -1,12 +1,9 @@
-from numpy import allclose
-from numpy import arange
-from numpy import ones
+from numpy import allclose, arange, ones
 from pytest import mark
 
 from dagflow.graph import Graph
 from dagflow.graphviz import savegraph
-from dagflow.lib.Array import Array
-from dagflow.lib.ParArrayInput import ParArrayInput
+from dagflow.lib.base import Array, ParArrayInput
 from dagflow.parameters import Parameters
 
 

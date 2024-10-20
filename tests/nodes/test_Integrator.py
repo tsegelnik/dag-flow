@@ -1,23 +1,14 @@
-from matplotlib.pyplot import close
-from matplotlib.pyplot import subplots
-from numpy import allclose
-from numpy import linspace
-from numpy import meshgrid
-from numpy import pi
-from numpy import vectorize
-from pytest import mark
-from pytest import raises
+from matplotlib.pyplot import close, subplots
+from numpy import allclose, linspace, meshgrid, pi, vectorize
+from pytest import mark, raises
 
 from dagflow.exception import TypeFunctionError
 from dagflow.graph import Graph
 from dagflow.graphviz import savegraph
-from dagflow.lib import Array
-from dagflow.lib import Cos
-from dagflow.lib import Integrator
-from dagflow.lib import IntegratorSampler
-from dagflow.lib.ManyToOneNode import ManyToOneNode
-from dagflow.lib.OneToOneNode import OneToOneNode
-from dagflow.lib import Sin
+from dagflow.lib.abstract import ManyToOneNode, OneToOneNode
+from dagflow.lib.base import Array
+from dagflow.lib.integration import Integrator, IntegratorSampler
+from dagflow.lib.trigonometry import Cos, Sin
 from dagflow.plot import plot_auto
 
 
@@ -126,9 +117,10 @@ def test_Integrator_gl1d(debug_graph, testname):
 def test_Integrator_gl2d(debug_graph, testname):
     class Polynomial1(ManyToOneNode):
         scale = 1.0
+
         def _fcn(self):
-            self.outputs["result"].data[:] = self.scale*vecF0(self.inputs[1].data) * vecF0(
-                self.inputs[0].data
+            self.outputs["result"].data[:] = (
+                self.scale * vecF0(self.inputs[1].data) * vecF0(self.inputs[0].data)
             )
             return list(self.outputs.iter_data())
 
@@ -211,7 +203,7 @@ def test_Integrator_gl2d(debug_graph, testname):
 
     poly0.scale = 2.2
     poly0.taint()
-    assert allclose(integrator.outputs[0].data, res*poly0.scale, atol=1e-10)
+    assert allclose(integrator.outputs[0].data, res * poly0.scale, atol=1e-10)
 
     savegraph(graph, f"output/{testname}.png")
 
@@ -220,9 +212,7 @@ def test_Integrator_gl2d(debug_graph, testname):
 def test_Integrator_gl2to1d_x(debug_graph, testname, dropdim):
     class Polynomial21(ManyToOneNode):
         def _fcn(self):
-            self.outputs["result"].data[:] = vecF0(self.inputs[1].data) * vecF0(
-                self.inputs[0].data
-            )
+            self.outputs["result"].data[:] = vecF0(self.inputs[1].data) * vecF0(self.inputs[0].data)
             return list(self.outputs.iter_data())
 
     with Graph(debug=debug_graph, close_on_exit=True) as graph:
@@ -286,9 +276,7 @@ def test_Integrator_gl2to1d_x(debug_graph, testname, dropdim):
 def test_Integrator_gl2to1d_y(debug_graph, testname, dropdim):
     class Polynomial21(ManyToOneNode):
         def _fcn(self):
-            self.outputs["result"].data[:] = vecF0(self.inputs[1].data) * vecF0(
-                self.inputs[0].data
-            )
+            self.outputs["result"].data[:] = vecF0(self.inputs[1].data) * vecF0(self.inputs[0].data)
             return list(self.outputs.iter_data())
 
     with Graph(debug=debug_graph, close_on_exit=True) as graph:

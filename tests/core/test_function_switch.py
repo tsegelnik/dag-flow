@@ -1,11 +1,8 @@
-from numpy import arange
-from numpy import array
-from numpy import copyto
-from numpy import result_type
+from numpy import arange, array, copyto, result_type
 
 from dagflow.graph import Graph
 from dagflow.inputhandler import MissingInputAddOne
-from dagflow.lib import Array
+from dagflow.lib.base import Array
 from dagflow.node import Node
 
 

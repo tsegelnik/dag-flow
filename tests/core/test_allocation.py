@@ -1,12 +1,12 @@
-import numpy as np
 from pytest import raises
+from numpy import arange
 
 from dagflow.graph import Graph
-from dagflow.lib.Dummy import Dummy
+from dagflow.lib.debug import Dummy
 
 
 def test_output_allocation_1():
-    data = np.arange(12, dtype="d").reshape(3, 4)
+    data = arange(12, dtype="d").reshape(3, 4)
     with Graph(close_on_exit=True):
         n1 = Dummy("node1")
         n2 = Dummy("node2")
@@ -20,7 +20,7 @@ def test_output_allocation_1():
 
 
 def test_output_allocation_2():
-    data = np.arange(12, dtype="d").reshape(3, 4)
+    data = arange(12, dtype="d").reshape(3, 4)
     with Graph(close_on_exit=True):
         n1 = Dummy("node1")
         n2 = Dummy("node2")

@@ -1,15 +1,16 @@
-import numpy as np
+from numpy import allclose, array, diag
 from pytest import mark
 
 from dagflow.graph import Graph
 from dagflow.graphviz import savegraph
-from dagflow.lib import Array, MatrixProductDVDt
+from dagflow.lib.base import Array
+from dagflow.lib.linear_algebra import MatrixProductDVDt
 
 
 @mark.parametrize("dtype", ("d", "f"))
 def test_MatrixProductDVDt_2d(dtype):
-    left = np.array([[1, 2, 3], [3, 4, 5]], dtype=dtype)
-    square = np.array(
+    left = array([[1, 2, 3], [3, 4, 5]], dtype=dtype)
+    square = array(
         [
             [9, 2, 1],
             [0, 4, 2],
@@ -29,15 +30,15 @@ def test_MatrixProductDVDt_2d(dtype):
     desired = left @ square @ left.T
     actual = prod.get_data("result")
 
-    assert np.allclose(desired, actual, atol=0, rtol=0)
+    assert allclose(desired, actual, atol=0, rtol=0)
 
     savegraph(graph, f"output/test_MatrixProductDVDt_2d_{dtype}.png")
 
 
 @mark.parametrize("dtype", ("d", "f"))
 def test_MatrixProductDVDt_1d(dtype):
-    left = np.array([[1, 2, 3], [3, 4, 5]], dtype=dtype)
-    diagonal = np.array([9, 4, 5], dtype=dtype)
+    left = array([[1, 2, 3], [3, 4, 5]], dtype=dtype)
+    diagonal = array([9, 4, 5], dtype=dtype)
 
     with Graph(close_on_exit=True) as graph:
         l_array = Array("Left", left)
@@ -47,9 +48,9 @@ def test_MatrixProductDVDt_1d(dtype):
         l_array >> prod.inputs["left"]
         s_array >> prod.inputs["square"]
 
-    desired = left @ np.diag(diagonal) @ left.T
+    desired = left @ diag(diagonal) @ left.T
     actual = prod.get_data("result")
 
-    assert np.allclose(desired, actual, atol=0, rtol=0)
+    assert allclose(desired, actual, atol=0, rtol=0)
 
     savegraph(graph, f"output/test_MatrixProductDVDt_1d_{dtype}.png")

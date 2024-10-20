@@ -1,14 +1,10 @@
-from numpy import allclose
-from numpy import arange
-from numpy import diag
-from numpy import finfo
-from numpy import zeros_like
+from numpy import allclose, arange, diag, finfo, zeros_like
 from pytest import mark
 
 from dagflow.graph import Graph
 from dagflow.graphviz import savegraph
-from dagflow.lib.Array import Array
-from dagflow.lib.RenormalizeDiag import RenormalizeDiag
+from dagflow.lib.base import Array
+from dagflow.lib.normalization import RenormalizeDiag
 
 
 @mark.parametrize("dtype", ("d", "f"))

@@ -1,11 +1,10 @@
-from numpy import allclose
-from numpy import arange
+from numpy import allclose, arange
 from pytest import mark
 
 from dagflow.graph import Graph
 from dagflow.graphviz import savegraph
-from dagflow.lib.Array import Array
-from dagflow.lib.NormalizeMatrix import NormalizeMatrix
+from dagflow.lib.base import Array
+from dagflow.lib.normalization import NormalizeMatrix
 
 
 @mark.parametrize("dtype", ("d", "f"))
@@ -14,11 +13,7 @@ def test_NormalizeMatrix(dtype: str, mode: str):
     size = 4
     norm_columns = mode == "columns"
 
-    matrix = (
-        in_matrix := arange(1, size * (size + 1) + 1, dtype=dtype).reshape(
-            size, size + 1
-        )
-    )
+    matrix = (in_matrix := arange(1, size * (size + 1) + 1, dtype=dtype).reshape(size, size + 1))
     if norm_columns:
         desired = matrix / matrix.sum(axis=0)
     else:

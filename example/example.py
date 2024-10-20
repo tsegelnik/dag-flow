@@ -5,10 +5,10 @@ from numpy import result_type
 from dagflow.graph import Graph
 from dagflow.graphviz import savegraph
 from dagflow.inputhandler import MissingInputAddEach
-from dagflow.lib import Array
-from dagflow.lib import Product
-from dagflow.lib import Sum
-from dagflow.lib import WeightedSum
+from dagflow.lib.base import Array
+from dagflow.lib.arithmetic import Product
+from dagflow.lib.arithmetic import Sum
+from dagflow.lib.sums import WeightedSum
 from dagflow.node import Node
 
 array = arange(3, dtype="d")

@@ -1,17 +1,15 @@
-from numpy import allclose
-from numpy import arange
-from numpy import finfo
+from numpy import allclose, arange, finfo
 from pytest import mark
 
 from dagflow.graph import Graph
 from dagflow.graphviz import savegraph
-from dagflow.lib import Array
-from dagflow.lib import ArraySum
+from dagflow.lib.base import Array
+from dagflow.lib.sums import ArraySum
 
 
 @mark.parametrize("a", (arange(12, dtype="d") * i for i in (1, 2, 3)))
 def test_ArraySum_01(testname, debug_graph, a):
-    a2 = a*(-1.1)
+    a2 = a * (-1.1)
     array_res = a.sum()
     array2_res = a2.sum()
 

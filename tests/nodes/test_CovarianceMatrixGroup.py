@@ -1,13 +1,12 @@
-
 from numpy import allclose, arange, array, diag, finfo
 from numpy.linalg import cholesky
 from pytest import mark, raises
 
 from dagflow.graph import Graph
 from dagflow.graphviz import savegraph
-from dagflow.lib import Product, Sum
-from dagflow.lib.Array import Array
-from dagflow.lib.CovarianceMatrixGroup import CovarianceMatrixGroup
+from dagflow.lib.arithmetic import Product, Sum
+from dagflow.lib.base import Array
+from dagflow.lib.statistics import CovarianceMatrixGroup
 from dagflow.parameters import Parameters
 
 
@@ -64,7 +63,9 @@ def test_CovarianceMatrixGroup(dtype, correlated: bool, testname):
         cm2.add_covariance_for(
             "covmat ABCD",
             [pars.parameters],
-            parameter_covariance_matrices=[pars.constraint._covariance_node], # pyright: ignore [reportAttributeAccessIssue]
+            parameter_covariance_matrices=[
+                pars.constraint._covariance_node
+            ],  # pyright: ignore [reportAttributeAccessIssue]
         )
 
         cm3 = CovarianceMatrixGroup()
@@ -138,8 +139,12 @@ def test_CovarianceMatrixGroup(dtype, correlated: bool, testname):
         factors = {"d": 0.0, "f": 100}
     rtol = finfo(dtype).resolution
     if not correlated:
-        assert allclose(jac_A, jac_check_A, rtol=factors[dtype] * rtol) # pyright: ignore [reportPossiblyUnboundVariable]
-        assert allclose(jac_B, jac_check_B, rtol=factors[dtype] * rtol) # pyright: ignore [reportPossiblyUnboundVariable]
+        assert allclose(
+            jac_A, jac_check_A, rtol=factors[dtype] * rtol
+        )  # pyright: ignore [reportPossiblyUnboundVariable]
+        assert allclose(
+            jac_B, jac_check_B, rtol=factors[dtype] * rtol
+        )  # pyright: ignore [reportPossiblyUnboundVariable]
     assert allclose(jac_AB, jac_check_AB, rtol=factors[dtype] * rtol)
     assert allclose(jac_CD, jac_check_CD, rtol=factors[dtype] * rtol)
 
@@ -148,7 +153,9 @@ def test_CovarianceMatrixGroup(dtype, correlated: bool, testname):
 
     assert allclose(vsyst_AB, vsyst_check_AB, rtol=factors[dtype] * rtol)
     if not correlated:
-        assert allclose(vsyst_AcB, vsyst_check_AB, rtol=factors[dtype] * rtol) # pyright: ignore [reportPossiblyUnboundVariable]
+        assert allclose(
+            vsyst_AcB, vsyst_check_AB, rtol=factors[dtype] * rtol
+        )  # pyright: ignore [reportPossiblyUnboundVariable]
     assert allclose(vsyst_CD, vsyst_check_CD, rtol=factors[dtype] * rtol)
     assert allclose(vsyst, vsyst_check, rtol=factors[dtype] * rtol)
     assert allclose(vsyst2, vsyst_check_23, rtol=factors[dtype] * rtol)

@@ -1,6 +1,6 @@
 from numpy import exp, expm1, log, log1p, log10
 
-from .OneToOneNode import OneToOneNode
+from .abstract import OneToOneNode
 
 
 class Exp(OneToOneNode):

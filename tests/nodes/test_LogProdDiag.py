@@ -1,10 +1,11 @@
-from numpy import allclose, array, diag, log, finfo
+from numpy import allclose, array, diag, finfo, log
 from pytest import mark, raises
 
 from dagflow.exception import TypeFunctionError
 from dagflow.graph import Graph
 from dagflow.graphviz import savegraph
-from dagflow.lib import Array, LogProdDiag
+from dagflow.lib.base import Array
+from dagflow.lib.statistics import LogProdDiag
 
 
 @mark.parametrize("dtype", ("d", "f"))
@@ -39,7 +40,7 @@ def test_LogProdDiag_00(testname, debug_graph, dtype):
     assert log_prod_diag2d.tainted == False
     assert log_prod_diag1d.tainted == False
 
-    atol=finfo(dtype).resolution
+    atol = finfo(dtype).resolution
     assert allclose(inL2d1, result2d1, atol=atol, rtol=0)
     assert allclose(inL2d2, result2d2, atol=atol, rtol=0)
     assert allclose(inL1d, result1d, atol=atol, rtol=0)

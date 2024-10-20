@@ -2,10 +2,12 @@ from numpy import allclose, concatenate, exp, finfo, linspace, log, sin, where, 
 from numpy.random import seed, shuffle
 from pytest import mark, raises
 
-from dagflow.exception import InitializationError, CalculationError
+from dagflow.exception import CalculationError, InitializationError
 from dagflow.graph import Graph
 from dagflow.graphviz import savegraph
-from dagflow.lib import Array, Interpolator, SegmentIndex, Sin
+from dagflow.lib.base import Array
+from dagflow.lib.interpolation import Interpolator, SegmentIndex
+from dagflow.lib.trigonometry import Sin
 
 
 @mark.parametrize("k", (1.234, -0.578))
@@ -241,7 +243,9 @@ def test_interpolation_exp_01(debug_graph, testname, k, b, fine_x_mode):
 @mark.parametrize("method", ("left", "right", "nearest"))
 @mark.parametrize("fine_x_mode", ("other", "same"))
 @mark.parametrize("truncate_y", (False, True))
-def test_interpolation_lrn_01(debug_graph, testname, k, b, method: str, fine_x_mode: str, truncate_y: bool):
+def test_interpolation_lrn_01(
+    debug_graph, testname, k, b, method: str, fine_x_mode: str, truncate_y: bool
+):
     seed(10)
 
     nc, nf = 100, 251
@@ -249,7 +253,7 @@ def test_interpolation_lrn_01(debug_graph, testname, k, b, method: str, fine_x_m
     ycX = exp(k * coarseX + b)
 
     if truncate_y:
-        if method=="left":
+        if method == "left":
             ycX = ycX[:-1]
         else:
             return

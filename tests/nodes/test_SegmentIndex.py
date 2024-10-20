@@ -2,16 +2,14 @@ from random import choice
 from string import ascii_lowercase
 
 from numpy import linspace
-from numpy.random import seed
-from numpy.random import shuffle
-from pytest import mark
-from pytest import raises
+from numpy.random import seed, shuffle
+from pytest import mark, raises
 
 from dagflow.exception import InitializationError
 from dagflow.graph import Graph
 from dagflow.graphviz import savegraph
-from dagflow.lib import Array
-from dagflow.lib import SegmentIndex
+from dagflow.lib.base import Array
+from dagflow.lib.interpolation import SegmentIndex
 
 
 @mark.parametrize("mode", ("left", "right"))
@@ -43,9 +41,7 @@ def test_segmentIndex_02(debug_graph, testname, mode):
         fine = Array("fine", fineX)
         segmentIndex = SegmentIndex("segmentIndex", mode=mode)
         (coarse, fine) >> segmentIndex
-    res = coarseX.ravel().searchsorted(
-        fineX.ravel(), side=mode, sorter=coarseX.ravel().argsort()
-    )
+    res = coarseX.ravel().searchsorted(fineX.ravel(), side=mode, sorter=coarseX.ravel().argsort())
     assert all(segmentIndex.outputs[0].data.ravel() == res)
     savegraph(graph, f"output/{testname}.png")
 
@@ -62,9 +58,7 @@ def test_segmentIndex_03(debug_graph, testname, mode):
         fine = Array("fine", fineX)
         segmentIndex = SegmentIndex("segmentIndex", mode=mode)
         (coarse, fine) >> segmentIndex
-    res = coarseX.ravel().searchsorted(
-        fineX.ravel(), side=mode, sorter=coarseX.ravel().argsort()
-    )
+    res = coarseX.ravel().searchsorted(fineX.ravel(), side=mode, sorter=coarseX.ravel().argsort())
     assert all(segmentIndex.outputs[0].data.ravel() == res)
     savegraph(graph, f"output/{testname}.png")
 

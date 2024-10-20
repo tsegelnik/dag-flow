@@ -1,23 +1,17 @@
-import pytest
-from numpy import allclose
-from numpy import arange
-from numpy import array
-from numpy import finfo
-from numpy import sqrt
-from pytest import raises
-from scipy.linalg import cholesky
-from scipy.linalg import solve_triangular
+from numpy import allclose, arange, array, finfo, sqrt
+from pytest import mark, raises
+from scipy.linalg import cholesky, solve_triangular
 
 from dagflow.exception import TypeFunctionError
 from dagflow.graph import Graph
 from dagflow.graphviz import savegraph
-from dagflow.lib import Array
-from dagflow.lib import Cholesky
-from dagflow.lib import NormalizeCorrelatedVars
+from dagflow.lib.base import Array
+from dagflow.lib.linear_algebra import Cholesky
+from dagflow.lib.statistics import NormalizeCorrelatedVars
 
 debug = False
 
-@pytest.mark.parametrize('dtype', ('d', 'f'))
+@mark.parametrize('dtype', ('d', 'f'))
 def test_NormalizeCorrelatedVars_00(dtype):
     inCentral = arange(3.0, dtype=dtype)*100.0
     inV = array([[10, 2,   1], [ 2, 12,  3], [ 1,  3, 13]], dtype=dtype)

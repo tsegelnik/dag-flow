@@ -3,8 +3,8 @@ from pytest import mark
 
 from dagflow.graph import Graph
 from dagflow.graphviz import savegraph
-from dagflow.lib import Array
-from dagflow.lib.LinearFunction import LinearFunction
+from dagflow.lib.base import Array
+from dagflow.lib.linear_algebra import LinearFunction
 from dagflow.makefcn import makefcn
 from dagflow.parameters import Parameters
 from dagflow.storage import NodeStorage

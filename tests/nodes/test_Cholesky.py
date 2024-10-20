@@ -1,18 +1,12 @@
-import numpy as np
-from numpy import allclose
-from numpy import array
-from numpy import diag
-from numpy import finfo
-from numpy import sqrt
-from pytest import mark
-from pytest import raises
+from numpy import allclose, array, diag, finfo, sqrt
+from pytest import mark, raises
 from scipy import linalg
 
 from dagflow.exception import TypeFunctionError
 from dagflow.graph import Graph
 from dagflow.graphviz import savegraph
-from dagflow.lib import Array
-from dagflow.lib import Cholesky
+from dagflow.lib.base import Array
+from dagflow.lib.linear_algebra import Cholesky
 
 
 @mark.parametrize("dtype", ("d", "f"))
@@ -47,7 +41,7 @@ def test_Cholesky_00(testname, debug_graph, dtype):
     assert chol2d.tainted == False
     assert chol1d.tainted == False
 
-    atol=finfo(dtype).resolution
+    atol = finfo(dtype).resolution
     assert allclose(inL2d1, result2d1, atol=atol, rtol=0)
     assert allclose(inL2d2, result2d2, atol=atol, rtol=0)
     assert allclose(inL1d, result1d, atol=atol, rtol=0)

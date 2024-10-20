@@ -1,15 +1,11 @@
-from matplotlib.pyplot import close
-from matplotlib.pyplot import gca
-from numpy import allclose
-from numpy import linspace
-from numpy import pi
+from matplotlib.pyplot import close, gca
+from numpy import allclose, linspace, pi
 
 from dagflow.graph import Graph
 from dagflow.graphviz import savegraph
-from dagflow.lib import Array
-from dagflow.lib import Cos
-from dagflow.lib import IntegratorGroup
-from dagflow.lib import Sin
+from dagflow.lib.base import Array
+from dagflow.lib.integration import IntegratorGroup
+from dagflow.lib.trigonometry import Cos, Sin
 from dagflow.metanode import MetaNode
 from dagflow.plot import plot_auto
 
