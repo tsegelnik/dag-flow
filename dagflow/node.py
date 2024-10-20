@@ -558,16 +558,15 @@ class Node(NodeBase):
             return
         if not self.closed:
             raise UnclosedGraphError("Cannot evaluate not closed node!", node=self)
+        self._touch()
+
+    def _touch(self):
         self.fd.being_evaluated = True
-        try:
-            self.fcn()
-        except DagflowError as exc:
-            raise exc
-        else:
-            self._n_calls += 1
-            self.fd.tainted = False
-            if self._auto_freeze:
-                self.fd.frozen = True
+        self.fcn()
+        self._n_calls += 1
+        self.fd.tainted = False
+        if self._auto_freeze:
+            self.fd.frozen = True
         self.fd.being_evaluated = False
 
     def freeze(self):
@@ -588,7 +587,6 @@ class Node(NodeBase):
     def taint(
         self, *, caller: Input | None = None, force: bool = False, force_computation: bool = False
     ):
-        self.logger.debug(f"Node '{self.name}': Taint...")
         self._on_taint(caller)
         if self.tainted and not force:
             return
@@ -596,7 +594,7 @@ class Node(NodeBase):
             self.fd.frozen_tainted = True
             return
         self.fd.tainted = True
-        ret = self.touch() if (self._immediate or force_computation) else None
+        ret = self._touch() if (self._immediate or force_computation) else None
         self.taint_children(force=force)
         return ret
 
@@ -604,7 +602,6 @@ class Node(NodeBase):
         self.fd.taint_children(**kwargs)
 
     def taint_type(self, **kwargs):
-        self.logger.debug(f"Node '{self.name}': Taint types...")
         if self.closed:
             raise ClosedGraphError("Unable to taint type", node=self)
         self.fd.taint_type(**kwargs)
@@ -624,7 +621,7 @@ class Node(NodeBase):
         """A output takes this function to determine the dtype and shape"""
         raise DagflowError("Unimplemented method: the method must be overridden!")
 
-    def _on_taint(self, caller: Input):
+    def _on_taint(self, caller: Input | None):
         """A node method to be called on taint"""
 
     def _post_allocate(self):
@@ -632,7 +629,7 @@ class Node(NodeBase):
 
         for input in self.inputs.iter_all():
             node = input.parent_node
-            if not node in self._input_nodes_callbacks:
+            if node not in self._input_nodes_callbacks:
                 self._input_nodes_callbacks.append(node.touch)
 
     def update_types(self, recursive: bool = True):
