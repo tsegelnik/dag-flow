@@ -5,7 +5,7 @@ from typing import TYPE_CHECKING
 from numpy import empty, matmul, multiply
 
 from ...node import Node
-from ...typefunctions import (
+from ...type_functions import (
     check_has_inputs,
     check_input_dimension,
     check_input_matrix_or_diag,

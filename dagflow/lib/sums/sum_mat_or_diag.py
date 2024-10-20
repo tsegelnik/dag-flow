@@ -2,9 +2,9 @@ from numba import njit
 from numpy import add, copyto
 from numpy.typing import NDArray
 
-from ...inputhandler import MissingInputAddOne
+from ...input_handler import MissingInputAddOne
 from ...node import Node
-from ...typefunctions import (
+from ...type_functions import (
     AllPositionals,
     check_has_inputs,
     check_inputs_consistent_square_or_diag,

@@ -4,7 +4,7 @@ from contextlib import suppress
 
 from dagflow.graph import Graph
 from dagflow.graphviz import savegraph
-from dagflow.inputhandler import (
+from dagflow.input_handler import (
     MissingInputAdd,
     MissingInputAddEach,
     MissingInputAddOne,

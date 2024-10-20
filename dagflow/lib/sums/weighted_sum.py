@@ -5,7 +5,7 @@ from typing import TYPE_CHECKING
 from numpy import copyto
 
 from ...exception import TypeFunctionError
-from ...typefunctions import check_has_inputs, copy_input_shape_to_outputs, eval_output_dtype
+from ...type_functions import check_has_inputs, copy_input_shape_to_outputs, eval_output_dtype
 from ..abstract import ManyToOneNode
 
 if TYPE_CHECKING:

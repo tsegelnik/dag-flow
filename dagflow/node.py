@@ -15,21 +15,21 @@ from .exception import (
     ReconnectionError,
     UnclosedGraphError,
 )
-from .flagsdescriptor import FlagsDescriptor
+from .flags_descriptor import FlagsDescriptor
 from .graph import Graph
 from .input import Input
 from .iter import IsIterable
 from .labels import Labels
-from .logger import Logger, get_logger
-from .nodebase import NodeBase
+from .node_base import NodeBase
 from .output import Output
+from .tools.logger import Logger, get_logger
 
 if TYPE_CHECKING:
     from collections.abc import Mapping, Sequence
     from typing import Any
     from weakref import ReferenceType
 
-    from .metanode import MetaNode
+    from .meta_node import MetaNode
     from .storage import NodeStorage
 
 
@@ -40,7 +40,7 @@ class Node(NodeBase):
         "_graph",
         "_logger",
         "_exception",
-        "_metanode",
+        "_meta_node",
         "_auto_freeze",
         "_immediate",
         "_debug",
@@ -60,7 +60,7 @@ class Node(NodeBase):
     _exception: str | None
     _logger: Logger
 
-    _metanode: ReferenceType | None
+    _meta_node: ReferenceType | None
     _fd: FlagsDescriptor
     _n_calls: int
 
@@ -90,7 +90,7 @@ class Node(NodeBase):
         super().__init__(missing_input_handler=missing_input_handler)
         self._graph = None
         self._exception = None
-        self._metanode = None
+        self._meta_node = None
 
         self._name = name
         self._allowed_kw_inputs = tuple(allowed_kw_inputs)
@@ -216,14 +216,14 @@ class Node(NodeBase):
         return self._exception
 
     @property
-    def metanode(self) -> MetaNode:
-        return self._metanode and self._metanode()
+    def meta_node(self) -> MetaNode:
+        return self._meta_node and self._meta_node()
 
-    @metanode.setter
-    def metanode(self, value: MetaNode):
-        if self._metanode is not None:
+    @meta_node.setter
+    def meta_node(self, value: MetaNode):
+        if self._meta_node is not None:
             raise RuntimeError("MetaNode may be set only once")
-        self._metanode = weakref(value)
+        self._meta_node = weakref(value)
 
     @property
     def logger(self) -> Logger:

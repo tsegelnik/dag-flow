@@ -3,10 +3,10 @@ from pytest import mark
 
 from dagflow.graph import Graph
 from dagflow.graphviz import savegraph
-from dagflow.inputhandler import MissingInputAddOne
+from dagflow.input_handler import MissingInputAddOne
 from dagflow.lib.base import Array
 from dagflow.lib.debug import Dummy
-from dagflow.typefunctions import (
+from dagflow.type_functions import (
     AllPositionals,
     check_array_edges_consistency,
     check_edges_type,

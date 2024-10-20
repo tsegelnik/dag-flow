@@ -12,7 +12,7 @@ from ...exception import InitializationError
 from ...node import Node
 from ...output import Output
 from ...tools.iter import iter_sequence_not_string
-from ...typefunctions import check_array_edges_consistency, check_edges_type
+from ...type_functions import check_array_edges_consistency, check_edges_type
 
 if TYPE_CHECKING:
     from numbers import Number

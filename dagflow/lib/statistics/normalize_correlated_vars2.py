@@ -6,7 +6,7 @@ from numpy import add, divide, matmul, multiply, subtract, zeros
 from scipy.linalg import solve_triangular
 
 from ...node import Node
-from ...typefunctions import (
+from ...type_functions import (
     check_has_inputs,
     check_input_dimension,
     check_input_matrix_or_diag,

@@ -4,10 +4,10 @@ from typing import TYPE_CHECKING
 
 from multikeydict.typing import properkey
 
-from ...inputhandler import MissingInputAddEach
+from ...input_handler import MissingInputAddEach
 from ...node import Node
 from ...storage import NodeStorage
-from ...typefunctions import (
+from ...type_functions import (
     AllPositionals,
     check_has_inputs,
     check_inputs_equivalence,

@@ -29,7 +29,7 @@ def _collect_pars_permissive(
     return res
 
 
-def makefcn(
+def make_fcn(
     node: Node | Output,
     storage: NodeStorage | NestedMKDict,
     safe: bool = True,

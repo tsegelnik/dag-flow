@@ -6,7 +6,7 @@ from numpy import matmul, multiply
 
 from ...exception import TypeFunctionError
 from ...node import Node
-from ...typefunctions import (
+from ...type_functions import (
     check_has_inputs,
     check_input_matrix_or_diag,
     check_inputs_multiplicable_mat,

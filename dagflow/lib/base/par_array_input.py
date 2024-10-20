@@ -6,7 +6,7 @@ from typing import TYPE_CHECKING
 from ...exception import InitializationError, TypeFunctionError
 from ...node import Node
 from ...parameters import Parameter, Parameters
-from ...typefunctions import check_input_dimension, check_inputs_number
+from ...type_functions import check_input_dimension, check_inputs_number
 
 if TYPE_CHECKING:
     from ...input import Input

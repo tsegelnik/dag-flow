@@ -7,7 +7,7 @@ from typing import TYPE_CHECKING, Sequence
 from multikeydict.nestedmkdict import NestedMKDict
 from multikeydict.typing import KeyLike, TupleKey, properkey
 
-from ...metanode import MetaNode
+from ...meta_node import MetaNode
 from ...parameters import GaussianParameter, NormalizedGaussianParameter
 from ...storage import NodeStorage
 from ..arithmetic import Sum

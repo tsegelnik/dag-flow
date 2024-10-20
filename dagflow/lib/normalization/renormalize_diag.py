@@ -4,8 +4,8 @@ from typing import TYPE_CHECKING
 
 from numba import njit
 
-from ...inputhandler import MissingInputAddPair
-from ...typefunctions import (
+from ...input_handler import MissingInputAddPair
+from ...type_functions import (
     AllPositionals,
     check_input_shape,
     check_input_square,

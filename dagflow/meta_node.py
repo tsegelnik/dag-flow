@@ -5,7 +5,7 @@ from typing import TYPE_CHECKING, Literal
 
 from .exception import CriticalError, InitializationError
 from .node import Node
-from .nodebase import NodeBase
+from .node_base import NodeBase
 
 if TYPE_CHECKING:
     from collections.abc import Callable
@@ -87,8 +87,8 @@ class MetaNode(NodeBase):
     ) -> Input | None:
         inp = node(name, *args, **kwargs)
         if inp and inp.name not in self.inputs:
-            self.inputs.add(inp)  # adding to metanode.inputs
-            if inp.child_output is not None:  # adding to metanode.outputs
+            self.inputs.add(inp)  # adding to meta_node.inputs
+            if inp.child_output is not None:  # adding to meta_node.outputs
                 self.outputs.add(inp.child_output)
         return inp
 
@@ -96,7 +96,7 @@ class MetaNode(NodeBase):
         self,
         node_args: dict | None = None,
         input_args: dict | None = None,
-        metanode_args: dict | None = None,
+        meta_node_args: dict | None = None,
         new_node_cls: type[Node] | None = None,
     ) -> Input | None:
         """
@@ -106,12 +106,12 @@ class MetaNode(NodeBase):
             node_args = {}
         if input_args is None:
             input_args = {}
-        if metanode_args is None:
-            metanode_args = {}
+        if meta_node_args is None:
+            meta_node_args = {}
         if new_node_cls is None:  # use default cls
             new_node_cls = self.new_node_cls
         node = new_node_cls(**node_args)
-        self._add_node(node, **metanode_args)
+        self._add_node(node, **meta_node_args)
         # NOTE: pass idx adn idx_out to avoid same naming of the inputs and outputs
         return self._add_input_to_node(
             node, idx=len(self._nodes), idx_out=len(self._nodes), **input_args
@@ -152,7 +152,7 @@ class MetaNode(NodeBase):
             node = self.nodes.get(nodename)
             if node is None:
                 raise CriticalError(
-                    f"Cannot create an input due to the metanode has no node with name={nodename}",
+                    f"Cannot create an input due to the meta_node has no node with name={nodename}",
                     node=node,
                 )
             if isinstance(name, str):
@@ -185,7 +185,7 @@ class MetaNode(NodeBase):
             raise RuntimeError("Node already added")
 
         self._nodes.append(node)
-        node.metanode = self
+        node.meta_node = self
         if self._strategy == "LeadingNode" and self.leading_node is None:
             self._leading_node = node
 

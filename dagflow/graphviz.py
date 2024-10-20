@@ -8,9 +8,9 @@ from numpy import printoptions, square
 from .exception import UnclosedGraphError
 from .graph import Graph
 from .input import Input
-from .logger import INFO1, logger
 from .node import Node
 from .output import Output
+from .tools.logger import INFO1, logger
 
 if TYPE_CHECKING:
     from collections.abc import Mapping, Sequence
@@ -336,7 +336,7 @@ else:
         ) -> None:
             if self._node_is_filtered(node):
                 return
-            if depth!=0 and node in visited_nodes and not ignore_visit:
+            if depth != 0 and node in visited_nodes and not ignore_visit:
                 return
             visited_nodes.add(node)
             if including_self and not self._add_node_only(
@@ -463,7 +463,13 @@ else:
 
             if edge_added:
                 self._graph.add_node(
-                    vnode, label="", shape="cds", width=0.1, height=0.1, color="forestgreen", weight=10
+                    vnode,
+                    label="",
+                    shape="cds",
+                    width=0.1,
+                    height=0.1,
+                    color="forestgreen",
+                    weight=10,
                 )
 
         def _add_edges_multi_few(self, iout: int, nodedag, output):
@@ -606,7 +612,7 @@ else:
             except AttributeError:
                 attr["color"] = "yellow"
 
-            if attr.get("depth")=="0":
+            if attr.get("depth") == "0":
                 attr["penwidth"] = 2
 
         def _set_style_edge(self, obj, attrin, attr, attrout):
@@ -652,7 +658,7 @@ else:
         def set_label(self, label: str):
             self._graph.graph_attr["label"] = label
 
-        def savegraph(self, fname, *, quiet: bool=False):
+        def savegraph(self, fname, *, quiet: bool = False):
             if not quiet:
                 logger.log(INFO1, f"Write: {fname}")
             if fname.endswith(".dot"):

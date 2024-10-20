@@ -7,7 +7,7 @@ from numpy.polynomial.legendre import leggauss
 
 from ...exception import InitializationError
 from ...node import Node
-from ...typefunctions import (
+from ...type_functions import (
     check_input_dimension,
     check_input_edges_dim,
     check_input_subtype,

@@ -8,7 +8,7 @@ from numpy import double, exp, integer, log
 
 from ...exception import InitializationError
 from ...node import Node
-from ...typefunctions import (
+from ...type_functions import (
     assign_output_axes_from_inputs,
     check_has_inputs,
     check_input_dimension,

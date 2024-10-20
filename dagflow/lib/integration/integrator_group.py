@@ -4,7 +4,7 @@ from typing import TYPE_CHECKING
 
 from multikeydict.typing import properkey
 
-from ...metanode import MetaNode
+from ...meta_node import MetaNode
 from ...storage import NodeStorage
 from .integrator import Integrator
 from .integrator_sampler import IntegratorSampler

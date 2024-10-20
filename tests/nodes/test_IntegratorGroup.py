@@ -6,7 +6,7 @@ from dagflow.graphviz import savegraph
 from dagflow.lib.base import Array
 from dagflow.lib.integration import IntegratorGroup
 from dagflow.lib.trigonometry import Cos, Sin
-from dagflow.metanode import MetaNode
+from dagflow.meta_node import MetaNode
 from dagflow.plot import plot_auto
 
 

@@ -6,7 +6,7 @@ from numba import njit
 
 from ...exception import InitializationError, CalculationError
 from ...node import Node
-from ...typefunctions import check_inputs_number, copy_from_input_to_output
+from ...type_functions import check_inputs_number, copy_from_input_to_output
 
 if TYPE_CHECKING:
     from numpy.typing import NDArray

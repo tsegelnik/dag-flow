@@ -6,7 +6,7 @@ from numba import njit
 from numpy import integer
 
 from ...exception import TypeFunctionError
-from ...typefunctions import (
+from ...type_functions import (
     AllPositionals,
     check_has_inputs,
     check_input_dimension,

@@ -9,9 +9,9 @@ from multikeydict.typing import Key, KeyLike, TupleKey
 from multikeydict.visitor import NestedMKDictVisitor
 
 from .input import Input
-from .logger import DEBUG, INFO1, INFO3, logger
 from .node import Node
 from .output import Output
+from .tools.logger import DEBUG, INFO1, INFO3, logger
 
 if TYPE_CHECKING:
     from matplotlib.axes import Axes

@@ -7,8 +7,8 @@ from numpy.typing import NDArray
 
 from multikeydict.visitor import NestedMKDictVisitor
 
-from ..logger import INFO1, INFO2, logger
 from ..output import Output
+from ..tools.logger import INFO1, INFO2, logger
 
 if TYPE_CHECKING:
     from contextlib import suppress

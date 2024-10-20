@@ -5,8 +5,8 @@ from typing import TYPE_CHECKING
 from numba import njit
 from numpy import divide, sum
 
-from ...inputhandler import MissingInputAddPair
-from ...typefunctions import AllPositionals, check_input_dimension, check_inputs_equivalence
+from ...input_handler import MissingInputAddPair
+from ...type_functions import AllPositionals, check_input_dimension, check_inputs_equivalence
 from ..abstract import OneToOneNode
 
 if TYPE_CHECKING:

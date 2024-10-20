@@ -4,7 +4,7 @@ from typing import TYPE_CHECKING
 
 from multikeydict.typing import properkey
 
-from ...metanode import MetaNode
+from ...meta_node import MetaNode
 from ...node import Node
 from ...storage import NodeStorage
 from .interpolator import Interpolator

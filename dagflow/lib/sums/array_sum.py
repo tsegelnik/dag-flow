@@ -1,4 +1,4 @@
-from ...typefunctions import AllPositionals, check_has_inputs, copy_input_dtype_to_output
+from ...type_functions import AllPositionals, check_has_inputs, copy_input_dtype_to_output
 from ..abstract import OneToOneNode
 
 

@@ -4,7 +4,7 @@ from typing import TYPE_CHECKING
 
 from numba import njit
 
-from ...typefunctions import AllPositionals, check_input_size, check_inputs_same_dtype
+from ...type_functions import AllPositionals, check_input_size, check_inputs_same_dtype
 from ..abstract import OneToOneNode
 
 if TYPE_CHECKING:

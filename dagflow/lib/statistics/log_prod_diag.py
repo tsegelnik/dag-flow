@@ -1,9 +1,9 @@
 from numpy import diag, empty, log
 from numpy.typing import NDArray
 
-from ...inputhandler import MissingInputAddPair
+from ...input_handler import MissingInputAddPair
 from ...node import Node
-from ...typefunctions import (
+from ...type_functions import (
     AllPositionals,
     check_has_inputs,
     check_input_matrix_or_diag,

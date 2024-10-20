@@ -1,7 +1,7 @@
 from numpy import add, empty, square
 from numpy.typing import NDArray
 
-from ...typefunctions import (
+from ...type_functions import (
     AllPositionals,
     check_has_inputs,
     check_inputs_equivalence,

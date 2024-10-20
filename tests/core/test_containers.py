@@ -1,7 +1,7 @@
 from contextlib import suppress
 
 from dagflow.input import Input, Inputs
-from dagflow.nodebase import NodeBase
+from dagflow.node_base import NodeBase
 from dagflow.output import Output
 
 

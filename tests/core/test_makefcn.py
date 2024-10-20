@@ -5,14 +5,14 @@ from dagflow.graph import Graph
 from dagflow.graphviz import savegraph
 from dagflow.lib.base import Array
 from dagflow.lib.linear_algebra import LinearFunction
-from dagflow.makefcn import makefcn
+from dagflow.make_fcn import make_fcn
 from dagflow.parameters import Parameters
 from dagflow.storage import NodeStorage
 
 
 @mark.parametrize("pass_params", (False, True))
 @mark.parametrize("pass_output", (False, True))
-def test_makefcn_safe(testname, pass_params, pass_output):
+def test_make_fcn_safe(testname, pass_params, pass_output):
     n = 10
     x = arange(n, dtype="d")
     vals_in = [1.0, 2.0]
@@ -31,7 +31,7 @@ def test_makefcn_safe(testname, pass_params, pass_output):
         Array("x", x) >> f
 
     res0 = f.outputs[0].data
-    LF = makefcn(
+    LF = make_fcn(
         f.outputs[0] if pass_output else f,
         storage,
         safe=True,
@@ -56,7 +56,7 @@ def test_makefcn_safe(testname, pass_params, pass_output):
 
 @mark.parametrize("pass_params", (False, True))
 @mark.parametrize("pass_output", (False, True))
-def test_makefcn_nonsafe(testname, pass_params, pass_output):
+def test_make_fcn_nonsafe(testname, pass_params, pass_output):
     n = 10
     x = arange(n, dtype="d")
     vals_in = [1.0, 2.0]
@@ -76,7 +76,7 @@ def test_makefcn_nonsafe(testname, pass_params, pass_output):
 
     res0 = f.outputs[0].data
     res0c = res0.copy()
-    LF = makefcn(
+    LF = make_fcn(
         f.outputs[0] if pass_output else f,
         storage,
         safe=False,

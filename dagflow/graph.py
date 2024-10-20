@@ -1,8 +1,8 @@
 from __future__ import annotations
 
 from .exception import ClosedGraphError, ClosingError, InitializationError, UnclosedGraphError
-from .graphbase import GraphBase
-from .logger import Logger, get_logger
+from .graph_base import GraphBase
+from .tools.logger import Logger, get_logger
 
 
 class Graph(GraphBase):

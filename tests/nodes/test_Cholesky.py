@@ -49,7 +49,7 @@ def test_Cholesky_00(testname, debug_graph, dtype):
     savegraph(graph, f"output/{testname}.png")
 
 
-def test_Cholesky_01_typefunctions():
+def test_Cholesky_01_type_functions():
     inV = array(
         [
             [10, 2, 1],

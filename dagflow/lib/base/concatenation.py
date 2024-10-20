@@ -1,5 +1,5 @@
-from ...inputhandler import MissingInputAddOne
-from ...typefunctions import check_has_inputs, check_input_dimension, check_input_dtype
+from ...input_handler import MissingInputAddOne
+from ...type_functions import check_has_inputs, check_input_dimension, check_input_dtype
 from ..abstract import ManyToOneNode
 
 

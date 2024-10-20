@@ -11,7 +11,7 @@ from numpy import double, dtype, frombuffer, linspace, ndarray
 from multikeydict.tools import reorder_key
 from multikeydict.typing import properkey
 
-from ..logger import INFO1, INFO2, INFO3, logger
+from ..tools.logger import INFO1, INFO2, INFO3, logger
 
 if TYPE_CHECKING:
     from typing import Any

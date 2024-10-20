@@ -5,7 +5,7 @@ from typing import TYPE_CHECKING
 
 from numpy import zeros
 
-from .datadescriptor import DataDescriptor
+from .data_descriptor import DataDescriptor
 from .edges import EdgeContainer
 from .exception import (
     AllocationError,

@@ -5,7 +5,7 @@ from typing import TYPE_CHECKING
 from numpy import multiply
 
 from ...node import Node
-from ...typefunctions import (
+from ...type_functions import (
     check_input_dimension,
     check_input_square,
     check_inputs_multiplicable_mat,

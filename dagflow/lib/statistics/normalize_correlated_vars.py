@@ -6,9 +6,9 @@ from numpy import add, divide, matmul, multiply, subtract
 from scipy.linalg import solve_triangular
 
 from ...exception import InitializationError
-from ...inputhandler import MissingInputAddPair
+from ...input_handler import MissingInputAddPair
 from ...node import Node
-from ...typefunctions import (
+from ...type_functions import (
     check_has_inputs,
     check_input_dimension,
     check_input_matrix_or_diag,

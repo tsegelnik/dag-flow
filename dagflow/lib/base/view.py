@@ -3,7 +3,7 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 
 from ...node import Node
-from ...typefunctions import copy_from_input_to_output
+from ...type_functions import copy_from_input_to_output
 
 if TYPE_CHECKING:
     from ...input import Input

@@ -6,8 +6,8 @@ from numba import njit
 from numpy import empty, floating, integer, multiply
 
 from ...exception import TypeFunctionError
-from ...inputhandler import MissingInputAddPair
-from ...typefunctions import (
+from ...input_handler import MissingInputAddPair
+from ...type_functions import (
     check_has_inputs,
     check_input_dimension,
     check_input_dtype,

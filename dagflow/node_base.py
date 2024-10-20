@@ -5,14 +5,14 @@ from typing import TYPE_CHECKING
 
 from multikeydict.nestedmkdict import NestedMKDict
 
-from . import inputhandler
+from . import input_handler
 from .exception import ConnectionError
 from .input import Input, Inputs
 from .iter import StopNesting
 from .labels import repr_pretty
-from .logger import logger
 from .output import Output, Outputs
 from .shift import rshift
+from .tools.logger import logger
 
 if TYPE_CHECKING:
     from .node import Node
@@ -36,7 +36,7 @@ class NodeBase:
     def _missing_input_handler(self, handler):
         if handler:
             if isinstance(handler, str):
-                sethandler = getattr(inputhandler, handler)(self)
+                sethandler = getattr(input_handler, handler)(self)
             elif isinstance(handler, type):
                 sethandler = handler(self)
             else:
@@ -45,7 +45,7 @@ class NodeBase:
         elif hasattr(self, "missing_input_handler"):
             sethandler = self.missing_input_handler
         else:
-            sethandler = inputhandler.MissingInputFail(self)
+            sethandler = input_handler.MissingInputFail(self)
         self.__missing_input_handler = sethandler
 
     def __getitem__(self, key):

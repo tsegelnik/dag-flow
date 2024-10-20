@@ -6,7 +6,7 @@ from dagflow.graphviz import savegraph
 from dagflow.lib.arithmetic import Sum
 from dagflow.lib.base import Array
 from dagflow.lib.debug import Dummy
-from dagflow.typefunctions import check_has_inputs, check_inputs_number
+from dagflow.type_functions import check_has_inputs, check_inputs_number
 
 
 def test_inputs_number_00(debug_graph):
