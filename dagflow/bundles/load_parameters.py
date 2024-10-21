@@ -104,7 +104,7 @@ IsParsCfgDict = Schema(
         "state": Or("fixed", "variable", error="Invalid parameters state: {}"),
         Optional("path", default=""): str,
         Optional("replicate", default=((),)): (IsStrSeqOrStr,),
-        Optional("replica_key_offset", default=0): int,
+        Optional("keys_order", default=None): Or([[str], [str]], ((str,), (str,))),
         Optional("correlations", default={}): IsNestedCorrelationsDict,
         Optional("joint_nuisance", default=False): bool,
     },
@@ -312,13 +312,8 @@ def _load_parameters(
     check_correlations_consistent(cfg)
 
     subkeys = cfg["replicate"]
-    replica_key_offset = cfg["replica_key_offset"]
-    if replica_key_offset > 0:
-        make_key = lambda key, subkey: key[:-replica_key_offset] + subkey + key[replica_key_offset:]
-    elif replica_key_offset == 0:
-        make_key = lambda key, subkey: key + subkey
-    else:
-        raise ValueError(f"{replica_key_offset=} should be non-negative")
+    from multikeydict.tools.map import _make_reorder_fcn
+    reorder_key = _make_reorder_fcn(cfg["keys_order"])
 
     varcfgs = NestedMKDict({})
     normpars = {}
@@ -328,8 +323,7 @@ def _load_parameters(
         label_general = NestedMKDict(varcfg["label"])
 
         for subkey in subkeys:
-            key = key_general + subkey
-            key = make_key(key_general, subkey)
+            key = reorder_key(key_general+subkey)
             key_str = ".".join(key)
             subkey_str = ".".join(subkey)
 
