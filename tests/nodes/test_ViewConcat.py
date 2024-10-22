@@ -50,7 +50,7 @@ def test_ViewConcat_00(closemode):
     assert view.tainted==False
     assert all(i.tainted==False for i in inputs)
 
-    data1, data2, data3 = (i.get_data(0) for i in inputs)
+    data1, data2, data3 = (i.outputs[0]._data for i in inputs)
     datac = concat.get_data(0)
     datav = view.get_data(0)
     assert all(data1==datac[:data1.size])
