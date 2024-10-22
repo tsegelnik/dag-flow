@@ -4,14 +4,14 @@ from pytest import raises
 from dagflow.exception import ClosedGraphError
 from dagflow.graph import Graph
 from dagflow.graphviz import savegraph
-from dagflow.lib import Array, Proxy
+from dagflow.lib.base import Array, Proxy
 
 
 def test_Proxy_several_inputs(testname, debug_graph):
     np_array0 = array([1, 2, 3, 4, 5])
     np_array1 = array([0, 1, 2, 3, 4])
 
-    with Graph(close_on_exit=True) as graph:
+    with Graph(close_on_exit=True, debug=debug_graph) as graph:
         array0 = Array("Array 0", np_array0)
         proxy = Proxy("proxy node")
         array0 >> proxy

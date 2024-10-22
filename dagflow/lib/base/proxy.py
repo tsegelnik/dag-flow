@@ -1,9 +1,11 @@
-from .ManyToOneNode import ManyToOneNode
 from numpy import copyto
+
+from ..abstract import ManyToOneNode
 
 
 class Proxy(ManyToOneNode):
     """Proxy inputs"""
+
     __slots__ = ("_idx",)
     _idx: int
 

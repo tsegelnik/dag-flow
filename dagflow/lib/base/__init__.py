@@ -1,15 +1,17 @@
 from .array import Array
-from .copy import Copy
 from .cache import Cache
+from .concatenation import Concatenation
+from .copy import Copy
+from .par_array_input import ParArrayInput
+from .proxy import Proxy
 from .view import View
 from .view_concat import ViewConcat
-from .concatenation import Concatenation
-from .par_array_input import ParArrayInput
 
-del array
 del copy
-del cache
 del view
+del array
+del cache
+del proxy
 del view_concat
 del concatenation
 del par_array_input
