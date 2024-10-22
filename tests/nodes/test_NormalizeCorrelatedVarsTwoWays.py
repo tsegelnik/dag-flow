@@ -7,13 +7,13 @@ from dagflow.graph import Graph
 from dagflow.graphviz import savegraph
 from dagflow.lib.base import Array
 from dagflow.lib.linear_algebra import Cholesky
-from dagflow.lib.statistics import NormalizeCorrelatedVars2
+from dagflow.lib.statistics import NormalizeCorrelatedVarsTwoWays
 
 debug = False
 
 
 @mark.parametrize("dtype", ("d", "f"))
-def test_NormalizeCorrelatedVars2_00(dtype):
+def test_NormalizeCorrelatedVarsTwoWays_00(dtype):
     fp_tolerance = finfo(dtype).resolution * 2
 
     inCentral = arange(3.0, dtype=dtype) * 100.0
@@ -34,8 +34,8 @@ def test_NormalizeCorrelatedVars2_00(dtype):
         normvalue1d = Array("normvalue 1d", inNorm, mode="store_weak")
         value2d = Array("vec 2d", inVec, mode="store_weak")
         normvalue2d = Array("normvalue 2d", inNorm, mode="store_weak")
-        norm1d = NormalizeCorrelatedVars2("norm1d")
-        norm2d = NormalizeCorrelatedVars2("norm2d")
+        norm1d = NormalizeCorrelatedVarsTwoWays("norm1d")
+        norm2d = NormalizeCorrelatedVarsTwoWays("norm2d")
 
         central >> norm1d.inputs["central"]
         central >> norm2d.inputs["central"]
@@ -250,10 +250,10 @@ def test_NormalizeCorrelatedVars2_00(dtype):
     assert allclose(checkMatrixOnes, back_matrix, atol=0, rtol=0)
     assert allclose(checkDiagOnes, back_diag, atol=0, rtol=0)
 
-    savegraph(graph, f"output/test_NormalizeCorrelatedVars2_00_{dtype}.png", show=["all"])
+    savegraph(graph, f"output/test_NormalizeCorrelatedVarsTwoWays_00_{dtype}.png", show=["all"])
 
 
-def test_NormalizeCorrelatedVars2_01(dtype="d"):
+def test_NormalizeCorrelatedVarsTwoWays_01(dtype="d"):
     inVec = arange(4.0, dtype=dtype) * 100.0
     inNorm = full_like(inVec, -100)
     inV = array([[10, 2, 1], [2, 12, 3], [1, 3, 13]], dtype=dtype)
@@ -262,7 +262,7 @@ def test_NormalizeCorrelatedVars2_01(dtype="d"):
         var_diag = Array("var_diag", inD)
         vec = Array("vec", inVec, mode="store_weak")
         nvec = Array("vec", inNorm, mode="store_weak")
-        norm1d = NormalizeCorrelatedVars2("norm1d")
+        norm1d = NormalizeCorrelatedVarsTwoWays("norm1d")
 
         vec >> norm1d.inputs["central"]
         var_diag >> norm1d.inputs["matrix"]
@@ -273,7 +273,7 @@ def test_NormalizeCorrelatedVars2_01(dtype="d"):
         var_matrix = Array("var_matrix", inV)
         vec = Array("vec", inVec, mode="store_weak")
         nvec = Array("vec", inNorm, mode="store_weak")
-        norm2d = NormalizeCorrelatedVars2("norm2d")
+        norm2d = NormalizeCorrelatedVarsTwoWays("norm2d")
 
         vec >> norm2d.inputs["central"]
         var_matrix >> norm2d.inputs["matrix"]

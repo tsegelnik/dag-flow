@@ -350,8 +350,8 @@ class GaussianConstraint(Constraint):
         self._normvalue_node.labels.inherit(self._pars._value_node.labels, fields_exclude={"paths"})
         self.normvalue = self._normvalue_node.outputs[0]
 
-        from ..lib.statistics import NormalizeCorrelatedVars2  # fmt: skip
-        self._norm_node = NormalizeCorrelatedVars2(f"[norm] {value_node.name}", immediate=True)
+        from ..lib.statistics import NormalizeCorrelatedVarsTwoWays  # fmt: skip
+        self._norm_node = NormalizeCorrelatedVarsTwoWays(f"[norm] {value_node.name}", immediate=True)
         self.central >> self._norm_node.inputs["central"]
         self.sigma >> self._norm_node.inputs["matrix"]
 

@@ -22,7 +22,7 @@ if TYPE_CHECKING:
     from ...output import Output
 
 
-class NormalizeCorrelatedVars2(Node):
+class NormalizeCorrelatedVarsTwoWays(Node):
     """Normalize correlated variables or correlate normal variables with linear expression
 
     If x is a vector of values, μ are the central values and L is a cholesky decomposition
