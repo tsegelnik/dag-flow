@@ -116,7 +116,7 @@ class Array(Node):
         array = full(shape, value, dtype=dtype)
 
         if store:
-            return cls.make_stored(name, array, edges=edges, **kwargs)
+            return cls.replicate(name=name, array=array, edges=edges, **kwargs)
 
         return cls(name, array, edges=edges, **kwargs)
 
@@ -136,7 +136,7 @@ class Array(Node):
         used_array_keys = set()
         for key, data in localstorage.walkitems():
             skey = ".".join((path,) + key)
-            _, istorage = cls.make_stored(skey, data, **kwargs)
+            _, istorage = cls.replicate(name=skey, array=data, **kwargs)
             tmpstorage |= istorage
             used_array_keys.add(key)
 

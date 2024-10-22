@@ -137,38 +137,12 @@ class Node(NodeBase):
         # TODO:
         #   - testing
         #   - keyword connection syntax ([] or ())
-        #   - consistency with make_stored, replicate
         instance = cls(name, **kwargs)
         for connectible in positional_connectibles:
             connectible >> instance
         for key, connectible in key_connectibles.items():
             connectible >> instance.inputs[key]
         return instance
-
-    @classmethod
-    def make_stored(
-        cls, name: str, *args, label_from: Mapping | None = None, **kwargs
-    ) -> tuple[Node | None, "NodeStorage"]:
-        from multikeydict.nestedmkdict import NestedMKDict  # fmt: skip
-        if label_from is not None:
-            label_from = NestedMKDict(label_from, sep=".")
-            try:
-                label = label_from.get_any(name, object=True)
-            except KeyError as exc:
-                raise RuntimeError(f"Could not find label for {name}") from exc
-            kwargs.setdefault("label", label)
-
-        node = cls(name, *args, **kwargs)
-
-        from .storage import NodeStorage  # fmt: skip
-        storage = NodeStorage(default_containers=True)
-        storage("nodes")[name] = node
-        if len(node.outputs) == 1:
-            storage("outputs")[name] = node.outputs[0]
-
-        NodeStorage.update_current(storage, strict=True)
-
-        return node, storage
 
     @classmethod
     def replicate(
@@ -206,7 +180,7 @@ class Node(NodeBase):
             if ninputs > 1:
                 for iname, input in iter_inputs:
                     inputs[tuplename + (iname,) + key] = input
-            else:
+            elif ninputs==1:
                 _, input = next(iter_inputs)
                 inputs[tuplename + key] = input
 

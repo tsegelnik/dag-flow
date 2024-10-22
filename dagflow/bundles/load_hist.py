@@ -119,16 +119,16 @@ def load_hist(acfg: Mapping | None = None, **kwargs) -> NodeStorage:
     storage = NodeStorage(default_containers=True)
     with storage:
         if edges_common is not None:
-            edges, _ = Array.make_stored(strkey(xname), edges_common)
+            edges, _ = Array.replicate(name=strkey(xname), array=edges_common)
         else:
             edges = None
 
         for key, (x, y) in data.items():
             if edges_common is None:
                 xkey = strkey(xname + key)
-                edges, _ = Array.make_stored(xkey, x)
+                edges, _ = Array.replicate(name=xkey, array=x)
             ykey = strkey(yname + key)
-            Array.make_stored(ykey, y, edges=edges)
+            Array.replicate(name=ykey, array=y, edges=edges)
 
     NodeStorage.update_current(storage, strict=True)
 

@@ -113,16 +113,16 @@ def load_graph(acfg: Mapping | None = None, **kwargs) -> NodeStorage:
     storage = NodeStorage(default_containers=True)
     with storage:
         if mesh_common is not None:
-            mesh, _ = Array.make_stored(strkey(xname), mesh_common)
+            mesh, _ = Array.replicate(name=strkey(xname), array=mesh_common)
         else:
             mesh = None
 
         for key, (x, y) in data.items():
             if mesh_common is None:
                 xkey = strkey(xname + key)
-                mesh, _ = Array.make_stored(xkey, x)
+                mesh, _ = Array.replicate(name=xkey, array=x)
             ykey = strkey(yname + key)
-            Array.make_stored(ykey, y, meshes=mesh)
+            Array.replicate(name=ykey, array=y, meshes=mesh)
 
     NodeStorage.update_current(storage, strict=True)
 
