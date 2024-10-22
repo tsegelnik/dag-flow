@@ -461,7 +461,7 @@ class PlotVisitor(NestedMKDictVisitor):
         elif self._folder is not None:
             self._kwargs["close"] = False
 
-    def _try_start_join(self, key: TupleKey) -> tuple[tuple[str] | None, str | None, bool]:
+    def _try_start_join(self, key: TupleKey) -> tuple[tuple[str,...] | None, str | None, bool]:
         key_set = OrderedSet(key)
         need_new_figure = True
         if self._currently_active_overlay is None:
@@ -483,7 +483,7 @@ class PlotVisitor(NestedMKDictVisitor):
 
     def _makefigure(
         self, key: TupleKey, *, force_new: bool = False
-    ) -> tuple[Axes, tuple[str] | None, str | None, bool]:
+    ) -> tuple[Axes, tuple[str,...] | None, str | None, bool]:
         from matplotlib.pyplot import sca, subplots
 
         def mkfig(storekey: TupleKey | None = None) -> Axes:

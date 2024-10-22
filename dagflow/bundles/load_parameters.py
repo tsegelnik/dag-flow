@@ -11,7 +11,10 @@ from multikeydict.nestedmkdict import NestedMKDict
 from multikeydict.typing import properkey
 
 from ..exception import InitializationError
-from ..labels import mapping_append_lists, format_dict, inherit_labels
+from ..labels import format_dict, inherit_labels, mapping_append_lists
+from ..lib import Array
+from ..lib.ElSumSq import ElSumSq
+from ..parameters import Parameters
 from ..storage import NodeStorage
 from ..tools.schema import IsStrSeqOrStr, LoadFileWithExt, LoadYaml, MakeLoaderPy, NestedSchema
 
@@ -176,7 +179,7 @@ def get_format_processor(format):
         return process_var_percent
 
 
-def get_label(key: tuple, labelscfg: dict, *, group_only: bool=False) -> dict:
+def get_label(key: tuple, labelscfg: dict | NestedMKDict, *, group_only: bool = False) -> dict:
     if not group_only:
         try:
             ret = labelscfg.get_any(key)
@@ -191,7 +194,7 @@ def get_label(key: tuple, labelscfg: dict, *, group_only: bool=False) -> dict:
     for n in range(1, len(key) + 1):
         subkey = key[:-n]
         try:
-            lcfg = labelscfg.get_dict(subkey+("group",))
+            lcfg = labelscfg.get_dict(subkey + ("group",))
         except KeyError:
             if not group_only:
                 try:
@@ -239,11 +242,6 @@ def iterate_varcfgs(
         varcfg = process(varcfg, form, hascentral)
         varcfg["label"] = get_label(key, labelscfg)
         yield key, varcfg
-
-
-from ..lib import Array
-from ..lib.ElSumSq import ElSumSq
-from ..parameters import Parameters
 
 
 def check_correlations_consistent(cfg: NestedMKDict) -> None:
@@ -303,7 +301,7 @@ def _load_parameters(
                 "constant": {},
                 "variable": {},
                 "free": {},
-                "constrained": {}
+                "constrained": {},
             },
         },
         sep=".",
@@ -313,6 +311,7 @@ def _load_parameters(
 
     subkeys = cfg["replicate"]
     from multikeydict.tools.map import _make_reorder_fcn
+
     reorder_key = _make_reorder_fcn(cfg["keys_order"])
 
     varcfgs = NestedMKDict({})
@@ -323,7 +322,7 @@ def _load_parameters(
         label_general = NestedMKDict(varcfg["label"])
 
         for subkey in subkeys:
-            key = reorder_key(key_general+subkey)
+            key = reorder_key(key_general + subkey)
             key_str = ".".join(key)
             subkey_str = ".".join(subkey)
 
@@ -358,7 +357,9 @@ def _load_parameters(
         matrix = corrcfg["matrix"]
         mark_matrix = "C" if matrixtype == "correlation" else "V"
         label_mat = inherit_labels(
-            label_mat0, fmtlong=f"{matrixtype.capitalize()} matrix: {{}}", fmtshort=mark_matrix + "({})"
+            label_mat0,
+            fmtlong=f"{matrixtype.capitalize()} matrix: {{}}",
+            fmtshort=mark_matrix + "({})",
         )
         label_mat["mark"] = mark_matrix
         label_mat = format_dict(

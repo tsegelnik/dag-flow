@@ -208,7 +208,7 @@ class Node(NodeBase):
         self._name = name
 
     @property
-    def allowed_kw_inputs(self) -> tuple[str]:
+    def allowed_kw_inputs(self) -> tuple[str,...]:
         return self._allowed_kw_inputs
 
     @property
@@ -465,7 +465,7 @@ class Node(NodeBase):
 
     def add_pair(
         self, iname: str, oname: str, **kwargs
-    ) -> tuple[Input | tuple[Input], Output | tuple[Output]]:
+    ) -> tuple[Input | tuple[Input,...], Output | tuple[Output,...]]:
         """
         Creates a pair of input and output
         """
@@ -506,7 +506,7 @@ class Node(NodeBase):
         oname: str,
         input_kws: dict | None = None,
         output_kws: dict | None = None,
-    ) -> tuple[Input | tuple[Input], Output | tuple[Output]]:
+    ) -> tuple[Input | tuple[Input,...], Output | tuple[Output,...]]:
         """
         Creates a pair of input and output
 

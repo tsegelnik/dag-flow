@@ -52,11 +52,11 @@ def mapping_append_lists(dct: dict, key: str, lst: list):
     if not isinstance(dct, dict):
         return
 
-    def patch(dct, index_values):
+    def patch(dct):
         oldlist = dct.get(key, [])
         newlist = list(lst)
         for name in oldlist:
-            if not name in newlist:
+            if name not in newlist:
                 newlist.append(name)
         dct[key] = newlist
 
@@ -67,7 +67,7 @@ def mapping_append_lists(dct: dict, key: str, lst: list):
             has_subdicts = True
 
     if not has_subdicts:
-        patch(dct, lst)
+        patch(dct)
 
 def repr_pretty(self, p, cycle):
     """Pretty repr for IPython. To be used as __repr__ method"""
@@ -203,8 +203,7 @@ class Labels:
                     and idxnum[1] != accepted_list  # key index
                 ):
                     return False
-            else:
-                if (
+            elif (
                     idxnum[0] not in accepted_list  # key value
                     and idxnum[1] not in accepted_list  # key index
                 ):

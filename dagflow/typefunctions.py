@@ -715,7 +715,7 @@ def check_input_edges_dim(
 def check_input_edges_equivalence(
     node: Node,
     inputkey: LimbKey = AllPositionals,
-    reference: tuple[Output] | None = None,
+    reference: tuple[Output,...] | None = None,
 ):
     """Checking the equivalence of the edges of the inputs."""
     inputs = tuple(node.inputs.iter(inputkey))

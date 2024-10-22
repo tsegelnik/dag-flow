@@ -95,7 +95,7 @@ class Array(Node):
         *,
         store: bool = False,
         edges: Output | Sequence[Output] | Node | None = None,
-        shape: int | tuple[int] |  None = None,
+        shape: int | tuple[int,...] |  None = None,
         dtype: DTypeLike = None,
         **kwargs,
     ):
@@ -200,7 +200,7 @@ class Array(Node):
                     f"got {edges=}, {type(edges)=}"
                 )
 
-    def set_mesh(self, meshes: Output | Node | Sequence[Output]):
+    def set_mesh(self, meshes: Output | Node | Sequence[Output] | Sequence[Node]):
         if not meshes:
             return
 

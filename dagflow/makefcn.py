@@ -47,7 +47,7 @@ def makefcn(
     If `safe=False`, the parameters will be setted to the new values
     :type safe: bool
     :param par_names: The short names of the set of parameters for presearch
-    :type par_names: list[str] | tuple[str] | None
+    :type par_names: list[str] | tuple[str,...] | None
     :rtype: function
     """
     if not isinstance(storage, (NodeStorage, NestedMKDict)):

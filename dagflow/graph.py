@@ -106,15 +106,11 @@ class Graph(GraphBase):
         """Closes the graph"""
         if force:
             self._nodes_closed = False
-        else:
-            if self._closed:
-                return True
+        elif self._closed:
+            return True
         self.logger.debug(f"Graph '{self.name}': Closing...")
 
-        if self._nodes_closed:
-            nodes_to_process = self._new_nodes
-        else:
-            nodes_to_process = self._nodes
+        nodes_to_process = self._new_nodes if self._nodes_closed else self._nodes
 
         self.logger.debug(f"Graph '{self.name}': Update types...")
         for node in nodes_to_process:
