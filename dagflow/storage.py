@@ -254,7 +254,9 @@ class NodeStorage(NestedMKDict):
 
             if subkey:
                 skey = ".".join(subkey)
-                object.labels.format(space_key=f" {skey}", key_space=f"{skey} ")
+                object.labels.format(
+                    index=subkey, key=skey, space_key=f" {skey}", key_space=f"{skey} "
+                )
 
         if strict:
             for key in processed_keys_set:
@@ -351,7 +353,14 @@ class NodeStorage(NestedMKDict):
 
         return ret
 
-    def to_latex(
+    def to_text_file(self, filename: str, **kwargs):
+        table = self.to_table(**kwargs)
+
+        with open(filename, "w") as out:
+            logger.log(INFO1, f"Write: {filename}")
+            out.write(table)
+
+    def to_latex_file(
         self, filename: str | None = None, *, return_df: bool = False, **kwargs
     ) -> str | tuple[str, DataFrame]:
         df = self.to_df(label_from="latex", **kwargs)
@@ -452,7 +461,7 @@ class PlotVisitor(NestedMKDictVisitor):
         elif self._folder is not None:
             self._kwargs["close"] = False
 
-    def _try_start_join(self, key: TupleKey) -> tuple[tuple[str] | None, str | None, bool]:
+    def _try_start_join(self, key: TupleKey) -> tuple[tuple[str,...] | None, str | None, bool]:
         key_set = OrderedSet(key)
         need_new_figure = True
         if self._currently_active_overlay is None:
@@ -474,7 +483,7 @@ class PlotVisitor(NestedMKDictVisitor):
 
     def _makefigure(
         self, key: TupleKey, *, force_new: bool = False
-    ) -> tuple[Axes, tuple[str] | None, str | None, bool]:
+    ) -> tuple[Axes, tuple[str,...] | None, str | None, bool]:
         from matplotlib.pyplot import sca, subplots
 
         def mkfig(storekey: TupleKey | None = None) -> Axes:
@@ -633,7 +642,7 @@ class ParametersVisitor(NestedMKDictVisitor):
             {
                 "path": f"group: {'.'.join(self._path)} [{len(self._localdata)}]",
                 "shape": len(self._localdata),
-                "label": "group",
+                "label": "[group]",
             }
         )
         self._data_list.extend(self._localdata)

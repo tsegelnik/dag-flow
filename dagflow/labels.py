@@ -1,12 +1,12 @@
 from __future__ import annotations
 
 from pathlib import Path
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Mapping
 
 from .tools.schema import LoadYaml
 
 if TYPE_CHECKING:
-    from collections.abc import Callable, Container, Mapping, Sequence
+    from collections.abc import Callable, Container, Sequence
     from typing import Any
 
 
@@ -14,7 +14,7 @@ def format_latex(k: str, s: str | Any, /, *args, protect_latex: bool = True, **k
     if not isinstance(s, str):
         return s
 
-    if protect_latex and (k == "latex" and "$" in s) or "{" not in s:
+    if protect_latex and (k == "latex" and "$" in s) or "{" not in s:  # }
         return s
 
     return s.format(*args, **kwargs)
@@ -31,18 +31,43 @@ def format_dict(
     if isinstance(dct, str):
         return {"text": format_latex("", dct, *args, **kwargs)}
 
-    if process_keys is None:
-        return {
-            k: format_latex(k, v, *args, protect_latex=protect_latex, **kwargs)
-            for k, v in dct.items()
-        }
+    ret = {}
+    for key, value in dct.items():
+        match value:
+            case dict():
+                ret[key] = format_dict(
+                    value, *args, process_keys=process_keys, protect_latex=protect_latex, **kwargs
+                )
+            case str():
+                if process_keys and key not in process_keys:
+                    continue
+                ret[key] = format_latex(key, value, *args, protect_latex=protect_latex, **kwargs)
+            case _:
+                ret[key] = value
 
-    return {
-        k: format_latex(k, v, *args, protect_latex=protect_latex, **kwargs)
-        for k, v in dct.items()
-        if k in process_keys
-    }
+    return ret
 
+
+def mapping_append_lists(dct: dict, key: str, lst: list):
+    if not isinstance(dct, dict):
+        return
+
+    def patch(dct):
+        oldlist = dct.get(key, [])
+        newlist = list(lst)
+        for name in oldlist:
+            if name not in newlist:
+                newlist.append(name)
+        dct[key] = newlist
+
+    has_subdicts = False
+    for v in dct.values():
+        if isinstance(v, dict):
+            mapping_append_lists(v, key, lst)
+            has_subdicts = True
+
+    if not has_subdicts:
+        patch(dct)
 
 def repr_pretty(self, p, cycle):
     """Pretty repr for IPython. To be used as __repr__ method"""
@@ -53,9 +78,17 @@ def _make_formatter(fmt: str | Callable | dict | None) -> Callable:
     if isinstance(fmt, str):
         return fmt.format
     elif isinstance(fmt, dict):
-        return lambda s: fmt.get(s, s)
+
+        def formatter(s, **_):
+            return fmt.get(s, s)
+
+        return formatter
     elif fmt is None:
-        return lambda s: s
+
+        def formatter(s, **_):
+            return s
+
+        return formatter
 
     return fmt
 
@@ -133,7 +166,7 @@ class Labels:
             case {"group": {} as group, **rest} if not rest:
                 d = group
                 for k, v in d.items():
-                    d[k] = v.format(space_key="")
+                    d[k] = v.format(space_key="", key_space="", key="", index=())
 
         for k, v in d.items():
             setattr(self, k, v)
@@ -153,7 +186,9 @@ class Labels:
     def index_dict(self) -> dict[str, tuple[str, int]]:
         return self._index_dict
 
-    def index_in_mask(self, accepted_items: Mapping[str, str | int | Container[str | int]] | None) -> bool:
+    def index_in_mask(
+        self, accepted_items: Mapping[str, str | int | Container[str | int]] | None
+    ) -> bool:
         if accepted_items is None:
             return True
 
@@ -168,8 +203,7 @@ class Labels:
                     and idxnum[1] != accepted_list  # key index
                 ):
                     return False
-            else:
-                if (
+            elif (
                     idxnum[0] not in accepted_list  # key value
                     and idxnum[1] not in accepted_list  # key index
                 ):
@@ -235,7 +269,7 @@ class Labels:
 
     @property
     def latex(self) -> str | None:
-        return self._latex
+        return self._latex or self._text
 
     @latex.setter
     def latex(self, value: str):
@@ -359,10 +393,12 @@ class Labels:
 
     def inherit(
         self,
-        source: Labels,
+        source: Labels | Mapping,
         fmtlong: str | Callable | None = None,
         fmtshort: str | Callable | None = None,
         fields: Sequence[str] = [],
+        fields_exclude: Container[str] = [],
+        fmtextra: Mapping[str, str] = {},
     ):
         fmtlong = _make_formatter(fmtlong)
         fmtshort = _make_formatter(fmtshort)
@@ -384,18 +420,35 @@ class Labels:
             )
         kshort = {"_mark"}
         for _key in inherit:
-            label = getattr(source, _key, None)
+            if _key[1:] in fields_exclude:
+                continue
+            if isinstance(source, Labels):
+                label = getattr(source, _key, None)
+            elif isinstance(source, Mapping):
+                key = _key[1:]
+                label = source.get(key, None)
+            else:
+                raise ValueError(source)
             if label is None:
                 continue
             match label:
                 case str():
-                    newv = fmtshort(label) if _key in kshort else fmtlong(label)
+                    formatter = fmtshort if _key in kshort else fmtlong
+                    newv = formatter(label, source=source)
                     if newv is not None:
                         self[_key] = newv
                 case tuple() | {} | []:
                     self[_key] = type(label)(label)
                 case _:
                     self[_key] = label
+
+        for key, fmt in fmtextra.items():
+            _key = f"_{key}"
+            if getattr(self, _key) is not None:
+                continue
+
+            formatter = _make_formatter(fmt)
+            self[_key] = formatter(source=source)
 
 
 def inherit_labels(
@@ -404,6 +457,7 @@ def inherit_labels(
     *,
     fmtlong: str | Callable,
     fmtshort: str | Callable,
+    fields_exclude: Container[str] = [],
 ) -> dict:
     if destination is None:
         destination = {}
@@ -414,6 +468,8 @@ def inherit_labels(
     kshort = {"mark"}
     kskip = {"key", "name"}
     for k, v in source.items():
+        if k in fields_exclude:
+            continue
         if k in kskip:
             continue
         if isinstance(v, str):

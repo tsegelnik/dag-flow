@@ -15,8 +15,8 @@ from dagflow.lib import Array
 from dagflow.lib import Cos
 from dagflow.lib import Integrator
 from dagflow.lib import IntegratorSampler
-from dagflow.lib import ManyToOneNode
-from dagflow.lib import OneToOneNode
+from dagflow.lib.ManyToOneNode import ManyToOneNode
+from dagflow.lib.OneToOneNode import OneToOneNode
 from dagflow.lib import Sin
 from dagflow.plot import plot_auto
 

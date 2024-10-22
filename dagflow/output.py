@@ -33,6 +33,7 @@ if TYPE_CHECKING:
 class Output:
     __slots__ = (
         "_data",
+        "_data_ro",
         "_dd",
         "_node",
         "_name",
@@ -46,6 +47,7 @@ class Output:
         "_debug",
     )
     _data: NDArray | None
+    _data_ro: NDArray | None
     _dd: DataDescriptor
     _labels: Labels | None
     _node: Node | None
@@ -77,6 +79,7 @@ class Output:
     ):
         self._labels = None
         self._data = None
+        self._data_ro = None
         self._allocating_input = None
 
         self._name = name
@@ -172,7 +175,7 @@ class Output:
             )
         try:
             self.touch()
-            return self._data
+            return self._data_ro
         except CalculationError as exc:
             raise CalculationError(
                 "An exception occured while the node was touched!",
@@ -211,6 +214,9 @@ class Output:
             self.node.taint_type()
 
         self._data = data
+        self._data_ro = data.view()
+        self._data_ro.flags.writeable = False
+
         self.dd.dtype = data.dtype
         self.dd.shape = data.shape
         self._owns_buffer = owns_buffer
@@ -277,7 +283,7 @@ class Output:
                 )
             self._allocating_input = input
         self._child_inputs.append(input)
-        input._set_parent_output(self)
+        input.set_parent_output(self)
         return input
 
     def deep_iter_outputs(self, disconnected_only=False):

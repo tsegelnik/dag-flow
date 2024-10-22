@@ -84,25 +84,25 @@ def test_to_root(testname, debug_graph, dtype):
             }
 
     with Graph(close_on_exit=True, debug=debug_graph) as graph, NodeStorage({}) as storage:
-        EdgesX, _ = Array.make_stored('edgesx', edgesx)
-        EdgesY, _ = Array.make_stored('edgesy', edgesy)
+        EdgesX, _ = Array.replicate(name='edgesx', array=edgesx)
+        EdgesY, _ = Array.replicate(name='edgesy', array=edgesy)
 
-        MeshX, _ = Array.make_stored('meshx', meshx)
+        MeshX, _ = Array.replicate(name='meshx', array=meshx)
 
-        Mesh2X, _ = Array.make_stored('mesh2x', mesh2x)
-        Mesh2Y, _ = Array.make_stored('mesh2y', mesh2y)
+        Mesh2X, _ = Array.replicate(name='mesh2x', array=mesh2x)
+        Mesh2Y, _ = Array.replicate(name='mesh2y', array=mesh2y)
 
-        arr1e, _ = Array.make_stored('array_edges', data, edges=EdgesX.outputs[0])
-        arr1n, _ = Array.make_stored('array_mesh', data)
+        arr1e, _ = Array.replicate(name='array_edges', array=data, edges=EdgesX.outputs[0])
+        arr1n, _ = Array.replicate(name='array_mesh', array=data)
         arr1n.outputs[0].dd.axes_meshes = (MeshX.outputs[0],)
         arr1n.outputs[0].dd.meshes_inherited = False
 
-        arr2e, _ = Array.make_stored('case_2d.array_2d_edges', data2, edges=(EdgesX, EdgesY))
-        arr2n, _ = Array.make_stored('case_2d.array_2d_mesh', data2)
+        arr2e, _ = Array.replicate(name='case_2d.array_2d_edges', array=data2, edges=(EdgesX, EdgesY))
+        arr2n, _ = Array.replicate(name='case_2d.array_2d_mesh', array=data2)
         arr2n.outputs[0].dd.axes_meshes = (Mesh2X.outputs[0], Mesh2Y.outputs[0])
         arr2n.outputs[0].dd.meshes_inherited = False
 
-        arr2b, _ = Array.make_stored('case_2d.both.array_2d_both', data2, edges=(EdgesX, EdgesY))
+        arr2b, _ = Array.replicate(name='case_2d.both.array_2d_both', array=data2, edges=(EdgesX, EdgesY))
         arr2b.outputs[0].dd.axes_meshes = (Mesh2X.outputs[0], Mesh2Y.outputs[0])
         arr2b.outputs[0].dd.meshes_inherited = False
 

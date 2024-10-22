@@ -52,6 +52,7 @@ class Parameter:
         parent: Parameters,
         connectible: Output | None = None,
         labelfmt: str = "{}",
+        label: Mapping = {},
         make_view: bool = True,
     ):
         self._parent = parent
@@ -70,14 +71,21 @@ class Parameter:
             self._view = None
         elif make_view:
             self._idx = idx
-            labels = self._common_output.node.labels.copy()
+            label_parent = self._common_output.node.labels.copy()
+            if not label:
+                label = label_parent
             try:
                 idxtuple = parent._names[idx]
                 idxname = ".".join(idxtuple)
-                labels["paths"] = [labels["paths"][idx]]
             except (ValueError, IndexError):
                 idxname = "???"
                 idxtuple = None
+
+            try:
+                label["paths"] = [label_parent["paths"][idx]]
+            except (KeyError, IndexError):
+                pass
+
             self._view = View(
                 f"{self._common_output.node.name}.{idxname}",
                 self._common_connectible_output,
@@ -85,8 +93,10 @@ class Parameter:
                 length=1,
             )
             self._view.labels.inherit(
-                labels,
-                fmtlong=f"{{}} {idxname} [{idx}]",
+                label,
+                fmtlong=f"{{}} (par {idx}: {idxname})",
+                fmtextra={"graph": f"{{source.text}}\\nparameter {idx}: {idxname}"},
+                fields_exclude={"paths"},
             )
             # if idxtuple:
             #     self._view.labels.index_values.extend(idxtuple)
@@ -261,6 +271,14 @@ class NormalizedGaussianParameter(Parameter):
     def sigma(self) -> float:
         return 1.0
 
+    @property
+    def normvalue(self) -> float:
+        return self.value
+
+    @normvalue.setter
+    def normvalue(self, normvalue: float):
+        self.value = normvalue
+
     def to_dict(self, **kwargs) -> dict:
         dct = super().to_dict(**kwargs)
         dct.update(
@@ -312,6 +330,7 @@ class Parameters:
         variable: bool | None = None,
         fixed: bool | None = None,
         close: bool = True,
+        label: Mapping = {},
     ):
         self._value_node = value
         try:
@@ -338,9 +357,11 @@ class Parameters:
 
             npars = self.value._data.size
             if npars > 1:
-                self._pars.extend(Parameter(self.value, i, parent=self) for i in range(npars))
+                for i in range(npars):
+                    ilabel = label.get(names[i], {})
+                    self._pars.append(Parameter(self.value, i, label=ilabel, parent=self))
             elif npars == 1:
-                self._pars.append(Parameter(self.value, parent=self))
+                self._pars.append(Parameter(self.value, label=label, parent=self))
             else:
                 raise RuntimeError("Do not know how to handle 0 parameters")
 
@@ -421,6 +442,8 @@ class Parameters:
         label = {"text": "parameter"} if label is None else dict(label)
         name: str = label.setdefault("name", "parameter")
 
+        grouplabel = label.get("group", label)
+
         if isinstance(value, (float, int)):
             value = (value,)
         elif not isinstance(value, (Sequence, ndarray)):
@@ -438,9 +461,10 @@ class Parameters:
             Array(
                 name,
                 array(value, dtype=dtype),
-                label=label,
+                label=grouplabel,
                 mode="store_weak",
             ),
+            label=label,
             fixed=fixed,
             variable=variable,
             close=not has_constraint,
@@ -453,7 +477,7 @@ class Parameters:
                 GaussianConstraint.from_numbers(
                     parameters=pars,
                     dtype=dtype,
-                    label=label,
+                    label=grouplabel,
                     central=central,
                     sigma=sigma,
                     **kwargs,
@@ -584,23 +608,35 @@ class GaussianConstraint(Constraint):
         else:
             normmark = "norm"
         self._normvalue_node = Array(
-            f"[norm] {value_node.name}",
+            f"normal unit: {value_node.name}",
             zeros_like(self.central._data),
             mark=normmark,
             mode="store_weak",
         )
-        self._normvalue_node.labels.inherit(
-            self._pars._value_node.labels, fmtlong="[norm] {}", fmtshort="n({})"
-        )
+        self._normvalue_node.labels.inherit(self._pars._value_node.labels, fields_exclude={"paths"})
         self.normvalue = self._normvalue_node.outputs[0]
 
-        self._norm_node = NormalizeCorrelatedVars2(f"[norm] {value_node.name}", immediate=True)
+        self._norm_node = NormalizeCorrelatedVars2("{value_node.name}", immediate=True)
         self.central >> self._norm_node.inputs["central"]
         self.sigma >> self._norm_node.inputs["matrix"]
 
+        fmts = {
+            "_cholesky_node": ("Cholesky: {}", "L({})"),
+            "_covariance_node": ("Covariance: {}", "V({})"),
+            "_normvalue_node": ("{}", "{}"),
+        }
         for nodename in ("_cholesky_node", "_covariance_node", "_norm_node", "_sigma_node"):
             if cnode := getattr(self, nodename):
                 cnode.labels.inherit(self._pars._value_node.labels, fields=("index_values",))
+        for nodename in ("_cholesky_node", "_covariance_node", "_normvalue_node"):
+            if (cnode := getattr(self, nodename)) is not None:
+                fmtlong, fmtshort = fmts[nodename]
+                cnode.labels.inherit(
+                    self._pars._value_node.labels,
+                    fmtlong=fmtlong,
+                    fmtshort=fmtshort,
+                    fields_exclude={"paths"},
+                )
 
         (parameters.value, self.normvalue) >> self._norm_node
         self.normvalue_final = self._norm_node.outputs["normvalue"]
@@ -661,13 +697,13 @@ class GaussianConstraint(Constraint):
         node_central = Array(
             f"{name}_central",
             array(central, dtype=dtype),
-            label=inherit_labels(label, fmtlong="central: {}", fmtshort="c({})"),
+            label=inherit_labels(label, fmtlong="central: {}", fmtshort="c({})", fields_exclude={"paths"}),
         )
 
         node_sigma = Array(
             f"{name}_sigma",
             array(sigma, dtype=dtype),
-            label=inherit_labels(label, fmtlong="sigma: {}", fmtshort="σ({})"),
+            label=inherit_labels(label, fmtlong="sigma: {}", fmtshort="σ({})", fields_exclude={"paths"}),
         )
 
         match correlation:
@@ -675,10 +711,11 @@ class GaussianConstraint(Constraint):
                 node_cor = Array(
                     f"{name}_correlation",
                     array(correlation, dtype=dtype),
-                    label=inherit_labels(label, fmtlong="correlations: {}", fmtshort="C({})"),
+                    label=inherit_labels(label, fmtlong="correlations: {}", fmtshort="C({})", fields_exclude={"paths"}),
                 )
             case Node():
                 node_cor = correlation
+                node_cor.labels.inherit(label, fmtlong="correlations: {}", fmtshort="C({})", fields_exclude={"paths"})
             case None:
                 node_cor = None
             case _:

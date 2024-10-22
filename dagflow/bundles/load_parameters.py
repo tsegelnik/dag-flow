@@ -11,7 +11,10 @@ from multikeydict.nestedmkdict import NestedMKDict
 from multikeydict.typing import properkey
 
 from ..exception import InitializationError
-from ..labels import format_dict, inherit_labels
+from ..labels import format_dict, inherit_labels, mapping_append_lists
+from ..lib import Array
+from ..lib.ElSumSq import ElSumSq
+from ..parameters import Parameters
 from ..storage import NodeStorage
 from ..tools.schema import IsStrSeqOrStr, LoadFileWithExt, LoadYaml, MakeLoaderPy, NestedSchema
 
@@ -104,7 +107,7 @@ IsParsCfgDict = Schema(
         "state": Or("fixed", "variable", error="Invalid parameters state: {}"),
         Optional("path", default=""): str,
         Optional("replicate", default=((),)): (IsStrSeqOrStr,),
-        Optional("replica_key_offset", default=0): int,
+        Optional("keys_order", default=None): Or([[str], [str]], ((str,), (str,))),
         Optional("correlations", default={}): IsNestedCorrelationsDict,
         Optional("joint_nuisance", default=False): bool,
     },
@@ -176,52 +179,60 @@ def get_format_processor(format):
         return process_var_percent
 
 
-def get_label(key: tuple, labelscfg: dict) -> dict:
-    try:
-        ret = labelscfg.get_any(key)
-    except KeyError:
-        pass
-    else:
-        ret["index_values"] = list(key)
-        if isinstance(ret, NestedMKDict):
-            ret = ret.object
-        return dict(ret)
+def get_label(key: tuple, labelscfg: dict | NestedMKDict, *, group_only: bool = False) -> dict:
+    if not group_only:
+        try:
+            ret = labelscfg.get_any(key)
+        except KeyError:
+            pass
+        else:
+            if isinstance(ret, NestedMKDict):
+                ret = ret.object
+            return dict(ret)
 
+    lcfg = None
     for n in range(1, len(key) + 1):
         subkey = key[:-n]
         try:
-            lcfg = labelscfg.get_any(subkey)
+            lcfg = labelscfg.get_dict(subkey + ("group",))
         except KeyError:
-            continue
+            if not group_only:
+                try:
+                    lcfg = labelscfg.get_any(subkey)
+                except KeyError:
+                    continue
 
-        if not subkey and "text" not in lcfg:
-            break
+        if not subkey and (lcfg is None or "text" not in lcfg):
+            return {}
 
-        key_str = ".".join(key[n - 1 :])
+        rightkey = key[n - 1 :]
+        key_str = ".".join(rightkey)
         ret = format_dict(
             lcfg,
             key_str,
             key=key_str,
+            index=rightkey,
             space_key=f" {key_str}",
             key_space=f"{key_str} ",
             process_keys=label_keys,
         )
-        ret["index_values"] = list(key)
         return ret
 
     return {}
 
 
 def _add_paths_from_labels(paths: list, cfg: NestedMKDict):
-    for _, cfg_label in cfg.walkdicts(ignorekeys=("value", "central", "sigma", "sigma_percent", "variable")):
+    for _, cfg_label in cfg.walkdicts(
+        ignorekeys=("value", "central", "sigma", "sigma_percent", "variable")
+    ):
         paths.extend(cfg_label.get("paths"))
 
 
 def iterate_varcfgs(
     cfg: NestedMKDict,
 ) -> Generator[tuple[tuple[str, ...], NestedMKDict], None, None]:
-    parameterscfg = cfg("parameters")
-    labelscfg = cfg("labels")
+    parameterscfg = cfg.get_dict("parameters")
+    labelscfg = cfg.get_dict("labels")
     form = cfg["format"]
 
     hascentral = "central" in form
@@ -233,14 +244,9 @@ def iterate_varcfgs(
         yield key, varcfg
 
 
-from ..lib import Array
-from ..lib.ElSumSq import ElSumSq
-from ..parameters import Parameters
-
-
 def check_correlations_consistent(cfg: NestedMKDict) -> None:
-    parscfg = cfg("parameters")
-    for key, corrcfg in cfg("correlations").walkdicts():
+    parscfg = cfg.get_dict("parameters")
+    for key, corrcfg in cfg.get_dict("correlations").walkdicts():
         # processed_cfgs.add(varcfg)
         names = corrcfg["names"]
         try:
@@ -283,17 +289,20 @@ def _load_parameters(
             "parameters": {
                 "all": {},
                 "constant": {},
+                "variable": {},
                 "free": {},
                 "central": {},
                 "constrained": {},
                 "normalized": {},
             },
             "correlations": {},
-            "stat": {
-                "nuisance_parts": {},
-                "nuisance": {},
+            "parameter_groups": {
+                "all": {},
+                "constant": {},
+                "variable": {},
+                "free": {},
+                "constrained": {},
             },
-            "parameter_groups": {"all": {}, "constant": {}, "free": {}, "constrained": {}},
         },
         sep=".",
     )
@@ -301,13 +310,9 @@ def _load_parameters(
     check_correlations_consistent(cfg)
 
     subkeys = cfg["replicate"]
-    replica_key_offset = cfg["replica_key_offset"]
-    if replica_key_offset > 0:
-        make_key = lambda key, subkey: key[:-replica_key_offset] + subkey + key[replica_key_offset:]
-    elif replica_key_offset == 0:
-        make_key = lambda key, subkey: key + subkey
-    else:
-        raise ValueError(f"{replica_key_offset=} should be non-negative")
+    from multikeydict.tools.map import _make_reorder_fcn
+
+    reorder_key = _make_reorder_fcn(cfg["keys_order"])
 
     varcfgs = NestedMKDict({})
     normpars = {}
@@ -317,8 +322,7 @@ def _load_parameters(
         label_general = NestedMKDict(varcfg["label"])
 
         for subkey in subkeys:
-            key = key_general + subkey
-            key = make_key(key_general, subkey)
+            key = reorder_key(key_general + subkey)
             key_str = ".".join(key)
             subkey_str = ".".join(subkey)
 
@@ -329,7 +333,8 @@ def _load_parameters(
 
             label = format_dict(
                 label_local.copy(),
-                subkey=key_str,
+                index=subkey,
+                key=subkey_str,
                 space_key=f" {subkey_str}",
                 key_space=f"{subkey_str} ",
                 process_keys=label_keys,
@@ -344,19 +349,23 @@ def _load_parameters(
 
     processed_cfgs = set()
     pars = NestedMKDict({})
-    for key, corrcfg in cfg("correlations").walkdicts():
-        label = get_label(key + ("group",), cfg("labels"))
+    for key, corrcfg in cfg.get_dict("correlations").walkdicts():
+        label = get_label(key, cfg.get_dict("labels"))
+        label_mat0 = get_label(key, cfg.get_dict("labels"), group_only=True)
 
         matrixtype = corrcfg["matrix_type"]
         matrix = corrcfg["matrix"]
         mark_matrix = "C" if matrixtype == "correlation" else "V"
         label_mat = inherit_labels(
-            label, fmtlong=f"{matrixtype.capitalize()} matrix: {{}}", fmtshort=mark_matrix + "({})"
+            label_mat0,
+            fmtlong=f"{matrixtype.capitalize()} matrix: {{}}",
+            fmtshort=mark_matrix + "({})",
         )
         label_mat["mark"] = mark_matrix
         label_mat = format_dict(
             label_mat,
             key="",
+            index=(),
             space_key="",
             key_space="",
             process_keys=label_keys,
@@ -385,16 +394,17 @@ def _load_parameters(
                 processed_cfgs.add(fullkey + name)
             _add_paths_from_labels(paths, varcfg)
 
-
             labelsub = format_dict(
                 dict(label, name=".".join(fullkey)),
                 subkey=subkey_str,
+                index=subkey,
+                key=subkey_str,
                 space_key=f" {subkey_str}",
                 key_space=f"{subkey_str} ",
                 process_keys=label_keys,
             )
-            labelsub["index_values"] = list(key + subkey)
-            labelsub["paths"] = paths
+            mapping_append_lists(labelsub, "index_values", subkey)
+            mapping_append_lists(labelsub, "paths", paths)
             pars[fullkey] = Parameters.from_numbers(label=labelsub, **kwargs)
 
     for key, varcfg in varcfgs.walkdicts(ignorekeys=("label",)):
@@ -411,6 +421,9 @@ def _load_parameters(
             targetkey = ("constant",) + pathkey
         else:
             targetkey = ("free",) + pathkey
+
+        if not par.is_fixed:
+            ret[("parameters", "variable") + pathkey] = par
 
         ret[("parameter_group",) + targetkey] = par
         ret[("parameter_group", "all") + pathkey] = par

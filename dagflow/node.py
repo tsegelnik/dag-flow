@@ -137,38 +137,12 @@ class Node(NodeBase):
         # TODO:
         #   - testing
         #   - keyword connection syntax ([] or ())
-        #   - consistency with make_stored, replicate
         instance = cls(name, **kwargs)
         for connectible in positional_connectibles:
             connectible >> instance
         for key, connectible in key_connectibles.items():
             connectible >> instance.inputs[key]
         return instance
-
-    @classmethod
-    def make_stored(
-        cls, name: str, *args, label_from: Mapping | None = None, **kwargs
-    ) -> tuple[Node | None, "NodeStorage"]:
-        from multikeydict.nestedmkdict import NestedMKDict  # fmt: skip
-        if label_from is not None:
-            label_from = NestedMKDict(label_from, sep=".")
-            try:
-                label = label_from.get_any(name, object=True)
-            except KeyError as exc:
-                raise RuntimeError(f"Could not find label for {name}") from exc
-            kwargs.setdefault("label", label)
-
-        node = cls(name, *args, **kwargs)
-
-        from .storage import NodeStorage  # fmt: skip
-        storage = NodeStorage(default_containers=True)
-        storage("nodes")[name] = node
-        if len(node.outputs) == 1:
-            storage("outputs")[name] = node.outputs[0]
-
-        NodeStorage.update_current(storage, strict=True)
-
-        return node, storage
 
     @classmethod
     def replicate(
@@ -206,7 +180,7 @@ class Node(NodeBase):
             if ninputs > 1:
                 for iname, input in iter_inputs:
                     inputs[tuplename + (iname,) + key] = input
-            else:
+            elif ninputs==1:
                 _, input = next(iter_inputs)
                 inputs[tuplename + key] = input
 
@@ -234,7 +208,7 @@ class Node(NodeBase):
         self._name = name
 
     @property
-    def allowed_kw_inputs(self) -> tuple[str]:
+    def allowed_kw_inputs(self) -> tuple[str,...]:
         return self._allowed_kw_inputs
 
     @property
@@ -438,6 +412,7 @@ class Node(NodeBase):
         self.inputs.add(inp, positional=positional, keyword=keyword)
         if self._graph:
             self._graph._add_input(inp)
+        self._fd.allocated = False
         return inp
 
     def add_output(
@@ -490,7 +465,7 @@ class Node(NodeBase):
 
     def add_pair(
         self, iname: str, oname: str, **kwargs
-    ) -> tuple[Input | tuple[Input], Output | tuple[Output]]:
+    ) -> tuple[Input | tuple[Input,...], Output | tuple[Output,...]]:
         """
         Creates a pair of input and output
         """
@@ -531,7 +506,7 @@ class Node(NodeBase):
         oname: str,
         input_kws: dict | None = None,
         output_kws: dict | None = None,
-    ) -> tuple[Input | tuple[Input], Output | tuple[Output]]:
+    ) -> tuple[Input | tuple[Input,...], Output | tuple[Output,...]]:
         """
         Creates a pair of input and output
 
@@ -694,7 +669,7 @@ class Node(NodeBase):
         self.logger.debug(f"Node '{self.name}': Allocate memory on outputs")
         output_reassigned = self.outputs.allocate()
         self.logger.debug(f"Node '{self.name}': Post allocate")
-        if input_reassigned or output_reassigned or self._fd.needs_postallocate:
+        if input_reassigned or output_reassigned or self._fd.needs_post_allocate:
             self._post_allocate()
         self._fd.allocated = True
         self._fd.needs_reallocation = False
@@ -704,6 +679,7 @@ class Node(NodeBase):
         self,
         recursive: bool = True,
         strict: bool = True,
+        close_children = False,
         together: Sequence["Node"] = [],
     ) -> bool:
         # Caution: `together` list should not be written in!
@@ -735,6 +711,12 @@ class Node(NodeBase):
         self.fd.closed = self.fd.allocated
         if strict and not self.closed:
             raise ClosingError(node=self)
+
+        if close_children:
+            for output in self.outputs:
+                for input in output.child_inputs:
+                    input.node.close(close_children=True, strict=strict)
+
         self.logger.debug(f"Node '{self.name}': {self.closed and 'closed' or 'failed to close'}")
         return self.closed
 

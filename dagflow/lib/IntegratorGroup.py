@@ -92,24 +92,21 @@ class IntegratorGroup(MetaNode):
         single_node: bool = False,
         dropdim: bool = True,
     ) -> tuple["IntegratorGroup", "NodeStorage"]:
-        #
-        # TODO: call Integrator.replicate
-        #
         storage = NodeStorage(default_containers=True)
         nodes = storage("nodes")
         inputs = storage("inputs")
         outputs = storage("outputs")
 
         integrators = cls(mode, bare=True)
-        key_integrator = tuple(names["integrator"].split("."))
-        key_sampler = names["sampler"].split(".")
+        key_integrator = tuple(names.get("integrator", "integrator").split("."))
+        key_sampler = names.get("sampler", "sampler").split(".")
         key_meta = f"{key_integrator[0]}_meta".split(".")
 
         nodes[key_meta] = integrators
 
-        integrators._init_sampler(mode, names["sampler"], labels.get("sampler", {}))
-        outputs[key_sampler + names["x"].split(".")] = integrators._sampler.outputs["x"]
-        outputs[key_sampler + names["y"].split(".")] = integrators._sampler.outputs["y"]
+        integrators._init_sampler(mode, names.get("sampler", "sampler"), labels.get("sampler", {}))
+        outputs[key_sampler + names.get("x", "x").split(".")] = integrators._sampler.outputs["x"]
+        outputs[key_sampler + names.get("y", "y").split(".")] = integrators._sampler.outputs["y"]
         nodes[key_sampler] = integrators._sampler
 
         label_int = labels.get("integrator", {})

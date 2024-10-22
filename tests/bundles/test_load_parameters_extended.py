@@ -132,5 +132,4 @@ def test_load_parameters_constrained(
                 np.float64(np.abs(parameter_value) * parameter_error * 1e-2), loaded_error
             ), "Loaded sigma is not equal to initial (percent case)"
         assert parameter_value == loaded_value, "Loaded value is not equal to initial"
-        assert f"[norm] {label}" == loaded_label, "Loaded label is not equal to initial"
         assert len(storage(f"parameters.{STATE_FORMAT_to_NS[(state, fmt)]}").keys()) > 0

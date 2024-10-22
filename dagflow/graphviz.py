@@ -262,11 +262,12 @@ else:
             except IndexError:
                 pass
             else:
-                if depth > 0 or num_in_range(o0size, minsize):
-                    self._add_node(node, depth=depth)
-                    return True
+                if depth <= 0 and not num_in_range(o0size, minsize):
+                    return False
 
-            return False
+            self._add_node(node, depth=depth)
+
+            return True
 
         def _add_nodes_backward_recursive(
             self,
@@ -671,8 +672,8 @@ else:
             try:
                 out0 = node.outputs[0]
             except IndexError:
-                shape0 = "?"
-                dtype0 = "?"
+                shape0 = ""
+                dtype0 = ""
                 hasedges = False
                 hasnodes = False
                 out0 = None
@@ -704,17 +705,22 @@ else:
                 nin.append(f"{nin_nonpos}k")
             nin = "+".join(nin) or "0"
 
-            nlimbs = f" {nin}→{nout}"
+            nlimbs = f"{nin}→{nout}"
 
             left, right = [], []
             br_left, br_right = ("\\{", "\\}") if hasedges else ("[", "]")
             if hasnodes:
                 br_right += "…"
-            info_type = f"{br_left}{shape0}{br_right}{dtype0}\\n{nlimbs}"
+            if shape0:
+                info_type = f"{br_left}{shape0}{br_right}{dtype0}\\n{nlimbs}"
+            else:
+                info_type = f"{nlimbs}"
             if "type" in self._show:
                 left.append(info_type)
             if "mark" in self._show and (mark := node.labels.mark) is not None:
                 left.append(mark)
+            if depth is not None:
+                left.append(f"d: {depth:+d}".replace("-", "−"))
             if "label" in self._show:
                 right.append(text)
             if "path" in self._show and (paths := node.labels.paths):
@@ -749,8 +755,8 @@ else:
             show_data_summary = "data_summary" in self._show
             need_data = show_data or show_data_part or show_data_summary
             if need_data and out0 is not None:
-                data = None
                 tainted = "tainted" if out0.tainted else "updated"
+                data = None
                 try:
                     data = out0.data
                 except UnclosedGraphError:
@@ -773,8 +779,6 @@ else:
                         f"max={mx:.2g}",
                         f"{tainted}",
                     ]
-                    if depth is not None:
-                        block.append(f"d: {depth:+d}".replace("-", "−"))
                     right.append(block)
 
                 if show_data_part:

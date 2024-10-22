@@ -33,7 +33,7 @@ class View(Node):
         **kwargs,
     ) -> None:
         super().__init__(name, **kwargs)
-        self._fd.needs_postallocate = True
+        self._fd.needs_post_allocate = True
         child_output = self._add_output(outname, allocatable=False, forbid_reallocation=True)
         self._input = self._add_input("input", child_output=child_output)
         self._start = start

@@ -164,3 +164,15 @@ def test_graph_big_01():
     final.data
     label = "Done reading E."
     plot()
+
+    label = "Open/Close D"
+    plot()
+    plot()
+    plot()
+    D.open()
+    D.close(close_children=True)
+    plot()
+    plot()
+    final.data
+    label = "Done opening/closing D."
+    plot()

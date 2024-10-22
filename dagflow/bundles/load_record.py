@@ -102,7 +102,7 @@ def load_record(acfg: Mapping | None = None, **kwargs) -> NodeStorage:
     storage = NodeStorage(default_containers=True)
     with storage:
         for key, record in data.items():
-            Array.make_stored(strkey(name + key), record)
+            Array.replicate(name=strkey(name + key), array=record)
 
     NodeStorage.update_current(storage, strict=True)
 

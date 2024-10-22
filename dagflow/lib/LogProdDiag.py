@@ -33,7 +33,7 @@ class LogProdDiag(Node):
             MissingInputAddPair(input_fmt="matrix", output_fmt="log_V"),
         )
         super().__init__(*args, **kwargs)
-        self._labels.setdefault("mark", "2log|L|")
+        self._labels.setdefault("mark", r"2log\|L\|")
 
         self._functions.update({"square": self._fcn_square, "diagonal": self._fcn_diagonal})
 
