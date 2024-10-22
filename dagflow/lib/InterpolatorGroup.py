@@ -107,13 +107,13 @@ class InterpolatorGroup(MetaNode):
             nonlocal interpolators, key_interpolator
 
             interpolators = cls(bare=True)
-            interpolators._add_indexer(names["indexer"], label=labels.get("indexer", {}))
-            key_interpolator = (names["interpolator"],)
+            interpolators._add_indexer(names.get("indexer", "indexer"), label=labels.get("indexer", {}))
+            key_interpolator = (names.get("interpolator", "interpolator"),)
 
             key_meta = (f"{key_interpolator[0]}_meta",) + key
             nodes[key_meta] = interpolators
 
-            key_indexer = (names["indexer"],) + key
+            key_indexer = (names.get("indexer", "indexer"),) + key
             nodes[key_indexer] = interpolators._indexer
 
         label_int = labels.get("interpolator", {})
