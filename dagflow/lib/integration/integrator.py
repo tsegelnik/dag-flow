@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-from multikeydict.typing import properkey
+from multikeydict.typing import KeyLike, properkey, strkey
 
 from ...core.meta_node import MetaNode
 from ...core.storage import NodeStorage
@@ -81,12 +81,13 @@ class Integrator(MetaNode):
         cls,
         mode: ModeType,
         *,
-        names: Mapping[str, str] = {
+        names: Mapping[str, KeyLike] = {
             "sampler": "sampler",
-            "integrator": "integrator",
-            "x": "mesh_x",
-            "y": "mesh_y",
+            "integrator": "integral",
+            "mesh_x": "sampler.mesh_x",
+            "mesh_y": "sampler.mesh_y",
         },
+        path: KeyLike = (),
         labels: Mapping = {},
         replicate_outputs: tuple[Key, ...] = ((),),
         single_node: bool = False,
@@ -97,16 +98,18 @@ class Integrator(MetaNode):
         inputs = storage("inputs")
         outputs = storage("outputs")
 
+        path = properkey(path)
+
         integrators = cls(mode, bare=True)
-        key_integrator = tuple(names.get("integrator", "integrator").split("."))
-        key_sampler = names.get("sampler", "sampler").split(".")
-        key_meta = f"{key_integrator[0]}_meta".split(".")
+        key_integrator = path + properkey(names.get("integrator", "integrator"))
+        key_sampler = path + properkey(names.get("sampler", "sampler"))
+        key_meta = key_integrator[:-1] + (f"{key_integrator[-1]}_meta",)
 
         nodes[key_meta] = integrators
 
-        integrators._init_sampler(mode, names.get("sampler", "sampler"), labels.get("sampler", {}))
-        outputs[key_sampler + names.get("x", "x").split(".")] = integrators._sampler.outputs["x"]
-        outputs[key_sampler + names.get("y", "y").split(".")] = integrators._sampler.outputs["y"]
+        integrators._init_sampler(mode, strkey(key_sampler), labels.get("sampler", {}))
+        outputs[path + properkey(names.get("mesh_x", "mesh_x"))] = integrators._sampler.outputs["x"]
+        outputs[path + properkey(names.get("mesh_y", "mesh_y"))] = integrators._sampler.outputs["y"]
         nodes[key_sampler] = integrators._sampler
 
         label_int = labels.get("integrator", {})

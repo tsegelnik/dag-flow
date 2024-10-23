@@ -15,8 +15,6 @@ from ...tools.iter import iter_sequence_not_string
 from ...core.type_functions import check_array_edges_consistency, check_edges_type
 
 if TYPE_CHECKING:
-    from numbers import Number
-
     from numpy.typing import ArrayLike, DTypeLike, NDArray
 
 
@@ -91,7 +89,7 @@ class Array(Node):
     def from_value(
         cls,
         name,
-        value: Number,
+        value: float | int,
         *,
         store: bool = False,
         edges: Output | Sequence[Output] | Node | None = None,
