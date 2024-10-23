@@ -78,7 +78,7 @@ class SequentialFormatter(Formatter):
         return base
 
 
-class Missinginput_handler:
+class MissingInputHandler:
     """
     Handler to implement behaviour when output
     is connected to the missing input with >>/<<
@@ -103,7 +103,7 @@ class Missinginput_handler:
         pass
 
 
-class MissingInputFail(Missinginput_handler):
+class MissingInputFail(MissingInputHandler):
     """Default missing input handler: issues and exception"""
 
     __slots__ = ()
@@ -115,7 +115,7 @@ class MissingInputFail(Missinginput_handler):
         raise RuntimeError("Unable to iterate inputs further. No additional inputs may be created")
 
 
-class MissingInputAdd(Missinginput_handler):
+class MissingInputAdd(MissingInputHandler):
     """Adds an input for each output in >> operator"""
 
     __slots__ = ("input_fmt", "input_kws", "output_fmt", "output_kws")
