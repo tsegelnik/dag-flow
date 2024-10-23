@@ -5,7 +5,7 @@ from scipy import linalg
 from dagflow.exception import TypeFunctionError
 from dagflow.graph import Graph
 from dagflow.graphviz import savegraph
-from dagflow.lib.base import Array
+from dagflow.lib.common import Array
 from dagflow.lib.linear_algebra import Cholesky
 
 

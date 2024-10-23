@@ -3,7 +3,7 @@ from pytest import mark
 
 from dagflow.graph import Graph
 from dagflow.graphviz import savegraph
-from dagflow.lib.base import Array, Cache, Copy
+from dagflow.lib.common import Array, Cache, Copy
 
 
 @mark.parametrize("dtype", ("d", "f"))

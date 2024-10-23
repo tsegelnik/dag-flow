@@ -2,7 +2,7 @@ from numpy import arange, array, copyto, result_type
 
 from dagflow.graph import Graph
 from dagflow.input_handler import MissingInputAddOne
-from dagflow.lib.base import Array
+from dagflow.lib.common import Array
 from dagflow.node import Node
 
 

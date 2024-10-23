@@ -11,7 +11,7 @@ from dagflow.input_handler import (
     MissingInputAddPair,
     MissingInputFail,
 )
-from dagflow.lib.base import Dummy
+from dagflow.lib.common import Dummy
 
 # TODO: add a test for MissingInputAddEachN
 

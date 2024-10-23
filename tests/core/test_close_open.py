@@ -1,7 +1,7 @@
 from numpy import arange, array
 
 from dagflow.graph import Graph
-from dagflow.lib.base import Array
+from dagflow.lib.common import Array
 from dagflow.lib.arithmetic import Product, Sum
 from dagflow.lib.sums import WeightedSum
 

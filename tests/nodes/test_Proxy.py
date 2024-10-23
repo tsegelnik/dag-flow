@@ -4,7 +4,7 @@ from pytest import raises
 from dagflow.exception import ClosedGraphError
 from dagflow.graph import Graph
 from dagflow.graphviz import savegraph
-from dagflow.lib.base import Array, Proxy
+from dagflow.lib.common import Array, Proxy
 
 
 def test_Proxy_several_inputs(testname, debug_graph):

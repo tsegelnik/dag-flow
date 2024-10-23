@@ -4,8 +4,8 @@ from pytest import mark
 from dagflow.graph import Graph
 from dagflow.graphviz import savegraph
 from dagflow.input_handler import MissingInputAddEach, MissingInputAddOne
-from dagflow.lib.base import Array
-from dagflow.lib.base import Dummy
+from dagflow.lib.common import Array
+from dagflow.lib.common import Dummy
 from dagflow.type_functions import (
     AllPositionals,
     copy_from_input_to_output,

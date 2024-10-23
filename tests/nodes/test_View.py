@@ -2,7 +2,7 @@ from numpy import arange
 
 from dagflow.graph import Graph
 from dagflow.graphviz import savegraph
-from dagflow.lib.base import Array, View
+from dagflow.lib.common import Array, View
 
 debug = False
 

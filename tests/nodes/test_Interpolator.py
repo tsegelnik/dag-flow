@@ -5,7 +5,7 @@ from pytest import mark, raises
 from dagflow.exception import CalculationError, InitializationError
 from dagflow.graph import Graph
 from dagflow.graphviz import savegraph
-from dagflow.lib.base import Array
+from dagflow.lib.common import Array
 from dagflow.lib.interpolation import Interpolator, SegmentIndex
 from dagflow.lib.trigonometry import Sin
 

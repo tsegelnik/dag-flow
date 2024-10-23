@@ -4,7 +4,7 @@ from pytest import mark, raises
 from dagflow.exception import ConnectionError
 from dagflow.graph import Graph
 from dagflow.graphviz import savegraph
-from dagflow.lib.base import Array, View, ViewConcat
+from dagflow.lib.common import Array, View, ViewConcat
 from dagflow.lib.statistics import NormalizeCorrelatedVarsTwoWays
 
 debug = False

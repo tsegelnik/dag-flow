@@ -75,7 +75,7 @@ class Parameter:
             with suppress(KeyError, IndexError):
                 label["paths"] = [label_parent["paths"][idx]]
 
-            from ..lib.base import View  # fmt: skip
+            from ..lib.common import View  # fmt: skip
             self._view = View(
                 f"{self._common_output.node.name}.{idxname}",
                 self._common_connectible_output,

@@ -12,7 +12,7 @@ from multikeydict.typing import properkey
 
 from ..exception import InitializationError
 from ..labels import format_dict, inherit_labels, mapping_append_lists
-from ..lib.base import Array
+from ..lib.common import Array
 from ..lib.sums import ElSumSq
 from ..parameters import Parameters
 from ..storage import NodeStorage

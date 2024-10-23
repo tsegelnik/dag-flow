@@ -2,7 +2,7 @@ from numpy import concatenate, linspace
 
 from dagflow.graph import Graph
 from dagflow.graphviz import savegraph
-from dagflow.lib.base import Array, Concatenation
+from dagflow.lib.common import Array, Concatenation
 
 
 def test_Concatenation_00(debug_graph):

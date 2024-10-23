@@ -4,7 +4,7 @@ from pytest import mark
 
 from dagflow.graph import Graph
 from dagflow.graphviz import savegraph
-from dagflow.lib.base import Array
+from dagflow.lib.common import Array
 from dagflow.lib.trigonometry import ArcCos, ArcSin, ArcTan, Cos, Sin, Tan
 from dagflow.plot import plot_auto
 

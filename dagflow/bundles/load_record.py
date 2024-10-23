@@ -10,7 +10,7 @@ from schema import And, Optional, Or, Schema, Use
 from multikeydict.tools import reorder_key
 from multikeydict.typing import strkey
 
-from ..lib.base import Array
+from ..lib.common import Array
 from ..storage import NodeStorage
 from ..tools.schema import (
     AllFileswithExt,

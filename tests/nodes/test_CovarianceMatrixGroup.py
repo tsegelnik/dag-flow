@@ -5,7 +5,7 @@ from pytest import mark, raises
 from dagflow.graph import Graph
 from dagflow.graphviz import savegraph
 from dagflow.lib.arithmetic import Product, Sum
-from dagflow.lib.base import Array
+from dagflow.lib.common import Array
 from dagflow.lib.statistics import CovarianceMatrixGroup
 from dagflow.parameters import Parameters
 

@@ -3,7 +3,7 @@ from pytest import raises
 
 from dagflow.exception import CriticalError, ReconnectionError, UnclosedGraphError
 from dagflow.graph import Graph
-from dagflow.lib.base import Array
+from dagflow.lib.common import Array
 from dagflow.lib.abstract import ManyToOneNode
 from dagflow.lib.sums import WeightedSum
 

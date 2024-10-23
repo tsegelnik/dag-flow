@@ -4,7 +4,7 @@ from pytest import mark
 from dagflow.graph import Graph
 from dagflow.graphviz import savegraph
 from dagflow.lib.arithmetic import Product, Sum
-from dagflow.lib.base import Array, Concatenation
+from dagflow.lib.common import Array, Concatenation
 from dagflow.lib.calculus import Jacobian
 from dagflow.lib.linear_algebra import LinearFunction
 from dagflow.parameters import GaussianParameter

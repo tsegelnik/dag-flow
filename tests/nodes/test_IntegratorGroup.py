@@ -3,7 +3,7 @@ from numpy import allclose, linspace, pi
 
 from dagflow.graph import Graph
 from dagflow.graphviz import savegraph
-from dagflow.lib.base import Array
+from dagflow.lib.common import Array
 from dagflow.lib.integration import IntegratorGroup
 from dagflow.lib.trigonometry import Cos, Sin
 from dagflow.meta_node import MetaNode

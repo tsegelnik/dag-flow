@@ -6,7 +6,7 @@ from dagflow.exception import TypeFunctionError
 from dagflow.graph import Graph
 from dagflow.graphviz import savegraph
 from dagflow.lib.abstract import ManyToOneNode, OneToOneNode
-from dagflow.lib.base import Array
+from dagflow.lib.common import Array
 from dagflow.lib.integration import Integrator, IntegratorSampler
 from dagflow.lib.trigonometry import Cos, Sin
 from dagflow.plot import plot_auto

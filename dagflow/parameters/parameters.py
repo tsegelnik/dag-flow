@@ -7,7 +7,7 @@ from numpy import array, ndarray, zeros_like
 
 from ..exception import InitializationError
 from ..labels import inherit_labels
-from ..lib.base import Array
+from ..lib.common import Array
 from ..node import Node
 from ..output import Output
 from .parameter import GaussianParameter, NormalizedGaussianParameter, Parameter

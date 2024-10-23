@@ -9,7 +9,7 @@ from schema import And, Optional, Or, Schema, Use
 
 from multikeydict.typing import strkey
 
-from ..lib.base import Array
+from ..lib.common import Array
 from ..tools.logger import INFO3, logger
 from ..storage import NodeStorage
 from ..tools.schema import (

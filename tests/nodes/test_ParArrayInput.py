@@ -3,7 +3,7 @@ from pytest import mark
 
 from dagflow.graph import Graph
 from dagflow.graphviz import savegraph
-from dagflow.lib.base import Array, ParArrayInput
+from dagflow.lib.common import Array, ParArrayInput
 from dagflow.parameters import Parameters
 
 

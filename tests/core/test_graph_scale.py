@@ -10,7 +10,7 @@ from plotille import Figure
 
 from dagflow.graph import Graph
 from dagflow.lib.arithmetic import Sum
-from dagflow.lib.base import Array
+from dagflow.lib.common import Array
 
 if TYPE_CHECKING:
     from numpy.typing import NDArray

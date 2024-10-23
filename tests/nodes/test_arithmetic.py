@@ -4,7 +4,7 @@ from pytest import mark
 from dagflow.graph import Graph
 from dagflow.graphviz import savegraph
 from dagflow.lib.arithmetic import Division, Product, Sqrt, Square, Sum
-from dagflow.lib.base import Array
+from dagflow.lib.common import Array
 
 
 @mark.parametrize("dtype", ("d", "f"))

@@ -4,8 +4,8 @@ from dagflow.exception import TypeFunctionError
 from dagflow.graph import Graph
 from dagflow.graphviz import savegraph
 from dagflow.lib.arithmetic import Sum
-from dagflow.lib.base import Array
-from dagflow.lib.base import Dummy
+from dagflow.lib.common import Array
+from dagflow.lib.common import Dummy
 from dagflow.type_functions import check_has_inputs, check_inputs_number
 
 

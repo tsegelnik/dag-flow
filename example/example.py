@@ -5,7 +5,7 @@ from numpy import result_type
 from dagflow.graph import Graph
 from dagflow.graphviz import savegraph
 from dagflow.input_handler import MissingInputAddEach
-from dagflow.lib.base import Array
+from dagflow.lib.common import Array
 from dagflow.lib.arithmetic import Product
 from dagflow.lib.arithmetic import Sum
 from dagflow.lib.sums import WeightedSum
