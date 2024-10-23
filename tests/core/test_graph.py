@@ -1,6 +1,6 @@
 from dagflow.graph import Graph
 from dagflow.graphviz import GraphDot
-from dagflow.lib.debug import Dummy
+from dagflow.lib.base import Dummy
 from dagflow.printl import current_level, set_prefix_function
 from dagflow.wrappers import printer, toucher
 

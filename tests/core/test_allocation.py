@@ -2,7 +2,7 @@ from pytest import raises
 from numpy import arange
 
 from dagflow.graph import Graph
-from dagflow.lib.debug import Dummy
+from dagflow.lib.base import Dummy
 
 
 def test_output_allocation_1():
