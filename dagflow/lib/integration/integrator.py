@@ -21,7 +21,7 @@ if TYPE_CHECKING:
 class Integrator(MetaNode):
     __slots__ = ("_sampler",)
 
-    _sampler: Node
+    _sampler: IntegratorSampler
 
     def __init__(
         self,
@@ -43,11 +43,11 @@ class Integrator(MetaNode):
 
         self._add_node(
             self._sampler,
-            kw_inputs=["ordersX"],
-            kw_inputs_optional=["ordersY"],
+            kw_inputs=["orders_x"],
+            kw_inputs_optional=["orders_y"],
             kw_outputs=["x"],
             kw_outputs_optional=["y"],
-            merge_inputs=["ordersX", "ordersY"],
+            merge_inputs=["orders_x", "orders_y"],
             missing_inputs=True,
             also_missing_outputs=True,
         )
@@ -60,14 +60,14 @@ class Integrator(MetaNode):
         positionals: bool = True,
         dropdim: bool,
     ) -> IntegratorCore:
-        integrator = IntegratorCore(name, dropdim=dropdim, label=label)
+        integrator = IntegratorCore(name, dropdim=dropdim, ndim=self._sampler.ndim, label=label)
         self._sampler.outputs["weights"] >> integrator("weights")
 
         self._add_node(
             integrator,
-            kw_inputs=["ordersX"],
-            kw_inputs_optional=["ordersY"],
-            merge_inputs=["ordersX", "ordersY"],
+            kw_inputs=["orders_x"],
+            kw_inputs_optional=["orders_y"],
+            merge_inputs=["orders_x", "orders_y"],
             inputs_pos=positionals,
             outputs_pos=positionals,
             missing_inputs=True,
@@ -86,6 +86,8 @@ class Integrator(MetaNode):
             "integrator": "integral",
             "mesh_x": "sampler.mesh_x",
             "mesh_y": "sampler.mesh_y",
+            "orders_x": "sampler.orders_x",
+            "orders_y": "sampler.orders_y",
         },
         path: KeyLike = (),
         labels: Mapping = {},
@@ -100,17 +102,20 @@ class Integrator(MetaNode):
 
         path = properkey(path)
 
-        integrators = cls(mode, bare=True)
+        instance = cls(mode, bare=True)
         key_integrator = path + properkey(names.get("integrator", "integrator"))
         key_sampler = path + properkey(names.get("sampler", "sampler"))
         key_meta = key_integrator[:-1] + (f"{key_integrator[-1]}_meta",)
+        key_mesh_x = path + properkey(names.get("mesh_x", "mesh_x"))
+        key_mesh_y = path + properkey(names.get("mesh_y", "mesh_y"))
+        key_orders_x = path + properkey(names.get("orders_x", "orders_x"))
+        key_orders_y = path + properkey(names.get("orders_y", "orders_y"))
+        nodes[key_meta] = instance
 
-        nodes[key_meta] = integrators
-
-        integrators._init_sampler(mode, strkey(key_sampler), labels.get("sampler", {}))
-        outputs[path + properkey(names.get("mesh_x", "mesh_x"))] = integrators._sampler.outputs["x"]
-        outputs[path + properkey(names.get("mesh_y", "mesh_y"))] = integrators._sampler.outputs["y"]
-        nodes[key_sampler] = integrators._sampler
+        instance._init_sampler(mode, strkey(key_sampler), labels.get("sampler", {}))
+        outputs[key_mesh_x] = instance._sampler.outputs["x"]
+        outputs[key_mesh_y] = instance._sampler.outputs["y"]
+        nodes[key_sampler] = instance._sampler
 
         label_int = labels.get("integrator", {})
         integrator = None
@@ -120,12 +125,12 @@ class Integrator(MetaNode):
             name = ".".join(key_integrator + key)
 
             if need_new_instance:
-                integrator = integrators._add_integrator(
+                integrator = instance._add_integrator(
                     name, label_int, positionals=False, dropdim=dropdim
                 )
                 nodes[key_integrator + key] = integrator
             elif integrator is None:
-                integrator = integrators._add_integrator(
+                integrator = instance._add_integrator(
                     name, label_int, positionals=False, dropdim=dropdim
                 )
                 nodes[key_integrator] = integrator
@@ -135,6 +140,9 @@ class Integrator(MetaNode):
             inputs[key_integrator + key] = integrator.inputs[-1]
             outputs[key_integrator + key] = integrator.outputs[-1]
 
+        inputs[key_orders_x] = instance.inputs["orders_x"]
+        inputs[key_orders_y] = instance.inputs["orders_y"]
+
         NodeStorage.update_current(storage, strict=True)
 
-        return integrators, storage
+        return instance, storage

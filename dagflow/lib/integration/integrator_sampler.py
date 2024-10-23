@@ -20,15 +20,13 @@ if TYPE_CHECKING:
     from ...core.input import Input
     from ...core.output import Output
 
-ModeType = Literal["rect", "trap", "gl", "2d"]
+ModeType = Literal["rect", "trap", "gl", "gl2d"]
 
 
 # TODO: without njit?
 def _gl_sampler(orders: NDArray, sample: NDArray, weights: NDArray, edges: NDArray):
-    """
-    Uses `numpy.polynomial.legendre.leggauss` to sample points with weights
-    on the range [-1,1] and transforms to any range [a, b]
-    """
+    """Uses `numpy.polynomial.legendre.leggauss` to sample points with weights
+    on the range [-1,1] and transforms to any range [a, b]"""
     offset = 0
     for i, n in enumerate(orders):
         if n < 1:
@@ -50,9 +48,9 @@ class IntegratorSampler(Node):
     """
     The `IntegratorSampler` node creates a sample for the `IntegratorCore` node.
 
-    There are several samplers for `1d` (`rect`, `trap`, `gl`) and only `2d`
+    There are several samplers for `1d` (`rect`, `trap`, `gl`) and only `gl2d`
     for `2d` integrator, where `rect` is the rectangular, `trap` is the trapezoidal,
-    `gl` is the 1d Gauss-Legendre, and `2d` is the 2d Gauss-Legendre.
+    `gl` is the 1d Gauss-Legendre, and `gl2d` is the 2d Gauss-Legendre.
 
     There is optional argument `offset` for the `rect` sampler,
     taking the following values: `left`, `center`, or `right`.
@@ -66,9 +64,10 @@ class IntegratorSampler(Node):
         "__bufferY",
         "_dtype",
         "_mode",
+        "_ndim",
         "_align",
-        "_ordersX",
-        "_ordersY",
+        "_orders_x",
+        "_orders_y",
         "_weights",
         "_x",
         "_y",
@@ -76,11 +75,12 @@ class IntegratorSampler(Node):
 
     _dtype: DTypeLike
     _mode: ModeType
+    _ndim: int
     _align: Literal["left", "center", "right"] | None
     __bufferX: NDArray
     __bufferY: NDArray
-    _ordersX: Input
-    _ordersY: Input
+    _orders_x: Input
+    _orders_y: Input
     _weights: Output
     _x: Output
     _y: Output
@@ -93,8 +93,8 @@ class IntegratorSampler(Node):
         align: Literal["left", "center", "right"] | None = None,
         **kwargs,
     ) -> None:
-        super().__init__(*args, **kwargs, allowed_kw_inputs=("ordersX", "ordersY"))
-        if mode not in {"rect", "trap", "gl", "2d"}:
+        super().__init__(*args, **kwargs, allowed_kw_inputs=("orders_x", "orders_y"))
+        if mode not in {"rect", "trap", "gl", "gl2d"}:
             raise InitializationError(
                 f"Argument `mode` must be 'rect', 'trap', 'gl', or '2d', but given '{mode}'!",
                 node=self,
@@ -106,24 +106,31 @@ class IntegratorSampler(Node):
         self._dtype = dtype
         self._mode = mode
         self._align = align if align is not None else "center"
-        self._ordersX = self._add_input("ordersX", positional=False)
+        self._orders_x = self._add_input("orders_x", positional=False)
         self._x = self._add_output("x")
-        if mode == "2d":
-            self._ordersY = self._add_input("ordersY", positional=False)
+        if mode == "gl2d":
+            self._orders_y = self._add_input("orders_y", positional=False)
             self._y = self._add_output("y")
+            self._ndim = 2
+        else:
+            self._ndim = 1
         self._weights = self._add_output("weights", positional=False)
         self._functions_dict.update(
             {
                 "rect": self._fcn_rect,
                 "trap": self._fcn_trap,
                 "gl": self._fcn_gl1d,
-                "2d": self._fcn_gl2d,
+                "gl2d": self._fcn_gl2d,
             }
         )
 
     @property
     def mode(self) -> str:
         return self._mode
+
+    @property
+    def ndim(self) -> int:
+        return self._ndim
 
     @property
     def dtype(self) -> DTypeLike:
@@ -134,15 +141,15 @@ class IntegratorSampler(Node):
         return self._align
 
     def _typefunc(self) -> None:
-        """
-        The function to determine the dtype and shape.
-        Checks self.inputs dimension and, selects an integration algorithm,
-        determines dtype and shape for self.outputs
+        """The function to determine the dtype and shape.
+
+        Checks self.inputs dimension and, selects an integration
+        algorithm, determines dtype and shape for self.outputs
         """
         check_inputs_number(self, 0)
-        lenX = self.__check_orders("ordersX")
-        if self.mode == "2d":
-            lenY = self.__check_orders("ordersY")
+        lenX = self.__check_orders("orders_x")
+        if self.mode == "gl2d":
+            lenY = self.__check_orders("orders_y")
             shape = (lenX, lenY)
         else:
             shape = (lenX,)
@@ -152,10 +159,8 @@ class IntegratorSampler(Node):
         self.function = self._functions_dict[self.mode]
 
     def __check_orders(self, name: str) -> int:
-        """
-        The method checks dimension (==1) of the input `name`, type (==`integer`),
-        and returns the `dd.shape[0]`
-        """
+        """The method checks dimension (==1) of the input `name`, type
+        (==`integer`), and returns the `dd.shape[0]`"""
         check_input_dimension(self, name, 1)
         check_input_subtype(self, name, integer)
         check_input_edges_dim(self, name, 1)
@@ -164,25 +169,25 @@ class IntegratorSampler(Node):
 
     def _post_allocate(self) -> None:
         """Allocates the `buffer`"""
-        ordersX = self._ordersX
-        edgeshapeX = ordersX.dd.axes_edges[0].dd.shape[0] - 1
+        orders_x = self._orders_x
+        edgeshapeX = orders_x.dd.axes_edges[0].dd.shape[0] - 1
         if self.mode == "rect":
             shapeX = (4, edgeshapeX)
         elif self.mode in {"trap", "gl"}:
             shapeX = (edgeshapeX,)
         else:
-            lenY = sum(self._ordersY.data)
+            lenY = sum(self._orders_y.data)
             shapeY = (2, lenY)
             self.__bufferY = empty(shape=shapeY, dtype=self.dtype)
-            lenX = sum(ordersX.data)
+            lenX = sum(orders_x.data)
             shapeX = (2, lenX)
         self.__bufferX = empty(shape=shapeX, dtype=self.dtype)
 
     def _fcn_rect(self):
-        """The rectangular sampling"""
-        ordersX = self._ordersX
-        edges = ordersX.dd.axes_edges[0]._data  # n+1
-        orders = ordersX.data  # n
+        """The rectangular sampling."""
+        orders_x = self._orders_x
+        edges = orders_x.dd.axes_edges[0]._data  # n+1
+        orders = orders_x.data  # n
         sample = self.outputs[0].data  # m = sum(orders)
         weights = self._weights.data
         binwidths = self.__bufferX[0]  # n
@@ -214,10 +219,10 @@ class IntegratorSampler(Node):
             offset += n
 
     def _fcn_trap(self):
-        """The trapezoidal sampling"""
-        ordersX = self._ordersX
-        edges = ordersX.dd.axes_edges[0]._data  # n+1
-        orders = ordersX.data  # n
+        """The trapezoidal sampling."""
+        orders_x = self._orders_x
+        edges = orders_x.dd.axes_edges[0]._data  # n+1
+        orders = orders_x.data  # n
         sample = self.outputs[0].data  # m = sum(orders)
         weights = self._weights.data
         samplewidths = self.__bufferX  # n
@@ -236,23 +241,23 @@ class IntegratorSampler(Node):
         weights[-1] = samplewidths[-1] * 0.5
 
     def _fcn_gl1d(self):
-        """The 1d Gauss-Legendre sampling"""
-        ordersX = self._ordersX
-        edges = ordersX.dd.axes_edges[0]._data
-        orders = ordersX.data
+        """The 1d Gauss-Legendre sampling."""
+        orders_x = self._orders_x
+        edges = orders_x.dd.axes_edges[0]._data
+        orders = orders_x.data
         sample = self.outputs[0].data
         weights = self._weights.data
 
         _gl_sampler(orders, sample, weights, edges)
 
     def _fcn_gl2d(self):
-        """The 2d Gauss-Legendre sampling"""
-        ordersX = self._ordersX
-        ordersY = self._ordersY
-        edgesX = ordersX.dd.axes_edges[0]._data  # p + 1
-        edgesY = ordersY.dd.axes_edges[0]._data  # q + 1
-        ordersX = ordersX.data
-        ordersY = ordersY.data
+        """The 2d Gauss-Legendre sampling."""
+        orders_x = self._orders_x
+        orders_y = self._orders_y
+        edgesX = orders_x.dd.axes_edges[0]._data  # p + 1
+        edgesY = orders_y.dd.axes_edges[0]._data  # q + 1
+        orders_x = orders_x.data
+        orders_y = orders_y.data
         weightsX = self.__bufferX[0]  # (n, )
         weightsY = self.__bufferY[0]  # (m, )
         sampleX = self.__bufferX[1]  # (n, )
@@ -261,8 +266,8 @@ class IntegratorSampler(Node):
         Y = self.outputs[1].data  # (n, m)
         weights = self._weights.data  # (n, m)
 
-        _gl_sampler(ordersX, sampleX, weightsX, edgesX)
-        _gl_sampler(ordersY, sampleY, weightsY, edgesY)
+        _gl_sampler(orders_x, sampleX, weightsX, edgesX)
+        _gl_sampler(orders_y, sampleY, weightsY, edgesY)
 
         X[:], Y[:] = meshgrid(sampleX, sampleY, indexing="ij")
         matmul(weightsX[newaxis].T, weightsY[newaxis], out=weights)
