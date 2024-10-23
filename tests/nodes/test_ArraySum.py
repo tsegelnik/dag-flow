@@ -4,7 +4,7 @@ from pytest import mark
 from dagflow.graph import Graph
 from dagflow.graphviz import savegraph
 from dagflow.lib.common import Array
-from dagflow.lib.sums import ArraySum
+from dagflow.lib.summation import ArraySum
 
 
 @mark.parametrize("a", (arange(12, dtype="d") * i for i in (1, 2, 3)))

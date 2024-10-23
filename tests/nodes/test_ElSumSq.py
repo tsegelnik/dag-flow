@@ -4,7 +4,7 @@ from pytest import mark
 from dagflow.graph import Graph
 from dagflow.graphviz import savegraph
 from dagflow.lib.common import Array
-from dagflow.lib.sums import ElSumSq
+from dagflow.lib.summation import ElSumSq
 
 
 @mark.parametrize("dtype", ("d", "f"))

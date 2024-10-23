@@ -3,7 +3,7 @@ from numpy import arange, array
 from dagflow.graph import Graph
 from dagflow.lib.common import Array
 from dagflow.lib.arithmetic import Product, Sum
-from dagflow.lib.sums import WeightedSum
+from dagflow.lib.summation import WeightedSum
 
 
 def test_00(debug_graph):

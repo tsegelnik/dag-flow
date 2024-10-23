@@ -5,7 +5,7 @@ from dagflow.exception import CriticalError, ReconnectionError, UnclosedGraphErr
 from dagflow.graph import Graph
 from dagflow.lib.common import Array
 from dagflow.lib.abstract import ManyToOneNode
-from dagflow.lib.sums import WeightedSum
+from dagflow.lib.summation import WeightedSum
 
 
 class ThreeInputsSum(ManyToOneNode):

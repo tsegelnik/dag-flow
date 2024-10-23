@@ -8,7 +8,7 @@ from dagflow.input_handler import MissingInputAddEach
 from dagflow.lib.common import Array
 from dagflow.lib.arithmetic import Product
 from dagflow.lib.arithmetic import Sum
-from dagflow.lib.sums import WeightedSum
+from dagflow.lib.summation import WeightedSum
 from dagflow.node import Node
 
 array = arange(3, dtype="d")
