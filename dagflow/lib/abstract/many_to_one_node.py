@@ -131,6 +131,7 @@ class ManyToOneNode(Node):
         replicate_outputs: Sequence[KeyLike] = ((),),
         allow_skip_inputs: bool = False,
         skippable_inputs_should_contain: Sequence[KeyLike] | None = None,
+        verbose: bool = False,
         **kwargs,
     ) -> tuple[Node | None, NodeStorage]:
         storage = NodeStorage(default_containers=True)
@@ -178,7 +179,7 @@ class ManyToOneNode(Node):
             skippable_left_keys_should_contain=skippable_inputs_should_contain,
         )
 
-        NodeStorage.update_current(storage, strict=True)
+        NodeStorage.update_current(storage, strict=True, verbose=verbose)
 
         return (instance, storage) if len(replicate_outputs) == 1 else (None, storage)
 
@@ -189,6 +190,7 @@ class ManyToOneNode(Node):
         *,
         replicate_outputs: Sequence[KeyLike] = ((),),
         replicate_inputs: Sequence[KeyLike] = ((),),
+        verbose: bool = False,
         **kwargs,
     ) -> tuple[Node | None, NodeStorage]:
         storage = NodeStorage(default_containers=True)
@@ -232,6 +234,6 @@ class ManyToOneNode(Node):
             fcn_outer_after=fcn_outer_after,
         )
 
-        NodeStorage.update_current(storage, strict=True)
+        NodeStorage.update_current(storage, strict=True, verbose=verbose)
 
         return (instance, storage) if len(replicate_outputs) == 1 else (None, storage)

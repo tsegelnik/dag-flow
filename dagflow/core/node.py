@@ -143,6 +143,7 @@ class Node(NodeBase):
         *,
         name: str,
         replicate_outputs: tuple[KeyLike, ...] = ((),),
+        verbose: bool = False,
         **kwargs,
     ) -> tuple[Node | None, "NodeStorage"]:
         from .storage import NodeStorage
@@ -185,7 +186,7 @@ class Node(NodeBase):
                 _, output = next(iter_outputs)
                 outputs[tuplename + key] = output
 
-        NodeStorage.update_current(storage, strict=True)
+        NodeStorage.update_current(storage, strict=True, verbose=verbose)
 
         return (instance, storage) if len(replicate_outputs) == 1 else (None, storage)
 
