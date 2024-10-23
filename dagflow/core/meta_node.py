@@ -276,7 +276,7 @@ class MetaNode(NodeBase):
             self.outputs.add(output, name=tname, positional=False)
 
     def print(self, recursive: bool = False):
-        print(f"MetaNode: →[{len(self.inputs)}],[{len(self.outputs)}]→")
+        print(f"MetaNode: →[{self.inputs.len_all()}],[{self.outputs.len_all()}]→")
 
         def getstr(prefix_disconnected, prefix_connected, name, obj):
             if isinstance(obj, tuple):
@@ -284,14 +284,14 @@ class MetaNode(NodeBase):
                 Nnode = len(obj)
                 Ndisconnected = Nnode - Nconnected
                 if Nconnected == 0:
-                    return f"{name}: {prefix_disconnected}{Ndisconnected}"
+                    return f"{name}: {prefix_disconnected} #{Ndisconnected}"
                 elif Ndisconnected > 0:
                     return (
-                        f"{name}: {prefix_disconnected}{Ndisconnected} +"
-                        f" {prefix_connected}{Nconnected}"
+                        f"{name}: {prefix_disconnected} #{Ndisconnected} +"
+                        f" {prefix_connected} #{Nconnected}"
                     )
                 else:
-                    return f"{name}: {prefix_connected}{Nnode}"
+                    return f"{name}: {prefix_connected} #{Nnode}"
             return f"{name}: {obj!s}"
 
         for i, (name, input) in enumerate(self.inputs.pos_edges.items()):
