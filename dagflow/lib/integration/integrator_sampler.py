@@ -48,7 +48,7 @@ def _gl_sampler(orders: NDArray, sample: NDArray, weights: NDArray, edges: NDArr
 
 class IntegratorSampler(Node):
     """
-    The `IntegratorSampler` node creates a sample for the `Integrator` node.
+    The `IntegratorSampler` node creates a sample for the `IntegratorCore` node.
 
     There are several samplers for `1d` (`rect`, `trap`, `gl`) and only `2d`
     for `2d` integrator, where `rect` is the rectangular, `trap` is the trapezoidal,
