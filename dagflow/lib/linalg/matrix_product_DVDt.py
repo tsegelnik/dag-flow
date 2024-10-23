@@ -4,8 +4,8 @@ from typing import TYPE_CHECKING
 
 from numpy import empty, matmul, multiply
 
-from ...node import Node
-from ...type_functions import (
+from ...core.node import Node
+from ...core.type_functions import (
     check_has_inputs,
     check_input_dimension,
     check_input_matrix_or_diag,
@@ -16,8 +16,8 @@ from ...type_functions import (
 if TYPE_CHECKING:
     from numpy.typing import NDArray
 
-    from ...input import Input
-    from ...output import Output
+    from ...core.input import Input
+    from ...core.output import Output
 
 
 class MatrixProductDVDt(Node):

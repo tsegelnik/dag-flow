@@ -3,9 +3,9 @@ from __future__ import annotations
 from contextlib import suppress
 from typing import TYPE_CHECKING
 
-from ..labels import repr_pretty
-from ..node import Node
-from ..output import Output
+from ..core.labels import repr_pretty
+from ..core.node import Node
+from ..core.output import Output
 
 if TYPE_CHECKING:
     from collections.abc import Mapping

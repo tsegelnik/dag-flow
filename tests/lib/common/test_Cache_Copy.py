@@ -1,8 +1,8 @@
 from numpy import allclose, geomspace, linspace
 from pytest import mark
 
-from dagflow.graph import Graph
-from dagflow.graphviz import savegraph
+from dagflow.core.graph import Graph
+from dagflow.core.graphviz import savegraph
 from dagflow.lib.common import Array, Cache, Copy
 
 

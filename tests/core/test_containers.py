@@ -1,8 +1,8 @@
 from contextlib import suppress
 
-from dagflow.input import Input, Inputs
-from dagflow.node_base import NodeBase
-from dagflow.output import Output
+from dagflow.core.input import Input, Inputs
+from dagflow.core.node_base import NodeBase
+from dagflow.core.output import Output
 
 
 def test_01():

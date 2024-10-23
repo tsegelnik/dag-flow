@@ -12,7 +12,7 @@ from .iter import StopNesting
 from .labels import repr_pretty
 from .output import Output, Outputs
 from .shift import rshift
-from .tools.logger import logger
+from ..tools.logger import logger
 
 if TYPE_CHECKING:
     from .node import Node

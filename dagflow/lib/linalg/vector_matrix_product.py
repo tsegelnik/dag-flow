@@ -4,11 +4,11 @@ from typing import TYPE_CHECKING
 
 from numpy import matmul, multiply
 
-from dagflow.input_handler import MissingInputAddPair
+from dagflow.core.input_handler import MissingInputAddPair
 
-from ...exception import TypeFunctionError
-from ...node import Node
-from ...type_functions import (
+from ...core.exception import TypeFunctionError
+from ...core.node import Node
+from ...core.type_functions import (
     AllPositionals,
     check_input_dimension,
     check_input_matrix_or_diag,
@@ -19,7 +19,7 @@ from ...type_functions import (
 if TYPE_CHECKING:
     from typing import Literal
 
-    from ...input import Input
+    from ...core.input import Input
 
 
 class VectorMatrixProduct(Node):

@@ -2,9 +2,9 @@ from numpy import allclose, concatenate, exp, finfo, linspace, log, sin, where, 
 from numpy.random import seed, shuffle
 from pytest import mark, raises
 
-from dagflow.exception import CalculationError, InitializationError
-from dagflow.graph import Graph
-from dagflow.graphviz import savegraph
+from dagflow.core.exception import CalculationError, InitializationError
+from dagflow.core.graph import Graph
+from dagflow.core.graphviz import savegraph
 from dagflow.lib.common import Array
 from dagflow.lib.interpolation import InterpolatorCore, SegmentIndex
 from dagflow.lib.trigonometry import Sin

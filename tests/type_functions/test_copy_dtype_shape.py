@@ -1,12 +1,12 @@
 from numpy import array
 from pytest import mark
 
-from dagflow.graph import Graph
-from dagflow.graphviz import savegraph
-from dagflow.input_handler import MissingInputAddEach, MissingInputAddOne
+from dagflow.core.graph import Graph
+from dagflow.core.graphviz import savegraph
+from dagflow.core.input_handler import MissingInputAddEach, MissingInputAddOne
 from dagflow.lib.common import Array
 from dagflow.lib.common import Dummy
-from dagflow.type_functions import (
+from dagflow.core.type_functions import (
     AllPositionals,
     copy_from_input_to_output,
     copy_input_dtype_to_output,

@@ -1,9 +1,9 @@
 from numpy import arange, array, copyto, result_type
 
-from dagflow.graph import Graph
-from dagflow.input_handler import MissingInputAddOne
+from dagflow.core.graph import Graph
+from dagflow.core.input_handler import MissingInputAddOne
 from dagflow.lib.common import Array
-from dagflow.node import Node
+from dagflow.core.node import Node
 
 
 class SumIntProductFloatElseNothing(Node):

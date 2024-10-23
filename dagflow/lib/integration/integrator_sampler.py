@@ -5,9 +5,9 @@ from typing import TYPE_CHECKING, Literal
 from numpy import empty, errstate, integer, linspace, matmul, meshgrid, newaxis
 from numpy.polynomial.legendre import leggauss
 
-from ...exception import InitializationError
-from ...node import Node
-from ...type_functions import (
+from ...core.exception import InitializationError
+from ...core.node import Node
+from ...core.type_functions import (
     check_input_dimension,
     check_input_edges_dim,
     check_input_subtype,
@@ -17,8 +17,8 @@ from ...type_functions import (
 if TYPE_CHECKING:
     from numpy.typing import DTypeLike, NDArray
 
-    from ...input import Input
-    from ...output import Output
+    from ...core.input import Input
+    from ...core.output import Output
 
 ModeType = Literal["rect", "trap", "gl", "2d"]
 

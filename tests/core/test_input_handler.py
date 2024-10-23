@@ -2,9 +2,9 @@
 
 from contextlib import suppress
 
-from dagflow.graph import Graph
-from dagflow.graphviz import savegraph
-from dagflow.input_handler import (
+from dagflow.core.graph import Graph
+from dagflow.core.graphviz import savegraph
+from dagflow.core.input_handler import (
     MissingInputAdd,
     MissingInputAddEach,
     MissingInputAddOne,

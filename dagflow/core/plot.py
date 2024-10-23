@@ -26,7 +26,7 @@ from matplotlib.pyplot import stairs
 from numpy import asanyarray, meshgrid, zeros_like
 from numpy.ma import array as masked_array
 
-from .tools.logger import INFO1, logger
+from ..tools.logger import INFO1, logger
 from .node_base import NodeBase
 from .output import Output
 

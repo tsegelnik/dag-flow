@@ -4,13 +4,13 @@ from typing import TYPE_CHECKING
 
 from numba import njit
 
-from ...type_functions import AllPositionals, check_input_size, check_inputs_same_dtype
+from ...core.type_functions import AllPositionals, check_input_size, check_inputs_same_dtype
 from ..abstract import OneToOneNode
 
 if TYPE_CHECKING:
     from numpy.typing import NDArray
 
-    from ...input import Input
+    from ...core.input import Input
 
 
 class LinearFunction(OneToOneNode):

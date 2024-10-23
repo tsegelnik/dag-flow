@@ -5,14 +5,14 @@ from typing import TYPE_CHECKING
 
 from numba import njit
 
-from ...exception import InitializationError
+from ...core.exception import InitializationError
 from ...parameters import AnyGaussianParameter, GaussianParameter, NormalizedGaussianParameter
 from ..abstract import OneToOneNode
 
 if TYPE_CHECKING:
     from numpy.typing import NDArray
 
-    from ...input import Input
+    from ...core.input import Input
 
 
 class Jacobian(OneToOneNode):

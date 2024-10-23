@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from .exception import ClosedGraphError, ClosingError, InitializationError, UnclosedGraphError
 from .graph_base import GraphBase
-from .tools.logger import Logger, get_logger
+from ..tools.logger import Logger, get_logger
 
 
 class Graph(GraphBase):

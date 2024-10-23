@@ -1,7 +1,7 @@
 from pytest import raises
 from numpy import arange
 
-from dagflow.graph import Graph
+from dagflow.core.graph import Graph
 from dagflow.lib.common import Dummy
 
 

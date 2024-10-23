@@ -22,7 +22,7 @@ from .iter import IsIterable
 from .labels import Labels
 from .node_base import NodeBase
 from .output import Output
-from .tools.logger import Logger, get_logger
+from ..tools.logger import Logger, get_logger
 
 if TYPE_CHECKING:
     from collections.abc import Mapping, Sequence

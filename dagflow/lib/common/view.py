@@ -2,12 +2,12 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-from ...node import Node
-from ...type_functions import copy_from_input_to_output
+from ...core.node import Node
+from ...core.type_functions import copy_from_input_to_output
 
 if TYPE_CHECKING:
-    from ...input import Input
-    from ...output import Output
+    from ...core.input import Input
+    from ...core.output import Output
 
 
 class View(Node):

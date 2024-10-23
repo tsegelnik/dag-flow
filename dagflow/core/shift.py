@@ -1,10 +1,7 @@
-from itertools import repeat
-from itertools import zip_longest
+from itertools import repeat, zip_longest
 
 from .exception import ConnectionError
-from .iterators import iter_child_outputs
-from .iterators import iter_inputs
-from .iterators import iter_outputs
+from .iterators import iter_child_outputs, iter_inputs, iter_outputs
 
 _rshift_scope_id = 0
 
@@ -23,7 +20,7 @@ def rshift(outputs, inputs):
     outputs_all = tuple(iter_outputs(outputs))
     inputs_all = tuple(iter_inputs(inputs, disconnected_only=True))
 
-    if len(outputs_all)==1 and len(inputs_all)!=len(outputs_all):
+    if len(outputs_all) == 1 and len(inputs_all) != len(outputs_all):
         permit_multiple_expansion = False
         outputs_it = repeat(outputs_all[0])
     else:
@@ -41,8 +38,7 @@ def rshift(outputs, inputs):
         if isinstance(output, dict):
             if inp:
                 raise ConnectionError(
-                    f"Cannot perform a binding from dict={output} due to "
-                    f"non-empty input={inp}!"
+                    f"Cannot perform a binding from dict={output} due to " f"non-empty input={inp}!"
                 )
             for key, val in output.items():
                 val >> inputs(key)

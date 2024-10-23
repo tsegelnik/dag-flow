@@ -1,9 +1,9 @@
 from numpy import allclose, arange, finfo, linspace
 from pytest import mark, raises
 
-from dagflow.exception import TypeFunctionError
-from dagflow.graph import Graph
-from dagflow.graphviz import savegraph
+from dagflow.core.exception import TypeFunctionError
+from dagflow.core.graph import Graph
+from dagflow.core.graphviz import savegraph
 from dagflow.lib.common import Array
 from dagflow.lib.summation import PartialSums
 

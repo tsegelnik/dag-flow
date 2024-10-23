@@ -2,14 +2,14 @@ from numpy import arange
 from numpy import copyto
 from numpy import result_type
 
-from dagflow.graph import Graph
-from dagflow.graphviz import savegraph
-from dagflow.input_handler import MissingInputAddEach
+from dagflow.core.graph import Graph
+from dagflow.core.graphviz import savegraph
+from dagflow.core.input_handler import MissingInputAddEach
 from dagflow.lib.common import Array
 from dagflow.lib.arithmetic import Product
 from dagflow.lib.arithmetic import Sum
 from dagflow.lib.summation import WeightedSum
-from dagflow.node import Node
+from dagflow.core.node import Node
 
 array = arange(3, dtype="d")
 debug = False

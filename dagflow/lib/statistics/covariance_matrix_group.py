@@ -7,9 +7,9 @@ from typing import TYPE_CHECKING, Sequence
 from multikeydict.nestedmkdict import NestedMKDict
 from multikeydict.typing import KeyLike, TupleKey, properkey
 
-from ...meta_node import MetaNode
+from ...core.meta_node import MetaNode
 from ...parameters import GaussianParameter, NormalizedGaussianParameter
-from ...storage import NodeStorage
+from ...core.storage import NodeStorage
 from ..arithmetic import Sum
 from ..calculus import Jacobian
 from ..linalg import MatrixProductDDt, MatrixProductDVDt
@@ -17,7 +17,7 @@ from ..linalg import MatrixProductDDt, MatrixProductDVDt
 if TYPE_CHECKING:
     from typing import Mapping
 
-    from ...node import Node, Output
+    from ...core.node import Node, Output
 
 CovarianceMatrixParameterType = (
     NormalizedGaussianParameter

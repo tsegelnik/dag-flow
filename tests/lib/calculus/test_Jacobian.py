@@ -1,8 +1,8 @@
 from numpy import allclose, arange, array, diag, finfo, ones
 from pytest import mark
 
-from dagflow.graph import Graph
-from dagflow.graphviz import savegraph
+from dagflow.core.graph import Graph
+from dagflow.core.graphviz import savegraph
 from dagflow.lib.arithmetic import Product, Sum
 from dagflow.lib.common import Array, Concatenation
 from dagflow.lib.calculus import Jacobian

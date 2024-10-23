@@ -5,8 +5,8 @@ from typing import TYPE_CHECKING
 from numba import njit
 from numpy import integer
 
-from ...exception import TypeFunctionError
-from ...type_functions import (
+from ...core.exception import TypeFunctionError
+from ...core.type_functions import (
     AllPositionals,
     check_has_inputs,
     check_input_dimension,
@@ -19,7 +19,7 @@ from ..abstract import OneToOneNode
 if TYPE_CHECKING:
     from numpy.typing import NDArray
 
-    from ...input import Input
+    from ...core.input import Input
 
 
 @njit(cache=True)

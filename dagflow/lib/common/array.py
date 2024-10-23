@@ -8,11 +8,11 @@ from numpy import full
 
 from multikeydict.nestedmkdict import NestedMKDict
 
-from ...exception import InitializationError
-from ...node import Node
-from ...output import Output
+from ...core.exception import InitializationError
+from ...core.node import Node
+from ...core.output import Output
 from ...tools.iter import iter_sequence_not_string
-from ...type_functions import check_array_edges_consistency, check_edges_type
+from ...core.type_functions import check_array_edges_consistency, check_edges_type
 
 if TYPE_CHECKING:
     from numbers import Number

@@ -1,9 +1,9 @@
 from pytest import mark
 from numpy import allclose, square
 
-from dagflow.exception import CriticalError
-from dagflow.graph import Graph
-from dagflow.graphviz import savegraph
+from dagflow.core.exception import CriticalError
+from dagflow.core.graph import Graph
+from dagflow.core.graphviz import savegraph
 from dagflow.lib.common import Array
 from dagflow.parameters import GaussianParameters, Parameter
 

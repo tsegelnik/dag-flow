@@ -2,8 +2,8 @@ from numpy import allclose, arange, array, diag, finfo
 from numpy.linalg import cholesky
 from pytest import mark, raises
 
-from dagflow.graph import Graph
-from dagflow.graphviz import savegraph
+from dagflow.core.graph import Graph
+from dagflow.core.graphviz import savegraph
 from dagflow.lib.arithmetic import Product, Sum
 from dagflow.lib.common import Array
 from dagflow.lib.statistics import CovarianceMatrixGroup

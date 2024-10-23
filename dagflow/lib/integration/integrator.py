@@ -4,8 +4,8 @@ from typing import TYPE_CHECKING
 
 from multikeydict.typing import properkey
 
-from ...meta_node import MetaNode
-from ...storage import NodeStorage
+from ...core.meta_node import MetaNode
+from ...core.storage import NodeStorage
 from .integrator_core import IntegratorCore
 from .integrator_sampler import IntegratorSampler
 
@@ -14,7 +14,7 @@ if TYPE_CHECKING:
 
     from multikeydict.typing import Key
 
-    from ...node import Node
+    from ...core.node import Node
     from .integrator_sampler import ModeType
 
 

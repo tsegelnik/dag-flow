@@ -3,7 +3,7 @@ from __future__ import annotations
 from pathlib import Path
 from typing import TYPE_CHECKING, Mapping
 
-from .tools.schema import LoadYaml
+from ..tools.schema import LoadYaml
 
 if TYPE_CHECKING:
     from collections.abc import Callable, Container, Sequence

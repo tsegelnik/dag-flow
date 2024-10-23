@@ -10,7 +10,7 @@ from .graph import Graph
 from .input import Input
 from .node import Node
 from .output import Output
-from .tools.logger import INFO1, logger
+from ..tools.logger import INFO1, logger
 
 if TYPE_CHECKING:
     from collections.abc import Mapping, Sequence

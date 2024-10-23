@@ -4,12 +4,12 @@ from typing import TYPE_CHECKING
 
 from numpy import copyto
 
-from ...exception import TypeFunctionError
-from ...type_functions import check_has_inputs, copy_input_shape_to_outputs, eval_output_dtype
+from ...core.exception import TypeFunctionError
+from ...core.type_functions import check_has_inputs, copy_input_shape_to_outputs, eval_output_dtype
 from ..abstract import ManyToOneNode
 
 if TYPE_CHECKING:
-    from ...input import Input
+    from ...core.input import Input
 
 
 class WeightedSum(ManyToOneNode):

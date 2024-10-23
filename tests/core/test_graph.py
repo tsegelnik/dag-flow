@@ -1,8 +1,8 @@
-from dagflow.graph import Graph
-from dagflow.graphviz import GraphDot
+from dagflow.core.graph import Graph
+from dagflow.core.graphviz import GraphDot
 from dagflow.lib.common import Dummy
-from dagflow.printl import current_level, set_prefix_function
-from dagflow.wrappers import printer, toucher
+from dagflow.core.printl import current_level, set_prefix_function
+from dagflow.core.wrappers import printer, toucher
 
 set_prefix_function(lambda: f"{current_level():<2d} ")
 

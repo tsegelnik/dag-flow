@@ -3,13 +3,13 @@ from numpy import allclose, array, finfo, linspace
 from numpy.random import seed, shuffle
 from pytest import mark
 
-from dagflow.graph import Graph
-from dagflow.graphviz import savegraph
+from dagflow.core.graph import Graph
+from dagflow.core.graphviz import savegraph
 from dagflow.lib.common import Array
 from dagflow.lib.interpolation import Interpolator
 from dagflow.lib.linalg import LinearFunction
-from dagflow.meta_node import MetaNode
-from dagflow.plot import plot_auto
+from dagflow.core.meta_node import MetaNode
+from dagflow.core.plot import plot_auto
 
 
 @mark.parametrize("dtype", ("d", "f"))

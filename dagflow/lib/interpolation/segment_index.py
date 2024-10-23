@@ -4,15 +4,15 @@ from typing import TYPE_CHECKING, Literal
 
 from numba import njit
 
-from ...exception import InitializationError, CalculationError
-from ...node import Node
-from ...type_functions import check_inputs_number, copy_from_input_to_output
+from ...core.exception import InitializationError, CalculationError
+from ...core.node import Node
+from ...core.type_functions import check_inputs_number, copy_from_input_to_output
 
 if TYPE_CHECKING:
     from numpy.typing import NDArray
 
-    from ...input import Input
-    from ...output import Output
+    from ...core.input import Input
+    from ...core.output import Output
 
 
 # TODO: without cache?

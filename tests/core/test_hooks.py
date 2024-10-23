@@ -1,8 +1,8 @@
 from numpy import arange, copyto
 from pytest import raises
 
-from dagflow.exception import CriticalError, ReconnectionError, UnclosedGraphError
-from dagflow.graph import Graph
+from dagflow.core.exception import CriticalError, ReconnectionError, UnclosedGraphError
+from dagflow.core.graph import Graph
 from dagflow.lib.common import Array
 from dagflow.lib.abstract import ManyToOneNode
 from dagflow.lib.summation import WeightedSum

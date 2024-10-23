@@ -1,9 +1,9 @@
 from numpy import sqrt
 from scipy.linalg import cholesky
 
-from ...input_handler import MissingInputAddPair
-from ...node import Node
-from ...type_functions import check_has_inputs, check_input_matrix_or_diag, copy_from_input_to_output
+from ...core.input_handler import MissingInputAddPair
+from ...core.node import Node
+from ...core.type_functions import check_has_inputs, check_input_matrix_or_diag, copy_from_input_to_output
 
 
 class Cholesky(Node):

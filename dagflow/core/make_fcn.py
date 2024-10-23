@@ -2,10 +2,10 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-from dagflow.node import Node
-from dagflow.output import Output
+from dagflow.core.node import Node
+from dagflow.core.output import Output
 from dagflow.parameters import Parameter
-from dagflow.storage import NestedMKDict, NodeStorage
+from dagflow.core.storage import NestedMKDict, NodeStorage
 
 if TYPE_CHECKING:
     from collections.abc import Callable, KeysView
@@ -40,9 +40,9 @@ def make_fcn(
     and retruns the result of the node evaluation.
 
     :param node: A node (or output), depending (explicitly or implicitly) on the parameters
-    :type node: class:`dagflow.node.Node` | class:`dagflow.output.Output`
+    :type node: class:`dagflow.core.node.Node` | class:`dagflow.core.output.Output`
     :param storage: A storage with parameters
-    :type storage: class:`dagflow.storage.NodeStorage`
+    :type storage: class:`dagflow.core.storage.NodeStorage`
     :param safe: If `safe=True`, the parameters will be resetted to old values after evaluation.
     If `safe=False`, the parameters will be setted to the new values
     :type safe: bool

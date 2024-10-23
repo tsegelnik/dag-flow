@@ -4,8 +4,8 @@ from typing import TYPE_CHECKING
 
 from numpy import multiply
 
-from ...node import Node
-from ...type_functions import (
+from ...core.node import Node
+from ...core.type_functions import (
     check_input_dimension,
     check_input_square,
     check_inputs_multiplicable_mat,
@@ -13,8 +13,8 @@ from ...type_functions import (
 )
 
 if TYPE_CHECKING:
-    from ...input import Input
-    from ...output import Output
+    from ...core.input import Input
+    from ...core.output import Output
 
 
 class CovmatrixFromCormatrix(Node):

@@ -4,9 +4,9 @@ from typing import TYPE_CHECKING
 
 from multikeydict.typing import properkey
 
-from ...meta_node import MetaNode
-from ...node import Node
-from ...storage import NodeStorage
+from ...core.meta_node import MetaNode
+from ...core.node import Node
+from ...core.storage import NodeStorage
 from .interpolator_core import InterpolatorCore
 from .segment_index import SegmentIndex
 

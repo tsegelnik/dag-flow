@@ -3,13 +3,13 @@ from __future__ import annotations
 from collections.abc import Sequence
 from typing import TYPE_CHECKING
 
-from ...exception import InitializationError, TypeFunctionError
-from ...node import Node
+from ...core.exception import InitializationError, TypeFunctionError
+from ...core.node import Node
 from ...parameters import Parameter, Parameters
-from ...type_functions import check_input_dimension, check_inputs_number
+from ...core.type_functions import check_input_dimension, check_inputs_number
 
 if TYPE_CHECKING:
-    from ...input import Input
+    from ...core.input import Input
 
 
 class ParArrayInput(Node):

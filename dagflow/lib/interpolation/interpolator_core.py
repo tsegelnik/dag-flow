@@ -6,9 +6,9 @@ from typing import TYPE_CHECKING, Literal
 from numba import njit
 from numpy import double, exp, integer, log
 
-from ...exception import InitializationError
-from ...node import Node
-from ...type_functions import (
+from ...core.exception import InitializationError
+from ...core.node import Node
+from ...core.type_functions import (
     assign_output_axes_from_inputs,
     check_has_inputs,
     check_input_dimension,
@@ -23,8 +23,8 @@ if TYPE_CHECKING:
 
     from numpy.typing import NDArray
 
-    from ...input import Input
-    from ...output import Output
+    from ...core.input import Input
+    from ...core.output import Output
 
 
 class ExtrapolationStrategy(IntEnum):

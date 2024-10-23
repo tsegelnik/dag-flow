@@ -4,9 +4,9 @@ from typing import TYPE_CHECKING
 
 from numpy import matmul, multiply
 
-from ...exception import TypeFunctionError
-from ...node import Node
-from ...type_functions import (
+from ...core.exception import TypeFunctionError
+from ...core.node import Node
+from ...core.type_functions import (
     check_has_inputs,
     check_input_matrix_or_diag,
     check_inputs_multiplicable_mat,
@@ -14,8 +14,8 @@ from ...type_functions import (
 )
 
 if TYPE_CHECKING:
-    from ...input import Input
-    from ...output import Output
+    from ...core.input import Input
+    from ...core.output import Output
 
 
 class MatrixProductAB(Node):

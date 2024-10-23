@@ -1,6 +1,6 @@
 from numpy import arange, array
 
-from dagflow.graph import Graph
+from dagflow.core.graph import Graph
 from dagflow.lib.common import Array
 from dagflow.lib.arithmetic import Product, Sum
 from dagflow.lib.summation import WeightedSum

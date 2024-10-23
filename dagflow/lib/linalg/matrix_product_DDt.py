@@ -4,12 +4,12 @@ from typing import TYPE_CHECKING
 
 from numpy import matmul
 
-from ...node import Node
-from ...type_functions import check_input_dimension, eval_output_dtype
+from ...core.node import Node
+from ...core.type_functions import check_input_dimension, eval_output_dtype
 
 if TYPE_CHECKING:
-    from ...input import Input
-    from ...output import Output
+    from ...core.input import Input
+    from ...core.output import Output
 
 
 class MatrixProductDDt(Node):

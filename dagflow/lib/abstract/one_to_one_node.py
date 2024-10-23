@@ -6,10 +6,10 @@ from numpy.typing import NDArray
 
 from multikeydict.typing import properkey
 
-from ...input_handler import MissingInputAddPair
-from ...node import Node
-from ...storage import NodeStorage
-from ...type_functions import (
+from ...core.input_handler import MissingInputAddPair
+from ...core.node import Node
+from ...core.storage import NodeStorage
+from ...core.type_functions import (
     assign_outputs_axes_from_inputs,
     check_has_inputs,
     copy_from_input_to_output,

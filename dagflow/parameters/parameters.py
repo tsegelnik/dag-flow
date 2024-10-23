@@ -5,11 +5,11 @@ from typing import TYPE_CHECKING
 
 from numpy import array, ndarray, zeros_like
 
-from ..exception import InitializationError
-from ..labels import inherit_labels
+from ..core.exception import InitializationError
+from ..core.labels import inherit_labels
 from ..lib.common import Array
-from ..node import Node
-from ..output import Output
+from ..core.node import Node
+from ..core.output import Output
 from .parameter import GaussianParameter, NormalizedGaussianParameter, Parameter
 
 if TYPE_CHECKING:
