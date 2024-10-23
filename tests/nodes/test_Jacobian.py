@@ -6,7 +6,7 @@ from dagflow.graphviz import savegraph
 from dagflow.lib.arithmetic import Product, Sum
 from dagflow.lib.common import Array, Concatenation
 from dagflow.lib.calculus import Jacobian
-from dagflow.lib.linear_algebra import LinearFunction
+from dagflow.lib.linalg import LinearFunction
 from dagflow.parameters import GaussianParameter
 
 

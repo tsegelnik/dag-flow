@@ -6,7 +6,7 @@ from dagflow.exception import TypeFunctionError
 from dagflow.graph import Graph
 from dagflow.graphviz import savegraph
 from dagflow.lib.common import Array
-from dagflow.lib.linear_algebra import Cholesky
+from dagflow.lib.linalg import Cholesky
 
 
 @mark.parametrize("dtype", ("d", "f"))

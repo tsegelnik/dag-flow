@@ -12,7 +12,7 @@ from ...parameters import GaussianParameter, NormalizedGaussianParameter
 from ...storage import NodeStorage
 from ..arithmetic import Sum
 from ..calculus import Jacobian
-from ..linear_algebra import MatrixProductDDt, MatrixProductDVDt
+from ..linalg import MatrixProductDDt, MatrixProductDVDt
 
 if TYPE_CHECKING:
     from typing import Mapping

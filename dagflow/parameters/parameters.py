@@ -299,7 +299,7 @@ class GaussianConstraint(Constraint):
         if sigma is not None:
             self.sigma_total = sigma.outputs[0]
         if correlation is not None:
-            from ..lib.linear_algebra import Cholesky
+            from ..lib.linalg import Cholesky
             from ..lib.statistics import CovmatrixFromCormatrix
 
             self._correlation_node = correlation
@@ -317,7 +317,7 @@ class GaussianConstraint(Constraint):
                 self._covariance_node = Square(f"σ²({value_node.name})")
                 self._sigma_node >> self._covariance_node
         elif covariance is not None:
-            from ..lib.linear_algebra import Cholesky
+            from ..lib.linalg import Cholesky
 
             self._cholesky_node = Cholesky(f"L({value_node.name})")
             self._sigma_node = self._cholesky_node

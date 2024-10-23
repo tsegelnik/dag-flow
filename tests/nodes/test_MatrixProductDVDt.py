@@ -4,7 +4,7 @@ from pytest import mark
 from dagflow.graph import Graph
 from dagflow.graphviz import savegraph
 from dagflow.lib.common import Array
-from dagflow.lib.linear_algebra import MatrixProductDVDt
+from dagflow.lib.linalg import MatrixProductDVDt
 
 
 @mark.parametrize("dtype", ("d", "f"))
