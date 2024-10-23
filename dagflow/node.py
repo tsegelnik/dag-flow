@@ -180,7 +180,7 @@ class Node(NodeBase):
             if ninputs > 1:
                 for iname, input in iter_inputs:
                     inputs[tuplename + (iname,) + key] = input
-            elif ninputs==1:
+            elif ninputs == 1:
                 _, input = next(iter_inputs)
                 inputs[tuplename + key] = input
 
@@ -208,7 +208,7 @@ class Node(NodeBase):
         self._name = name
 
     @property
-    def allowed_kw_inputs(self) -> tuple[str,...]:
+    def allowed_kw_inputs(self) -> tuple[str, ...]:
         return self._allowed_kw_inputs
 
     @property
@@ -465,7 +465,7 @@ class Node(NodeBase):
 
     def add_pair(
         self, iname: str, oname: str, **kwargs
-    ) -> tuple[Input | tuple[Input,...], Output | tuple[Output,...]]:
+    ) -> tuple[Input | tuple[Input, ...], Output | tuple[Output, ...]]:
         """
         Creates a pair of input and output
         """
@@ -506,7 +506,7 @@ class Node(NodeBase):
         oname: str,
         input_kws: dict | None = None,
         output_kws: dict | None = None,
-    ) -> tuple[Input | tuple[Input,...], Output | tuple[Output,...]]:
+    ) -> tuple[Input | tuple[Input, ...], Output | tuple[Output, ...]]:
         """
         Creates a pair of input and output
 
@@ -545,19 +545,18 @@ class Node(NodeBase):
     def eval(self):
         if not self.closed:
             raise UnclosedGraphError("Cannot evaluate not closed node!", node=self)
+
         self.fd.being_evaluated = True
-        try:
-            self._n_calls += 1
-            self.fcn()
-        except DagflowError as exc:
-            raise exc
+        self._n_calls += 1
+        self.fcn()
         self.fd.being_evaluated = False
 
     def touch(self, force_computation=False):
-        if (not self.tainted and not force_computation) or self.frozen:
-            return
-        if not self.closed:
-            raise UnclosedGraphError("Cannot evaluate not closed node!", node=self)
+        if not force_computation:
+            if not self.tainted:
+                return
+            if not self.closed:
+                raise UnclosedGraphError("Cannot evaluate not closed node!", node=self)
         self._touch()
 
     def _touch(self):
@@ -565,6 +564,9 @@ class Node(NodeBase):
         self.fcn()
         self._n_calls += 1
         self.fd.tainted = False
+        # TODO: The differ from eval is only in this condition (and extra check in eval).
+        #       Maybe it must be the same and we can delete redundant method,
+        #       rename _touch->_eval and use it inside eval?
         if self._auto_freeze:
             self.fd.frozen = True
         self.fd.being_evaluated = False
@@ -593,9 +595,12 @@ class Node(NodeBase):
         if self.frozen:
             self.fd.frozen_tainted = True
             return
+
         self.fd.tainted = True
         ret = self._touch() if (self._immediate or force_computation) else None
-        self.taint_children(force=force)
+        # TODO:  maybe here it is better to avoid extra call from FlagsDescriptor
+        self.fd.taint_children(force=force)
+
         return ret
 
     def taint_children(self, **kwargs):
@@ -676,7 +681,7 @@ class Node(NodeBase):
         self,
         recursive: bool = True,
         strict: bool = True,
-        close_children = False,
+        close_children=False,
         together: Sequence["Node"] = [],
     ) -> bool:
         # Caution: `together` list should not be written in!
