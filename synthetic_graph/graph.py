@@ -25,7 +25,7 @@ while len(input_nodes) > 1:
     current_nodes = 0
     output_nodes = []
     while current_nodes < max_nodes:
-        # 95% что будет нода принимающая только один вход, чтоб граф был глубже
+        # 95% chance that there will be a node accepting only one input to make the graph deeper
         if np.random.rand() < 0.95:
             operation = np.random.choice(ONE_NODE_OPERATIONS)
         else:
