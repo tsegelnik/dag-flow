@@ -142,7 +142,6 @@ class Integrator(MetaNode):
 
         inputs[key_orders_x] = instance.inputs["orders_x"]
         inputs[key_orders_y] = instance.inputs["orders_y"]
-        import IPython; IPython.embed(colors='neutral')
 
         NodeStorage.update_current(storage, strict=True, verbose=verbose)
 
