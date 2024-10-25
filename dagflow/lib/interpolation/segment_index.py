@@ -85,7 +85,7 @@ class SegmentIndex(Node):
         copy_from_input_to_output(self, 1, 0, dtype=False, shape=True, edges=False, meshes=False)
         self._indices.dd.dtype = "i"
 
-    def _fcn(self):
+    def _function(self):
         """Uses `numpy.ndarray.searchsorted` and `numpy.ndarray.argsort`"""
         out = self._indices.data.ravel()
         coarse = self._coarse.data.ravel()

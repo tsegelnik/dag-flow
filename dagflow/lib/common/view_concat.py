@@ -29,7 +29,7 @@ class ViewConcat(Node):
         iname = f"input_{idx:02d}"
         return self._add_input(iname, allocatable=True, child_output=self._output)
 
-    def _fcn(self):
+    def _function(self):
         self.inputs.touch()
 
     def _typefunc(self) -> None:

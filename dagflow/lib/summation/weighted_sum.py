@@ -21,7 +21,7 @@ class WeightedSum(ManyToOneNode):
     def __init__(self, *args, **kwargs) -> None:
         super().__init__(*args, **kwargs, allowed_kw_inputs=("weight",))
         self._weight = self._add_input("weight", positional=False)
-        self._functions.update({"number": self._fcn_number, "iterable": self._fcn_iterable})
+        self._functions_dict.update({"number": self._fcn_number, "iterable": self._fcn_iterable})
 
     def _typefunc(self) -> None:
         """A output takes this function to determine the dtype and shape"""
@@ -37,9 +37,9 @@ class WeightedSum(ManyToOneNode):
                 input=weight,
             )
         elif shape == 1:
-            self.fcn = self._functions["number"]
+            self.function = self._functions_dict["number"]
         elif shape == leninp:
-            self.fcn = self._functions["iterable"]
+            self.function = self._functions_dict["iterable"]
         else:
             raise TypeFunctionError(
                 f"The number of weights (={shape}) must coincide "

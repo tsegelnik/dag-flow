@@ -29,7 +29,7 @@ class ElSumSq(Node):
         super().__init__(*args, **kwargs)
         self._labels.setdefault("mark", "Σa²")
 
-    def _fcn(self):
+    def _function(self):
         out = self.outputs["result"].data
         out[0] = 0.0
         for _input in self.inputs.iter_data():

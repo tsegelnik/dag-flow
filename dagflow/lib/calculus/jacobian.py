@@ -52,7 +52,7 @@ class Jacobian(OneToOneNode):
             out.dd.dtype = inp.dd.dtype
             out.dd.shape = (inp.dd.size, n)
 
-    def _fcn(self):
+    def _function(self):
         c1 = 4.0 / 3.0
         c2 = 1.0 / 6.0
         for inp, outdata in zip(self.inputs, self.outputs.iter_data()):

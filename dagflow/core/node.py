@@ -46,8 +46,8 @@ class Node(NodeBase):
         "_allowed_kw_inputs",
         "_fd",
         "_auto_freeze",
-        "fcn",
-        "_functions",
+        "function",
+        "_functions_dict",
         "_n_calls",
         "_input_nodes_callbacks",
         "_touch",
@@ -118,9 +118,8 @@ class Node(NodeBase):
         self.fd.frozen = frozen
         self._touch = self.__touch_auto_freeze if self._auto_freeze else self.__touch
 
-        # TODO: It is better to rename `fcn` and `functions` to the similar way
-        self._functions: dict[Any, Callable] = {"default": self._fcn}
-        self.fcn = self._functions["default"]
+        self._functions_dict: dict[Any, Callable] = {"default": self._function}
+        self.function = self._functions_dict["default"]
 
         self._input_nodes_callbacks = []
 
@@ -512,7 +511,7 @@ class Node(NodeBase):
         self._fd.allocated = False
         return inp, out
 
-    def _fcn(self):
+    def _function(self):
         pass
 
     def eval(self):
@@ -523,7 +522,7 @@ class Node(NodeBase):
     def _eval(self):
         self.fd.being_evaluated = True
         self._n_calls += 1
-        self.fcn()
+        self.function()
         self.fd.being_evaluated = False
 
     def touch(self, force_computation=False):

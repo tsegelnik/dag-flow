@@ -20,7 +20,7 @@ class ThreeInputsOneOutput(Node):
         kwargs.setdefault("missing_input_handler", MissingInputAddEach())
         super().__init__(*args, **kwargs)
 
-    def _fcn(self, _, inputs, outputs):
+    def _function(self, _, inputs, outputs):
         for i, output in enumerate(outputs):
             out = output.data
             copyto(out, inputs[3 * i].data)

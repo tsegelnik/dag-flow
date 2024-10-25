@@ -34,7 +34,7 @@ class MeshToEdges(OneToOneNode):
 
     __slots__ = ()
 
-    def _fcn(self):
+    def _function(self):
         for _input, _output in zip(self.inputs.iter_data(), self.outputs.iter_data()):
             _binedges(_input, _output)
 

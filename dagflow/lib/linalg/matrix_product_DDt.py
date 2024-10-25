@@ -28,7 +28,7 @@ class MatrixProductDDt(Node):
         self._out = self._add_output("result")
         self._labels.setdefault("mark", "DDᵀ")
 
-    def _fcn(self):
+    def _function(self):
         matrix = self._matrix.data
         out = self._out.data
         matmul(matrix, matrix.T, out=out)

@@ -219,7 +219,7 @@ class InterpolatorCore(Node):
         self._indices = self._indices_input.data_unsafe.ravel()
         self._result = self._result_output.data_unsafe.ravel()
 
-    def _fcn(self):
+    def _function(self):
         """Runs interpolation method chosen within `method` arg"""
         # TODO: inherit from OneToOneNode, loop inputs
         for callback in self._input_nodes_callbacks:

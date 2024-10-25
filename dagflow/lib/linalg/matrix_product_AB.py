@@ -36,7 +36,7 @@ class MatrixProductAB(Node):
         self._out = self._add_output("result")
         self._labels.setdefault("mark", "A@B")
 
-        self._functions.update(
+        self._functions_dict.update(
             {
                 "diagonal_diagonal": self._fcn_diagonal_diagonal,
                 "diagonal_block": self._fcn_diagonal_block,
@@ -77,13 +77,13 @@ class MatrixProductAB(Node):
         ndim = ndim_left, ndim_right
         ndim_out = 2
         if ndim == (2, 2):
-            self.fcn = self._fcn_block_block
+            self.function = self._fcn_block_block
         elif ndim == (2, 1):
-            self.fcn = self._fcn_block_diagonal
+            self.function = self._fcn_block_diagonal
         elif ndim == (1, 2):
-            self.fcn = self._fcn_diagonal_block
+            self.function = self._fcn_diagonal_block
         elif ndim == (1, 1):
-            self.fcn = self._fcn_diagonal_diagonal
+            self.function = self._fcn_diagonal_diagonal
             ndim_out = 1
         else:
             raise TypeFunctionError(f"One of the inputs' dimension >2: {ndim}", node=self)

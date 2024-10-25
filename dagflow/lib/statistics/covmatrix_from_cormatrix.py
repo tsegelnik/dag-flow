@@ -38,7 +38,7 @@ class CovmatrixFromCormatrix(Node):
         )
         self._sigma = self._add_input("sigma", positional=False)
 
-    def _fcn(self):
+    def _function(self):
         self.inputs.touch()
         C = self._cormatrix.data
         sigma = self._sigma.data

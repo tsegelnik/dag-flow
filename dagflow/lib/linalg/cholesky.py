@@ -20,7 +20,7 @@ class Cholesky(Node):
         super().__init__(*args, **kwargs)
         self._labels.setdefault("mark", "V→L")
 
-        self._functions.update({"square": self._fcn_square, "diagonal": self._fcn_diagonal})
+        self._functions_dict.update({"square": self._fcn_square, "diagonal": self._fcn_diagonal})
 
     def _fcn_square(self):
         """Compute Cholesky decomposition using `scipy.linalg.cholesky`
@@ -50,8 +50,8 @@ class Cholesky(Node):
         copy_from_input_to_output(self, slice(None), slice(None))
 
         if ndim == 2:
-            self.fcn = self._functions["square"]
+            self.function = self._functions_dict["square"]
             self.labels.mark = "V→L"
         else:
-            self.fcn = self._functions["diagonal"]
+            self.function = self._functions_dict["diagonal"]
             self.labels.mark = "sqrt(Vᵢ)"

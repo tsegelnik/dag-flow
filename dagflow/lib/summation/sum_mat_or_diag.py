@@ -36,7 +36,7 @@ class SumMatOrDiag(Node):
     def __init__(self, *args, **kwargs):
         kwargs.setdefault("missing_input_handler", MissingInputAddOne(output_fmt="result"))
         super().__init__(*args, **kwargs)
-        self._functions.update({2: self._fcn2d, 1: self._fcn1d})
+        self._functions_dict.update({2: self._fcn2d, 1: self._fcn1d})
 
     def _fcn2d(self):
         out = self.outputs["result"].data
@@ -76,4 +76,4 @@ class SumMatOrDiag(Node):
         else:
             assert False
 
-        self.fcn = self._functions[self._ndim]
+        self.function = self._functions_dict[self._ndim]

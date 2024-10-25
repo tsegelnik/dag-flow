@@ -51,7 +51,7 @@ class RenormalizeDiag(OneToOneNode):
         self._ndiag = ndiag
 
         self._scale = self._add_input("scale", positional=False)
-        self._functions.update({"diag": self._fcn_diag, "offdiag": self._fcn_offdiag})
+        self._functions_dict.update({"diag": self._fcn_diag, "offdiag": self._fcn_offdiag})
 
     def _fcn_diag(self) -> None:
         scale = self._scale.data[0]
@@ -69,7 +69,7 @@ class RenormalizeDiag(OneToOneNode):
         check_input_square(self, 0)
         check_inputs_equivalence(self, AllPositionals, check_dtype=True, check_shape=True)
         eval_output_dtype(self, (AllPositionals, "scale"), "result")
-        self.fcn = self._functions[self._mode]
+        self.function = self._functions_dict[self._mode]
 
 
 @njit(cache=True)

@@ -27,6 +27,6 @@ class ArraySum(OneToOneNode):
         for out in self.outputs:
             out.dd.shape = (1,)
 
-    def _fcn(self):
+    def _function(self):
         for inp, out in zip(self.inputs, self.outputs):
             out.data[0] = inp.data.sum()

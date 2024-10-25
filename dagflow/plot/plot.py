@@ -406,11 +406,11 @@ def plot_array_2d_hist(
         "pcolormesh" if method in {"auto", None} else method
     )  # pyright: ignore [reportGeneralTypeIssues]
     try:
-        fcn = plot_array_2d_hist_methods[smethod]
+        function = plot_array_2d_hist_methods[smethod]
     except KeyError as e:
         raise RuntimeError(f"Invlid 2d hist method: {method}") from e
 
-    return fcn(dZ, edges, *args, **kwargs)
+    return function(dZ, edges, *args, **kwargs)
 
 
 def plot_array_2d_vs_pcolormesh(
@@ -519,11 +519,11 @@ def plot_array_2d_vs(
         "pcolormesh" if method in {"auto", None} else method
     )  # pyright: ignore [reportGeneralTypeIssues]
     try:
-        fcn = plot_array_2d_vs_methods[smethod]
+        function = plot_array_2d_vs_methods[smethod]
     except KeyError as e:
         raise RuntimeError("unimplemented") from e
 
-    return fcn(array, meshes, *args, **kwargs)
+    return function(array, meshes, *args, **kwargs)
 
 
 def _mask_if_needed(datain: ArrayLike, /, *, masked_value: float | None = None) -> NDArray:
@@ -535,10 +535,10 @@ def _mask_if_needed(datain: ArrayLike, /, *, masked_value: float | None = None) 
     return masked_array(data, mask=mask)
 
 
-def _patch_with_colorbar(fcn, mode3d=False):
+def _patch_with_colorbar(function, mode3d=False):
     """Patch pyplot.function or ax.method by adding a "colorbar" option"""
     returner = mode3d and _colorbar_or_not_3d or _colorbar_or_not
-    if isinstance(fcn, str):
+    if isinstance(function, str):
 
         def newfcn(
             *args,
@@ -547,7 +547,7 @@ def _patch_with_colorbar(fcn, mode3d=False):
             **kwargs,
         ):
             ax = gca()
-            actual_fcn = getattr(ax, fcn)
+            actual_fcn = getattr(ax, function)
             kwargs["cmap"] = cmap is True and "viridis" or cmap
             res = actual_fcn(*args, **kwargs)
             return returner(res, colorbar)
@@ -561,7 +561,7 @@ def _patch_with_colorbar(fcn, mode3d=False):
             **kwargs,
         ):
             kwargs["cmap"] = cmap is True and "viridis" or cmap
-            res = fcn(*args, **kwargs)
+            res = function(*args, **kwargs)
             return returner(res, colorbar)
 
     return newfcn

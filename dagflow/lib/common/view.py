@@ -44,7 +44,7 @@ class View(Node):
             if output.closed:
                 self.close()
 
-    def _fcn(self):
+    def _function(self):
         self._input.data
 
     def _typefunc(self) -> None:

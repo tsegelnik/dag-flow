@@ -15,7 +15,7 @@ class Proxy(ManyToOneNode):
         self._fd.needs_post_allocate = True
         self._labels.setdefault("mark", "proxy")
 
-    def _fcn(self):
+    def _function(self):
         self._input_nodes_callbacks[self._idx]()
         copyto(self._output_data, self._input_data[self._idx])
 

@@ -10,9 +10,9 @@ class SumIntProductFloatElseNothing(Node):
     def __init__(self, name, **kwargs):
         kwargs.setdefault("missing_input_handler", MissingInputAddOne(output_fmt="result"))
         super().__init__(name, **kwargs)
-        self._functions.update({"int": self._fcn_int, "float": self._fcn_float})
+        self._functions_dict.update({"int": self._fcn_int, "float": self._fcn_float})
 
-    def _fcn(self):
+    def _function(self):
         return self.outputs[0].data
 
     def _fcn_int(self):
@@ -33,14 +33,14 @@ class SumIntProductFloatElseNothing(Node):
 
     def _typefunc(self) -> bool:
         if self.inputs[0].dd.dtype == "i":
-            self.fcn = self._functions.get("int")
+            self.function = self._functions_dict.get("int")
         elif self.inputs[0].dd.dtype == "d":
-            self.fcn = self._functions.get("float")
+            self.function = self._functions_dict.get("float")
         self.outputs["result"].dd.shape = self.inputs[0].dd.shape
         self.outputs["result"].dd.dtype = result_type(*tuple(inp.dd.dtype for inp in self.inputs))
         self.logger.debug(
             f"Node '{self.name}': dtype={self.outputs['result'].dd.dtype}, "
-            f"shape={self.outputs['result'].dd.shape}, function={self.fcn.__name__}"
+            f"shape={self.outputs['result'].dd.shape}, function={self.function.__name__}"
         )
         return True
 

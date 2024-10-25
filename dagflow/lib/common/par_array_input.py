@@ -57,6 +57,6 @@ class ParArrayInput(Node):
                 node=self,
             )
 
-    def _fcn(self) -> None:
+    def _function(self) -> None:
         for par, val in zip(self._parameters_list, self._values.data):
             par.value = val

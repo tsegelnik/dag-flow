@@ -151,7 +151,7 @@ class ManyToOneNode(Node):
             instance = cls(".".join(outname), **kwargs)
             nodes[outname] = instance
 
-        def fcn(i: int, inkey: TupleKey, outkey: TupleKey):
+        def function(i: int, inkey: TupleKey, outkey: TupleKey):
             container = args[i]
             output = container[inkey] if inkey else container
             try:
@@ -171,7 +171,7 @@ class ManyToOneNode(Node):
         match_keys(
             keys_left,
             replicate_outputs,
-            fcn,
+            function,
             fcn_outer_before=fcn_outer_before,
             fcn_outer_after=fcn_outer_after,
             require_all_left_keys_processed=not allow_skip_inputs,
@@ -212,7 +212,7 @@ class ManyToOneNode(Node):
             instance = cls(".".join(outname), **kwargs)
             nodes[outname] = instance
 
-        def fcn(iarg: int, inkey: TupleKey, outkey: TupleKey):
+        def function(iarg: int, inkey: TupleKey, outkey: TupleKey):
             nonlocal inputs, instance, input_names
             for iname in input_names:
                 input = instance()
@@ -227,7 +227,7 @@ class ManyToOneNode(Node):
         match_keys(
             (replicate_inputs,),
             replicate_outputs,
-            fcn,
+            function,
             fcn_outer_before=fcn_outer_before,
             fcn_outer_after=fcn_outer_after,
         )

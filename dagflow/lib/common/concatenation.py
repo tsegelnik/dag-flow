@@ -44,7 +44,7 @@ class Concatenation(ManyToOneNode):
         self._offsets = tuple(offsets)
         self._sizes = tuple(sizes)
 
-    def _fcn(self):
+    def _function(self):
         _output = self.outputs["result"]
         data = _output.data
         for offset, _input in zip(self._offsets, self.inputs):

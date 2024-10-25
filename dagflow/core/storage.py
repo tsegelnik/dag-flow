@@ -140,7 +140,7 @@ class NodeStorage(NestedMKDict):
         nconnections = 0
         to_remove = []
 
-        def fcn(i: int, outkey: TupleKey, inkey: TupleKey):
+        def function(i: int, outkey: TupleKey, inkey: TupleKey):
             nonlocal nconnections
             output = self[outkey]
             input = other[inkey]
@@ -157,7 +157,7 @@ class NodeStorage(NestedMKDict):
 
             nconnections += 1
 
-        match_keys((keys_left,), keys_right, fcn, left_in_right=True, right_in_left=False)
+        match_keys((keys_left,), keys_right, function, left_in_right=True, right_in_left=False)
 
         if nconnections == 0:
             raise ConnectionError("No connections are done")

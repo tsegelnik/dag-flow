@@ -77,13 +77,13 @@ vecFres = vectorize(fres)
 
 
 class Polynomial0(OneToOneNode):
-    def _fcn(self):
+    def _function(self):
         for inp, out in zip(self.inputs, self.outputs):
             out.data[:] = vecF0(inp.data)
 
 
 class PolynomialRes(OneToOneNode):
-    def _fcn(self):
+    def _function(self):
         for inp, out in zip(self.inputs, self.outputs):
             out.data[:] = vecFres(inp.data)
 
@@ -116,7 +116,7 @@ def test_IntegratorCore_gl2d(debug_graph, testname):
     class Polynomial1(ManyToOneNode):
         scale = 1.0
 
-        def _fcn(self):
+        def _function(self):
             self.outputs["result"].data[:] = (
                 self.scale * vecF0(self.inputs[1].data) * vecF0(self.inputs[0].data)
             )
@@ -208,7 +208,7 @@ def test_IntegratorCore_gl2d(debug_graph, testname):
 @mark.parametrize("dropdim", (True, False))
 def test_IntegratorCore_gl2to1d_x(debug_graph, testname, dropdim):
     class Polynomial21(ManyToOneNode):
-        def _fcn(self):
+        def _function(self):
             self.outputs["result"].data[:] = vecF0(self.inputs[1].data) * vecF0(self.inputs[0].data)
 
     with Graph(debug=debug_graph, close_on_exit=True) as graph:
@@ -271,7 +271,7 @@ def test_IntegratorCore_gl2to1d_x(debug_graph, testname, dropdim):
 @mark.parametrize("dropdim", (True, False))
 def test_IntegratorCore_gl2to1d_y(debug_graph, testname, dropdim):
     class Polynomial21(ManyToOneNode):
-        def _fcn(self):
+        def _function(self):
             self.outputs["result"].data[:] = vecF0(self.inputs[1].data) * vecF0(self.inputs[0].data)
 
     with Graph(debug=debug_graph, close_on_exit=True) as graph:

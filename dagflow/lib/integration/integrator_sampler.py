@@ -112,7 +112,7 @@ class IntegratorSampler(Node):
             self._ordersY = self._add_input("ordersY", positional=False)
             self._y = self._add_output("y")
         self._weights = self._add_output("weights", positional=False)
-        self._functions.update(
+        self._functions_dict.update(
             {
                 "rect": self._fcn_rect,
                 "trap": self._fcn_trap,
@@ -149,7 +149,7 @@ class IntegratorSampler(Node):
         for output in (*self.outputs, self._weights):
             output.dd.dtype = self.dtype
             output.dd.shape = shape
-        self.fcn = self._functions[self.mode]
+        self.function = self._functions_dict[self.mode]
 
     def __check_orders(self, name: str) -> int:
         """

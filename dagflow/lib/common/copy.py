@@ -9,6 +9,6 @@ class Copy(OneToOneNode):
         super().__init__(*args, **kwargs)
         self._labels.setdefault("mark", "copy")
 
-    def _fcn(self):
+    def _function(self):
         for inp, out in zip(self.inputs, self.outputs):
             out.data[:] = inp.data

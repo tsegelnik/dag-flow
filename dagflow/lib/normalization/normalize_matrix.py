@@ -34,7 +34,7 @@ class NormalizeMatrix(OneToOneNode):
         else:
             raise RuntimeError(f"Invalid NormalizeMatrix mode {mode}")
 
-        self._functions.update(
+        self._functions_dict.update(
             {
                 "columns": self._fcn_norm_columns,
                 "rows": self._fcn_norm_rows,
@@ -54,7 +54,7 @@ class NormalizeMatrix(OneToOneNode):
         check_input_dimension(self, AllPositionals, ndim=2)
         check_inputs_equivalence(self, AllPositionals, check_dtype=True, check_shape=True)
 
-        self.fcn = self._functions[self._mode]
+        self.function = self._functions_dict[self._mode]
 
 
 @njit(cache=True)

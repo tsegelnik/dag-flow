@@ -19,9 +19,9 @@ def test_graph_big_01():
         d.savegraph(f"output/test_graph_big_{counter:03d}.png")
         counter += 1
 
-    def plotter(fcn, node):
+    def plotter(function, node):
         plot(f"[start evaluating {node.name}]")
-        fcn()
+        function()
         plot(f"[done evaluating {node.name}]")
 
     with g:

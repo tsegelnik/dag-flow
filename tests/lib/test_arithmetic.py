@@ -90,9 +90,9 @@ def test_Division_01(testname, debug_graph, dtype):
 
 
 @mark.parametrize("dtype", ("d", "f"))
-@mark.parametrize("fcn", (square, sqrt))
-def test_Powers_01(testname, debug_graph, fcn, dtype):
-    if fcn == square:
+@mark.parametrize("function", (square, sqrt))
+def test_Powers_01(testname, debug_graph, function, dtype):
+    if function == square:
         arrays_in = tuple(linspace(-10, 10, 101, dtype=dtype) * i for i in (1, 2, 3))
         cls = Square
         name = "Square"
@@ -110,7 +110,7 @@ def test_Powers_01(testname, debug_graph, fcn, dtype):
         arrays >> node
 
     outputs = node.outputs
-    ress = fcn(arrays_in)
+    ress = function(arrays_in)
 
     assert node.tainted == True
     assert all(output.dd.dtype == dtype for output in outputs)
@@ -119,7 +119,7 @@ def test_Powers_01(testname, debug_graph, fcn, dtype):
 
     for i in range(len(arrays_in)):
         arrays_in[i][:] = 2.3 * (i + 2) ** 2 + i
-        ress = fcn(arrays_in)
+        ress = function(arrays_in)
         arrays[i].outputs[0].set(2.3 * (i + 2) ** 2 + i)
         assert node.tainted == True
         assert all(output.dd.dtype == dtype for output in outputs)

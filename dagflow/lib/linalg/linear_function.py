@@ -30,7 +30,7 @@ class LinearFunction(OneToOneNode):
         check_input_size(self, ("a", "b"), exact=1)
         check_inputs_same_dtype(self, ("a", "b", AllPositionals))
 
-    def _fcn(self):
+    def _function(self):
         a = self._a.data[0]
         b = self._b.data[0]
         for inp, out in zip(self.inputs.iter_data(), self.outputs.iter_data()):

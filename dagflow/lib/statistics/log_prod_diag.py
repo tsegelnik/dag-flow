@@ -35,7 +35,7 @@ class LogProdDiag(Node):
         super().__init__(*args, **kwargs)
         self._labels.setdefault("mark", r"2log\|L\|")
 
-        self._functions.update({"square": self._fcn_square, "diagonal": self._fcn_diagonal})
+        self._functions_dict.update({"square": self._fcn_square, "diagonal": self._fcn_diagonal})
 
     def _fcn_square(self):
         """Compute logarithm of determinant of matrix using Cholesky decomposition"""
@@ -59,9 +59,9 @@ class LogProdDiag(Node):
             out.dd.shape = (1,)
 
         if ndim == 2:
-            self.fcn = self._functions["square"]
+            self.function = self._functions_dict["square"]
         else:
-            self.fcn = self._functions["diagonal"]
+            self.function = self._functions_dict["diagonal"]
 
     def _post_allocate(self) -> None:
         inpdd = self.inputs[0].dd

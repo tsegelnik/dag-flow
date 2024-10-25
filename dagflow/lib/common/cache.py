@@ -9,7 +9,7 @@ class Cache(OneToOneNode):
         super().__init__(*args, auto_freeze=True, **kwargs)
         self._labels.setdefault("mark", "cache")
 
-    def _fcn(self):
+    def _function(self):
         for inp, out in zip(self.inputs, self.outputs):
             out.data[:] = inp.data
 

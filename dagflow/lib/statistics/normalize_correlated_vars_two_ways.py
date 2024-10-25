@@ -89,7 +89,7 @@ class NormalizeCorrelatedVarsTwoWays(Node):
             output_kws={"forbid_reallocation": True, "allocatable": False},
         )
 
-        self._functions.update(
+        self._functions_dict.update(
             {
                 "forward_2d": self._fcn_forward_2d,
                 "forward_1d": self._fcn_forward_1d,
@@ -143,9 +143,9 @@ class NormalizeCorrelatedVarsTwoWays(Node):
             - value should not be tainted on sigma/central modificantion
         """
         if caller is self._normvalue_input:
-            self.fcn = self._functions[f"backward_{self._ndim}"]
+            self.function = self._functions_dict[f"backward_{self._ndim}"]
         else:
-            self.fcn = self._functions[f"forward_{self._ndim}"]
+            self.function = self._functions_dict[f"forward_{self._ndim}"]
 
     def _typefunc(self) -> None:
         check_has_inputs(self)
@@ -162,7 +162,7 @@ class NormalizeCorrelatedVarsTwoWays(Node):
         )
 
         self._ndim = f"{ndim}d"
-        self.fcn = self._functions[f"forward_{self._ndim}"]
+        self.function = self._functions_dict[f"forward_{self._ndim}"]
 
         self._value = zeros(shape=self._value_input.dd.shape, dtype=self._value_input.dd.dtype)
         self._normvalue = zeros(

@@ -127,7 +127,7 @@ class IntegratorCore(OneToOneNode):
         self._dropdim = dropdim
         self._weights_input = self._add_input("weights", positional=False)
         self._ordersX_input = self._add_input("ordersX", positional=False)
-        self._functions.update(
+        self._functions_dict.update(
             {
                 1: self._fcn_1d,
                 2: self._fcn_2d,
@@ -174,19 +174,19 @@ class IntegratorCore(OneToOneNode):
             if self.dropdim and edgeslenY == 2:  # drop Y dimension
                 shape = (edgeslenX - 1,)
                 edges = [edgesX]
-                self.fcn = self._functions[211]
+                self.function = self._functions_dict[211]
             elif self.dropdim and edgeslenX == 2:  # drop X dimension
                 shape = (edgeslenY - 1,)
                 edges = [edgesY]
-                self.fcn = self._functions[210]
+                self.function = self._functions_dict[210]
             else:
                 shape = (edgeslenX - 1, edgeslenY - 1)
                 edges = [edgesX, edgesY]
-                self.fcn = self._functions[2]
+                self.function = self._functions_dict[2]
         else:
             shape = (edgeslenX - 1,)
             edges = [edgesX]
-            self.fcn = self._functions[1]
+            self.function = self._functions_dict[1]
 
         for output in self.outputs:
             output.dd.dtype = dtype

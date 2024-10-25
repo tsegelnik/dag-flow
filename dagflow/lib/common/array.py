@@ -63,14 +63,14 @@ class Array(Node):
         else:
             raise InitializationError(f'Array: invalid mode "{mode}"', node=self)
 
-        self._functions.update(
+        self._functions_dict.update(
             {
                 "store": self._fcn_store,
                 "store_weak": self._fcn_store,
                 "fill": self._fcn_fill,
             }
         )
-        self.fcn = self._functions[self._mode]
+        self.function = self._functions_dict[self._mode]
 
         if edges:
             self.set_edges(edges)

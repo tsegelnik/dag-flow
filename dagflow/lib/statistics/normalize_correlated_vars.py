@@ -59,7 +59,7 @@ class NormalizeCorrelatedVars(Node):
         self._matrix = self._add_input("matrix", positional=False)
         self._central = self._add_input("central", positional=False)
 
-        self._functions.update(
+        self._functions_dict.update(
             {
                 "forward_2d": self._fcn_forward_2d,
                 "backward_2d": self._fcn_backward_2d,
@@ -110,8 +110,8 @@ class NormalizeCorrelatedVars(Node):
 
         key = f"{self._mode}_{ndim}d"
         try:
-            self.fcn = self._functions[key]
+            self.function = self._functions_dict[key]
         except KeyError as exc:
             raise InitializationError(
-                f'Invalid mode "{key}". Expect: {self._functions.keys()}'
+                f'Invalid mode "{key}". Expect: {self._functions_dict.keys()}'
             ) from exc

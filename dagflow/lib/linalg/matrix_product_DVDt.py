@@ -39,7 +39,7 @@ class MatrixProductDVDt(Node):
         self._left = self._add_input("left")
         self._square = self._add_input("square")
         self._out = self._add_output("result")
-        self._functions.update({"diagonal": self._fcn_diagonal, "square": self._fcn_square})
+        self._functions_dict.update({"diagonal": self._fcn_diagonal, "square": self._fcn_square})
         self._labels.setdefault("mark", "DVDᵀ")
 
     def _fcn_diagonal(self):
@@ -63,7 +63,7 @@ class MatrixProductDVDt(Node):
         check_inputs_multiplicable_mat(self, "left", "square")
         eval_output_dtype(self, slice(None), "result")
         self._out.dd.shape = (self._left.dd.shape[0], self._left.dd.shape[0])
-        self.fcn = self._functions["diagonal" if ndim == 1 else "square"]
+        self.function = self._functions_dict["diagonal" if ndim == 1 else "square"]
 
     def _post_allocate(self) -> None:
         self._buffer = empty(shape=self._left.dd.shape, dtype=self._left.dd.dtype)

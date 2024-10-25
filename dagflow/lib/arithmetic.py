@@ -14,7 +14,7 @@ class Sum(ManyToOneNode):
         super().__init__(*args, **kwargs)
         self._labels.setdefault("mark", "Σ")
 
-    def _fcn(self):
+    def _function(self):
         for callback in self._input_nodes_callbacks:
             callback()
 
@@ -33,7 +33,7 @@ class Product(ManyToOneNode):
         super().__init__(*args, **kwargs)
         self._labels.setdefault("mark", "Π")
 
-    def _fcn(self):
+    def _function(self):
         for callback in self._input_nodes_callbacks:
             callback()
 
@@ -57,7 +57,7 @@ class Division(ManyToOneNode):
         super().__init__(*args, **kwargs)
         self._labels.setdefault("mark", "÷")
 
-    def _fcn(self):
+    def _function(self):
         for callback in self._input_nodes_callbacks:
             callback()
 
@@ -76,7 +76,7 @@ class Square(OneToOneNode):
         super().__init__(*args, **kwargs)
         self._labels.setdefault("mark", "x²")
 
-    def _fcn(self):
+    def _function(self):
         for callback in self._input_nodes_callbacks:
             callback()
 
@@ -93,7 +93,7 @@ class Sqrt(OneToOneNode):
         super().__init__(*args, **kwargs)
         self._labels.setdefault("mark", "√x")
 
-    def _fcn(self):
+    def _function(self):
         for callback in self._input_nodes_callbacks:
             callback()
 
