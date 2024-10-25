@@ -15,8 +15,7 @@ if TYPE_CHECKING:
     from ...core.output import Output
 
 
-# TODO: without cache?
-@njit
+@njit(cache=True)
 def _is_sorted(array: NDArray) -> bool:
     previous = array[0]
     for i in range(1, len(array)):
