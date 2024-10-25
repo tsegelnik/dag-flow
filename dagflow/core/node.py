@@ -41,15 +41,16 @@ class Node(NodeBase):
         "_logger",
         "_exception",
         "_meta_node",
-        "_auto_freeze",
         "_immediate",
         "_debug",
         "_allowed_kw_inputs",
         "_fd",
+        "_auto_freeze",
         "fcn",
         "_functions",
         "_n_calls",
         "_input_nodes_callbacks",
+        "_touch",
     )
 
     _name: str
@@ -65,9 +66,8 @@ class Node(NodeBase):
 
     # Options
     _debug: bool
-    _auto_freeze: bool
     _immediate: bool
-    # _always_tainted: bool
+    _auto_freeze: bool
 
     _input_nodes_callbacks: list[Callable]
 
@@ -116,6 +116,7 @@ class Node(NodeBase):
         self._immediate = immediate
         self._auto_freeze = auto_freeze
         self.fd.frozen = frozen
+        self._touch = self.__touch_auto_freeze if self._auto_freeze else self.__touch
 
         # TODO: It is better to rename `fcn` and `functions` to the similar way
         self._functions: dict[Any, Callable] = {"default": self._fcn}
@@ -243,11 +244,6 @@ class Node(NodeBase):
     @property
     def auto_freeze(self) -> bool:
         return self._auto_freeze
-
-    # TODO: do we need this actually?
-    # @property
-    # def always_tainted(self) -> bool:
-    # return self.fd.always_tainted
 
     @property
     def closed(self) -> bool:
@@ -410,8 +406,6 @@ class Node(NodeBase):
             raise ReconnectionError(input=name, node=self)
         inp = Input(name, self, **kwargs)
         self.inputs.add(inp, positional=positional, keyword=keyword)
-        if self._graph:
-            self._graph._add_input(inp)
         self._fd.allocated = False
         return inp
 
@@ -427,19 +421,6 @@ class Node(NodeBase):
         if self.closed:
             raise ClosedGraphError(node=self)
         return self._add_output(name, keyword=keyword, positional=positional, **kwargs)
-
-    def _add_outputs(self, name: Sequence[str], **kwargs) -> tuple[Output, ...]:
-        """
-        Creates a sequence of outputs
-
-        .. note:: there is no check whether the graph is closed or not.
-        """
-        if IsIterable(name):
-            return tuple(self._add_output(n, **kwargs) for n in name)
-        raise CriticalError(
-            f"'name' of the output must be `Sequence[str]`, but given {name=}",
-            node=self,
-        )
 
     def _add_output(
         self,
@@ -459,9 +440,21 @@ class Node(NodeBase):
             raise ReconnectionError(output=name, node=self)
         out = Output(name, self, **kwargs)
         self.outputs.add(out, positional=positional, keyword=keyword)
-        if self._graph:
-            self._graph._add_output(out)
+        self._fd.allocated = False
         return out
+
+    def _add_outputs(self, name: Sequence[str], **kwargs) -> tuple[Output, ...]:
+        """
+        Creates a sequence of outputs
+
+        .. note:: there is no check whether the graph is closed or not.
+        """
+        if IsIterable(name):
+            return tuple(self._add_output(n, **kwargs) for n in name)
+        raise CriticalError(
+            f"'name' of the output must be `Sequence[str]`, but given {name=}",
+            node=self,
+        )
 
     def add_pair(
         self, iname: str, oname: str, **kwargs
@@ -516,6 +509,7 @@ class Node(NodeBase):
         output_kws = output_kws or {}
         out = self._add_output(oname, **output_kws)
         inp = self._add_input(iname, child_output=out, **input_kws)
+        self._fd.allocated = False
         return inp, out
 
     def _fcn(self):
@@ -524,7 +518,9 @@ class Node(NodeBase):
     def eval(self):
         if not self.closed:
             raise UnclosedGraphError("Cannot evaluate not closed node!", node=self)
+        self._eval()
 
+    def _eval(self):
         self.fd.being_evaluated = True
         self._n_calls += 1
         self.fcn()
@@ -538,17 +534,15 @@ class Node(NodeBase):
                 raise UnclosedGraphError("Cannot evaluate not closed node!", node=self)
         self._touch()
 
-    def _touch(self):
-        self.fd.being_evaluated = True
-        self.fcn()
-        self._n_calls += 1
+    def __touch(self):
+        self._eval()
         self.fd.tainted = False
-        # TODO: The differ from eval is only in this condition (and extra check in eval).
-        #       Maybe it must be the same and we can delete redundant method,
-        #       rename _touch->_eval and use it inside eval?
+
+    def __touch_auto_freeze(self):
+        self._eval()
+        self.fd.tainted = False
         if self._auto_freeze:
             self.fd.frozen = True
-        self.fd.being_evaluated = False
 
     def freeze(self):
         if self.frozen:
@@ -607,6 +601,7 @@ class Node(NodeBase):
 
     def _on_taint(self, caller: Input | None):
         """A node method to be called on taint"""
+        pass
 
     def _post_allocate(self):
         self._input_nodes_callbacks = []
