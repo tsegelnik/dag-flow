@@ -5,6 +5,8 @@ from weakref import ref as weakref
 
 from multikeydict.typing import KeyLike, properkey
 
+from ..plot.labels import Labels
+from ..tools.logger import Logger, get_logger
 from .exception import (
     ClosedGraphError,
     ClosingError,
@@ -19,10 +21,8 @@ from .flags_descriptor import FlagsDescriptor
 from .graph import Graph
 from .input import Input
 from .iter import IsIterable
-from .labels import Labels
 from .node_base import NodeBase
 from .output import Output
-from ..tools.logger import Logger, get_logger
 
 if TYPE_CHECKING:
     from collections.abc import Mapping, Sequence
@@ -47,7 +47,6 @@ class Node(NodeBase):
         "_allowed_kw_inputs",
         "_fd",
         "fcn",
-        "_fcn_chain",
         "_functions",
         "_n_calls",
         "_input_nodes_callbacks",
@@ -118,7 +117,7 @@ class Node(NodeBase):
         self._auto_freeze = auto_freeze
         self.fd.frozen = frozen
 
-        self._fcn_chain = []  # do we need a chain of functions?
+        # TODO: It is better to rename `fcn` and `functions` to the similar way
         self._functions: dict[Any, Callable] = {"default": self._fcn}
         self.fcn = self._functions["default"]
 
@@ -245,6 +244,7 @@ class Node(NodeBase):
     def auto_freeze(self) -> bool:
         return self._auto_freeze
 
+    # TODO: do we need this actually?
     # @property
     # def always_tainted(self) -> bool:
     # return self.fd.always_tainted
@@ -335,7 +335,7 @@ class Node(NodeBase):
             raise ClosedGraphError(node=self)
 
         self.logger.debug(f"Node '{self.name}': Try to get/create the input '{name}'")
-        inp = self.inputs.get(name, None)
+        inp: Any = self.inputs.get(name, None)
         kwargs.setdefault("positional", False)
         if inp is None:
             inp = self.add_input(name, **kwargs)
@@ -514,30 +514,9 @@ class Node(NodeBase):
         """
         input_kws = input_kws or {}
         output_kws = output_kws or {}
-        output = self._add_output(oname, **output_kws)
-        input = self._add_input(iname, child_output=output, **input_kws)
-        return input, output
-
-    def _stash_fcn(self):
-        self._fcn_chain.append(self.fcn)
-        return self.fcn
-
-    def _make_wrap(self, prev_fcn, wrap_fcn):
-        def wrapped_fcn():
-            wrap_fcn(prev_fcn, self)
-
-        return wrapped_fcn
-
-    def _wrap_fcn(self, wrap_fcn, *other_fcns):
-        prev_fcn = self._stash_fcn()
-        self.fcn = self._make_wrap(prev_fcn, wrap_fcn)
-        if other_fcns:
-            self._wrap_fcn(*other_fcns)
-
-    def _unwrap_fcn(self):
-        if not self._fcn_chain:
-            raise DagflowError("Unable to unwrap bare function")
-        self.fcn = self._fcn_chain.pop()
+        out = self._add_output(oname, **output_kws)
+        inp = self._add_input(iname, child_output=out, **input_kws)
+        return inp, out
 
     def _fcn(self):
         pass

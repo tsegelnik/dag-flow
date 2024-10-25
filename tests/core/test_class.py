@@ -1,12 +1,9 @@
 from numpy import arange
 
 from dagflow.core.graph import Graph
-from dagflow.core.graphviz import savegraph
+from dagflow.plot.graphviz import savegraph
 from dagflow.lib.common import Array
 from dagflow.lib.arithmetic import Product, Sum
-from dagflow.core.printl import current_level, printl, set_prefix_function
-
-set_prefix_function(lambda: f"{current_level():<2d} ")
 
 
 def test_00(testname, debug_graph):
@@ -29,6 +26,6 @@ def test_00(testname, debug_graph):
     m.print()
 
     result = m.outputs["result"].data
-    printl(result)
+    print("Evaluation result:", result)
 
     savegraph(graph, "output/{testname}.pdf")

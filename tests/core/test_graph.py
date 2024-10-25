@@ -1,10 +1,6 @@
 from dagflow.core.graph import Graph
-from dagflow.core.graphviz import GraphDot
+from dagflow.plot.graphviz import GraphDot
 from dagflow.lib.common import Dummy
-from dagflow.core.printl import current_level, set_prefix_function
-from dagflow.core.wrappers import printer, toucher
-
-set_prefix_function(lambda: f"{current_level():<2d} ")
 
 
 def test_01():
@@ -13,7 +9,6 @@ def test_01():
         n1 = Dummy("node1")
         n2 = Dummy("node2")
         n3 = Dummy("node3")
-    g._wrap_fcns(toucher, printer)
 
     out1 = n1._add_output("o1", allocatable=False)
     out2 = n1._add_output("o2", allocatable=False)
@@ -37,7 +32,6 @@ def test_02():
         n1 = Dummy("node1")
         n2 = Dummy("node2")
         n3 = Dummy("node3")
-    g._wrap_fcns(toucher, printer)
 
     out1 = n1._add_output("o1", allocatable=False)
     out2 = n1._add_output("o2", allocatable=False)
@@ -66,7 +60,6 @@ def test_02a():
         n2 = Dummy("node2")
         n3 = Dummy("node3")
         n4 = Dummy("node4")
-    g._wrap_fcns(toucher, printer)
 
     out1 = n1._add_output("o1", allocatable=False)
 

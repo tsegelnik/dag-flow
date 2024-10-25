@@ -2,7 +2,7 @@ from numpy import arange, meshgrid
 from pytest import mark
 
 from dagflow.core.graph import Graph
-from dagflow.core.graphviz import savegraph
+from dagflow.plot.graphviz import savegraph
 from dagflow.lib.common import Array
 from dagflow.core.storage import NodeStorage
 

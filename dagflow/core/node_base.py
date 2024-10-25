@@ -5,14 +5,14 @@ from typing import TYPE_CHECKING
 
 from multikeydict.nestedmkdict import NestedMKDict
 
+from ..plot.labels import repr_pretty
+from ..tools.logger import logger
 from . import input_handler
 from .exception import ConnectionError
 from .input import Input, Inputs
 from .iter import StopNesting
-from .labels import repr_pretty
 from .output import Output, Outputs
 from .shift import rshift
-from ..tools.logger import logger
 
 if TYPE_CHECKING:
     from .node import Node

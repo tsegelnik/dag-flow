@@ -2,10 +2,10 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-from dagflow.core.node import Node
-from dagflow.core.output import Output
-from dagflow.parameters import Parameter
-from dagflow.core.storage import NestedMKDict, NodeStorage
+from ..parameters import Parameter
+from .node import Node
+from .output import Output
+from .storage import NestedMKDict, NodeStorage
 
 if TYPE_CHECKING:
     from collections.abc import Callable, KeysView

@@ -66,6 +66,8 @@ class Graph(GraphBase):
     def closed(self) -> bool:
         return self._closed
 
+    # TODO: Do we need these dummy methods?
+    #       In fact, in the whole project there is no real usage of these!
     def _add_output(self, *args, **kwargs):
         """Dummy method"""
 

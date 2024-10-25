@@ -5,6 +5,7 @@ from typing import TYPE_CHECKING
 
 from numpy import zeros
 
+from ..plot.labels import Labels, repr_pretty
 from .data_descriptor import DataDescriptor
 from .edges import EdgeContainer
 from .exception import (
@@ -17,7 +18,6 @@ from .exception import (
     UnclosedGraphError,
 )
 from .iter import StopNesting
-from .labels import Labels, repr_pretty
 from .shift import rshift
 
 if TYPE_CHECKING:

@@ -3,7 +3,7 @@ from numpy.linalg import cholesky
 from pytest import mark, raises
 
 from dagflow.core.graph import Graph
-from dagflow.core.graphviz import savegraph
+from dagflow.plot.graphviz import savegraph
 from dagflow.lib.arithmetic import Product, Sum
 from dagflow.lib.common import Array
 from dagflow.lib.statistics import CovarianceMatrixGroup

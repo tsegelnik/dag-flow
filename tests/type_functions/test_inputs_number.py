@@ -2,7 +2,7 @@ from pytest import raises
 
 from dagflow.core.exception import TypeFunctionError
 from dagflow.core.graph import Graph
-from dagflow.core.graphviz import savegraph
+from dagflow.plot.graphviz import savegraph
 from dagflow.lib.arithmetic import Sum
 from dagflow.lib.common import Array
 from dagflow.lib.common import Dummy

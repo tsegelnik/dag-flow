@@ -27,13 +27,13 @@ from numpy import asanyarray, meshgrid, zeros_like
 from numpy.ma import array as masked_array
 
 from ..tools.logger import INFO1, logger
-from .node_base import NodeBase
-from .output import Output
+from ..core.node_base import NodeBase
+from ..core.output import Output
 
 if TYPE_CHECKING:
     from numpy.typing import ArrayLike, NDArray
 
-    from .types import EdgesLike, MeshesLike
+    from ..core.types import EdgesLike, MeshesLike
 
 
 class plot_auto:

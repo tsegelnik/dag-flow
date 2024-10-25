@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from typing import TYPE_CHECKING
+
 if TYPE_CHECKING:
     from .node import Node
 
@@ -30,14 +31,6 @@ class GraphBase:
         self._nodes.append(node)
         self._new_nodes.append(node)
         self._nodes_set.add(node)
-
-    def _wrap_fcns(self, *args):
-        for node in self._nodes:
-            node._wrap_fcn(*args)
-
-    def _unwrap_fcns(self):
-        for node in self._nodes:
-            node._unwrap_fcn()
 
     def touch(self):
         """Touch all the nodes"""

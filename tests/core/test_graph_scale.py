@@ -111,7 +111,7 @@ def test_graph_scale_01(testname, width: int = 6, length: int = 7):
 
     print(f"Minimal time per sum: {min(time_rel_μs)} μs")
 
-    # from dagflow.core.graphviz import GraphDot
+    # from dagflow.plot.graphviz import GraphDot
     # d = GraphDot(g)
     # ofile = f"output/{testname}.dot"
     # d.savegraph(ofile)

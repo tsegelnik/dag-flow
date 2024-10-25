@@ -3,7 +3,7 @@ from numpy import copyto
 from numpy import result_type
 
 from dagflow.core.graph import Graph
-from dagflow.core.graphviz import savegraph
+from dagflow.plot.graphviz import savegraph
 from dagflow.core.input_handler import MissingInputAddEach
 from dagflow.lib.common import Array
 from dagflow.lib.arithmetic import Product

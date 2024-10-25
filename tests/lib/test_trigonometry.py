@@ -3,10 +3,10 @@ from numpy import allclose, arccos, arcsin, arctan, cos, linspace, pi, sin, tan
 from pytest import mark
 
 from dagflow.core.graph import Graph
-from dagflow.core.graphviz import savegraph
+from dagflow.plot.graphviz import savegraph
 from dagflow.lib.common import Array
 from dagflow.lib.trigonometry import ArcCos, ArcSin, ArcTan, Cos, Sin, Tan
-from dagflow.core.plot import plot_auto
+from dagflow.plot.plot import plot_auto
 
 fcnnames = ("cos", "sin", "tan", "arccos", "arcsin", "arctan")
 fcns = (cos, sin, tan, arccos, arcsin, arctan)

@@ -4,11 +4,11 @@ from typing import TYPE_CHECKING
 
 from numpy import zeros
 
+from ..plot.labels import repr_pretty
 from .data_descriptor import DataDescriptor
 from .edges import EdgeContainer
 from .exception import AllocationError, ClosedGraphError, InitializationError, ReconnectionError
 from .iter import StopNesting
-from .labels import repr_pretty
 from .shift import rshift
 
 if TYPE_CHECKING:

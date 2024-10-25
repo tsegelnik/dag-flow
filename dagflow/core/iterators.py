@@ -1,7 +1,7 @@
 from multikeydict.nestedmkdict import NestedMKDict
 
-from .iter import IsIterable
-from .iter import StopNesting
+from .iter import IsIterable, StopNesting
+
 
 def get_proper_iterator(obj, methodname, onerror, **kwargs):
     if methodname:
@@ -12,8 +12,7 @@ def get_proper_iterator(obj, methodname, onerror, **kwargs):
     if IsIterable(obj):
         return obj
     raise RuntimeError(
-        f"Do not know how to get an iterator for '{onerror}'! "
-        f"{obj=}, {type(obj)=}"
+        f"Do not know how to get an iterator for '{onerror}'! {obj=}, {type(obj)=}"
     )
 
 

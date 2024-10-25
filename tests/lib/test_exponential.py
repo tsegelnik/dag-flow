@@ -3,10 +3,10 @@ from numpy import allclose, exp, expm1, finfo, linspace, log, log1p, log10
 from pytest import mark
 
 from dagflow.core.graph import Graph
-from dagflow.core.graphviz import savegraph
+from dagflow.plot.graphviz import savegraph
 from dagflow.lib.common import Array
 from dagflow.lib.exponential import Exp, Expm1, Log, Log1p, Log10
-from dagflow.core.plot import plot_auto
+from dagflow.plot.plot import plot_auto
 
 fcnnames = ("exp", "expm1", "log", "log1p", "log10")
 fcns = (exp, expm1, log, log1p, log10)

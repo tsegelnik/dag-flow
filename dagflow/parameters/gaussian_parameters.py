@@ -5,9 +5,9 @@ from typing import TYPE_CHECKING
 from numpy import array, ndarray, zeros_like
 
 from ..core.exception import InitializationError
-from ..core.labels import inherit_labels
 from ..core.node import Node
 from ..lib.common import Array
+from ..plot.labels import inherit_labels
 from .gaussian_parameter import GaussianParameter, NormalizedGaussianParameter
 from .parameters import Constraint, Parameters
 

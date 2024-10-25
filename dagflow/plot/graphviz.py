@@ -5,11 +5,11 @@ from typing import TYPE_CHECKING
 
 from numpy import printoptions, square
 
-from .exception import UnclosedGraphError
-from .graph import Graph
-from .input import Input
-from .node import Node
-from .output import Output
+from ..core.exception import UnclosedGraphError
+from ..core.graph import Graph
+from ..core.input import Input
+from ..core.node import Node
+from ..core.output import Output
 from ..tools.logger import INFO1, logger
 
 if TYPE_CHECKING:

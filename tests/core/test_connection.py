@@ -2,7 +2,7 @@ from pytest import raises
 
 from dagflow.core.exception import ClosedGraphError, ConnectionError, UnclosedGraphError
 from dagflow.core.graph import Graph
-from dagflow.core.graphviz import savegraph
+from dagflow.plot.graphviz import savegraph
 from dagflow.core.input import Input
 from dagflow.lib.common import Dummy
 from dagflow.core.node import Node

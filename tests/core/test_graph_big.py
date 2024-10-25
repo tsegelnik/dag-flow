@@ -1,10 +1,6 @@
 from dagflow.core.graph import Graph
-from dagflow.core.graphviz import GraphDot
+from dagflow.plot.graphviz import GraphDot
 from dagflow.lib.common import Dummy
-from dagflow.core.printl import current_level, set_prefix_function
-from dagflow.core.wrappers import printer, toucher
-
-set_prefix_function(lambda: f"{current_level():<2d} ")
 
 counter = 0
 
@@ -40,8 +36,6 @@ def test_graph_big_01():
         F = Dummy("F")
         H = Dummy("H")
         P = Dummy("P", immediate=True, label="{name}|immediate")
-
-    g._wrap_fcns(toucher, printer, plotter)
 
     A1._add_output("o1", allocatable=False)
     A2._add_output("o1", allocatable=False)
