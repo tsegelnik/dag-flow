@@ -3,7 +3,6 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 
 from numba import njit
-from numpy import divide, sum
 
 from ...core.input_handler import MissingInputAddPair
 from ...core.type_functions import AllPositionals, check_input_dimension, check_inputs_equivalence
@@ -84,14 +83,3 @@ def _norm_columns(matrix: NDArray, out: NDArray):
             continue
         for row in range(nrows):
             out[row, column] += matrix[row, column] / total_sum
-
-
-# TODO: methods below are not used now!
-def _norm_rows_python(matrix: NDArray, out: NDArray, buffer: NDArray):
-    sum(matrix, axis=1, out=buffer)
-    divide(matrix, buffer[:, None], out=out)
-
-
-def _norm_columns_python(matrix: NDArray, out: NDArray, buffer: NDArray):
-    sum(matrix, axis=0, out=buffer)
-    divide(matrix, buffer, out=out)
