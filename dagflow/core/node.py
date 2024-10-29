@@ -547,10 +547,7 @@ class Node(NodeBase):
             self.fd.frozen_tainted = False
             self.taint()
 
-    def taint(
-        self, *, caller: Input | None = None, force: bool = False, force_computation: bool = False
-    ):
-        self._on_taint(caller)
+    def taint(self, *, force: bool = False, force_computation: bool = False, **kwargs):
         if self.tainted and not force:
             return
         if self.frozen:
@@ -560,7 +557,7 @@ class Node(NodeBase):
         self.fd.tainted = True
         ret = self._touch() if (self._immediate or force_computation) else None
         # TODO:  maybe here it is better to avoid extra call from FlagsDescriptor
-        self.fd.taint_children(force=force)
+        self.fd.taint_children(force=force, **kwargs)
 
         return ret
 
@@ -592,16 +589,13 @@ class Node(NodeBase):
         """A output takes this function to determine the dtype and shape"""
         raise DagflowError("Unimplemented method: the method must be overridden!")
 
-    def _on_taint(self, caller: Input | None):
-        """A node method to be called on taint"""
-        pass
-
     def _post_allocate(self):
         self._input_nodes_callbacks = []
 
         for input in self.inputs.iter_all():
             node = input.parent_node
             if node not in self._input_nodes_callbacks:
+
                 self._input_nodes_callbacks.append(node.touch)
 
     def update_types(self, recursive: bool = True):

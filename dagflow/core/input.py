@@ -221,7 +221,8 @@ class Input:
         return self._parent_output.touch()
 
     def taint(self, **kwargs) -> None:
-        self._node.taint(caller=self, **kwargs)
+        kwargs.setdefault("caller", self)
+        self._node.taint(**kwargs)
 
     def taint_type(self, *args, **kwargs) -> None:
         self._node.taint_type(*args, **kwargs)
