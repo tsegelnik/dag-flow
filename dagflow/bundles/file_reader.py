@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-from collections.abc import Generator, Sequence
 from contextlib import suppress
 from os import listdir
 from pathlib import Path
@@ -11,9 +10,10 @@ from numpy import double, dtype, frombuffer, linspace, ndarray
 from multikeydict.tools import reorder_key
 from multikeydict.typing import properkey
 
-from ..logger import INFO1, INFO2, INFO3, logger
+from ..tools.logger import INFO1, INFO2, INFO3, logger
 
 if TYPE_CHECKING:
+    from collections.abc import Generator, Sequence
     from typing import Any
 
     import ROOT
@@ -76,6 +76,7 @@ _RecordGetter = RecordGetter()
 
 class FileReaderMeta(type):
     """Metaclass for `FileReader` class, implementing `FileReader[file_name]` method"""
+
     _opened_files: dict[str, FileReader] = {}
     _last_used_file: str = ""
 

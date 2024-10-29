@@ -6,9 +6,9 @@ from schema import And, Optional, Or, Schema, Use
 
 from multikeydict.typing import strkey
 
-from ..lib.Array import Array
-from ..logger import INFO3, logger
-from ..storage import NodeStorage
+from ..lib.common import Array
+from ..core.storage import NodeStorage
+from ..tools.logger import INFO3, logger
 from ..tools.schema import (
     AllFileswithExt,
     IsFilenameSeqOrFilename,
@@ -52,9 +52,7 @@ def _validate_cfg(cfg):
         return _schema_cfg.validate(cfg)
 
 
-def load_array(
-    acfg: Mapping | None = None, *, array_kwargs: Mapping = {}, **kwargs
-) -> NodeStorage:
+def load_array(acfg: Mapping | None = None, *, array_kwargs: Mapping = {}, **kwargs) -> NodeStorage:
     acfg = dict(acfg or {}, **kwargs)
     cfg = _validate_cfg(acfg)
 

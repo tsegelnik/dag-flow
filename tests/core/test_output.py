@@ -1,6 +1,6 @@
-from dagflow.graph import Graph
-from dagflow.lib import Array
-from dagflow.lib import Sum
+from dagflow.core.graph import Graph
+from dagflow.lib.common import Array
+from dagflow.lib.arithmetic import Sum
 
 
 def test_Output_01():

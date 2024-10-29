@@ -1,6 +1,6 @@
 from numpy import exp, expm1, log, log1p, log10
 
-from .OneToOneNode import OneToOneNode
+from .abstract import OneToOneNode
 
 
 class Exp(OneToOneNode):
@@ -12,7 +12,7 @@ class Exp(OneToOneNode):
         super().__init__(*args, **kwargs)
         self._labels.setdefault("mark", "exp")
 
-    def _fcn(self):
+    def _function(self):
         for inp, out in zip(self.inputs, self.outputs):
             exp(inp.data, out=out.data)
 
@@ -26,7 +26,7 @@ class Expm1(OneToOneNode):
         super().__init__(*args, **kwargs)
         self._labels.setdefault("mark", "exp-1")
 
-    def _fcn(self):
+    def _function(self):
         for inp, out in zip(self.inputs, self.outputs):
             expm1(inp.data, out=out.data)
 
@@ -40,7 +40,7 @@ class Log(OneToOneNode):
         super().__init__(*args, **kwargs)
         self._labels.setdefault("mark", "log")
 
-    def _fcn(self):
+    def _function(self):
         for inp, out in zip(self.inputs, self.outputs):
             log(inp.data, out=out.data)
 
@@ -54,7 +54,7 @@ class Log1p(OneToOneNode):
         super().__init__(*args, **kwargs)
         self._labels.setdefault("mark", "log(x+1)")
 
-    def _fcn(self):
+    def _function(self):
         for inp, out in zip(self.inputs, self.outputs):
             log1p(inp.data, out=out.data)
 
@@ -68,6 +68,6 @@ class Log10(OneToOneNode):
         super().__init__(*args, **kwargs)
         self._labels.setdefault("mark", "log₁₀")
 
-    def _fcn(self):
+    def _function(self):
         for inp, out in zip(self.inputs, self.outputs):
             log10(inp.data, out=out.data)

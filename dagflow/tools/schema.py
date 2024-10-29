@@ -8,7 +8,7 @@ from typing import TYPE_CHECKING
 
 from schema import And, Or, Schema, SchemaError, Use
 
-from ..logger import INFO1, logger
+from .logger import INFO1, logger
 
 if TYPE_CHECKING:
     from collections.abc import Callable, Sequence
