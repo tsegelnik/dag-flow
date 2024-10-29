@@ -11,7 +11,7 @@ from multikeydict.nestedmkdict import NestedMKDict
 from multikeydict.typing import properkey
 
 from ..core.exception import InitializationError
-from ..plot.labels import format_dict, inherit_labels, mapping_append_lists
+from ..core.labels import format_dict, inherit_labels, mapping_append_lists
 from ..lib.common import Array
 from ..lib.summation import ElSumSq
 from ..parameters import Parameters

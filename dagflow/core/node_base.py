@@ -5,7 +5,7 @@ from typing import TYPE_CHECKING
 
 from multikeydict.nestedmkdict import NestedMKDict
 
-from ..plot.labels import repr_pretty
+from ..core.labels import repr_pretty
 from ..tools.logger import logger
 from . import input_handler
 from .exception import ConnectionError

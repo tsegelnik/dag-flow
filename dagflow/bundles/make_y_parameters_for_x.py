@@ -6,7 +6,7 @@ from numpy import ndarray
 
 from multikeydict.nestedmkdict import NestedMKDict
 
-from ..plot.labels import format_dict
+from ..core.labels import format_dict
 from ..core.output import Output
 from .load_parameters import label_keys, load_parameters
 

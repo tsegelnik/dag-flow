@@ -3,7 +3,7 @@ from __future__ import annotations
 from contextlib import suppress
 from typing import TYPE_CHECKING
 
-from ..plot.labels import repr_pretty
+from ..core.labels import repr_pretty
 
 if TYPE_CHECKING:
     from collections.abc import Mapping

@@ -5,7 +5,7 @@ from typing import TYPE_CHECKING
 
 from numpy import zeros
 
-from ..plot.labels import Labels, repr_pretty
+from ..core.labels import Labels, repr_pretty
 from .data_descriptor import DataDescriptor
 from .edges import EdgeContainer
 from .exception import (

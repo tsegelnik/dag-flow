@@ -4,7 +4,7 @@ from typing import TYPE_CHECKING
 
 from numpy import prod
 
-from ..plot.labels import repr_pretty
+from ..core.labels import repr_pretty
 
 if TYPE_CHECKING:
     from typing import Literal

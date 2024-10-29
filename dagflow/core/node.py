@@ -5,7 +5,7 @@ from weakref import ref as weakref
 
 from multikeydict.typing import KeyLike, properkey
 
-from ..plot.labels import Labels
+from ..core.labels import Labels
 from ..tools.logger import Logger, get_logger
 from .exception import (
     ClosedGraphError,
