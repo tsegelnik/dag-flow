@@ -24,9 +24,16 @@ def test_graph_big_01():
         function()
         plot(f"[done evaluating {node.name}]")
 
+    def _function(self):
+        self.fd.frozen = True
+
+    class DummyFrozen(Dummy):
+        def _function(self):
+            self.fd.frozen = True
+
     with g:
         A1 = Dummy("A1")
-        A2 = Dummy("A2", auto_freeze=True, label="{name}|frozen")
+        A2 = DummyFrozen("A2", label="{name}|frozen")
         A3 = Dummy("A3", immediate=True, label="{name}|immediate")
         B = Dummy("B")
         C1 = Dummy("C1")

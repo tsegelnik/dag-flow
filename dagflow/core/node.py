@@ -45,12 +45,10 @@ class Node(NodeBase):
         "_debug",
         "_allowed_kw_inputs",
         "_fd",
-        "_auto_freeze",
         "function",
         "_functions_dict",
         "_n_calls",
         "_input_nodes_callbacks",
-        "_touch",
     )
 
     _name: str
@@ -67,7 +65,6 @@ class Node(NodeBase):
     # Options
     _debug: bool
     _immediate: bool
-    _auto_freeze: bool
 
     _input_nodes_callbacks: list[Callable]
 
@@ -81,7 +78,6 @@ class Node(NodeBase):
         logger: Any | None = None,
         missing_input_handler: Callable | None = None,
         immediate: bool = False,
-        auto_freeze: bool = False,
         frozen: bool = False,
         allowed_kw_inputs: Sequence[str] = (),
         **kwargs,
@@ -114,9 +110,7 @@ class Node(NodeBase):
             self._logger = get_logger()
 
         self._immediate = immediate
-        self._auto_freeze = auto_freeze
         self.fd.frozen = frozen
-        self._touch = self.__touch_auto_freeze if self._auto_freeze else self.__touch
 
         self._functions_dict: dict[Any, Callable] = {"default": self._function}
         self.function = self._functions_dict["default"]
@@ -239,10 +233,6 @@ class Node(NodeBase):
     @property
     def frozen(self) -> bool:
         return self.fd.frozen
-
-    @property
-    def auto_freeze(self) -> bool:
-        return self._auto_freeze
 
     @property
     def closed(self) -> bool:
@@ -533,15 +523,13 @@ class Node(NodeBase):
                 raise UnclosedGraphError("Cannot evaluate not closed node!", node=self)
         self._touch()
 
-    def __touch(self):
-        self._eval()
+    def _touch(self):
+        # To avoid extra function calls we copy lines below from _eval
+        self.fd.being_evaluated = True
+        self._n_calls += 1
+        self.function()
+        self.fd.being_evaluated = False
         self.fd.tainted = False
-
-    def __touch_auto_freeze(self):
-        self._eval()
-        self.fd.tainted = False
-        if self._auto_freeze:
-            self.fd.frozen = True
 
     def freeze(self):
         if self.frozen:
