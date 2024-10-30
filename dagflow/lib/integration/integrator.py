@@ -92,6 +92,7 @@ class Integrator(MetaNode):
         path: KeyLike = (),
         labels: Mapping = {},
         replicate_outputs: tuple[Key, ...] = ((),),
+        verbose: bool = False,
         single_node: bool = False,
         dropdim: bool = True,
     ) -> tuple["Integrator", "NodeStorage"]:
