@@ -82,7 +82,7 @@ class NodeStorage(NestedMKDict):
     ):
         from os import makedirs
 
-        from .graphviz import GraphDot
+        from .plots.graphviz import GraphDot
 
         items = list(self.walkitems())
         nitems = len(items)
