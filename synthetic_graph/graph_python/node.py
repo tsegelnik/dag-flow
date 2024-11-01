@@ -1,6 +1,5 @@
 class Node:
     __slots__ = (
-        "name",
         "inputs",
     )
 
