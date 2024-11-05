@@ -143,6 +143,7 @@ class Node(NodeBase):
         *,
         name: str,
         replicate_outputs: tuple[KeyLike, ...] = ((),),
+        verbose: bool = False,
         **kwargs,
     ) -> tuple[Node | None, "NodeStorage"]:
         from .storage import NodeStorage
@@ -185,7 +186,7 @@ class Node(NodeBase):
                 _, output = next(iter_outputs)
                 outputs[tuplename + key] = output
 
-        NodeStorage.update_current(storage, strict=True)
+        NodeStorage.update_current(storage, strict=True, verbose=verbose)
 
         return (instance, storage) if len(replicate_outputs) == 1 else (None, storage)
 
@@ -572,7 +573,7 @@ class Node(NodeBase):
         self.fd.taint_type(**kwargs)
 
     def print(self):
-        print(f"Node {self._name}: →[{len(self.inputs)}],[{len(self.outputs)}]→")
+        print(f"Node {self._name}: →[{self.inputs.len_all()}],[{self.outputs.len_all()}]→")
         for i, _input in enumerate(self.inputs):
             print("  ", i, _input)
         for _input in self.inputs.iter_nonpos():
@@ -581,6 +582,11 @@ class Node(NodeBase):
             print("  ", i, output)
         for output in self.outputs.iter_nonpos():
             print("    ", output)
+
+    def to_dict(self, *, label_from: str = "text") -> dict:
+        return {
+            "label": self.labels[label_from],
+        }
 
     def _typefunc(self) -> None:
         """A output takes this function to determine the dtype and shape"""

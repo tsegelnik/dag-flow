@@ -5,7 +5,7 @@ from typing import TYPE_CHECKING
 from ordered_set import OrderedSet
 
 from multikeydict.nestedmkdict import NestedMKDict
-from multikeydict.typing import Key, KeyLike, TupleKey
+from multikeydict.typing import Key, KeyLike, TupleKey, strkey
 from multikeydict.visitor import NestedMKDictVisitor
 
 from ..tools.logger import DEBUG, INFO1, INFO3, logger
@@ -82,7 +82,7 @@ class NodeStorage(NestedMKDict):
     ):
         from os import makedirs
 
-        from .graphviz import GraphDot
+        from .plots.graphviz import GraphDot
 
         items = list(self.walkitems())
         nitems = len(items)
@@ -152,7 +152,7 @@ class NodeStorage(NestedMKDict):
                     f"Invalid NodeStorage>> types for {outkey}/{inkey}: {type(output)}/{type(input)}"
                 ) from e
 
-            if self._remove_connected_inputs and isinstance(input, Input):
+            if self._remove_connected_inputs and isinstance(input, (Input, tuple)):
                 to_remove.append(inkey)
 
             nconnections += 1
@@ -296,7 +296,7 @@ class NodeStorage(NestedMKDict):
     def to_df(self, *, columns: list[str] | None = None, **kwargs) -> DataFrame:
         dct = self.to_list(**kwargs)
         if columns is None:
-            columns = ["path", "value", "central", "sigma", "flags", "shape", "label"]
+            columns = ["path", "value", "central", "sigma", "flags", "count", "shape", "label"]
         df = DataFrame(dct, columns=columns)
 
         df.insert(4, "sigma_rel_perc", df["sigma"])
@@ -304,16 +304,18 @@ class NodeStorage(NestedMKDict):
         sigma_rel_perc[df["central"] == 0] = nan
         df["sigma_rel_perc"] = sigma_rel_perc
 
-        for key in ("central", "sigma", "sigma_rel_perc"):
+        for key in ("count", "shape", "value", "central", "sigma", "sigma_rel_perc"):
             if df[key].isna().all():
                 del df[key]
             else:
                 _fillna(df, key, "-")
 
-        _fillna(df, "value", "-")
-        _fillna(df, "flags", "")
-        _fillna(df, "label", "")
-        _fillna(df, "shape", "")
+        if "value" in df.columns:
+            _fillna(df, "value", "-")
+
+        for col in ("flags", "label", "count", "shape"):
+            if col in df.columns:
+                _fillna(df, col, "")
 
         if (df["flags"] == "").all():
             del df["flags"]
@@ -352,6 +354,9 @@ class NodeStorage(NestedMKDict):
             return trunc(ret, width=truncate)
 
         return ret
+
+    def print(self, *args, **kwargs) -> None:
+        print(self.to_table(*args, **kwargs))
 
     def to_text_file(self, filename: str, **kwargs):
         table = self.to_table(**kwargs)
@@ -402,9 +407,15 @@ class NodeStorage(NestedMKDict):
             raise RuntimeError("NodeStorage: invalid context exit")
 
     @classmethod
-    def update_current(cls, storage: NestedMKDict, *, strict: bool = True):
+    def update_current(cls, storage: NestedMKDict, *, strict: bool = True, verbose: bool = False):
         if (common_storage := cls.current()) is None:
             return
+
+        if verbose:
+            print("Update current storage with:")
+            for key in storage.walkjoinedkeys():
+                print(f"- {key}")
+
         if strict:
             common_storage ^= storage
         else:
@@ -607,13 +618,16 @@ class ParametersVisitor(NestedMKDictVisitor):
         self._localdata = []
 
     def visit(self, key, value):
-        try:
-            dct = value.to_dict(**self._kwargs)
-        except (AttributeError, IndexError):
-            if isinstance(value, ndarray):
+        match value:
+            case ndarray():
                 dct = {"shape": value.shape, "label": "data"}
-            else:
-                return
+            case tuple() | list():
+                dct = {"count": len(value), "label": "sequence"}
+            case _:
+                try:
+                    dct = value.to_dict(**self._kwargs)
+                except (AttributeError, IndexError):
+                    return
 
         if dct is None:
             return
@@ -641,7 +655,7 @@ class ParametersVisitor(NestedMKDictVisitor):
         self._data_list.append(
             {
                 "path": f"group: {'.'.join(self._path)} [{len(self._localdata)}]",
-                "shape": len(self._localdata),
+                "count": len(self._localdata),
                 "label": "[group]",
             }
         )

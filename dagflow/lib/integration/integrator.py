@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-from multikeydict.typing import properkey
+from multikeydict.typing import KeyLike, properkey, strkey
 
 from ...core.meta_node import MetaNode
 from ...core.storage import NodeStorage
@@ -21,7 +21,7 @@ if TYPE_CHECKING:
 class Integrator(MetaNode):
     __slots__ = ("_sampler",)
 
-    _sampler: Node
+    _sampler: IntegratorSampler
 
     def __init__(
         self,
@@ -43,11 +43,11 @@ class Integrator(MetaNode):
 
         self._add_node(
             self._sampler,
-            kw_inputs=["ordersX"],
-            kw_inputs_optional=["ordersY"],
+            kw_inputs=["orders_x"],
+            kw_inputs_optional=["orders_y"],
             kw_outputs=["x"],
             kw_outputs_optional=["y"],
-            merge_inputs=["ordersX", "ordersY"],
+            merge_inputs=["orders_x", "orders_y"],
             missing_inputs=True,
             also_missing_outputs=True,
         )
@@ -60,14 +60,14 @@ class Integrator(MetaNode):
         positionals: bool = True,
         dropdim: bool,
     ) -> IntegratorCore:
-        integrator = IntegratorCore(name, dropdim=dropdim, label=label)
+        integrator = IntegratorCore(name, dropdim=dropdim, ndim=self._sampler.ndim, label=label)
         self._sampler.outputs["weights"] >> integrator("weights")
 
         self._add_node(
             integrator,
-            kw_inputs=["ordersX"],
-            kw_inputs_optional=["ordersY"],
-            merge_inputs=["ordersX", "ordersY"],
+            kw_inputs=["orders_x"],
+            kw_inputs_optional=["orders_y"],
+            merge_inputs=["orders_x", "orders_y"],
             inputs_pos=positionals,
             outputs_pos=positionals,
             missing_inputs=True,
@@ -81,14 +81,18 @@ class Integrator(MetaNode):
         cls,
         mode: ModeType,
         *,
-        names: Mapping[str, str] = {
+        names: Mapping[str, KeyLike] = {
             "sampler": "sampler",
-            "integrator": "integrator",
-            "x": "mesh_x",
-            "y": "mesh_y",
+            "integrator": "integral",
+            "mesh_x": "sampler.mesh_x",
+            "mesh_y": "sampler.mesh_y",
+            "orders_x": "sampler.orders_x",
+            "orders_y": "sampler.orders_y",
         },
+        path: KeyLike = (),
         labels: Mapping = {},
         replicate_outputs: tuple[Key, ...] = ((),),
+        verbose: bool = False,
         single_node: bool = False,
         dropdim: bool = True,
     ) -> tuple["Integrator", "NodeStorage"]:
@@ -97,17 +101,22 @@ class Integrator(MetaNode):
         inputs = storage("inputs")
         outputs = storage("outputs")
 
-        integrators = cls(mode, bare=True)
-        key_integrator = tuple(names.get("integrator", "integrator").split("."))
-        key_sampler = names.get("sampler", "sampler").split(".")
-        key_meta = f"{key_integrator[0]}_meta".split(".")
+        path = properkey(path)
 
-        nodes[key_meta] = integrators
+        instance = cls(mode, bare=True)
+        key_integrator = path + properkey(names.get("integrator", "integrator"))
+        key_sampler = path + properkey(names.get("sampler", "sampler"))
+        key_meta = key_integrator[:-1] + (f"{key_integrator[-1]}_meta",)
+        key_mesh_x = path + properkey(names.get("mesh_x", "mesh_x"))
+        key_mesh_y = path + properkey(names.get("mesh_y", "mesh_y"))
+        key_orders_x = path + properkey(names.get("orders_x", "orders_x"))
+        key_orders_y = path + properkey(names.get("orders_y", "orders_y"))
+        nodes[key_meta] = instance
 
-        integrators._init_sampler(mode, names.get("sampler", "sampler"), labels.get("sampler", {}))
-        outputs[key_sampler + names.get("x", "x").split(".")] = integrators._sampler.outputs["x"]
-        outputs[key_sampler + names.get("y", "y").split(".")] = integrators._sampler.outputs["y"]
-        nodes[key_sampler] = integrators._sampler
+        instance._init_sampler(mode, strkey(key_sampler), labels.get("sampler", {}))
+        outputs[key_mesh_x] = instance._sampler.outputs["x"]
+        outputs[key_mesh_y] = instance._sampler.outputs["y"]
+        nodes[key_sampler] = instance._sampler
 
         label_int = labels.get("integrator", {})
         integrator = None
@@ -117,12 +126,12 @@ class Integrator(MetaNode):
             name = ".".join(key_integrator + key)
 
             if need_new_instance:
-                integrator = integrators._add_integrator(
+                integrator = instance._add_integrator(
                     name, label_int, positionals=False, dropdim=dropdim
                 )
                 nodes[key_integrator + key] = integrator
             elif integrator is None:
-                integrator = integrators._add_integrator(
+                integrator = instance._add_integrator(
                     name, label_int, positionals=False, dropdim=dropdim
                 )
                 nodes[key_integrator] = integrator
@@ -132,6 +141,9 @@ class Integrator(MetaNode):
             inputs[key_integrator + key] = integrator.inputs[-1]
             outputs[key_integrator + key] = integrator.outputs[-1]
 
-        NodeStorage.update_current(storage, strict=True)
+        inputs[key_orders_x] = instance.inputs["orders_x"]
+        inputs[key_orders_y] = instance.inputs["orders_y"]
 
-        return integrators, storage
+        NodeStorage.update_current(storage, strict=True, verbose=verbose)
+
+        return instance, storage

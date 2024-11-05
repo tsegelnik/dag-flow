@@ -99,6 +99,7 @@ class BlockToOneNode(Node):
         *args: NodeStorage | Any,
         replicate_outputs: Sequence[KeyLike] = ((),),
         allow_skip_inputs: bool = False,
+        verbose: bool = False,
         **kwargs,
     ) -> tuple[Node | None, NodeStorage]:
         storage = NodeStorage(default_containers=True)
@@ -146,7 +147,7 @@ class BlockToOneNode(Node):
             require_all_right_keys_processed=False,
         )
 
-        NodeStorage.update_current(storage, strict=True)
+        NodeStorage.update_current(storage, strict=True, verbose=verbose)
 
         if len(replicate_outputs) == 1:
             return instance, storage  # pyright: ignore [reportUnboundVariable]
@@ -160,6 +161,7 @@ class BlockToOneNode(Node):
         *,
         replicate_outputs: Sequence[KeyLike] = ((),),
         replicate_inputs: Sequence[KeyLike] | None = None,
+        verbose: bool = False,
         **kwargs,
     ) -> tuple[Node | None, NodeStorage]:
         storage = NodeStorage(default_containers=True)
@@ -206,7 +208,7 @@ class BlockToOneNode(Node):
             fcn_outer_after=fcn_outer_after,
         )
 
-        NodeStorage.update_current(storage, strict=True)
+        NodeStorage.update_current(storage, strict=True, verbose=verbose)
 
         if len(replicate_outputs) == 1:
             return instance, storage  # pyright: ignore [reportUnboundVariable]

@@ -93,6 +93,7 @@ class Interpolator(MetaNode):
         replicate_xcoarse: bool = False,
         # replicate_ycoarse: bool = True,
         replicate_outputs: tuple[KeyLike, ...] = ((),),
+        verbose: bool = False,
         **kwargs,
     ) -> tuple["Interpolator", "NodeStorage"]:
         storage = NodeStorage(default_containers=True)
@@ -140,6 +141,6 @@ class Interpolator(MetaNode):
             inputs.child(key_interpolator)["xcoarse"] = interpolators.inputs["coarse"]
             inputs.child(key_interpolator)["xfine"] = interpolators.inputs["fine"]
 
-        NodeStorage.update_current(storage, strict=True)
+        NodeStorage.update_current(storage, strict=True, verbose=verbose)
 
         return interpolators, storage

@@ -412,15 +412,16 @@ class Output:
             "shape": shape[0] if shape and len(shape) == 1 else shape,
         }
 
-        if size > 1:
-            ret["value"] = "…"
-        elif size == 1:
-            try:
-                data = self.data
-            except DagflowError:
-                ret["value"] = "???"
-            else:
-                ret["value"] = float(data.ravel()[0])
+        if size is not None:
+            if size > 1:
+                ret["value"] = "…"
+            elif size == 1:
+                try:
+                    data = self.data
+                except DagflowError:
+                    ret["value"] = "???"
+                else:
+                    ret["value"] = float(data.ravel()[0])
 
         return ret
 

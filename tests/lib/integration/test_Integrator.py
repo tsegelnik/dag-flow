@@ -2,11 +2,11 @@ from matplotlib.pyplot import close, gca
 from numpy import allclose, linspace, pi
 
 from dagflow.core.graph import Graph
-from dagflow.plot.graphviz import savegraph
+from dagflow.core.meta_node import MetaNode
 from dagflow.lib.common import Array
 from dagflow.lib.integration import Integrator
 from dagflow.lib.trigonometry import Cos, Sin
-from dagflow.core.meta_node import MetaNode
+from dagflow.plot.graphviz import savegraph
 from dagflow.plot.plot import plot_auto
 
 
@@ -17,7 +17,7 @@ def test_Integrator_trap(debug_graph):
     with Graph(debug=debug_graph, close_on_exit=True) as graph:
         npoints = 10
         edges = Array("edges", linspace(0, pi, npoints + 1), label={"axis": xlabel})
-        ordersX = Array("ordersX", [1000] * npoints, edges=edges["array"])
+        orders_x = Array("orders_x", [1000] * npoints, edges=edges["array"])
         A = Array("A", edges._data[:-1])
         B = Array("B", edges._data[1:])
 
@@ -28,7 +28,7 @@ def test_Integrator_trap(debug_graph):
 
         cosf = Cos("cos")
         sinf = Sin("sin")
-        ordersX >> metaint.inputs["ordersX"]
+        orders_x >> metaint.inputs["orders_x"]
 
         metaint.outputs["x"] >> (cosf(), sinf())
 

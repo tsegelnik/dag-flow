@@ -177,7 +177,7 @@ class Input:
 
     @property
     def invalid(self) -> bool:
-        """Checks validity of the parent output data"""
+        """Checks validity of the parent output data."""
         return self._parent_output.invalid
 
     @property
@@ -194,7 +194,7 @@ class Input:
 
     @invalid.setter
     def invalid(self, invalid) -> None:
-        """Sets the validity of the current node"""
+        """Sets the validity of the current node."""
         self._node.invalid = invalid
 
     @property
@@ -240,13 +240,11 @@ class Input:
         return iter(tuple())
 
     def __rrshift__(self, other):
-        """
-        other >> self
-        """
+        """Other >> self."""
         return rshift(other, self)
 
     def allocate(self, **kwargs) -> bool:
-        """returns True if data was reassigned"""
+        """Returns True if data was reassigned."""
         if not self._allocatable or (
             (data := self._own_data) is not None and self.own_dd.consistent_with(data)
         ):
@@ -267,7 +265,7 @@ class Input:
 
     def to_dict(self, *, label_from: str = "text") -> dict:
         try:
-            output = self.output
+            output = self.parent_output
         except AttributeError:
             return {"label": "input", "shape": "?"}
         else:

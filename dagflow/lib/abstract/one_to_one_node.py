@@ -76,6 +76,7 @@ class OneToOneNode(Node):
         cls,
         name: str,
         replicate_outputs: Sequence[KeyLike] = ((),),
+        verbose: bool = False,
         **kwargs,
     ) -> tuple[Node | None, NodeStorage]:
         storage = NodeStorage(default_containers=True)
@@ -112,7 +113,7 @@ class OneToOneNode(Node):
                 _, output = next(iter_outputs)
                 outputs[tuplename + outkey] = output
 
-        NodeStorage.update_current(storage, strict=True)
+        NodeStorage.update_current(storage, strict=True, verbose=verbose)
 
         return (instance, storage) if len(replicate_outputs) == 1 else (None, storage)
 
@@ -121,6 +122,7 @@ class OneToOneNode(Node):
         cls,
         name: str,
         *args: NodeStorage | Any,
+        verbose: bool = False,
         **kwargs,
     ) -> tuple[Node | None, NodeStorage]:
         storage = NodeStorage(default_containers=True)
@@ -161,6 +163,6 @@ class OneToOneNode(Node):
 
                 nobjects += 1
 
-        NodeStorage.update_current(storage, strict=True)
+        NodeStorage.update_current(storage, strict=True, verbose=verbose)
 
         return (instance, storage) if nobjects == 1 else (None, storage)
