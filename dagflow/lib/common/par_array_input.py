@@ -5,15 +5,15 @@ from typing import TYPE_CHECKING
 
 from ...core.exception import InitializationError, TypeFunctionError
 from ...core.node import Node
-from ...parameters import Parameter, Parameters
 from ...core.type_functions import check_input_dimension, check_inputs_number
 
 if TYPE_CHECKING:
     from ...core.input import Input
+    from ...parameters import Parameter, Parameters
 
 
 class ParArrayInput(Node):
-    """Set values for parameters list from an input"""
+    """Set values for parameters list from an input."""
 
     __slots__ = ("_parameters_list", "_values")
 
@@ -25,6 +25,7 @@ class ParArrayInput(Node):
     ) -> None:
         super().__init__(name, **kwargs)
         self._parameters_list = []  # pyright: ignore
+        from ...parameters import Parameters
         if parameters:
             if isinstance(parameters, Parameters):
                 for par in parameters._pars:
@@ -40,6 +41,7 @@ class ParArrayInput(Node):
         self._values = self._add_input("values")
 
     def append_par(self, par: Parameter) -> None:
+        from ...parameters import Parameter
         if not isinstance(par, Parameter):
             raise RuntimeError(f"par must be a Parameter, but given {par=}, {type(par)=}!")
         self._parameters_list.append(par)
