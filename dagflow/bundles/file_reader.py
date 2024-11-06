@@ -7,7 +7,7 @@ from typing import TYPE_CHECKING
 
 from numpy import double, dtype, frombuffer, linspace, ndarray
 
-from multikeydict.tools import reorder_key
+from multikeydict.tools.map import make_reorder_function
 from multikeydict.typing import properkey
 
 from ..tools.logger import INFO1, INFO2, INFO3, logger
@@ -75,7 +75,8 @@ _RecordGetter = RecordGetter()
 
 
 class FileReaderMeta(type):
-    """Metaclass for `FileReader` class, implementing `FileReader[file_name]` method"""
+    """Metaclass for `FileReader` class, implementing `FileReader[file_name]`
+    method."""
 
     _opened_files: dict[str, FileReader] = {}
     _last_used_file: str = ""
@@ -327,8 +328,9 @@ class FileReaderTSV(FileReaderArray):
 
     def _get_filenames(self, object_name: str) -> tuple[str, ...]:
         return (
+            str(self._file_name / f"{object_name}{self._extension}"),
+            f"{self._file_name.parent/self._file_name.stem}_{object_name}{self._extension}",
             str(self._file_name / f"{self._file_name.stem}_{object_name}{self._extension}"),
-            f"{self._file_name.parent/self._file_name.stem!s}_{object_name}{self._extension}",
         )
 
     def _get_object_impl(self, object_name: str, return_record: bool = True) -> Any:
@@ -500,20 +502,20 @@ def iterate_filenames_and_objectnames(
     skip: Sequence[set[str]] | None = None,
     key_order: Sequence[int] | None = None,
 ) -> Generator[tuple[TupleKey, str | Path, TupleKey, TupleKey], None, None]:
+    reorder_key = make_reorder_function(key_order)
     for filekey, filename in iterate_filenames(filenames, filename_keys):
         for key in keys:
             key = properkey(key)
             fullkey = filekey + key
             if skip is not None and any(skipkey.issubset(fullkey) for skipkey in skip):
                 continue
-            fullkey = reorder_key(fullkey, key_order)
+            fullkey = reorder_key(fullkey)
             yield filekey, filename, key, fullkey
 
 
 def _get_buffer_hist1(h: ROOT.TH1, flows: bool = False) -> NDArray:
-    """Return TH1* histogram data buffer
-    if flows=False, exclude underflow and overflow
-    """
+    """Return TH1* histogram data buffer if flows=False, exclude underflow and
+    overflow."""
     buf = h.GetArray()
     buf = frombuffer(buf, dtype(buf.typecode), h.GetNbinsX() + 2)
     if not flows:
@@ -537,7 +539,7 @@ def _get_buffer_hist2(h, flows=False):
 
 
 def _get_bin_edges(ax: ROOT.TAxis) -> NDArray:
-    """Get the array with bin edges"""
+    """Get the array with bin edges."""
     xbins = ax.GetXbins()
     n = xbins.GetSize()
     if n > 0:
@@ -547,7 +549,7 @@ def _get_bin_edges(ax: ROOT.TAxis) -> NDArray:
 
 
 def _get_bin_left_edges(ax: ROOT.TAxis) -> NDArray:
-    """Get the array with bin left edges"""
+    """Get the array with bin left edges."""
     xbins = ax.GetXbins()
     n = xbins.GetSize()
     if n > 0:
@@ -557,7 +559,7 @@ def _get_bin_left_edges(ax: ROOT.TAxis) -> NDArray:
 
 
 def _get_buffers_graph(g: ROOT.TGraph) -> tuple[NDArray, NDArray]:
-    """Get TGraph x and y buffers"""
+    """Get TGraph x and y buffers."""
     npoints = g.GetN()
     if npoints == 0:
         raise RuntimeError("Got graph with 0 points")
@@ -569,7 +571,7 @@ def _get_buffers_graph(g: ROOT.TGraph) -> tuple[NDArray, NDArray]:
 
 
 def _get_buffer_matrix(m):
-    """Get TMatrix buffer"""
+    """Get TMatrix buffer."""
     cbuf = m.GetMatrixArray()
     res = frombuffer(cbuf, dtype(cbuf.typecode), m.GetNoElements()).reshape(
         m.GetNrows(), m.GetNcols()

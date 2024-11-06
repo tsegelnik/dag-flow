@@ -9,9 +9,9 @@ from schema import And, Optional, Or, Schema, Use
 
 from multikeydict.typing import strkey
 
+from ..core.storage import NodeStorage
 from ..lib.common import Array
 from ..tools.logger import INFO3, logger
-from ..core.storage import NodeStorage
 from ..tools.schema import (
     AllFileswithExt,
     IsFilenameSeqOrFilename,
@@ -39,7 +39,12 @@ _schema_cfg = Schema(
         Optional("skip", default=None): And(
             Or(((str,),), [[str]]), Use(lambda l: tuple(set(k) for k in l))
         ),
-        Optional("key_order", default=None): Or((int,), [int]),
+        Optional("key_order", default=None): Or(
+            ((str,), (str,)),
+            [[str], [str]],
+            (int,),
+            [int],
+        ),
         Optional("objects", default=lambda: lambda st, tpl: st): Or(
             Callable, And({str: str}, Use(lambda dct: lambda st, tpl: dct.get(st, st)))
         ),

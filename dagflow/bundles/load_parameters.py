@@ -310,9 +310,9 @@ def _load_parameters(
     check_correlations_consistent(cfg)
 
     subkeys = cfg["replicate"]
-    from multikeydict.tools.map import _make_reorder_fcn
+    from multikeydict.tools.map import make_reorder_function
 
-    reorder_key = _make_reorder_fcn(cfg["keys_order"])
+    reorder_key = make_reorder_function(cfg["keys_order"])
 
     varcfgs = NestedMKDict({})
     normpars = {}
