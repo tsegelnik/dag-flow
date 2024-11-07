@@ -46,7 +46,7 @@ _schema_cfg = Schema(
             (int,),
             [int],
         ),
-        Optional("objects", default=lambda: lambda st, tpl: st): Or(
+        Optional("name_function", default=lambda: lambda st, tpl: st): Or(
             Callable, And({str: str}, Use(lambda dct: lambda st, tpl: dct.get(st, st)))
         ),
     }
@@ -79,7 +79,7 @@ def _load_record_data(
     filenames = cfg["filenames"]
     keys = cfg["replicate_outputs"]
     file_keys = cfg["replicate_files"]
-    objectname = cfg["objects"]
+    name_function = cfg["name_function"]
     skip = cfg["skip"]
     key_order = cfg["key_order"]
     dtype = cfg["dtype"]
@@ -94,7 +94,7 @@ def _load_record_data(
 
         reorder_key = make_reorder_function(key_order)
 
-        record = FileReader.record[filename, objectname(skey, key)]
+        record = FileReader.record[filename, name_function(skey, key)]
         for column in columns:
             fullkey = reorder_key((column,) + key)
             rec = record[column][:]

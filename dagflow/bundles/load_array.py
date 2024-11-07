@@ -34,7 +34,7 @@ _schema_cfg = Schema(
             (int,),
             [int],
         ),
-        Optional("objects", default=lambda: lambda st, tpl: st): Or(
+        Optional("name_function", default=lambda: lambda st, tpl: st): Or(
             Callable, And({str: str}, Use(lambda dct: lambda st, tpl: dct.get(st, st)))
         ),
     }
@@ -65,7 +65,7 @@ def load_array(acfg: Mapping | None = None, *, array_kwargs: Mapping = {}, **kwa
     filenames = cfg["filenames"]
     keys = cfg["replicate_outputs"]
     file_keys = cfg["replicate_files"]
-    objectname = cfg["objects"]
+    name_function = cfg["name_function"]
     skip = cfg["skip"]
     key_order = cfg["key_order"]
     dtype = cfg["dtype"]
@@ -77,7 +77,7 @@ def load_array(acfg: Mapping | None = None, *, array_kwargs: Mapping = {}, **kwa
         skey = strkey(key)
         logger.log(INFO3, f"Process {skey}")
 
-        array = FileReader.array[filename, objectname(skey, key)]
+        array = FileReader.array[filename, name_function(skey, key)]
         data[key] = asarray(array, dtype)
 
     storage = NodeStorage(default_containers=True)

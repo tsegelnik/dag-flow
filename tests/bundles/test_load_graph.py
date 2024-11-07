@@ -54,7 +54,7 @@ def test_load_graph(object_type, n_points, x_axis_parameters, dtype):
             name=output_ns,
             filenames=filename_object,
             replicate_outputs=(output_name,),
-            objects={output_name: object_name},
+            name_function={output_name: object_name},
             x=column_x,
             y=column_y,
             dtype=dtype,
