@@ -5,7 +5,7 @@ from os import listdir
 from pathlib import Path
 from typing import TYPE_CHECKING
 
-from numpy import double, dtype, frombuffer, linspace, ndarray
+from numpy import concatenate, double, dtype, frombuffer, linspace, ndarray
 
 from multikeydict.tools.map import make_reorder_function
 from multikeydict.typing import properkey
@@ -259,8 +259,11 @@ class FileReaderArray(FileReader):
         return self._get_xy(object_name)
 
     def _get_hist(self, object_name: str) -> tuple[NDArray, NDArray]:
-        x, y = self._get_xy(object_name)
-        return x, y[:-1]
+        emin, emax, h = self._get_emin_emax_h(object_name)
+        if not (emin[1:] == emax[:-1]).all():
+            raise ValueError("Inconsistent histogram edges")
+        edges = concatenate((emin, emax[-1:]))
+        return edges, h
 
     def _get_array(self, object_name: str) -> NDArray:
         return self._get_object(object_name)
@@ -272,6 +275,11 @@ class FileReaderArray(FileReader):
         data = self._get_object(object_name)
         cols = data.dtype.names
         return data[cols[0]], data[cols[1]]
+
+    def _get_emin_emax_h(self, object_name: str) -> tuple[NDArray, NDArray]:
+        data = self._get_object(object_name)
+        cols = data.dtype.names
+        return data[cols[0]], data[cols[1]], data[cols[2]]
 
 
 class FileReaderNPZ(FileReaderArray):
