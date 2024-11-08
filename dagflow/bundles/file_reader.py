@@ -327,11 +327,13 @@ class FileReaderTSV(FileReaderArray):
         super().__init__(file_name)
 
     def _get_filenames(self, object_name: str) -> tuple[str, ...]:
-        return (
+        uncompressed = (
             str(self._file_name / f"{object_name}{self._extension}"),
             f"{self._file_name.parent/self._file_name.stem}_{object_name}{self._extension}",
             str(self._file_name / f"{self._file_name.stem}_{object_name}{self._extension}"),
         )
+
+        return uncompressed + tuple(f"{fname}.bz2" for fname in uncompressed)
 
     def _get_object_impl(self, object_name: str, return_record: bool = True) -> Any:
         filenames = self._get_filenames(object_name)
@@ -342,13 +344,16 @@ class FileReaderTSV(FileReaderArray):
             for filename in filenames:
                 with suppress(FileNotFoundError):
                     df = read_table(filename, comment="#", sep=None, engine="python")
+                    logger.log(INFO1, f"Read: {filename}")
                     return df.to_records(index=False)
         else:
             from numpy import loadtxt
 
             for filename in filenames:
                 with suppress(FileNotFoundError):
-                    return loadtxt(filename)
+                    ret = loadtxt(filename)
+                    logger.log(INFO1, f"Read: {filename}")
+                    return ret
 
         raise FileNotFoundError(", ".join(map(str, filenames)))
 
