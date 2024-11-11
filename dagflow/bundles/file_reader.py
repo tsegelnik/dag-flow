@@ -276,7 +276,7 @@ class FileReaderArray(FileReader):
         cols = data.dtype.names
         return data[cols[0]], data[cols[1]]
 
-    def _get_emin_emax_h(self, object_name: str) -> tuple[NDArray, NDArray]:
+    def _get_emin_emax_h(self, object_name: str) -> tuple[NDArray, NDArray, NDArray]:
         data = self._get_object(object_name)
         cols = data.dtype.names
         return data[cols[0]], data[cols[1]], data[cols[2]]
