@@ -13,6 +13,7 @@ from .shift import rshift
 
 if TYPE_CHECKING:
     from collections.abc import Iterator
+    from typing import Any
 
     from numpy.typing import DTypeLike, NDArray
 
@@ -125,7 +126,7 @@ class Input:
         self.own_dd.axes_meshes = axes_meshes or ()
 
     @property
-    def closed(self):
+    def closed(self) -> bool:
         return self._node.closed if self.node else False
 
     def set_child_output(self, child_output: Output | None, force: bool = False) -> None:
@@ -220,9 +221,14 @@ class Input:
     def touch(self):
         return self._parent_output.touch()
 
-    def taint(self, **kwargs) -> None:
-        kwargs.setdefault("caller", self)
-        self._node.taint(**kwargs)
+    def taint(
+        self, *, force: bool = False, force_computation: bool = False, caller: Input | None = None
+    ) -> None:
+        self._node.taint(
+            force=force,
+            force_computation=force_computation,
+            caller=self if caller is None else caller,
+        )
 
     def taint_type(self, *args, **kwargs) -> None:
         self._node.taint_type(*args, **kwargs)

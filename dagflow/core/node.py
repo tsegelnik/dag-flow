@@ -547,7 +547,7 @@ class Node(NodeBase):
             self.fd.frozen_tainted = False
             self.taint()
 
-    def taint(self, *, force: bool = False, force_computation: bool = False, **kwargs):
+    def taint(self, *, force: bool = False, force_computation: bool = False, caller: Any = None):
         if self.tainted and not force:
             return
         if self.frozen:
@@ -557,12 +557,12 @@ class Node(NodeBase):
         self.fd.tainted = True
         ret = self._touch() if (self._immediate or force_computation) else None
         # TODO:  maybe here it is better to avoid extra call from FlagsDescriptor
-        self.fd.taint_children(force=force, **kwargs)
+        self.fd.taint_children(force=force, force_computation=force_computation, caller=caller)
 
         return ret
 
-    def taint_children(self, **kwargs):
-        self.fd.taint_children(**kwargs)
+    def taint_children(self, *, force: bool = False, force_computation: bool = False):
+        self.fd.taint_children(force=force, force_computation=force_computation)
 
     def taint_type(self, **kwargs):
         if self.closed:

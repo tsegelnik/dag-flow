@@ -322,16 +322,16 @@ class Output:
         else:
             rshift(self, other)
 
-    def taint_children(self, **kwargs) -> None:
+    def taint_children(self, *, force: bool = False, force_computation: bool = False, caller: Input| None=None) -> None:
         for input in self._child_inputs:
-            input.taint(**kwargs)
+            input.taint(force=force, force_computation=force_computation, caller=caller)
 
     def taint_children_type(self, **kwargs) -> None:
         for input in self._child_inputs:
             input.taint_type(**kwargs)
 
-    def touch(self):
-        return self._node.touch()
+    def touch(self, force_computation=False):
+        return self._node.touch(force_computation=force_computation)
 
     def connected(self):
         return bool(self._child_inputs)
