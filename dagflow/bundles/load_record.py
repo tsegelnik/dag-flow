@@ -7,11 +7,12 @@ from typing import TYPE_CHECKING
 from numpy import asarray
 from schema import And, Optional, Or, Schema, Use
 
-from multikeydict.tools import reorder_key
+from multikeydict.tools.map import make_reorder_function
 from multikeydict.typing import strkey
 
-from ..lib.common import Array
 from ..core.storage import NodeStorage
+from ..lib.common import Array
+from ..tools.logger import INFO3, logger
 from ..tools.schema import (
     AllFileswithExt,
     IsFilenameSeqOrFilename,
@@ -19,7 +20,6 @@ from ..tools.schema import (
     LoadFileWithExt,
     LoadYaml,
 )
-from ..tools.logger import INFO3, logger
 from .file_reader import FileReader, file_readers, iterate_filenames_and_objectnames
 
 if TYPE_CHECKING:
@@ -40,8 +40,13 @@ _schema_cfg = Schema(
         Optional("skip", default=None): And(
             Or((Or((str,), {str}),), [Or([str], {str})]), Use(lambda l: tuple(set(k) for k in l))
         ),
-        Optional("key_order", default=None): Or((int,), [int]),
-        Optional("objects", default=lambda: lambda st, tpl: st): Or(
+        Optional("key_order", default=None): Or(
+            ((str,), (str,)),
+            [[str], [str]],
+            (int,),
+            [int],
+        ),
+        Optional("name_function", default=lambda: lambda st, tpl: st): Or(
             Callable, And({str: str}, Use(lambda dct: lambda st, tpl: dct.get(st, st)))
         ),
     }
@@ -74,7 +79,7 @@ def _load_record_data(
     filenames = cfg["filenames"]
     keys = cfg["replicate_outputs"]
     file_keys = cfg["replicate_files"]
-    objectname = cfg["objects"]
+    name_function = cfg["name_function"]
     skip = cfg["skip"]
     key_order = cfg["key_order"]
     dtype = cfg["dtype"]
@@ -87,9 +92,11 @@ def _load_record_data(
         skey = strkey(key)
         logger.log(INFO3, f"Process {skey}")
 
-        record = FileReader.record[filename, objectname(skey, key)]
+        reorder_key = make_reorder_function(key_order)
+
+        record = FileReader.record[filename, name_function(skey, key)]
         for column in columns:
-            fullkey = reorder_key((column,) + key, key_order)
+            fullkey = reorder_key((column,) + key)
             rec = record[column][:]
             data[fullkey] = asarray(rec, dtype)
 

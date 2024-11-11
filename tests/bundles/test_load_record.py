@@ -51,7 +51,7 @@ def test_load_array(object_type, size, dtype):
             name=output_ns,
             filenames=filename_object,
             replicate_outputs=(output_name,),
-            objects={output_name: object_name},
+            name_function={output_name: object_name},
             columns=columns,
         )
 
