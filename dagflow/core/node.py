@@ -564,10 +564,10 @@ class Node(NodeBase):
     def taint_children(self, *, force: bool = False, force_computation: bool = False):
         self.fd.taint_children(force=force, force_computation=force_computation)
 
-    def taint_type(self, **kwargs):
+    def taint_type(self, force: bool = False):
         if self.closed:
             raise ClosedGraphError("Unable to taint type", node=self)
-        self.fd.taint_type(**kwargs)
+        self.fd.taint_type(force=force)
 
     def print(self):
         print(f"Node {self._name}: →[{self.inputs.len_all()}],[{self.outputs.len_all()}]→")

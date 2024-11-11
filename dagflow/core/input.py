@@ -230,8 +230,8 @@ class Input:
             caller=self if caller is None else caller,
         )
 
-    def taint_type(self, *args, **kwargs) -> None:
-        self._node.taint_type(*args, **kwargs)
+    def taint_type(self, force: bool = False) -> None:
+        self._node.taint_type(force=force)
 
     def connected(self) -> bool:
         return self._parent_output is not None
