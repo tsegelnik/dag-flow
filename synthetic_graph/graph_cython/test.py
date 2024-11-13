@@ -1,6 +1,6 @@
 import numpy as np
 
-from synthetic_graph.graph_cython.library import Input, Sin, Integrator
+from library import Input, Sin, Integrator
 
 bins = Input(data=np.linspace(0, np.pi, 100).tolist())
 

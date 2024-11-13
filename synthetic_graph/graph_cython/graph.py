@@ -1,9 +1,9 @@
 import time
 import numpy as np
 import timeit
-from synthetic_graph.graph_python.library import Sin, Sum, Product, Input, Cosh, Tan, Sinh, Repeater
+# from synthetic_graph.graph_python.library import Sin, Sum, Product, Input, Cosh, Tan, Sinh, Repeater
 # from synthetic_graph.graph_ctypes.library import Sin, Sum, Product, Input, Cosh
-# from synthetic_graph.graph_python_ctypes.library import Sin, Sum, Product, Input, Cosh
+from library import Sin, Sum, Product, Input, Cosh
 
 np.random.seed(33)
 
@@ -50,14 +50,17 @@ while len(input_nodes) > 1:
 
     input_nodes = output_nodes
 
-# node = input_nodes[0].compile()
+node = input_nodes[0].compile()
 
 print("RUN GRAPH")
 TESTS_COUNT = 10
 
-# priiu
 print("Average time: {:.4f}".format(
-    timeit.timeit(input_nodes[0], number=TESTS_COUNT) / TESTS_COUNT
+    timeit.timeit(input_nodes[0].run, number=TESTS_COUNT) / TESTS_COUNT
 ))
+
+# print("Average time: {:.4f}".format(
+#     timeit.timeit(input_nodes[0], number=TESTS_COUNT) / TESTS_COUNT
+# ))
 
 

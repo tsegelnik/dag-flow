@@ -1,4 +1,5 @@
 import functools
+import time
 from abc import abstractmethod, ABC
 from ctypes import POINTER, c_int, c_double, CDLL, cast, CFUNCTYPE
 
@@ -57,12 +58,14 @@ class Node(ABC):
 
         fcn = self.get_fcn()
 
-        return fcn(
+        result = fcn(
             self.c_inputs,
             self.c_input_sizes,
             len(self.inputs),
             self.c_data,
         )
+
+        return result
 
     @functools.cache
     def get_size(self):

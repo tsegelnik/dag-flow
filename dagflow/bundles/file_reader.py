@@ -338,7 +338,7 @@ class FileReaderTSV(FileReaderArray):
 
             for filename in filenames:
                 with suppress(FileNotFoundError):
-                    df = read_table(filename, comment="#", sep=None, engine="python")
+                    df = read_table(filename, comment="#", sep=None, engine="graph_python")
                     return df.to_records(index=False)
         else:
             from numpy import loadtxt
