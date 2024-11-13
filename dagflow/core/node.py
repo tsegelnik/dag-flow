@@ -547,7 +547,9 @@ class Node(NodeBase):
             self.fd.frozen_tainted = False
             self.taint()
 
-    def taint(self, *, force: bool = False, force_computation: bool = False, caller: Any = None):
+    def taint(
+        self, *, force: bool = False, force_computation: bool = False, caller: Input | None = None
+    ):
         if self.tainted and not force:
             return
         if self.frozen:
@@ -561,8 +563,10 @@ class Node(NodeBase):
 
         return ret
 
-    def taint_children(self, *, force: bool = False, force_computation: bool = False):
-        self.fd.taint_children(force=force, force_computation=force_computation)
+    def taint_children(
+        self, *, force: bool = False, force_computation: bool = False, caller: Input | None = None
+    ):
+        self.fd.taint_children(force=force, force_computation=force_computation, caller=caller)
 
     def taint_type(self, force: bool = False):
         if self.closed:
