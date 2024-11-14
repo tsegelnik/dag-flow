@@ -37,7 +37,7 @@ class ViewConcat(Node):
         size = 0
         self._offsets = []
         cdtype = self.inputs[0].dd.dtype
-        check_input_dtype(self, slice(None), cdtype)
+        check_input_dtype(self, slice(None), dtype=cdtype)
         check_input_dimension(self, slice(None), 1)
         for _input in self.inputs:
             self._offsets.append(size)

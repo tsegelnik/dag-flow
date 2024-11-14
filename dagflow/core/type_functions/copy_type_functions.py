@@ -7,10 +7,10 @@ from .tools_for_type_functions import (
     AllPositionals,
     LimbKey,
     MethodSequenceCaller,
-    cpy_dtype,
-    cpy_edges,
-    cpy_meshes,
-    cpy_shape,
+    copy_dtype,
+    copy_edges,
+    copy_meshes,
+    copy_shape,
     zip_dag,
 )
 
@@ -39,13 +39,13 @@ def copy_from_input_to_output(
 
     caller = MethodSequenceCaller()
     if dtype:
-        caller.add(cpy_dtype)
+        caller.add(copy_dtype)
     if shape:
-        caller.add(cpy_shape)
+        caller.add(copy_shape)
     if edges:
-        caller.add(cpy_edges)
+        caller.add(copy_edges)
     if meshes:
-        caller.add(cpy_meshes)
+        caller.add(copy_meshes)
 
     has_preference = prefer_input_with_edges or prefer_largest_input
     if has_preference and len(inputs) > 1:

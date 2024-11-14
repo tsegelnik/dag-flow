@@ -5,8 +5,7 @@ from dagflow.core.exception import TypeFunctionError
 from dagflow.core.graph import Graph
 from dagflow.plot.graphviz import savegraph
 from dagflow.core.input_handler import MissingInputAddOne
-from dagflow.lib.common import Array
-from dagflow.lib.common import Dummy
+from dagflow.lib.common import Array, Dummy
 from dagflow.core.type_functions import (
     AllPositionals,
     check_input_dimension,
@@ -43,13 +42,13 @@ def test_check_input_common(testname, debug_graph, data, dim, shape, dtype):
         copy_from_input_to_output(node, 0, "result")
     check_input_dimension(node, 0, dim)
     check_input_shape(node, 0, shape)
-    check_input_dtype(node, 0, dtype)
+    check_input_dtype(node, 0, dtype=dtype)
     with raises(TypeFunctionError):
         check_input_dimension(node, 0, dim + 1)
     with raises(TypeFunctionError):
         check_input_shape(node, 0, (1,))
     with raises(TypeFunctionError):
-        check_input_dtype(node, 0, object)
+        check_input_dtype(node, 0, dtype=object)
     savegraph(graph, f"output/{testname}.png")
 
 
@@ -114,7 +113,7 @@ def test_check_inputs_equivalence(testname, debug_graph, dtype, wrongarr):
         (arr1, arr2, arr3) >> node
         check_inputs_equivalence(node)
         check_input_shape(node, AllPositionals, (2,))
-        check_input_dtype(node, AllPositionals, dtype)
+        check_input_dtype(node, AllPositionals, dtype=dtype)
         check_inputs_same_dtype(node)
         check_inputs_same_shape(node)
         Array("wrong_array", wrongarr) >> node
@@ -139,12 +138,12 @@ def test_check_subtype(testname, debug_graph, dtype):
             missing_input_handler=MissingInputAddOne(output_fmt="result"),
         )
         arr1 >> node
-        check_input_subtype(node, 0, floating)
-        check_output_subtype(node, "result", floating)
+        check_input_subtype(node, 0, dtype=floating)
+        check_output_subtype(node, "result", dtype=floating)
         with raises(TypeFunctionError):
-            check_input_subtype(node, 0, integer)
+            check_input_subtype(node, 0, dtype=integer)
         with raises(TypeFunctionError):
-            check_output_subtype(node, "result", integer)
+            check_output_subtype(node, "result", dtype=integer)
     savegraph(graph, f"output/{testname}.png")
 
 

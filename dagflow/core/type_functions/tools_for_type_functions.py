@@ -42,19 +42,19 @@ class MethodSequenceCaller:
         self.methods.append(method)
 
 
-def cpy_dtype(input, output):
+def copy_dtype(input, output):
     output.dd.dtype = input.dd.dtype
 
 
-def cpy_shape(input, output):
+def copy_shape(input, output):
     output.dd.shape = input.dd.shape
 
 
-def cpy_edges(input, output):
+def copy_edges(input, output):
     output.dd.axes_edges = input.dd.axes_edges
 
 
-def cpy_meshes(input, output):
+def copy_meshes(input, output):
     output.dd.axes_meshes = input.dd.axes_meshes
 
 

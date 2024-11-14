@@ -19,6 +19,7 @@ if TYPE_CHECKING:
 def check_has_inputs(
     node: Node,
     inputkey: str | int | slice | Sequence | None = None,
+    *,
     check_named: bool = False,
 ) -> None:
     """Checking if the node has inputs"""
@@ -114,7 +115,7 @@ def check_input_size(
                 )
 
 
-def check_input_dtype(node: Node, inputkey: LimbKey, dtype, **kwargs):
+def check_input_dtype(node: Node, inputkey: LimbKey, *, dtype: DTypeLike, **kwargs):
     """Checking the dtype equivalence for inputs"""
     for input in node.inputs.iter(inputkey, **kwargs):
         dtt = input.dd.dtype
@@ -126,10 +127,7 @@ def check_input_dtype(node: Node, inputkey: LimbKey, dtype, **kwargs):
             )
 
 
-def check_input_square(
-    node: Node,
-    inputkey: LimbKey,
-):
+def check_input_square(node: Node, inputkey: LimbKey):
     """Checking input is a square matrix"""
     for input in node.inputs.iter(inputkey):
         shape = input.dd.shape
@@ -171,7 +169,7 @@ def _check_input_block_or_diag(node: Node, input: Input, *, check_square: bool =
     return dim
 
 
-def check_input_matrix_or_diag(node: Node, inputkey: LimbKey, check_square: bool = False) -> int:
+def check_input_matrix_or_diag(node: Node, inputkey: LimbKey, *, check_square: bool = False) -> int:
     """Check if input is a square matrix or diagonal (1d) of a square matrix.
     Returns the maximal dimension."""
     dim_max = 0
@@ -301,7 +299,7 @@ def check_inputs_same_shape(node: Node, inputkey: LimbKey = AllPositionals) -> t
     return shape
 
 
-def check_input_subtype(node: Node, inputkey: LimbKey, dtype: DTypeLike):
+def check_input_subtype(node: Node, inputkey: LimbKey, *, dtype: DTypeLike):
     """Checks if the input dtype is some subtype of `dtype`."""
     for input in node.inputs.iter(inputkey):
         if not issubdtype(input.dd.dtype, dtype):

@@ -162,7 +162,7 @@ class IntegratorSampler(Node):
         """The method checks dimension (==1) of the input `name`, type
         (==`integer`), and returns the `dd.shape[0]`"""
         check_input_dimension(self, name, 1)
-        check_input_subtype(self, name, integer)
+        check_input_subtype(self, name, dtype=integer)
         check_input_edges_dim(self, name, 1)
         orders = self.inputs[name]
         return sum(orders.data)

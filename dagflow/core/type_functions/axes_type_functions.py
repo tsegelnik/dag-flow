@@ -33,7 +33,7 @@ def copy_input_edges_to_output(
 
 
 def assign_output_edges(
-    input: Input | Sequence[Input], output: Output, ignore_assigned: bool = False
+    input: Input | Sequence[Input], output: Output, *, ignore_assigned: bool = False
 ):
     """Assign output's edges from input's parent output"""
     dd = output.dd

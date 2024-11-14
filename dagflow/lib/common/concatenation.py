@@ -27,7 +27,7 @@ class Concatenation(ManyToOneNode):
         """A output takes this function to determine the dtype and shape"""
         check_has_inputs(self)
         cdtype = self.inputs[0].dd.dtype
-        check_input_dtype(self, slice(None), cdtype)
+        check_input_dtype(self, slice(None), dtype=cdtype)
         check_input_dimension(self, slice(None), 1)
         _output = self.outputs["result"]
 

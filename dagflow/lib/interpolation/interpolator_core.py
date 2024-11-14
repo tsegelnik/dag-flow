@@ -185,7 +185,7 @@ class InterpolatorCore(Node):
         check_inputs_number(self, 1)
         check_has_inputs(self, ("coarse", "y", "fine", "indices"))
         check_input_dimension(self, ("coarse", "y"), 1)
-        check_input_dtype(self, "indices", "i")
+        check_input_dtype(self, "indices", dtype="i")
 
         ncoarse = self._coarse_input.dd.shape[0]
         if self._methodname == "left":

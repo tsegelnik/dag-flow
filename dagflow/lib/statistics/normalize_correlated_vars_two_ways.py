@@ -133,7 +133,11 @@ class NormalizeCorrelatedVarsTwoWays(Node):
         add(self._value, self._central, out=self._value)
 
     def taint(
-        self, *, force: bool = False, force_computation: bool = False, caller: Input | None = None
+        self,
+        *,
+        force_taint: bool = False,
+        force_computation: bool = False,
+        caller: Input | None = None,
     ):
         """Choose the function to call based on the modified input:
         - if normvalue is modified, the value should be updated
@@ -148,7 +152,7 @@ class NormalizeCorrelatedVarsTwoWays(Node):
             self.function = self._functions_dict[f"backward_{self._ndim}"]
         else:
             self.function = self._functions_dict[f"forward_{self._ndim}"]
-        super().taint(force=force, force_computation=force_computation, caller=caller)
+        super().taint(force_taint=force_taint, force_computation=force_computation, caller=caller)
 
     def _typefunc(self) -> None:
         check_has_inputs(self)

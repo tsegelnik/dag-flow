@@ -53,7 +53,7 @@ class PartialSums(OneToOneNode):
         check_has_inputs(self, "array")
         check_has_inputs(self, AllPositionals)
         check_input_dimension(self, (AllPositionals, "array"), 1)
-        check_input_subtype(self, AllPositionals, integer)
+        check_input_subtype(self, AllPositionals, dtype=integer)
         check_input_shape(self, AllPositionals, (2,))
         copy_input_dtype_to_output(self, "array", AllPositionals)
         for out in self.outputs:

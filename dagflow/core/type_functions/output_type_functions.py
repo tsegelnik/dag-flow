@@ -20,6 +20,7 @@ def check_outputs_number(node: Node, n: int) -> None:
             f"The node must have only {n} outputs, but given {nout}!", node=node
         )
 
+
 def eval_output_dtype(
     node: Node,
     inputkey: LimbKey = AllPositionals,
@@ -34,7 +35,7 @@ def eval_output_dtype(
         output.dd.dtype = dtype
 
 
-def check_output_subtype(node: Node, outputkey: LimbKey, dtype: DTypeLike):
+def check_output_subtype(node: Node, outputkey: LimbKey, *, dtype: DTypeLike):
     """Checks if the output dtype is some subtype of `dtype`."""
     for output in node.outputs.iter(outputkey):
         if not issubdtype(output.dd.dtype, dtype):
