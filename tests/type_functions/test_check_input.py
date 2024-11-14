@@ -8,18 +8,18 @@ from dagflow.core.input_handler import MissingInputAddOne
 from dagflow.lib.common import Array, Dummy
 from dagflow.core.type_functions import (
     AllPositionals,
-    check_input_dimension,
-    check_input_dtype,
-    check_input_matrix_or_diag,
-    check_input_shape,
-    check_input_square,
-    check_input_subtype,
+    check_dimension_of_inputs,
+    check_dtype_of_inputs,
+    check_inputs_are_matrices_or_diagonals,
+    check_shape_of_inputs,
+    check_inputs_are_square_matrices,
+    check_subtype_of_inputs,
     check_inputs_equivalence,
-    check_inputs_multiplicable_mat,
-    check_inputs_same_dtype,
-    check_inputs_same_shape,
-    check_output_subtype,
-    copy_from_input_to_output,
+    check_inputs_are_matrix_multipliable,
+    check_inputs_have_same_dtype,
+    check_inputs_have_same_shape,
+    check_subtype_of_outputs,
+    copy_from_inputs_to_outputs,
 )
 
 
@@ -39,21 +39,21 @@ def test_check_input_common(testname, debug_graph, data, dim, shape, dtype):
             missing_input_handler=MissingInputAddOne(output_fmt="result"),
         )
         arr1 >> node
-        copy_from_input_to_output(node, 0, "result")
-    check_input_dimension(node, 0, dim)
-    check_input_shape(node, 0, shape)
-    check_input_dtype(node, 0, dtype=dtype)
+        copy_from_inputs_to_outputs(node, 0, "result")
+    check_dimension_of_inputs(node, 0, dim)
+    check_shape_of_inputs(node, 0, shape)
+    check_dtype_of_inputs(node, 0, dtype=dtype)
     with raises(TypeFunctionError):
-        check_input_dimension(node, 0, dim + 1)
+        check_dimension_of_inputs(node, 0, dim + 1)
     with raises(TypeFunctionError):
-        check_input_shape(node, 0, (1,))
+        check_shape_of_inputs(node, 0, (1,))
     with raises(TypeFunctionError):
-        check_input_dtype(node, 0, dtype=object)
+        check_dtype_of_inputs(node, 0, dtype=object)
     savegraph(graph, f"output/{testname}.png")
 
 
 @mark.parametrize("data", ([0, 1, 2], [1], [[1, 2], [1, 2, 3]], [[[], [], []]]))
-def test_check_input_square_00(testname, debug_graph, data):
+def test_check_inputs_are_square_matrices_00(testname, debug_graph, data):
     with Graph(close_on_exit=False, debug=debug_graph) as graph:
         arr1 = Array("arr1", array(data, dtype=object))
         arr2 = Array("arr2", array(data, dtype=object))
@@ -64,10 +64,10 @@ def test_check_input_square_00(testname, debug_graph, data):
         arr1 >> node
         arr2 >> node
     with raises(TypeFunctionError):
-        check_input_square(node, 0)
+        check_inputs_are_square_matrices(node, 0)
     if arr1.outputs["array"].dd.dim != 1:
         with raises(TypeFunctionError):
-            check_input_matrix_or_diag(node, 0, check_square=True)
+            check_inputs_are_matrices_or_diagonals(node, 0, check_square=True)
     savegraph(graph, f"output/{testname}.png")
 
 
@@ -79,7 +79,7 @@ def test_check_input_square_00(testname, debug_graph, data):
         linspace(0, 16, 16).reshape(4, 4),
     ),
 )
-def test_check_input_square_01(testname, debug_graph, data):
+def test_check_inputs_are_square_matrices_01(testname, debug_graph, data):
     with Graph(close_on_exit=False, debug=debug_graph) as graph:
         arr1 = Array("arr1", array(data))
         node = Dummy(
@@ -87,8 +87,8 @@ def test_check_input_square_01(testname, debug_graph, data):
             missing_input_handler=MissingInputAddOne(output_fmt="result"),
         )
         arr1 >> node
-        check_input_square(node, 0)
-        check_input_matrix_or_diag(node, 0, check_square=True)
+        check_inputs_are_square_matrices(node, 0)
+        check_inputs_are_matrices_or_diagonals(node, 0, check_square=True)
     savegraph(graph, f"output/{testname}.png")
 
 
@@ -112,17 +112,17 @@ def test_check_inputs_equivalence(testname, debug_graph, dtype, wrongarr):
         )
         (arr1, arr2, arr3) >> node
         check_inputs_equivalence(node)
-        check_input_shape(node, AllPositionals, (2,))
-        check_input_dtype(node, AllPositionals, dtype=dtype)
-        check_inputs_same_dtype(node)
-        check_inputs_same_shape(node)
+        check_shape_of_inputs(node, AllPositionals, (2,))
+        check_dtype_of_inputs(node, AllPositionals, dtype=dtype)
+        check_inputs_have_same_dtype(node)
+        check_inputs_have_same_shape(node)
         Array("wrong_array", wrongarr) >> node
         with raises(TypeFunctionError):
             check_inputs_equivalence(node)
         with raises(TypeFunctionError):
             # NOTE: at least one raises Exception, see `wrongarr`
-            check_inputs_same_dtype(node)
-            check_inputs_same_shape(node)
+            check_inputs_have_same_dtype(node)
+            check_inputs_have_same_shape(node)
     savegraph(graph, f"output/{testname}.png")
 
 
@@ -138,12 +138,12 @@ def test_check_subtype(testname, debug_graph, dtype):
             missing_input_handler=MissingInputAddOne(output_fmt="result"),
         )
         arr1 >> node
-        check_input_subtype(node, 0, dtype=floating)
-        check_output_subtype(node, "result", dtype=floating)
+        check_subtype_of_inputs(node, 0, dtype=floating)
+        check_subtype_of_outputs(node, "result", dtype=floating)
         with raises(TypeFunctionError):
-            check_input_subtype(node, 0, dtype=integer)
+            check_subtype_of_inputs(node, 0, dtype=integer)
         with raises(TypeFunctionError):
-            check_output_subtype(node, "result", dtype=integer)
+            check_subtype_of_outputs(node, "result", dtype=integer)
     savegraph(graph, f"output/{testname}.png")
 
 
@@ -155,7 +155,7 @@ def test_check_subtype(testname, debug_graph, dtype):
         (linspace(0, 3, 3)[newaxis].T, linspace(0, 3, 3)[newaxis].T),
     ),
 )
-def test_check_inputs_multiplicable_mat_00(testname, debug_graph, data1, data2):
+def test_check_inputs_are_matrix_multipliable_00(testname, debug_graph, data1, data2):
     with Graph(close_on_exit=False, debug=debug_graph) as graph:
         arr1 = Array("arr1", array(data1))
         arr2 = Array("arr2", array(data2))
@@ -165,7 +165,7 @@ def test_check_inputs_multiplicable_mat_00(testname, debug_graph, data1, data2):
         )
         (arr1, arr2) >> node
         with raises(TypeFunctionError):
-            check_inputs_multiplicable_mat(node, 0, 1)
+            check_inputs_are_matrix_multipliable(node, 0, 1)
     savegraph(graph, f"output/{testname}.png")
 
 
@@ -177,7 +177,7 @@ def test_check_inputs_multiplicable_mat_00(testname, debug_graph, data1, data2):
         (linspace(0, 3, 3)[newaxis], linspace(0, 3, 3)[newaxis].T),
     ),
 )
-def test_check_inputs_multiplicable_mat_01(testname, debug_graph, data1, data2):
+def test_check_inputs_are_matrix_multipliable_01(testname, debug_graph, data1, data2):
     with Graph(close_on_exit=False, debug=debug_graph) as graph:
         arr1 = Array("arr1", array(data1))
         arr2 = Array("arr2", array(data2))
@@ -186,5 +186,5 @@ def test_check_inputs_multiplicable_mat_01(testname, debug_graph, data1, data2):
             missing_input_handler=MissingInputAddOne(output_fmt="result"),
         )
         (arr1, arr2) >> node
-        check_inputs_multiplicable_mat(node, 0, 1)
+        check_inputs_are_matrix_multipliable(node, 0, 1)
     savegraph(graph, f"output/{testname}.png")

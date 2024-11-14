@@ -12,7 +12,7 @@ from ...core.exception import InitializationError
 from ...core.node import Node
 from ...core.output import Output
 from ...tools.iter import iter_sequence_not_string
-from ...core.type_functions import check_array_edges_consistency, check_edges_type
+from ...core.type_functions import check_edges_consistency_with_array, check_dtype_of_edges
 
 if TYPE_CHECKING:
     from numpy.typing import ArrayLike, DTypeLike, NDArray
@@ -154,8 +154,8 @@ class Array(Node):
                 localstorage.delete_with_parents(key)
 
     def _typefunc(self) -> None:
-        check_edges_type(self, slice(None), "array")  # checks List[Output]
-        check_array_edges_consistency(self, "array")  # checks dim and N+1 size
+        check_dtype_of_edges(self, slice(None), "array")  # checks List[Output]
+        check_edges_consistency_with_array(self, "array")  # checks dim and N+1 size
 
     def _post_allocate(self) -> None:
         if self._mode == "fill":

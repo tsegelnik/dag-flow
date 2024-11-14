@@ -6,7 +6,7 @@ from numba import njit
 
 from ...core.exception import InitializationError, CalculationError
 from ...core.node import Node
-from ...core.type_functions import check_inputs_number, copy_from_input_to_output
+from ...core.type_functions import check_number_of_inputs, copy_from_inputs_to_outputs
 
 if TYPE_CHECKING:
     from numpy.typing import NDArray
@@ -81,8 +81,8 @@ class SegmentIndex(Node):
         """
         The function to determine the dtype and shape of the ouput.
         """
-        check_inputs_number(self, 2)
-        copy_from_input_to_output(self, 1, 0, dtype=False, shape=True, edges=False, meshes=False)
+        check_number_of_inputs(self, 2)
+        copy_from_inputs_to_outputs(self, 1, 0, dtype=False, shape=True, edges=False, meshes=False)
         self._indices.dd.dtype = "i"
 
     def _function(self):

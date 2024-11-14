@@ -8,11 +8,11 @@ from numpy import integer
 from ...core.exception import TypeFunctionError
 from ...core.type_functions import (
     AllPositionals,
-    check_has_inputs,
-    check_input_dimension,
-    check_input_shape,
-    check_input_subtype,
-    copy_input_dtype_to_output,
+    check_node_has_inputs,
+    check_dimension_of_inputs,
+    check_shape_of_inputs,
+    check_subtype_of_inputs,
+    copy_dtype_from_inputs_to_outputs,
 )
 from ..abstract import OneToOneNode
 
@@ -50,12 +50,12 @@ class PartialSums(OneToOneNode):
         self._array = self._add_input("array", positional=False)
 
     def _typefunc(self) -> None:
-        check_has_inputs(self, "array")
-        check_has_inputs(self, AllPositionals)
-        check_input_dimension(self, (AllPositionals, "array"), 1)
-        check_input_subtype(self, AllPositionals, dtype=integer)
-        check_input_shape(self, AllPositionals, (2,))
-        copy_input_dtype_to_output(self, "array", AllPositionals)
+        check_node_has_inputs(self, "array")
+        check_node_has_inputs(self, AllPositionals)
+        check_dimension_of_inputs(self, (AllPositionals, "array"), 1)
+        check_subtype_of_inputs(self, AllPositionals, dtype=integer)
+        check_shape_of_inputs(self, AllPositionals, (2,))
+        copy_dtype_from_inputs_to_outputs(self, "array", AllPositionals)
         for out in self.outputs:
             out.dd.shape = (1,)
         # TODO: axes_edges and axes_meshes?

@@ -5,9 +5,9 @@ from ...core.input_handler import MissingInputAddOne
 from ...core.node import Node
 from ...core.type_functions import (
     AllPositionals,
-    check_has_inputs,
-    check_inputs_same_dtype,
-    eval_output_dtype,
+    check_node_has_inputs,
+    check_inputs_have_same_dtype,
+    evaluate_dtype_of_outputs,
 )
 
 
@@ -37,7 +37,7 @@ class ElSumSq(Node):
 
     def _typefunc(self) -> None:
         """A output takes this function to determine the dtype and shape"""
-        check_has_inputs(self)
-        check_inputs_same_dtype(self)
-        eval_output_dtype(self, AllPositionals, "result")
+        check_node_has_inputs(self)
+        check_inputs_have_same_dtype(self)
+        evaluate_dtype_of_outputs(self, AllPositionals, "result")
         self.outputs[0].dd.shape = (1,)

@@ -13,7 +13,7 @@ if TYPE_CHECKING:
     from ..node import Node
 
 
-def check_outputs_number(node: Node, n: int) -> None:
+def check_number_of_outputs(node: Node, n: int) -> None:
     """Checking if the node has only `n` outputs"""
     if (nout := len(node.outputs)) != n:
         raise TypeFunctionError(
@@ -21,7 +21,7 @@ def check_outputs_number(node: Node, n: int) -> None:
         )
 
 
-def eval_output_dtype(
+def evaluate_dtype_of_outputs(
     node: Node,
     inputkey: LimbKey = AllPositionals,
     outputkey: LimbKey = AllPositionals,
@@ -35,7 +35,7 @@ def eval_output_dtype(
         output.dd.dtype = dtype
 
 
-def check_output_subtype(node: Node, outputkey: LimbKey, *, dtype: DTypeLike):
+def check_subtype_of_outputs(node: Node, outputkey: LimbKey, *, dtype: DTypeLike):
     """Checks if the output dtype is some subtype of `dtype`."""
     for output in node.outputs.iter(outputkey):
         if not issubdtype(output.dd.dtype, dtype):

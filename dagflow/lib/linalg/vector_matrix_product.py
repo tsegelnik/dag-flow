@@ -10,10 +10,10 @@ from ...core.exception import TypeFunctionError
 from ...core.node import Node
 from ...core.type_functions import (
     AllPositionals,
-    check_input_dimension,
-    check_input_matrix_or_diag,
-    check_inputs_multiplicable_mat,
-    eval_output_dtype,
+    check_dimension_of_inputs,
+    check_inputs_are_matrices_or_diagonals,
+    check_inputs_are_matrix_multipliable,
+    evaluate_dtype_of_outputs,
 )
 
 if TYPE_CHECKING:
@@ -78,19 +78,19 @@ class VectorMatrixProduct(Node):
             multiply(diag, col, out=out)
 
     def _typefunc(self) -> None:
-        check_input_dimension(self, AllPositionals, ndim=1)
-        ndim_mat = check_input_matrix_or_diag(self, "matrix")
+        check_dimension_of_inputs(self, AllPositionals, ndim=1)
+        ndim_mat = check_inputs_are_matrices_or_diagonals(self, "matrix")
         if ndim_mat not in (1, 2):
             raise TypeFunctionError(f"Matrix dimension >2: {ndim_mat}", node=self)
 
         if self._matrix_column:
             for i, out in enumerate(self.outputs):
-                (resshape,) = check_inputs_multiplicable_mat(self, "matrix", i)
+                (resshape,) = check_inputs_are_matrix_multipliable(self, "matrix", i)
                 out.dd.shape = (resshape[0],)
             self.function = ndim_mat == 2 and self._fcn_block_column or self._fcn_diagonal_column
         else:
             for i, out in enumerate(self.outputs):
-                (resshape,) = check_inputs_multiplicable_mat(self, i, "matrix")
+                (resshape,) = check_inputs_are_matrix_multipliable(self, i, "matrix")
                 out.dd.shape = (resshape[-1],)
             self.function = ndim_mat == 2 and self._fcn_row_block or self._fcn_row_diagonal
 
@@ -101,4 +101,4 @@ class VectorMatrixProduct(Node):
             edges = (mat_edges[not self._matrix_column],) if ndim_mat == 2 else (mat_edges[0],)
             for out in self.outputs:
                 out.dd.axes_edges = edges
-        eval_output_dtype(self, AllPositionals, AllPositionals)
+        evaluate_dtype_of_outputs(self, AllPositionals, AllPositionals)

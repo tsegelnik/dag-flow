@@ -4,7 +4,7 @@ from typing import TYPE_CHECKING
 
 from numba import njit
 
-from ...core.type_functions import AllPositionals, check_input_size, check_inputs_same_dtype
+from ...core.type_functions import AllPositionals, check_size_of_inputs, check_inputs_have_same_dtype
 from ..abstract import OneToOneNode
 
 if TYPE_CHECKING:
@@ -27,8 +27,8 @@ class LinearFunction(OneToOneNode):
 
     def _typefunc(self) -> None:
         super()._typefunc()
-        check_input_size(self, ("a", "b"), exact=1)
-        check_inputs_same_dtype(self, ("a", "b", AllPositionals))
+        check_size_of_inputs(self, ("a", "b"), exact=1)
+        check_inputs_have_same_dtype(self, ("a", "b", AllPositionals))
 
     def _function(self):
         a = self._a.data[0]

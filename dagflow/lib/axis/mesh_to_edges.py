@@ -4,7 +4,7 @@ from typing import TYPE_CHECKING
 
 from numba import njit
 
-from ...core.type_functions import AllPositionals, check_has_inputs, check_input_dimension
+from ...core.type_functions import AllPositionals, check_node_has_inputs, check_dimension_of_inputs
 from ..abstract import OneToOneNode
 
 if TYPE_CHECKING:
@@ -40,8 +40,8 @@ class MeshToEdges(OneToOneNode):
 
     def _typefunc(self) -> None:
         """A output takes this function to determine the dtype and shape"""
-        check_has_inputs(self, check_named=True)
-        check_input_dimension(self, (AllPositionals, *self.inputs.kw.keys()), ndim=1)
+        check_node_has_inputs(self, check_named=True)
+        check_dimension_of_inputs(self, (AllPositionals, *self.inputs.kw.keys()), ndim=1)
         for _input, _output in zip(self.inputs, self.outputs):
             inputdd = _input.dd
             _output.dd.dtype = inputdd.dtype

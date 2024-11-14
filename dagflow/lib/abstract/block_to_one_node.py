@@ -9,10 +9,10 @@ from ...core.node import Node
 from ...core.storage import NodeStorage
 from ...core.type_functions import (
     AllPositionals,
-    check_has_inputs,
+    check_node_has_inputs,
     check_inputs_equivalence,
-    copy_from_input_to_output,
-    eval_output_dtype,
+    copy_from_inputs_to_outputs,
+    evaluate_dtype_of_outputs,
 )
 
 if TYPE_CHECKING:
@@ -49,19 +49,19 @@ class BlockToOneNode(Node):
 
     def _typefunc(self) -> None:
         """A output takes this function to determine the dtype and shape"""
-        check_has_inputs(self)  # at least one input
+        check_node_has_inputs(self)  # at least one input
         check_inputs_equivalence(
             self, broadcastable=self._broadcastable
         )  # all the inputs should have same dd fields
         n = self._inputs_block_size()
-        copy_from_input_to_output(
+        copy_from_inputs_to_outputs(
             self,
             slice(0, None, n),
             AllPositionals,
             prefer_largest_input=self._broadcastable,
             prefer_input_with_edges=True,
         )  # copy shape to results
-        eval_output_dtype(self, AllPositionals, AllPositionals)  # eval dtype of results
+        evaluate_dtype_of_outputs(self, AllPositionals, AllPositionals)  # eval dtype of results
 
     @classmethod
     def replicate(

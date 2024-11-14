@@ -3,10 +3,10 @@ from numpy.typing import NDArray
 
 from ...core.type_functions import (
     AllPositionals,
-    check_has_inputs,
+    check_node_has_inputs,
     check_inputs_equivalence,
-    copy_input_shape_to_outputs,
-    eval_output_dtype,
+    copy_shape_from_inputs_to_outputs,
+    evaluate_dtype_of_outputs,
 )
 from ..abstract import ManyToOneNode
 
@@ -31,10 +31,10 @@ class SumSq(ManyToOneNode):
 
     def _typefunc(self) -> None:
         """A output takes this function to determine the dtype and shape"""
-        check_has_inputs(self)
-        copy_input_shape_to_outputs(self, 0, "result")
+        check_node_has_inputs(self)
+        copy_shape_from_inputs_to_outputs(self, 0, "result")
         check_inputs_equivalence(self)
-        eval_output_dtype(self, AllPositionals, "result")
+        evaluate_dtype_of_outputs(self, AllPositionals, "result")
 
     def _post_allocate(self) -> None:
         inpdd = self.inputs[0].dd

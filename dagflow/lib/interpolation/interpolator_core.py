@@ -9,13 +9,13 @@ from numpy import double, exp, integer, log
 from ...core.exception import InitializationError
 from ...core.node import Node
 from ...core.type_functions import (
-    assign_output_axes_from_inputs,
-    check_has_inputs,
-    check_input_dimension,
-    check_input_dtype,
-    check_input_shape,
-    check_inputs_number,
-    copy_from_input_to_output,
+    assign_axes_from_inputs_to_outputs,
+    check_node_has_inputs,
+    check_dimension_of_inputs,
+    check_dtype_of_inputs,
+    check_shape_of_inputs,
+    check_number_of_inputs,
+    copy_from_inputs_to_outputs,
 )
 
 if TYPE_CHECKING:
@@ -182,25 +182,30 @@ class InterpolatorCore(Node):
         Checks self.inputs dimension and, selects an interpolation algorithm,
         determines dtype and shape for self.outputs
         """
-        check_inputs_number(self, 1)
-        check_has_inputs(self, ("coarse", "y", "fine", "indices"))
-        check_input_dimension(self, ("coarse", "y"), 1)
-        check_input_dtype(self, "indices", dtype="i")
+        check_number_of_inputs(self, 1)
+        check_node_has_inputs(self, ("coarse", "y", "fine", "indices"))
+        check_dimension_of_inputs(self, ("coarse", "y"), 1)
+        check_dtype_of_inputs(self, "indices", dtype="i")
 
         ncoarse = self._coarse_input.dd.shape[0]
         if self._methodname == "left":
-            check_input_shape(self, "y", (ncoarse,), (ncoarse - 1,))
+            check_shape_of_inputs(self, "y", (ncoarse,), (ncoarse - 1,))
         else:
-            check_input_shape(self, "y", (ncoarse,))
-        check_input_shape(self, "fine", self._indices_input.dd.shape)
-        copy_from_input_to_output(self, "fine", "result")
+            check_shape_of_inputs(self, "y", (ncoarse,))
+        check_shape_of_inputs(self, "fine", self._indices_input.dd.shape)
+        copy_from_inputs_to_outputs(self, "fine", "result")
         if self._fine_input.dd.dim == 1:
-            assign_output_axes_from_inputs(
-                self, "fine", "result", assign_meshes=True, ignore_assigned=False
+            assign_axes_from_inputs_to_outputs(
+                self,
+                "fine",
+                "result",
+                assign_meshes=True,
+                ignore_assigned=False,
+                merge_input_axes=True,
             )
         else:
             # TODO: add a choice of what axis to overwrite
-            assign_output_axes_from_inputs(
+            assign_axes_from_inputs_to_outputs(
                 self,
                 "fine",
                 "result",
@@ -208,6 +213,7 @@ class InterpolatorCore(Node):
                 ignore_assigned=False,
                 overwrite_assigned=True,
                 ignore_inconsistent_number_of_meshes=True,
+                merge_input_axes=True,
             )
 
     def _post_allocate(self):

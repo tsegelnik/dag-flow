@@ -7,12 +7,12 @@ from scipy.linalg import solve_triangular
 
 from ...core.node import Node
 from ...core.type_functions import (
-    check_has_inputs,
-    check_input_dimension,
-    check_input_matrix_or_diag,
+    check_node_has_inputs,
+    check_dimension_of_inputs,
+    check_inputs_are_matrices_or_diagonals,
     check_inputs_equivalence,
-    check_inputs_multiplicable_mat,
-    copy_from_input_to_output,
+    check_inputs_are_matrix_multipliable,
+    copy_from_inputs_to_outputs,
 )
 
 if TYPE_CHECKING:
@@ -155,12 +155,12 @@ class NormalizeCorrelatedVarsTwoWays(Node):
         super().taint(force_taint=force_taint, force_computation=force_computation, caller=caller)
 
     def _typefunc(self) -> None:
-        check_has_inputs(self)
-        ndim = check_input_matrix_or_diag(self, "matrix", check_square=True)
-        check_input_dimension(self, "central", 1)
+        check_node_has_inputs(self)
+        ndim = check_inputs_are_matrices_or_diagonals(self, "matrix", check_square=True)
+        check_dimension_of_inputs(self, "central", 1)
         check_inputs_equivalence(self, ("central", slice(None)))
-        check_inputs_multiplicable_mat(self, "matrix", slice(None))
-        copy_from_input_to_output(self, slice(None), slice(None))
+        check_inputs_are_matrix_multipliable(self, "matrix", slice(None))
+        copy_from_inputs_to_outputs(self, slice(None), slice(None))
 
         self.labels.inherit(
             self._value_input.parent_node.labels,

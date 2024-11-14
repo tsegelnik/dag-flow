@@ -8,10 +8,10 @@ from dagflow.lib.common import Array
 from dagflow.lib.common import Dummy
 from dagflow.core.type_functions import (
     AllPositionals,
-    copy_from_input_to_output,
-    copy_input_dtype_to_output,
-    copy_input_shape_to_outputs,
-    eval_output_dtype,
+    copy_from_inputs_to_outputs,
+    copy_dtype_from_inputs_to_outputs,
+    copy_shape_from_inputs_to_outputs,
+    evaluate_dtype_of_outputs,
 )
 
 
@@ -32,8 +32,8 @@ def test_copy_input_dtype_and_shape(testname, debug_graph, data, dtype):
             missing_input_handler=MissingInputAddOne(output_fmt="result"),
         )
         arr1 >> node
-    copy_input_shape_to_outputs(node, 0, "result")
-    copy_input_dtype_to_output(node, 0, "result")
+    copy_shape_from_inputs_to_outputs(node, 0, "result")
+    copy_dtype_from_inputs_to_outputs(node, 0, "result")
     assert node.close()
     assert node.outputs["result"].dd.dtype == arrdata.dtype
     assert node.outputs["result"].dd.shape == arrdata.shape
@@ -50,8 +50,8 @@ def test_output_eval_dtype(testname, debug_graph, dtype):
             missing_input_handler=MissingInputAddOne(output_fmt="result"),
         )
         (arr1, arr2) >> node
-    copy_input_shape_to_outputs(node, 1, "result")
-    eval_output_dtype(node, AllPositionals, "result")
+    copy_shape_from_inputs_to_outputs(node, 1, "result")
+    evaluate_dtype_of_outputs(node, AllPositionals, "result")
     assert node.close()
     assert node.outputs["result"].dd.dtype == dtype
     savegraph(graph, f"output/{testname}.png")
@@ -61,7 +61,7 @@ def test_copy_from_input_00(testname, debug_graph):
     with Graph(close_on_exit=True, debug=debug_graph) as graph:
         node = Dummy("node")
     assert (
-        copy_from_input_to_output(
+        copy_from_inputs_to_outputs(
             node,
             slice(None),
             slice(None),
@@ -91,7 +91,7 @@ def test_copy_from_input_01(testname, debug_graph, dtype):
         )
         arr1 >> node
         arr2 >> node
-    copy_from_input_to_output(node, AllPositionals, AllPositionals)
+    copy_from_inputs_to_outputs(node, AllPositionals, AllPositionals)
     assert node.close()
     out1 = arr1.outputs["array"].dd
     out2 = arr2.outputs["array"].dd

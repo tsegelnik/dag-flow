@@ -7,10 +7,10 @@ from numpy import matmul, multiply
 from ...core.exception import TypeFunctionError
 from ...core.node import Node
 from ...core.type_functions import (
-    check_has_inputs,
-    check_input_matrix_or_diag,
-    check_inputs_multiplicable_mat,
-    eval_output_dtype,
+    check_node_has_inputs,
+    check_inputs_are_matrices_or_diagonals,
+    check_inputs_are_matrix_multipliable,
+    evaluate_dtype_of_outputs,
 )
 
 if TYPE_CHECKING:
@@ -70,9 +70,9 @@ class MatrixProductAB(Node):
         multiply(left, right, out=out)
 
     def _typefunc(self) -> None:
-        check_has_inputs(self, ("left", "right"))
-        ndim_left = check_input_matrix_or_diag(self, "left")
-        ndim_right = check_input_matrix_or_diag(self, "right")
+        check_node_has_inputs(self, ("left", "right"))
+        ndim_left = check_inputs_are_matrices_or_diagonals(self, "left")
+        ndim_right = check_inputs_are_matrices_or_diagonals(self, "right")
 
         ndim = ndim_left, ndim_right
         ndim_out = 2
@@ -88,7 +88,7 @@ class MatrixProductAB(Node):
         else:
             raise TypeFunctionError(f"One of the inputs' dimension >2: {ndim}", node=self)
 
-        (resshape,) = check_inputs_multiplicable_mat(self, "left", "right")
-        eval_output_dtype(self, slice(None), "result")
+        (resshape,) = check_inputs_are_matrix_multipliable(self, "left", "right")
+        evaluate_dtype_of_outputs(self, slice(None), "result")
 
         self._out.dd.shape = resshape[:ndim_out]

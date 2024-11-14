@@ -12,11 +12,13 @@ from .tools_for_type_functions import AllPositionals, LimbKey, zip_dag
 if TYPE_CHECKING:
     from ..node import Node
 
+# TODO: we have no type functions for meshes!
+
 
 ####################
 # edges
 ####################
-def copy_input_edges_to_output(
+def copy_edges_from_inputs_to_outputs(
     node: Node,
     inputkey: str | int = 0,
     outputkey: LimbKey = AllPositionals,
@@ -32,7 +34,126 @@ def copy_input_edges_to_output(
         output.dd.axes_edges = input.dd.axes_edges
 
 
-def assign_output_edges(
+def check_edges_dimension_of_inputs(
+    node: Node,
+    inputkey: LimbKey = AllPositionals,
+    dim: int = 1,
+):
+    """Checking the existence and dim of the edges of the inputs"""
+    for input in node.inputs.iter(inputkey):
+        edges = input.dd.axes_edges
+        if len(edges) == 0:
+            raise TypeFunctionError(
+                f"The input must have edges, but given {edges=}!",
+                node=node,
+                input=input,
+            )
+        for edge in edges:
+            if not isinstance(edge, Output):
+                raise TypeFunctionError(
+                    f"The input edge must be an `Output`, but given {edge=}!",
+                    node=node,
+                    input=input,
+                )
+            if edge.dd.dim != dim:
+                raise TypeFunctionError(
+                    f"The input edge must be a {dim}d array, but given {edge.dd.dim=}!",
+                    node=node,
+                    input=input,
+                )
+
+
+def check_edges_equivalence_of_inputs(
+    node: Node,
+    inputkey: LimbKey = AllPositionals,
+    reference: tuple[Output, ...] | None = None,
+):
+    """Checking the equivalence of the edges of the inputs."""
+    inputs = tuple(node.inputs.iter(inputkey))
+    if reference is None:
+        input0, inputs = inputs[0], inputs[1:]
+        reference = input0.dd.axes_edges
+    for input in inputs:
+        edges = input.dd.axes_edges
+        if edges != reference:
+            raise TypeFunctionError(
+                f"The input edge must be {reference}, but given {edges=}!",
+                node=node,
+                input=input,
+            )
+
+
+def check_dtype_of_edges(
+    node: Node,
+    inputkey: LimbKey = AllPositionals,
+    outputkey: LimbKey = AllPositionals,
+):
+    """Checking of the edges type (must be `List[Output]`) of the inputs and outputs."""
+    # check inputs
+    for input in node.inputs.iter(inputkey):
+        edges = input.dd.axes_edges
+        if not isinstance(edges, tuple):
+            raise TypeFunctionError(
+                f"The `input.dd.axes_edges` must be `List[Output]`, but given {edges=}!",
+                node=node,
+                input=input,
+            )
+        for edge in edges:
+            if not isinstance(edge, Output):
+                raise TypeFunctionError(
+                    f"The edge must be `Output`, but given {edge=}!",
+                    node=node,
+                    input=input,
+                )
+    # check outputs
+    for output in node.outputs.iter(outputkey):
+        edges = output.dd.axes_edges
+        if not isinstance(edges, tuple):
+            raise TypeFunctionError(
+                f"The `output.dd.axes_edges` must be `List[Output]`, but given {edges=}!",
+                node=node,
+                output=output,
+            )
+        for edge in edges:
+            if not isinstance(edge, Output):
+                raise TypeFunctionError(
+                    f"The edge must be `Output`, but given {edge=}!",
+                    node=node,
+                    output=output,
+                )
+
+
+def check_edges_consistency_with_array(node: Node, outputkey: LimbKey = AllPositionals):
+    """
+    Checks the dimension equivalence of edges and the output, then checks that
+    `len(output) = N` and `len(edges) = N+1` for each dimension.
+    Tht type function is passed if the edges are empty.
+    """
+    for output in node.outputs.iter(outputkey):
+        dd = output.dd
+        edges = dd.axes_edges
+        if (y := len(edges)) > 0:
+            if y != dd.dim:
+                raise TypeFunctionError(
+                    f"Array: the data ({dd.dim}d) and edges "
+                    f"({len(edges)}d) must have the same dimension!",
+                    node=node,
+                    output=output,
+                )
+            for i, edge in enumerate(edges):
+                if edge.dd.shape[0] != dd.shape[i] + 1:
+                    raise TypeFunctionError(
+                        f"Array: the data length+1 ({dd.shape[i]+1}) "
+                        f"is not consistent with edges ({edge.dd.shape[0]})",
+                        node=node,
+                        output=output,
+                    )
+
+
+####################
+# assign axes from inputs to outputs
+####################
+def assign_edges_from_inputs_to_outputs(
     input: Input | Sequence[Input], output: Output, *, ignore_assigned: bool = False
 ):
     """Assign output's edges from input's parent output"""
@@ -73,126 +194,7 @@ def assign_output_edges(
     output.dd.axes_edges = tuple(edges)
 
 
-def check_input_edges_dim(
-    node: Node,
-    inputkey: LimbKey = AllPositionals,
-    dim: int = 1,
-):
-    """Checking the existence and dim of the edges of the inputs"""
-    for input in node.inputs.iter(inputkey):
-        edges = input.dd.axes_edges
-        if len(edges) == 0:
-            raise TypeFunctionError(
-                f"The input must have edges, but given {edges=}!",
-                node=node,
-                input=input,
-            )
-        for edge in edges:
-            if not isinstance(edge, Output):
-                raise TypeFunctionError(
-                    f"The input edge must be an `Output`, but given {edge=}!",
-                    node=node,
-                    input=input,
-                )
-            if edge.dd.dim != dim:
-                raise TypeFunctionError(
-                    f"The input edge must be a {dim}d array, but given {edge.dd.dim=}!",
-                    node=node,
-                    input=input,
-                )
-
-
-def check_input_edges_equivalence(
-    node: Node,
-    inputkey: LimbKey = AllPositionals,
-    reference: tuple[Output, ...] | None = None,
-):
-    """Checking the equivalence of the edges of the inputs."""
-    inputs = tuple(node.inputs.iter(inputkey))
-    if reference is None:
-        input0, inputs = inputs[0], inputs[1:]
-        reference = input0.dd.axes_edges
-    for input in inputs:
-        edges = input.dd.axes_edges
-        if edges != reference:
-            raise TypeFunctionError(
-                f"The input edge must be {reference}, but given {edges=}!",
-                node=node,
-                input=input,
-            )
-
-
-def check_edges_type(
-    node: Node,
-    inputkey: LimbKey = AllPositionals,
-    outputkey: LimbKey = AllPositionals,
-):
-    """Checking of the edges type (must be `List[Output]`) of the inputs and outputs."""
-    # check inputs
-    for input in node.inputs.iter(inputkey):
-        edges = input.dd.axes_edges
-        if not isinstance(edges, tuple):
-            raise TypeFunctionError(
-                f"The `input.dd.axes_edges` must be `List[Output]`, but given {edges=}!",
-                node=node,
-                input=input,
-            )
-        for edge in edges:
-            if not isinstance(edge, Output):
-                raise TypeFunctionError(
-                    f"The edge must be `Output`, but given {edge=}!",
-                    node=node,
-                    input=input,
-                )
-    # check outputs
-    for output in node.outputs.iter(outputkey):
-        edges = output.dd.axes_edges
-        if not isinstance(edges, tuple):
-            raise TypeFunctionError(
-                f"The `output.dd.axes_edges` must be `List[Output]`, but given {edges=}!",
-                node=node,
-                output=output,
-            )
-        for edge in edges:
-            if not isinstance(edge, Output):
-                raise TypeFunctionError(
-                    f"The edge must be `Output`, but given {edge=}!",
-                    node=node,
-                    output=output,
-                )
-
-
-def check_array_edges_consistency(node: Node, outputkey: LimbKey = AllPositionals):
-    """
-    Checks the dimension equivalence of edges and the output, then checks that
-    `len(output) = N` and `len(edges) = N+1` for each dimension.
-    Tht type function is passed if the edges are empty.
-    """
-    for output in node.outputs.iter(outputkey):
-        dd = output.dd
-        edges = dd.axes_edges
-        if (y := len(edges)) > 0:
-            if y != dd.dim:
-                raise TypeFunctionError(
-                    f"Array: the data ({dd.dim}d) and edges "
-                    f"({len(edges)}d) must have the same dimension!",
-                    node=node,
-                    output=output,
-                )
-            for i, edge in enumerate(edges):
-                if edge.dd.shape[0] != dd.shape[i] + 1:
-                    raise TypeFunctionError(
-                        f"Array: the data length+1 ({dd.shape[i]+1}) "
-                        f"is not consistent with edges ({edge.dd.shape[0]})",
-                        node=node,
-                        output=output,
-                    )
-
-
-####################
-# meshes
-####################
-def assign_output_meshes(
+def assign_meshes_from_inputs_to_outputs(
     input: Input | Sequence[Input],
     output: Output,
     *,
@@ -245,36 +247,7 @@ def assign_output_meshes(
         dd.axes_meshes = tuple(meshes)
 
 
-####################
-# axes
-####################
-def assign_output_axes_from_inputs(
-    node: Node,
-    inputkey: LimbKey = 0,
-    outputkey: LimbKey = AllPositionals,
-    *,
-    assign_edges: bool = False,
-    assign_meshes: bool = False,
-    **kwargs,
-) -> None:
-    """Set output edges/meshes based on inputs (take parent_output)"""
-    if not (assign_edges ^ assign_meshes):
-        raise TypeFunctionError(
-            "assign_output_axes_from_input: may not assign {assign_edges=} and {assign_meshes=}"
-        )
-
-    inputs = tuple(node.inputs.iter(inputkey))
-    outputs = tuple(node.outputs.iter(outputkey))
-
-    for output in outputs:
-        if assign_edges:
-            assign_output_edges(inputs, output, **kwargs)
-
-        if assign_meshes:
-            assign_output_meshes(inputs, output, **kwargs)
-
-
-def assign_outputs_axes_from_inputs(
+def assign_axes_from_inputs_to_outputs(
     node: Node,
     inputkey: LimbKey = 0,
     outputkey: LimbKey = AllPositionals,
@@ -282,25 +255,34 @@ def assign_outputs_axes_from_inputs(
     assign_edges: bool = False,
     assign_meshes: bool = False,
     ignore_Nd: bool = False,
+    merge_input_axes: bool = False,
     **kwargs,
 ) -> None:
     """Set outputs' edges/meshes based on inputs (take parent_output). Process each pair."""
     if not (assign_edges ^ assign_meshes):
         raise TypeFunctionError(
-            "assign_output_axes_from_input: may not assign {assign_edges=} and {assign_meshes=}"
+            f"assign_axes_from_inputs_to_outputs: may not {assign_edges=} and {assign_meshes=}"
         )
 
     inputs = tuple(node.inputs.iter(inputkey))
     outputs = tuple(node.outputs.iter(outputkey))
 
-    if len(inputs) == 1:
-        inputs = repeat(inputs[0], len(outputs))
+    if merge_input_axes:
+        for output in outputs:
+            if assign_edges:
+                assign_edges_from_inputs_to_outputs(inputs, output, **kwargs)
 
-    for input, output in zip_dag(inputs, outputs):
-        if ignore_Nd and len(output.dd.shape) != 1:
-            continue
-        if assign_edges:
-            assign_output_edges(input, output, **kwargs)
+            if assign_meshes:
+                assign_meshes_from_inputs_to_outputs(inputs, output, **kwargs)
+    else:
+        if len(inputs) == 1:
+            inputs = repeat(inputs[0], len(outputs))
 
-        if assign_meshes:
-            assign_output_meshes(input, output, **kwargs)
+        for input, output in zip_dag(inputs, outputs):
+            if ignore_Nd and len(output.dd.shape) != 1:
+                continue
+            if assign_edges:
+                assign_edges_from_inputs_to_outputs(input, output, **kwargs)
+
+            if assign_meshes:
+                assign_meshes_from_inputs_to_outputs(input, output, **kwargs)

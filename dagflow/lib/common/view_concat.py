@@ -5,7 +5,7 @@ from typing import TYPE_CHECKING
 from numpy import zeros
 
 from ...core.node import Node
-from ...core.type_functions import check_input_dimension, check_input_dtype
+from ...core.type_functions import check_dimension_of_inputs, check_dtype_of_inputs
 
 if TYPE_CHECKING:
     from ...core.input import Input
@@ -37,8 +37,8 @@ class ViewConcat(Node):
         size = 0
         self._offsets = []
         cdtype = self.inputs[0].dd.dtype
-        check_input_dtype(self, slice(None), dtype=cdtype)
-        check_input_dimension(self, slice(None), 1)
+        check_dtype_of_inputs(self, slice(None), dtype=cdtype)
+        check_dimension_of_inputs(self, slice(None), 1)
         for _input in self.inputs:
             self._offsets.append(size)
             size += _input.dd.shape[0]

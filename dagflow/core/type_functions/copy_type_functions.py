@@ -18,7 +18,7 @@ if TYPE_CHECKING:
     from ..node import Node
 
 
-def copy_from_input_to_output(
+def copy_from_inputs_to_outputs(
     node: Node,
     inputkey: LimbKey = 0,
     outputkey: LimbKey = AllPositionals,
@@ -69,7 +69,7 @@ def copy_from_input_to_output(
         caller(input, output)
 
 
-def copy_input_dtype_to_output(
+def copy_dtype_from_inputs_to_outputs(
     node: Node,
     inputkey: LimbKey = 0,
     outputkey: LimbKey = AllPositionals,
@@ -85,7 +85,7 @@ def copy_input_dtype_to_output(
         output.dd.dtype = input.dd.dtype
 
 
-def copy_input_shape_to_outputs(
+def copy_shape_from_inputs_to_outputs(
     node: Node,
     inputkey: str | int = 0,
     outputkey: LimbKey = AllPositionals,

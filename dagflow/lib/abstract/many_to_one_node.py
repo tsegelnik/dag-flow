@@ -11,10 +11,10 @@ from ...core.node import Node
 from ...core.storage import NodeStorage
 from ...core.type_functions import (
     AllPositionals,
-    check_has_inputs,
+    check_node_has_inputs,
     check_inputs_equivalence,
-    copy_from_input_to_output,
-    eval_output_dtype,
+    copy_from_inputs_to_outputs,
+    evaluate_dtype_of_outputs,
 )
 
 if TYPE_CHECKING:
@@ -74,18 +74,18 @@ class ManyToOneNode(Node):
 
     def _typefunc(self) -> None:
         """A output takes this function to determine the dtype and shape"""
-        check_has_inputs(self)  # at least one input
+        check_node_has_inputs(self)  # at least one input
         check_inputs_equivalence(
             self, broadcastable=self._broadcastable, check_edges_contents=self._check_edges_contents
         )  # all the inputs should have same dd fields
-        copy_from_input_to_output(
+        copy_from_inputs_to_outputs(
             self,
             AllPositionals,
             "result",
             prefer_largest_input=self._broadcastable,
             prefer_input_with_edges=True,
         )  # copy shape to result
-        eval_output_dtype(self, AllPositionals, "result")  # eval dtype of result
+        evaluate_dtype_of_outputs(self, AllPositionals, "result")  # eval dtype of result
 
     def _post_allocate(self):
         super()._post_allocate()

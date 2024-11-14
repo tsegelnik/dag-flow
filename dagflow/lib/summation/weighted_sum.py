@@ -5,7 +5,7 @@ from typing import TYPE_CHECKING
 from numpy import copyto
 
 from ...core.exception import TypeFunctionError
-from ...core.type_functions import check_has_inputs, copy_input_shape_to_outputs, eval_output_dtype
+from ...core.type_functions import check_node_has_inputs, copy_shape_from_inputs_to_outputs, evaluate_dtype_of_outputs
 from ..abstract import ManyToOneNode
 
 if TYPE_CHECKING:
@@ -26,7 +26,7 @@ class WeightedSum(ManyToOneNode):
     def _typefunc(self) -> None:
         """A output takes this function to determine the dtype and shape"""
         super()._typefunc()
-        check_has_inputs(self, "weight")
+        check_node_has_inputs(self, "weight")
         weight = self._weight
         shape = weight.dd.shape[0]
         leninp = len(self.inputs)
@@ -47,8 +47,8 @@ class WeightedSum(ManyToOneNode):
                 node=self,
                 input=weight,
             )
-        copy_input_shape_to_outputs(self, 0, "result")
-        eval_output_dtype(self, slice(None), "result")
+        copy_shape_from_inputs_to_outputs(self, 0, "result")
+        evaluate_dtype_of_outputs(self, slice(None), "result")
 
     def _fcn_number(self):
         """

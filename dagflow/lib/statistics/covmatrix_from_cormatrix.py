@@ -6,10 +6,10 @@ from numpy import multiply
 
 from ...core.node import Node
 from ...core.type_functions import (
-    check_input_dimension,
-    check_input_square,
-    check_inputs_multiplicable_mat,
-    copy_from_input_to_output,
+    check_dimension_of_inputs,
+    check_inputs_are_square_matrices,
+    check_inputs_are_matrix_multipliable,
+    copy_from_inputs_to_outputs,
 )
 
 if TYPE_CHECKING:
@@ -48,7 +48,7 @@ class CovmatrixFromCormatrix(Node):
         multiply(V, sigma[:, None], out=V)
 
     def _typefunc(self) -> None:
-        check_input_square(self, "cormatrix")
-        check_input_dimension(self, "sigma", 1)
-        check_inputs_multiplicable_mat(self, "cormatrix", "sigma")
-        copy_from_input_to_output(self, slice(None), slice(None))
+        check_inputs_are_square_matrices(self, "cormatrix")
+        check_dimension_of_inputs(self, "sigma", 1)
+        check_inputs_are_matrix_multipliable(self, "cormatrix", "sigma")
+        copy_from_inputs_to_outputs(self, slice(None), slice(None))

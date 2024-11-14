@@ -16,7 +16,7 @@ if TYPE_CHECKING:
     from ..node import Node
 
 
-def check_has_inputs(
+def check_node_has_inputs(
     node: Node,
     inputkey: str | int | slice | Sequence | None = None,
     *,
@@ -44,13 +44,13 @@ def check_has_inputs(
             ) from exc
 
 
-def check_inputs_number(node: Node, n: int) -> None:
+def check_number_of_inputs(node: Node, n: int) -> None:
     """Checking if the node has only `n` inputs"""
     if (ninp := len(node.inputs)) != n:
         raise TypeFunctionError(f"The node must have only {n} inputs, but given {ninp}!", node=node)
 
 
-def check_input_dimension(node: Node, inputkey: LimbKey, ndim: int, **kwargs):
+def check_dimension_of_inputs(node: Node, inputkey: LimbKey, ndim: int, **kwargs):
     """Checking the dimension of the input"""
     for input in node.inputs.iter(inputkey, **kwargs):
         dim = len(input.dd.shape)
@@ -62,7 +62,7 @@ def check_input_dimension(node: Node, inputkey: LimbKey, ndim: int, **kwargs):
             )
 
 
-def check_input_shape(node: Node, inputkey: LimbKey, *shapes: tuple[int, ...], **kwargs):
+def check_shape_of_inputs(node: Node, inputkey: LimbKey, *shapes: tuple[int, ...], **kwargs):
     """Checking the shape equivalence for inputs"""
     for input in node.inputs.iter(inputkey, **kwargs):
         shape_current = input.dd.shape
@@ -74,7 +74,7 @@ def check_input_shape(node: Node, inputkey: LimbKey, *shapes: tuple[int, ...], *
             )
 
 
-def check_input_size(
+def check_size_of_inputs(
     node: Node,
     inputkey: LimbKey,
     *,
@@ -115,7 +115,7 @@ def check_input_size(
                 )
 
 
-def check_input_dtype(node: Node, inputkey: LimbKey, *, dtype: DTypeLike, **kwargs):
+def check_dtype_of_inputs(node: Node, inputkey: LimbKey, *, dtype: DTypeLike, **kwargs):
     """Checking the dtype equivalence for inputs"""
     for input in node.inputs.iter(inputkey, **kwargs):
         dtt = input.dd.dtype
@@ -127,7 +127,7 @@ def check_input_dtype(node: Node, inputkey: LimbKey, *, dtype: DTypeLike, **kwar
             )
 
 
-def check_input_square(node: Node, inputkey: LimbKey):
+def check_inputs_are_square_matrices(node: Node, inputkey: LimbKey):
     """Checking input is a square matrix"""
     for input in node.inputs.iter(inputkey):
         shape = input.dd.shape
@@ -169,7 +169,7 @@ def _check_input_block_or_diag(node: Node, input: Input, *, check_square: bool =
     return dim
 
 
-def check_input_matrix_or_diag(node: Node, inputkey: LimbKey, *, check_square: bool = False) -> int:
+def check_inputs_are_matrices_or_diagonals(node: Node, inputkey: LimbKey, *, check_square: bool = False) -> int:
     """Check if input is a square matrix or diagonal (1d) of a square matrix.
     Returns the maximal dimension."""
     dim_max = 0
@@ -179,7 +179,7 @@ def check_input_matrix_or_diag(node: Node, inputkey: LimbKey, *, check_square: b
     return dim_max
 
 
-def check_inputs_consistent_square_or_diag(node: Node, inputkey: LimbKey = AllPositionals) -> int:
+def check_inputs_consistency_with_square_matrices_or_diagonals(node: Node, inputkey: LimbKey = AllPositionals) -> int:
     """Check if inputs are square matrices or diagonals (1d) of a square matrices of the same size.
     Returns the maximal dimension."""
     inputs = tuple(node.inputs.iter(inputkey))
@@ -267,7 +267,7 @@ def check_inputs_equivalence(
             )
 
 
-def check_inputs_same_dtype(node: Node, inputkey: LimbKey = AllPositionals) -> DTypeLike:
+def check_inputs_have_same_dtype(node: Node, inputkey: LimbKey = AllPositionals) -> DTypeLike:
     """Checking dtypes of all the inputs are same"""
     inputs = tuple(node.inputs.iter(inputkey))
     input0, inputs = inputs[0], inputs[1:]
@@ -283,7 +283,7 @@ def check_inputs_same_dtype(node: Node, inputkey: LimbKey = AllPositionals) -> D
     return dtype
 
 
-def check_inputs_same_shape(node: Node, inputkey: LimbKey = AllPositionals) -> tuple[int, ...]:
+def check_inputs_have_same_shape(node: Node, inputkey: LimbKey = AllPositionals) -> tuple[int, ...]:
     """Checking shapes of all the inputs are same"""
     inputs = tuple(node.inputs.iter(inputkey))
     input0, inputs = inputs[0], inputs[1:]
@@ -299,7 +299,7 @@ def check_inputs_same_shape(node: Node, inputkey: LimbKey = AllPositionals) -> t
     return shape
 
 
-def check_input_subtype(node: Node, inputkey: LimbKey, *, dtype: DTypeLike):
+def check_subtype_of_inputs(node: Node, inputkey: LimbKey, *, dtype: DTypeLike):
     """Checks if the input dtype is some subtype of `dtype`."""
     for input in node.inputs.iter(inputkey):
         if not issubdtype(input.dd.dtype, dtype):
@@ -310,7 +310,7 @@ def check_input_subtype(node: Node, inputkey: LimbKey, *, dtype: DTypeLike):
             )
 
 
-def check_inputs_multiplicable_mat(
+def check_inputs_are_matrix_multipliable(
     node: Node, inputkey1: LimbKey, inputkey2: LimbKey
 ) -> tuple[tuple[int, int], ...]:
     """Checking that inputs from key1 and key2 may be multiplied (matrix)
@@ -354,7 +354,7 @@ def find_max_size_of_inputs(node: Node, inputkey: LimbKey = AllPositionals) -> i
     return size
 
 
-def check_inputs_multiplicity(node: Node, N: int) -> None:
+def check_inputs_number_is_divisible_by_N(node: Node, N: int) -> None:
     """Check whether inputs count multiple to some N or not"""
     n = node.inputs.len_pos()
     if n % N != 0:

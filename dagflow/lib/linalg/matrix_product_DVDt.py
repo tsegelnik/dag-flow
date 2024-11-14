@@ -6,11 +6,11 @@ from numpy import empty, matmul, multiply
 
 from ...core.node import Node
 from ...core.type_functions import (
-    check_has_inputs,
-    check_input_dimension,
-    check_input_matrix_or_diag,
-    check_inputs_multiplicable_mat,
-    eval_output_dtype,
+    check_node_has_inputs,
+    check_dimension_of_inputs,
+    check_inputs_are_matrices_or_diagonals,
+    check_inputs_are_matrix_multipliable,
+    evaluate_dtype_of_outputs,
 )
 
 if TYPE_CHECKING:
@@ -57,11 +57,11 @@ class MatrixProductDVDt(Node):
         matmul(self._buffer, left.T, out=out)
 
     def _typefunc(self) -> None:
-        check_has_inputs(self, ("left", "square"))
-        check_input_dimension(self, "left", ndim=2)
-        ndim = check_input_matrix_or_diag(self, "square", check_square=True)
-        check_inputs_multiplicable_mat(self, "left", "square")
-        eval_output_dtype(self, slice(None), "result")
+        check_node_has_inputs(self, ("left", "square"))
+        check_dimension_of_inputs(self, "left", ndim=2)
+        ndim = check_inputs_are_matrices_or_diagonals(self, "square", check_square=True)
+        check_inputs_are_matrix_multipliable(self, "left", "square")
+        evaluate_dtype_of_outputs(self, slice(None), "result")
         self._out.dd.shape = (self._left.dd.shape[0], self._left.dd.shape[0])
         self.function = self._functions_dict["diagonal" if ndim == 1 else "square"]
 
