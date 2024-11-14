@@ -103,16 +103,22 @@ class FlagsDescriptor:
         self.frozen_tainted = False
 
     def taint_children(
-        self, *, force: bool = False, force_computation: bool = False, caller: Input | None = None
+        self,
+        *,
+        force_taint: bool = False,
+        force_computation: bool = False,
+        caller: Input | None = None,
     ) -> None:
         for child in self.children:
-            child.taint_children(force=force, force_computation=force_computation, caller=caller)
+            child.taint_children(
+                force_taint=force_taint, force_computation=force_computation, caller=caller
+            )
 
-    def taint_type(self, force: bool = False):
-        if self.types_tainted and not force:
+    def taint_type(self, force_taint: bool = False):
+        if self.types_tainted and not force_taint:
             return
         self.types_tainted = True
         self.tainted = True
         self.frozen = False
         for child in self.children:
-            child.taint_children_type(force=force)
+            child.taint_children_type(force_taint=force_taint)

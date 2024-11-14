@@ -323,14 +323,18 @@ class Output:
             rshift(self, other)
 
     def taint_children(
-        self, *, force: bool = False, force_computation: bool = False, caller: Input | None = None
+        self,
+        *,
+        force_taint: bool = False,
+        force_computation: bool = False,
+        caller: Input | None = None,
     ) -> None:
         for input in self._child_inputs:
-            input.taint(force=force, force_computation=force_computation, caller=caller)
+            input.taint(force_taint=force_taint, force_computation=force_computation, caller=caller)
 
-    def taint_children_type(self, force: bool = False) -> None:
+    def taint_children_type(self, force_taint: bool = False) -> None:
         for input in self._child_inputs:
-            input.taint_type(force=force)
+            input.taint_type(force_taint=force_taint)
 
     def touch(self, force_computation=False):
         return self._node.touch(force_computation=force_computation)
@@ -380,8 +384,10 @@ class Output:
 
         return True
 
-    def seti(self, idx: int, value: float, check_taint: bool = False, force: bool = False) -> bool:
-        if self.node.frozen and not force:
+    def seti(
+        self, idx: int, value: float, check_taint: bool = False, force_taint: bool = False
+    ) -> bool:
+        if self.node.frozen and not force_taint:
             return False
 
         tainted = self._data[idx] != value if check_taint else True
@@ -390,8 +396,8 @@ class Output:
             self.__taint_children()
         return tainted
 
-    def set(self, data: ArrayLike, check_taint: bool = False, force: bool = False) -> bool:
-        if self.node.frozen and not force:
+    def set(self, data: ArrayLike, check_taint: bool = False, force_taint: bool = False) -> bool:
+        if self.node.frozen and not force_taint:
             return False
 
         tainted = (self._data != data).any() if check_taint else True

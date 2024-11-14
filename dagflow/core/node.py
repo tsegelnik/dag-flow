@@ -548,9 +548,9 @@ class Node(NodeBase):
             self.taint()
 
     def taint(
-        self, *, force: bool = False, force_computation: bool = False, caller: Input | None = None
+        self, *, force_taint: bool = False, force_computation: bool = False, caller: Input | None = None
     ):
-        if self.tainted and not force:
+        if self.tainted and not force_taint:
             return
         if self.frozen:
             self.fd.frozen_tainted = True
@@ -559,19 +559,19 @@ class Node(NodeBase):
         self.fd.tainted = True
         ret = self._touch() if (self._immediate or force_computation) else None
         # TODO:  maybe here it is better to avoid extra call from FlagsDescriptor
-        self.fd.taint_children(force=force, force_computation=force_computation, caller=caller)
+        self.fd.taint_children(force_taint=force_taint, force_computation=force_computation, caller=caller)
 
         return ret
 
     def taint_children(
-        self, *, force: bool = False, force_computation: bool = False, caller: Input | None = None
+        self, *, force_taint: bool = False, force_computation: bool = False, caller: Input | None = None
     ):
-        self.fd.taint_children(force=force, force_computation=force_computation, caller=caller)
+        self.fd.taint_children(force_taint=force_taint, force_computation=force_computation, caller=caller)
 
-    def taint_type(self, force: bool = False):
+    def taint_type(self, force_taint: bool = False):
         if self.closed:
             raise ClosedGraphError("Unable to taint type", node=self)
-        self.fd.taint_type(force=force)
+        self.fd.taint_type(force_taint=force_taint)
 
     def print(self):
         print(f"Node {self._name}: →[{self.inputs.len_all()}],[{self.outputs.len_all()}]→")
@@ -687,12 +687,12 @@ class Node(NodeBase):
         self.logger.debug(f"Node '{self.name}': {self.closed and 'closed' or 'failed to close'}")
         return self.closed
 
-    def open(self, force: bool = False) -> bool:
-        if not self.closed and not force:
+    def open(self, force_taint: bool = False) -> bool:
+        if not self.closed and not force_taint:
             return True
         self.logger.debug(f"Node '{self.name}': Open")
         if not all(
-            _input.node.open(force) for output in self.outputs for _input in output.child_inputs
+            _input.node.open(force_taint) for output in self.outputs for _input in output.child_inputs
         ):
             raise OpeningError(node=self)
         self.unfreeze()

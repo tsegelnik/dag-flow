@@ -129,26 +129,26 @@ class Input:
     def closed(self) -> bool:
         return self._node.closed if self.node else False
 
-    def set_child_output(self, child_output: Output | None, force: bool = False) -> None:
+    def set_child_output(self, child_output: Output | None, force_taint: bool = False) -> None:
         if not self.closed:
-            return self._set_child_output(child_output, force)
+            return self._set_child_output(child_output, force_taint)
         raise ClosedGraphError(input=self, node=self.node, output=child_output)
 
-    def _set_child_output(self, child_output: Output, force: bool = False) -> None:
-        if self.child_output and not force:
+    def _set_child_output(self, child_output: Output, force_taint: bool = False) -> None:
+        if self.child_output and not force_taint:
             raise ReconnectionError(output=self.child_output, node=self.node)
         self._child_output = child_output
         if child_output:
             child_output.parent_input = self
 
-    def set_parent_output(self, parent_output: Output, force: bool = False) -> None:
+    def set_parent_output(self, parent_output: Output, force_taint: bool = False) -> None:
         if self.closed:
             raise ClosedGraphError(input=self, node=self.node, output=parent_output)
 
-        return self._set_parent_output(parent_output, force)
+        return self._set_parent_output(parent_output, force_taint)
 
-    def _set_parent_output(self, parent_output: Output, force: bool = False) -> None:
-        if self.connected() and not force:
+    def _set_parent_output(self, parent_output: Output, force_taint: bool = False) -> None:
+        if self.connected() and not force_taint:
             raise ReconnectionError(output=self._parent_output, node=self.node)
         self._parent_output = parent_output
 
@@ -222,16 +222,20 @@ class Input:
         return self._parent_output.touch()
 
     def taint(
-        self, *, force: bool = False, force_computation: bool = False, caller: Input | None = None
+        self,
+        *,
+        force_taint: bool = False,
+        force_computation: bool = False,
+        caller: Input | None = None,
     ) -> None:
         self._node.taint(
-            force=force,
+            force_taint=force_taint,
             force_computation=force_computation,
             caller=self if caller is None else caller,
         )
 
-    def taint_type(self, force: bool = False) -> None:
-        self._node.taint_type(force=force)
+    def taint_type(self, force_taint: bool = False) -> None:
+        self._node.taint_type(force_taint=force_taint)
 
     def connected(self) -> bool:
         return self._parent_output is not None
