@@ -1,12 +1,14 @@
 from __future__ import annotations
 
 from contextlib import suppress
+from sys import argv
 from time import process_time
 from typing import TYPE_CHECKING
 
 from numpy import exp, log10
 from numpy.random import uniform
 from plotille import Figure
+from pytest import mark
 
 from dagflow.core.graph import Graph
 from dagflow.lib.arithmetic import Sum
@@ -73,6 +75,7 @@ def _report(t1, t2, nsums, datasize):
     return dt_ms, dt_rel_μs
 
 
+@mark.skipif("--include-long-time-tests" not in argv, reason="long-time tests switched off")
 def test_graph_scale_01(testname, width: int = 6, length: int = 7):
     datasize = 1
     nsums, g, input_arrays, head = _make_test_graph(datasize, width, length)
@@ -134,6 +137,7 @@ def _draw_fig(arg1, logsize, arg3):
     return result
 
 
+@mark.skipif("--include-long-time-tests" not in argv, reason="long-time tests switched off")
 def test_graph_scale_02(width: int = 2, length: int = 18):
     datasize = 1
     nsums, _, input_arrays, head = _make_test_graph(datasize, width, length)

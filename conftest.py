@@ -1,8 +1,4 @@
-from os import chdir
-from os import environ
-from os import getcwd
-from os import listdir
-from os import mkdir
+from os import chdir, environ, getcwd, listdir, mkdir
 from os.path import isdir
 
 from pytest import fixture
@@ -28,9 +24,28 @@ def pytest_sessionstart(session):
 
 
 def pytest_addoption(parser):
-    parser.addoption("--debug-graph", action="store_true", default=False)
+    parser.addoption(
+        "--debug-graph",
+        action="store_true",
+        default=False,
+        help="set debug=True for all the graphs in tests",
+    )
+    parser.addoption(
+        "--include-long-time-tests", action="store_true", default=False, help="include long-time tests"
+    )
 
 
+def pytest_generate_tests(metafunc):
+    # This is called for every test. Only get/set command line arguments
+    # if the argument is specified in the list of test "fixturenames".
+    option_value = metafunc.config.option.include_long_time_tests
+    if "--include-long-time-tests" in metafunc.fixturenames and option_value is not None:
+        metafunc.parametrize("--include-long-time-tests", [option_value])
+
+
+########################################
+# Create global variables (fixtures) for a pytest run
+########################################
 @fixture(scope="session")
 def debug_graph(request):
     return request.config.option.debug_graph

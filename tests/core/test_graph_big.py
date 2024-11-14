@@ -1,10 +1,15 @@
+from sys import argv
+
+from pytest import mark
+
 from dagflow.core.graph import Graph
-from dagflow.plot.graphviz import GraphDot
 from dagflow.lib.common import Dummy
+from dagflow.plot.graphviz import GraphDot
 
 counter = 0
 
 
+@mark.skipif("--include-long-time-tests" not in argv, reason="long-time tests switched off")
 def test_graph_big_01():
     """Create a graph of nodes and test evaluation features"""
     g = Graph()
