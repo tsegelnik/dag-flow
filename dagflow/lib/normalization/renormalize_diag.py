@@ -7,10 +7,10 @@ from numba import njit
 from ...core.input_handler import MissingInputAddPair
 from ...core.type_functions import (
     AllPositionals,
-    check_input_shape,
-    check_input_square,
+    check_shape_of_inputs,
+    check_inputs_are_square_matrices,
     check_inputs_equivalence,
-    eval_output_dtype,
+    evaluate_dtype_of_outputs,
 )
 from ..abstract import OneToOneNode
 
@@ -65,10 +65,10 @@ class RenormalizeDiag(OneToOneNode):
 
     def _typefunc(self) -> None:
         super()._typefunc()
-        check_input_shape(self, "scale", (1,))
-        check_input_square(self, 0)
+        check_shape_of_inputs(self, "scale", (1,))
+        check_inputs_are_square_matrices(self, 0)
         check_inputs_equivalence(self, AllPositionals, check_dtype=True, check_shape=True)
-        eval_output_dtype(self, (AllPositionals, "scale"), "result")
+        evaluate_dtype_of_outputs(self, (AllPositionals, "scale"), "result")
         self.function = self._functions_dict[self._mode]
 
 

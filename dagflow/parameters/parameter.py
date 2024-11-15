@@ -25,13 +25,13 @@ class Parameter:
         "_labelfmt",
         "_stack",
     )
-    _parent: Parameters
+    _parent: Parameters | None
     _idx: int
     _common_output: Output
     _value_output: Output
     _view: Node | None
     _common_connectible_output: Output
-    _connectible_output: Output
+    _connectible_output: Output | None
     _labelfmt: str
     _stack: list[float] | list[int]
 
@@ -40,7 +40,7 @@ class Parameter:
         value_output: Output,
         idx: int | None = None,
         *,
-        parent: Parameters,
+        parent: Parameters | None,
         connectible: Output | None = None,
         labelfmt: str = "{}",
         label: Mapping = {},
@@ -118,10 +118,10 @@ class Parameter:
 
     @property
     def is_correlated(self) -> bool:
-        return self._parent.is_correlated
+        return self._parent is not None and self._parent.is_correlated
 
     @property
-    def connectible(self) -> Output:
+    def connectible(self) -> Output | None:
         return self._connectible_output
 
     def label(self, source: str = "text") -> str:
@@ -131,6 +131,8 @@ class Parameter:
         return {"value": self.value, "label": self.label(label_from), "flags": ""}
 
     def __rshift__(self, other):
+        if self._connectible_output is None:
+            raise RuntimeError("Cannot connect a connectible output due to it is None!")
         self._connectible_output >> other
 
     def push(self, other: float | int | None = None) -> float | int:

@@ -5,9 +5,9 @@ from ...core.input_handler import MissingInputAddPair
 from ...core.node import Node
 from ...core.type_functions import (
     AllPositionals,
-    check_has_inputs,
-    check_input_matrix_or_diag,
-    copy_input_dtype_to_output,
+    check_node_has_inputs,
+    check_inputs_are_matrices_or_diagonals,
+    copy_dtype_from_inputs_to_outputs,
 )
 
 
@@ -52,9 +52,9 @@ class LogProdDiag(Node):
             out.data[0] = 2 * self._buffer.sum()
 
     def _typefunc(self) -> None:
-        check_has_inputs(self, AllPositionals)
-        ndim = check_input_matrix_or_diag(self, AllPositionals, check_square=True)
-        copy_input_dtype_to_output(self, AllPositionals, AllPositionals)
+        check_node_has_inputs(self, AllPositionals)
+        ndim = check_inputs_are_matrices_or_diagonals(self, AllPositionals, check_square=True)
+        copy_dtype_from_inputs_to_outputs(self, AllPositionals, AllPositionals)
         for out in self.outputs:
             out.dd.shape = (1,)
 

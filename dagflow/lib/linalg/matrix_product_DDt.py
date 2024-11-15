@@ -5,7 +5,7 @@ from typing import TYPE_CHECKING
 from numpy import matmul
 
 from ...core.node import Node
-from ...core.type_functions import check_input_dimension, eval_output_dtype
+from ...core.type_functions import check_dimension_of_inputs, evaluate_dtype_of_outputs
 
 if TYPE_CHECKING:
     from ...core.input import Input
@@ -34,6 +34,6 @@ class MatrixProductDDt(Node):
         matmul(matrix, matrix.T, out=out)
 
     def _typefunc(self) -> None:
-        check_input_dimension(self, "matrix", ndim=2)
-        eval_output_dtype(self, slice(None), "result")
+        check_dimension_of_inputs(self, "matrix", ndim=2)
+        evaluate_dtype_of_outputs(self, slice(None), "result")
         self._out.dd.shape = (self._matrix.dd.shape[0], self._matrix.dd.shape[0])

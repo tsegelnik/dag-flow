@@ -1,4 +1,4 @@
-from ...core.type_functions import AllPositionals, check_has_inputs, copy_input_dtype_to_output
+from ...core.type_functions import AllPositionals, check_node_has_inputs, copy_dtype_from_inputs_to_outputs
 from ..abstract import OneToOneNode
 
 
@@ -22,8 +22,8 @@ class ArraySum(OneToOneNode):
         self._labels.setdefault("mark", "Σᵢ")
 
     def _typefunc(self) -> None:
-        check_has_inputs(self, AllPositionals)
-        copy_input_dtype_to_output(self, AllPositionals, AllPositionals)
+        check_node_has_inputs(self, AllPositionals)
+        copy_dtype_from_inputs_to_outputs(self, AllPositionals, AllPositionals)
         for out in self.outputs:
             out.dd.shape = (1,)
 

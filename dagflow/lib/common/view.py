@@ -3,7 +3,7 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 
 from ...core.node import Node
-from ...core.type_functions import copy_from_input_to_output
+from ...core.type_functions import copy_from_inputs_to_outputs
 
 if TYPE_CHECKING:
     from ...core.input import Input
@@ -49,7 +49,7 @@ class View(Node):
 
     def _typefunc(self) -> None:
         """A output takes this function to determine the dtype and shape"""
-        copy_from_input_to_output(self, 0, 0)
+        copy_from_inputs_to_outputs(self, 0, 0)
 
         if self._length is not None:
             dd = self.outputs[0].dd

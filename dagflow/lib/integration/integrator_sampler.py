@@ -8,10 +8,10 @@ from numpy.polynomial.legendre import leggauss
 from ...core.exception import InitializationError
 from ...core.node import Node
 from ...core.type_functions import (
-    check_input_dimension,
-    check_input_edges_dim,
-    check_input_subtype,
-    check_inputs_number,
+    check_dimension_of_inputs,
+    check_edges_dimension_of_inputs,
+    check_subtype_of_inputs,
+    check_number_of_inputs,
 )
 
 if TYPE_CHECKING:
@@ -146,7 +146,7 @@ class IntegratorSampler(Node):
         Checks self.inputs dimension and, selects an integration
         algorithm, determines dtype and shape for self.outputs
         """
-        check_inputs_number(self, 0)
+        check_number_of_inputs(self, 0)
         lenX = self.__check_orders("orders_x")
         if self.mode == "gl2d":
             lenY = self.__check_orders("orders_y")
@@ -161,9 +161,9 @@ class IntegratorSampler(Node):
     def __check_orders(self, name: str) -> int:
         """The method checks dimension (==1) of the input `name`, type
         (==`integer`), and returns the `dd.shape[0]`"""
-        check_input_dimension(self, name, 1)
-        check_input_subtype(self, name, integer)
-        check_input_edges_dim(self, name, 1)
+        check_dimension_of_inputs(self, name, 1)
+        check_subtype_of_inputs(self, name, dtype=integer)
+        check_edges_dimension_of_inputs(self, name, 1)
         orders = self.inputs[name]
         return sum(orders.data)
 

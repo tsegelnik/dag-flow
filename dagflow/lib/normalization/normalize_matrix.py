@@ -5,7 +5,7 @@ from typing import TYPE_CHECKING
 from numba import njit
 
 from ...core.input_handler import MissingInputAddPair
-from ...core.type_functions import AllPositionals, check_input_dimension, check_inputs_equivalence
+from ...core.type_functions import AllPositionals, check_dimension_of_inputs, check_inputs_equivalence
 from ..abstract import OneToOneNode
 
 if TYPE_CHECKING:
@@ -51,7 +51,7 @@ class NormalizeMatrix(OneToOneNode):
 
     def _typefunc(self) -> None:
         super()._typefunc()
-        check_input_dimension(self, AllPositionals, ndim=2)
+        check_dimension_of_inputs(self, AllPositionals, ndim=2)
         check_inputs_equivalence(self, AllPositionals, check_dtype=True, check_shape=True)
 
         self.function = self._functions_dict[self._mode]

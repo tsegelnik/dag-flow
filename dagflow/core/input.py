@@ -13,6 +13,7 @@ from .shift import rshift
 
 if TYPE_CHECKING:
     from collections.abc import Iterator
+    from typing import Any
 
     from numpy.typing import DTypeLike, NDArray
 
@@ -125,29 +126,29 @@ class Input:
         self.own_dd.axes_meshes = axes_meshes or ()
 
     @property
-    def closed(self):
+    def closed(self) -> bool:
         return self._node.closed if self.node else False
 
-    def set_child_output(self, child_output: Output | None, force: bool = False) -> None:
+    def set_child_output(self, child_output: Output | None, force_taint: bool = False) -> None:
         if not self.closed:
-            return self._set_child_output(child_output, force)
+            return self._set_child_output(child_output, force_taint)
         raise ClosedGraphError(input=self, node=self.node, output=child_output)
 
-    def _set_child_output(self, child_output: Output, force: bool = False) -> None:
-        if self.child_output and not force:
+    def _set_child_output(self, child_output: Output, force_taint: bool = False) -> None:
+        if self.child_output and not force_taint:
             raise ReconnectionError(output=self.child_output, node=self.node)
         self._child_output = child_output
         if child_output:
             child_output.parent_input = self
 
-    def set_parent_output(self, parent_output: Output, force: bool = False) -> None:
+    def set_parent_output(self, parent_output: Output, force_taint: bool = False) -> None:
         if self.closed:
             raise ClosedGraphError(input=self, node=self.node, output=parent_output)
 
-        return self._set_parent_output(parent_output, force)
+        return self._set_parent_output(parent_output, force_taint)
 
-    def _set_parent_output(self, parent_output: Output, force: bool = False) -> None:
-        if self.connected() and not force:
+    def _set_parent_output(self, parent_output: Output, force_taint: bool = False) -> None:
+        if self.connected() and not force_taint:
             raise ReconnectionError(output=self._parent_output, node=self.node)
         self._parent_output = parent_output
 
@@ -220,11 +221,21 @@ class Input:
     def touch(self):
         return self._parent_output.touch()
 
-    def taint(self, **kwargs) -> None:
-        self._node.taint(caller=self, **kwargs)
+    def taint(
+        self,
+        *,
+        force_taint: bool = False,
+        force_computation: bool = False,
+        caller: Input | None = None,
+    ) -> None:
+        self._node.taint(
+            force_taint=force_taint,
+            force_computation=force_computation,
+            caller=self if caller is None else caller,
+        )
 
-    def taint_type(self, *args, **kwargs) -> None:
-        self._node.taint_type(*args, **kwargs)
+    def taint_type(self, force_taint: bool = False) -> None:
+        self._node.taint_type(force_taint=force_taint)
 
     def connected(self) -> bool:
         return self._parent_output is not None

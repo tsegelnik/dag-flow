@@ -3,7 +3,7 @@ from scipy.linalg import cholesky
 
 from ...core.input_handler import MissingInputAddPair
 from ...core.node import Node
-from ...core.type_functions import check_has_inputs, check_input_matrix_or_diag, copy_from_input_to_output
+from ...core.type_functions import check_node_has_inputs, check_inputs_are_matrices_or_diagonals, copy_from_inputs_to_outputs
 
 
 class Cholesky(Node):
@@ -45,9 +45,9 @@ class Cholesky(Node):
             sqrt(_input, out=_output)
 
     def _typefunc(self) -> None:
-        check_has_inputs(self)
-        ndim = check_input_matrix_or_diag(self, slice(None), check_square=True)
-        copy_from_input_to_output(self, slice(None), slice(None))
+        check_node_has_inputs(self)
+        ndim = check_inputs_are_matrices_or_diagonals(self, slice(None), check_square=True)
+        copy_from_inputs_to_outputs(self, slice(None), slice(None))
 
         if ndim == 2:
             self.function = self._functions_dict["square"]

@@ -7,12 +7,12 @@ from scipy.linalg import solve_triangular
 
 from ...core.node import Node
 from ...core.type_functions import (
-    check_has_inputs,
-    check_input_dimension,
-    check_input_matrix_or_diag,
+    check_node_has_inputs,
+    check_dimension_of_inputs,
+    check_inputs_are_matrices_or_diagonals,
     check_inputs_equivalence,
-    check_inputs_multiplicable_mat,
-    copy_from_input_to_output,
+    check_inputs_are_matrix_multipliable,
+    copy_from_inputs_to_outputs,
 )
 
 if TYPE_CHECKING:
@@ -132,7 +132,13 @@ class NormalizeCorrelatedVarsTwoWays(Node):
         multiply(self._matrix, self._normvalue, out=self._value)
         add(self._value, self._central, out=self._value)
 
-    def _on_taint(self, caller: Input) -> None:
+    def taint(
+        self,
+        *,
+        force_taint: bool = False,
+        force_computation: bool = False,
+        caller: Input | None = None,
+    ):
         """Choose the function to call based on the modified input:
         - if normvalue is modified, the value should be updated
         - if value is modified, the normvalue should be updated
@@ -146,14 +152,15 @@ class NormalizeCorrelatedVarsTwoWays(Node):
             self.function = self._functions_dict[f"backward_{self._ndim}"]
         else:
             self.function = self._functions_dict[f"forward_{self._ndim}"]
+        super().taint(force_taint=force_taint, force_computation=force_computation, caller=caller)
 
     def _typefunc(self) -> None:
-        check_has_inputs(self)
-        ndim = check_input_matrix_or_diag(self, "matrix", check_square=True)
-        check_input_dimension(self, "central", 1)
+        check_node_has_inputs(self)
+        ndim = check_inputs_are_matrices_or_diagonals(self, "matrix", check_square=True)
+        check_dimension_of_inputs(self, "central", 1)
         check_inputs_equivalence(self, ("central", slice(None)))
-        check_inputs_multiplicable_mat(self, "matrix", slice(None))
-        copy_from_input_to_output(self, slice(None), slice(None))
+        check_inputs_are_matrix_multipliable(self, "matrix", slice(None))
+        copy_from_inputs_to_outputs(self, slice(None), slice(None))
 
         self.labels.inherit(
             self._value_input.parent_node.labels,

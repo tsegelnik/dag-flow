@@ -5,7 +5,7 @@ from typing import TYPE_CHECKING
 
 from ...core.exception import InitializationError, TypeFunctionError
 from ...core.node import Node
-from ...core.type_functions import check_input_dimension, check_inputs_number
+from ...core.type_functions import check_dimension_of_inputs, check_number_of_inputs
 
 if TYPE_CHECKING:
     from ...core.input import Input
@@ -48,8 +48,8 @@ class ParArrayInput(Node):
 
     def _typefunc(self) -> None:
         # TODO: check dtype of input and parameters?
-        check_inputs_number(self, 1)
-        check_input_dimension(self, 0, 1)
+        check_number_of_inputs(self, 1)
+        check_dimension_of_inputs(self, 0, 1)
         if (npar := len(self._parameters_list)) != (inpsize := self._values.dd.size):
             raise TypeFunctionError(
                 (

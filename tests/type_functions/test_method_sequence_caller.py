@@ -1,4 +1,4 @@
-from dagflow.core.type_functions import MethodSequenceCaller
+from dagflow.core.type_functions.tools_for_type_functions import MethodSequenceCaller
 
 
 def test_00():

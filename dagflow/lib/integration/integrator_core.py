@@ -8,12 +8,12 @@ from numpy import empty, floating, integer, multiply
 from ...core.exception import TypeFunctionError
 from ...core.input_handler import MissingInputAddPair
 from ...core.type_functions import (
-    check_has_inputs,
-    check_input_dimension,
-    check_input_dtype,
-    check_input_edges_dim,
-    check_input_shape,
-    check_input_subtype,
+    check_node_has_inputs,
+    check_dimension_of_inputs,
+    check_dtype_of_inputs,
+    check_edges_dimension_of_inputs,
+    check_shape_of_inputs,
+    check_subtype_of_inputs,
 )
 from ..abstract import OneToOneNode
 
@@ -154,7 +154,7 @@ class IntegratorCore(OneToOneNode):
         """
         if len(self.inputs) == 0:
             return
-        check_has_inputs(self, "weights")
+        check_node_has_inputs(self, "weights")
 
         input0 = self.inputs[0]
         self._orders_y_input = self.inputs.get("orders_y", None)
@@ -164,11 +164,11 @@ class IntegratorCore(OneToOneNode):
                 f"The IntegratorCore works only with {dim}d self.inputs, but the first is {ndim}d!",
                 node=self,
             )
-        check_input_dimension(self, (slice(None), "weights"), dim)
-        check_input_shape(self, (slice(None), "weights"), input0.dd.shape)
-        check_input_subtype(self, 0, floating)
+        check_dimension_of_inputs(self, (slice(None), "weights"), dim)
+        check_shape_of_inputs(self, (slice(None), "weights"), input0.dd.shape)
+        check_subtype_of_inputs(self, 0, dtype=floating)
         dtype = input0.dd.dtype
-        check_input_dtype(self, (slice(None), "weights"), dtype)
+        check_dtype_of_inputs(self, (slice(None), "weights"), dtype=dtype)
 
         edgeslenX, edgesX = self.__check_orders_input("orders_x", input0.dd.shape[0])
         if dim == 2:
@@ -199,8 +199,8 @@ class IntegratorCore(OneToOneNode):
     def __check_orders_input(self, name: str, shape: ShapeLike) -> tuple:
         """The method checks dimension (==1) of the input `name`, type
         (==`integer`), and `sum(orders) == len(input)`"""
-        check_input_dimension(self, name, 1)
-        check_input_subtype(self, name, integer)
+        check_dimension_of_inputs(self, name, 1)
+        check_subtype_of_inputs(self, name, dtype=integer)
         orders = self.inputs[name]
         if (y := sum(orders.data)) != shape:
             raise TypeFunctionError(
@@ -211,7 +211,7 @@ class IntegratorCore(OneToOneNode):
                 node=self,
                 input=orders,
             )
-        check_input_edges_dim(self, name, 1)
+        check_edges_dimension_of_inputs(self, name, 1)
         edges = orders.dd.axes_edges[0]
         return edges.dd.shape[0], edges
 

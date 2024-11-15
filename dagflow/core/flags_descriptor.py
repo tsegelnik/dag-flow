@@ -3,7 +3,7 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
-    from .input import Inputs
+    from .input import Input, Inputs
     from .output import Outputs
 
 
@@ -40,8 +40,8 @@ class FlagsDescriptor:
     types_tainted: bool
     # observers and observed
     # _node: Node
-    _children: Outputs  # TODO: List[FlagsDescriptor]?
-    _parents: Inputs  # TODO: List[FlagsDescriptor]?
+    _children: Outputs
+    _parents: Inputs
 
     def __init__(
         self,
@@ -73,7 +73,7 @@ class FlagsDescriptor:
     def parents(self) -> Inputs:
         return self._parents
 
-    def _invalidate(self, invalid) -> None:
+    def _invalidate(self, invalid: bool) -> None:
         if invalid:
             self.invalidate()
         elif any(parent.invalid for parent in self.parents.iter_all()):
@@ -102,15 +102,23 @@ class FlagsDescriptor:
         self.frozen = True
         self.frozen_tainted = False
 
-    def taint_children(self, **kwargs) -> None:
+    def taint_children(
+        self,
+        *,
+        force_taint: bool = False,
+        force_computation: bool = False,
+        caller: Input | None = None,
+    ) -> None:
         for child in self.children:
-            child.taint_children(**kwargs)
+            child.taint_children(
+                force_taint=force_taint, force_computation=force_computation, caller=caller
+            )
 
-    def taint_type(self, force: bool = False):
-        if self.types_tainted and not force:
+    def taint_type(self, force_taint: bool = False):
+        if self.types_tainted and not force_taint:
             return
         self.types_tainted = True
         self.tainted = True
         self.frozen = False
         for child in self.children:
-            child.taint_children_type(force=force)
+            child.taint_children_type(force_taint=force_taint)

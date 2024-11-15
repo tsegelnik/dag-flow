@@ -6,11 +6,11 @@ from ...core.input_handler import MissingInputAddOne
 from ...core.node import Node
 from ...core.type_functions import (
     AllPositionals,
-    check_has_inputs,
-    check_inputs_consistent_square_or_diag,
-    check_inputs_same_dtype,
-    copy_input_shape_to_outputs,
-    eval_output_dtype,
+    check_node_has_inputs,
+    check_inputs_consistency_with_square_matrices_or_diagonals,
+    check_inputs_have_same_dtype,
+    copy_shape_from_inputs_to_outputs,
+    evaluate_dtype_of_outputs,
 )
 
 
@@ -61,11 +61,11 @@ class SumMatOrDiag(Node):
 
     def _typefunc(self) -> None:
         """A output takes this function to determine the dtype and shape"""
-        check_has_inputs(self)
-        copy_input_shape_to_outputs(self, 0, "result")
-        self._ndim = check_inputs_consistent_square_or_diag(self)
-        check_inputs_same_dtype(self)
-        eval_output_dtype(self, AllPositionals, "result")
+        check_node_has_inputs(self)
+        copy_shape_from_inputs_to_outputs(self, 0, "result")
+        self._ndim = check_inputs_consistency_with_square_matrices_or_diagonals(self)
+        check_inputs_have_same_dtype(self)
+        evaluate_dtype_of_outputs(self, AllPositionals, "result")
 
         size = self.inputs[0].dd.shape[0]
         output = self.outputs[0]
