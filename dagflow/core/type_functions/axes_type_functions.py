@@ -274,15 +274,16 @@ def assign_axes_from_inputs_to_outputs(
 
             if assign_meshes:
                 assign_meshes_from_inputs_to_outputs(inputs, output, **kwargs)
-    else:
-        if len(inputs) == 1:
-            inputs = repeat(inputs[0], len(outputs))
+        return
 
-        for input, output in zip_dag(inputs, outputs):
-            if ignore_Nd and len(output.dd.shape) != 1:
-                continue
-            if assign_edges:
-                assign_edges_from_inputs_to_outputs(input, output, **kwargs)
+    if len(inputs) == 1:
+        inputs = repeat(inputs[0], len(outputs))
 
-            if assign_meshes:
-                assign_meshes_from_inputs_to_outputs(input, output, **kwargs)
+    for input, output in zip_dag(inputs, outputs):
+        if ignore_Nd and len(output.dd.shape) != 1:
+            continue
+        if assign_edges:
+            assign_edges_from_inputs_to_outputs(input, output, **kwargs)
+
+        if assign_meshes:
+            assign_meshes_from_inputs_to_outputs(input, output, **kwargs)
