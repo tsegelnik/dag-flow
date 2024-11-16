@@ -3,7 +3,7 @@ import time
 from abc import abstractmethod, ABC
 from ctypes import POINTER, c_int, c_double, CDLL, cast, CFUNCTYPE
 
-library = CDLL('./graph_python_ctypes/source/libnode.so')
+library = CDLL('./synthetic_graph/graph_python_ctypes/source/libnode.so')
 
 CFcnType = CFUNCTYPE(POINTER(c_double), POINTER(POINTER(c_double)), POINTER(c_int), c_int)
 

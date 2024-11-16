@@ -18,7 +18,7 @@ cdef class Node:
         cdef int i
         cdef int input_count = len(self.inputs)
         cdef CNode** input_nodes = <CNode**> malloc(sizeof(CNode*) * input_count)
-        cdef int * input_sizes = <int *> malloc(sizeof(int) * input_count)
+        cdef int* input_sizes = <int *> malloc(sizeof(int) * input_count)
 
 
         cdef Node input_node

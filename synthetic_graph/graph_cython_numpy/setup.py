@@ -17,6 +17,6 @@ extensions = [
 ]
 
 setup(
-    ext_modules=cythonize(extensions, build_dir=build_dir),
+    ext_modules=cythonize(extensions, build_dir=build_dir, annotate=True),
     script_args=["build_ext", "--build-lib", build_dir],
 )

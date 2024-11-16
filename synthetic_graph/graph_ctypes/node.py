@@ -2,7 +2,7 @@ import functools
 from abc import abstractmethod, ABC
 from ctypes import POINTER, c_int, c_double, CFUNCTYPE, Structure, pointer, CDLL, cast
 
-library = CDLL('./graph_ctypes/source/libnode.so')
+library = CDLL('./synthetic_graph/graph_ctypes/source/libnode.so')
 
 
 class CNode(Structure):
