@@ -40,23 +40,7 @@ class Product(Node):
         return CFcnType(("product_fcn", library))
 
 
-class Integrator(Node):
-    @functools.cache
-    def get_size(self):
-        return 1
-
-    @staticmethod
-    def get_fcn():
-        return CFcnType(("integration_fcn", library))
-
-
 class Sin(Node):
     @staticmethod
     def get_fcn():
         return CFcnType(("sin_fcn", library))
-
-
-class Cosh(Node):
-    @staticmethod
-    def get_fcn():
-        return CFcnType(("cosh_fcn", library))

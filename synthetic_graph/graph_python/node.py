@@ -15,7 +15,7 @@ class Node:
         else:
             self.inputs = []
 
-    def __call__(self):
+    def run(self):
         return self.fcn()
 
     def __rshift__(self, other):
@@ -23,4 +23,7 @@ class Node:
         return other
 
     def fcn(self):
-        pass
+        for inp in self.inputs:
+            inp.run()
+
+        return self.inputs[0]

@@ -3,7 +3,7 @@ import functools
 from libc.stdlib cimport malloc, free
 
 from node cimport Node, CNode
-from functions cimport fcn_integration, fcn_sum, fcn_product, fcn_sin, fcn_cosh
+from functions cimport fcn_sum, fcn_product, fcn_sin
 
 
 cdef class Input(Node):
@@ -35,16 +35,6 @@ cdef class Input(Node):
         free(self.data)
 
 
-cdef class Integrator(Node):
-    def __init__(self, inputs=None):
-        super().__init__(inputs)
-        self.fcn = fcn_integration
-
-    @functools.cache
-    def get_size(self):
-        return 1
-
-
 cdef class Sum(Node):
     def __init__(self, inputs=None):
         super().__init__(inputs)
@@ -61,9 +51,3 @@ cdef class Sin(Node):
     def __init__(self, inputs=None):
         super().__init__(inputs)
         self.fcn = fcn_sin
-
-
-cdef class Cosh(Node):
-    def __init__(self, inputs=None):
-        super().__init__(inputs)
-        self.fcn = fcn_cosh

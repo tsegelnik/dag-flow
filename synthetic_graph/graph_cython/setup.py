@@ -2,13 +2,8 @@ from setuptools import setup, Extension
 from Cython.Build import cythonize
 import os
 
-# Указываем путь к исходным файлам
 source_dir = "src"
-
-# Указываем путь для сборки
 build_dir = os.path.join("build", "lib")
-
-# Создаем список расширений
 extensions = [
     Extension(
         "*",
