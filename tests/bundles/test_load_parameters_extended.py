@@ -1,8 +1,8 @@
-import tempfile
+from tempfile import NamedTemporaryFile
 
-import numpy as np
-import pytest
-import yaml
+from numpy import abs, allclose, float64
+from pytest import mark
+from yaml import safe_dump
 
 from dagflow.bundles.load_parameters import load_parameters
 
@@ -32,12 +32,10 @@ def _get_parameter_value_label(parameters, labels, key_sequence, replicate_indic
 
 
 def _load_parameters_from_file(format, state, parameters, labels, replicate_indices):
-    with tempfile.NamedTemporaryFile(suffix=".yaml") as f:
+    with NamedTemporaryFile(suffix=".yaml") as f:
         filename = f.name
         with open(filename, "w") as fin:
-            yaml.safe_dump(
-                dict(format=format, state=state, parameters=parameters, labels=labels), fin
-            )
+            safe_dump(dict(format=format, state=state, parameters=parameters, labels=labels), fin)
 
         storage = load_parameters(
             path="",
@@ -57,17 +55,17 @@ def _load_parameters_from_dict(format, state, parameters, labels, replicate_indi
     )
 
 
-@pytest.mark.parametrize("state", ["variable", "fixed"])
-@pytest.mark.parametrize("format", ["value"])
-@pytest.mark.parametrize(
+@mark.parametrize("state", ["variable", "fixed"])
+@mark.parametrize("format", ["value"])
+@mark.parametrize(
     "parameters,labels",
     [
         ({"x": 1}, {"x": "Label for x"}),
         ({"nested": {"x": -1.5, "y": 1.5}}, {"nested": {"x": "Label for x", "y": "Label for y"}}),
     ],
 )
-@pytest.mark.parametrize("replicate_indices", replicate_indices)
-@pytest.mark.parametrize("load_from_file", [True, False])
+@mark.parametrize("replicate_indices", replicate_indices)
+@mark.parametrize("load_from_file", [True, False])
 def test_load_parameters(state, format, parameters, labels, replicate_indices, load_from_file):
     if load_from_file:
         storage = _load_parameters_from_file(format, state, parameters, labels, replicate_indices)
@@ -85,8 +83,8 @@ def test_load_parameters(state, format, parameters, labels, replicate_indices, l
         assert len(storage(f"parameters.{STATE_FORMAT_to_NS[(state, format)]}").keys()) > 0
 
 
-@pytest.mark.parametrize("sigma_format", ["sigma_percent", "sigma_relative", "sigma_absolute"])
-@pytest.mark.parametrize(
+@mark.parametrize("sigma_format", ["sigma_percent", "sigma_relative", "sigma_absolute"])
+@mark.parametrize(
     "parameters,labels",
     [
         ({"x": (1, 1)}, {"x": "Label for x"}),
@@ -96,8 +94,8 @@ def test_load_parameters(state, format, parameters, labels, replicate_indices, l
         ),
     ],
 )
-@pytest.mark.parametrize("replicate_indices", replicate_indices)
-@pytest.mark.parametrize("load_from_file", [True, False])
+@mark.parametrize("replicate_indices", replicate_indices)
+@mark.parametrize("load_from_file", [True, False])
 def test_load_parameters_constrained(
     sigma_format, parameters, labels, replicate_indices, load_from_file
 ):
@@ -124,12 +122,12 @@ def test_load_parameters_constrained(
                 "Loaded absolute sigma" " is not equal to initial (absolute case)"
             )
         elif sigma_format == "sigma_relative":
-            assert np.allclose(
-                np.float64(np.abs(parameter_value) * parameter_error), loaded_error
+            assert allclose(
+                float64(abs(parameter_value) * parameter_error), loaded_error
             ), "Loaded sigma is not equal to initial (relative case)"
         else:
-            assert np.allclose(
-                np.float64(np.abs(parameter_value) * parameter_error * 1e-2), loaded_error
+            assert allclose(
+                float64(abs(parameter_value) * parameter_error * 1e-2), loaded_error
             ), "Loaded sigma is not equal to initial (percent case)"
         assert parameter_value == loaded_value, "Loaded value is not equal to initial"
         assert len(storage(f"parameters.{STATE_FORMAT_to_NS[(state, fmt)]}").keys()) > 0

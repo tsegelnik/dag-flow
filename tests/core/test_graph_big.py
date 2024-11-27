@@ -1,16 +1,15 @@
-from dagflow.graph import Graph
-from dagflow.graphviz import GraphDot
-from dagflow.lib.Dummy import Dummy
-from dagflow.printl import current_level
-from dagflow.printl import set_prefix_function
-from dagflow.wrappers import printer
-from dagflow.wrappers import toucher
+from sys import argv
 
-set_prefix_function(lambda: f"{current_level():<2d} ")
+from pytest import mark
+
+from dagflow.core.graph import Graph
+from dagflow.lib.common import Dummy
+from dagflow.plot.graphviz import GraphDot
 
 counter = 0
 
 
+@mark.skipif("--include-long-time-tests" not in argv, reason="long-time tests switched off")
 def test_graph_big_01():
     """Create a graph of nodes and test evaluation features"""
     g = Graph()
@@ -25,14 +24,21 @@ def test_graph_big_01():
         d.savegraph(f"output/test_graph_big_{counter:03d}.png")
         counter += 1
 
-    def plotter(fcn, node):
+    def plotter(function, node):
         plot(f"[start evaluating {node.name}]")
-        fcn()
+        function()
         plot(f"[done evaluating {node.name}]")
+
+    def _function(self):
+        self.fd.frozen = True
+
+    class DummyFrozen(Dummy):
+        def _function(self):
+            self.fd.frozen = True
 
     with g:
         A1 = Dummy("A1")
-        A2 = Dummy("A2", auto_freeze=True, label="{name}|frozen")
+        A2 = DummyFrozen("A2", label="{name}|frozen")
         A3 = Dummy("A3", immediate=True, label="{name}|immediate")
         B = Dummy("B")
         C1 = Dummy("C1")
@@ -42,8 +48,6 @@ def test_graph_big_01():
         F = Dummy("F")
         H = Dummy("H")
         P = Dummy("P", immediate=True, label="{name}|immediate")
-
-    g._wrap_fcns(toucher, printer, plotter)
 
     A1._add_output("o1", allocatable=False)
     A2._add_output("o1", allocatable=False)

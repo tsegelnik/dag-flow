@@ -1,18 +1,23 @@
 from __future__ import annotations
 
 from contextlib import suppress
+from sys import argv
 from time import process_time
 from typing import TYPE_CHECKING
 
 from numpy import exp, log10
 from numpy.random import uniform
+from plotille import Figure
+from pytest import mark
 
-from dagflow.graph import Graph
-from dagflow.lib import Array, Sum
+from dagflow.core.graph import Graph
+from dagflow.lib.arithmetic import Sum
+from dagflow.lib.common import Array
 
 if TYPE_CHECKING:
-    from dagflow.node import Node
     from numpy.typing import NDArray
+
+    from dagflow.core.node import Node
 
 
 def _make_data(datasize: int) -> NDArray:
@@ -42,7 +47,7 @@ def _make_test_graph(datasize: int = 1, width: int = 6, length: int = 7):
 
                 if prevlayer:
                     prevlayer = list(reversed(prevlayer))
-                    for isource in range(width):
+                    for _ in range(width):
                         array = prevlayer.pop()
                         array >> head
                 else:
@@ -62,7 +67,7 @@ def _make_test_graph(datasize: int = 1, width: int = 6, length: int = 7):
 def _report(t1, t2, nsums, datasize):
     dt_ms = (t2 - t1) * 1000
     dt_rel_μs = dt_ms / nsums * 1e3
-    print(f"Calculation time:")
+    print("Calculation time:")
     print(f"    time={dt_ms} ms")
     print(f"    time/sum={dt_rel_μs} μs")
     print(f"    {nsums} sums of {datasize} elements")
@@ -70,6 +75,7 @@ def _report(t1, t2, nsums, datasize):
     return dt_ms, dt_rel_μs
 
 
+@mark.skipif("--include-long-time-tests" not in argv, reason="long-time tests switched off")
 def test_graph_scale_01(testname, width: int = 6, length: int = 7):
     datasize = 1
     nsums, g, input_arrays, head = _make_test_graph(datasize, width, length)
@@ -103,41 +109,35 @@ def test_graph_scale_01(testname, width: int = 6, length: int = 7):
     print(time_ms)
     print(time_rel_μs)
     with suppress(Exception):
-        import plotille
-
-        fig = plotille.Figure()
-        fig.x_label = "log₁₀(size)"
-        fig.y_label = "time, ms"
-        fig.width = 60
-        fig.height = 30
-        fig.set_x_limits(min_=0, max_=6)
-        # fig.set_y_limits(min_=0, max_=1000)
-        fig.color_mode = "byte"
-        fig.plot(logsize, time_ms, lc=200)
-        fig.scatter(logsize, time_ms, lc=200, marker="x")
-        print(fig.show())
-
-        fig = plotille.Figure()
-        fig.x_label = "log₁₀(size)"
-        fig.y_label = "time/N, ns"
-        fig.width = 60
-        fig.height = 30
-        fig.set_x_limits(min_=0, max_=6)
-        # fig.set_y_limits(min_=0, max_=1000)
-        fig.color_mode = "byte"
-        fig.plot(logsize, time_rel_μs, lc=200)
-        fig.scatter(logsize, time_rel_μs, lc=200, marker="x")
-        print(fig.show())
+        _draw_fig("time, ms", logsize, time_ms)
+        _draw_fig("time/N, ns", logsize, time_rel_μs)
 
     print(f"Minimal time per sum: {min(time_rel_μs)} μs")
 
-    # from dagflow.graphviz import GraphDot
+    # from dagflow.plot.graphviz import GraphDot
     # d = GraphDot(g)
     # ofile = f"output/{testname}.dot"
     # d.savegraph(ofile)
     # print(f"Save graph: {ofile}")
 
 
+def _draw_fig(arg1, logsize, arg3):
+    result = Figure()
+    result.x_label = "log₁₀(size)"
+    result.y_label = arg1
+    result.width = 60
+    result.height = 30
+    result.set_x_limits(min_=0, max_=6)
+    # fig.set_y_limits(min_=0, max_=1000)
+    result.color_mode = "byte"
+    result.plot(logsize, arg3, lc=200)
+    result.scatter(logsize, arg3, lc=200, marker="x")
+    print(result.show())
+
+    return result
+
+
+@mark.skipif("--include-long-time-tests" not in argv, reason="long-time tests switched off")
 def test_graph_scale_02(width: int = 2, length: int = 18):
     datasize = 1
     nsums, _, input_arrays, head = _make_test_graph(datasize, width, length)

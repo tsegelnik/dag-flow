@@ -6,9 +6,9 @@ from schema import And, Optional, Or, Schema, Use
 
 from multikeydict.typing import strkey
 
-from ..lib.Array import Array
-from ..logger import INFO3, logger
-from ..storage import NodeStorage
+from ..lib.common import Array
+from ..core.storage import NodeStorage
+from ..tools.logger import INFO3, logger
 from ..tools.schema import (
     AllFileswithExt,
     IsFilenameSeqOrFilename,
@@ -28,8 +28,13 @@ _schema_cfg = Schema(
         Optional("skip", default=None): And(
             Or(((str,),), [[str]]), Use(lambda l: tuple(set(k) for k in l))
         ),
-        Optional("key_order", default=None): Or((int,), [int]),
-        Optional("objects", default=lambda: lambda st, tpl: st): Or(
+        Optional("key_order", default=None): Or(
+            ((str,), (str,)),
+            [[str], [str]],
+            (int,),
+            [int],
+        ),
+        Optional("name_function", default=lambda: lambda st, tpl: st): Or(
             Callable, And({str: str}, Use(lambda dct: lambda st, tpl: dct.get(st, st)))
         ),
     }
@@ -52,9 +57,7 @@ def _validate_cfg(cfg):
         return _schema_cfg.validate(cfg)
 
 
-def load_array(
-    acfg: Mapping | None = None, *, array_kwargs: Mapping = {}, **kwargs
-) -> NodeStorage:
+def load_array(acfg: Mapping | None = None, *, array_kwargs: Mapping = {}, **kwargs) -> NodeStorage:
     acfg = dict(acfg or {}, **kwargs)
     cfg = _validate_cfg(acfg)
 
@@ -62,7 +65,7 @@ def load_array(
     filenames = cfg["filenames"]
     keys = cfg["replicate_outputs"]
     file_keys = cfg["replicate_files"]
-    objectname = cfg["objects"]
+    name_function = cfg["name_function"]
     skip = cfg["skip"]
     key_order = cfg["key_order"]
     dtype = cfg["dtype"]
@@ -74,7 +77,7 @@ def load_array(
         skey = strkey(key)
         logger.log(INFO3, f"Process {skey}")
 
-        array = FileReader.array[filename, objectname(skey, key)]
+        array = FileReader.array[filename, name_function(skey, key)]
         data[key] = asarray(array, dtype)
 
     storage = NodeStorage(default_containers=True)

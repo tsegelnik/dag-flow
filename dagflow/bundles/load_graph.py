@@ -9,9 +9,9 @@ from schema import And, Optional, Or, Schema, Use
 
 from multikeydict.typing import strkey
 
-from ..lib.Array import Array
-from ..logger import INFO3, logger
-from ..storage import NodeStorage
+from ..core.storage import NodeStorage
+from ..lib.common import Array
+from ..tools.logger import INFO3, logger
 from ..tools.schema import (
     AllFileswithExt,
     IsFilenameSeqOrFilename,
@@ -39,8 +39,13 @@ _schema_cfg = Schema(
         Optional("skip", default=None): And(
             Or(((str,),), [[str]]), Use(lambda l: tuple(set(k) for k in l))
         ),
-        Optional("key_order", default=None): Or((int,), [int]),
-        Optional("objects", default=lambda: lambda st, tpl: st): Or(
+        Optional("key_order", default=None): Or(
+            ((str,), (str,)),
+            [[str], [str]],
+            (int,),
+            [int],
+        ),
+        Optional("name_function", default=lambda: lambda st, tpl: st): Or(
             Callable, And({str: str}, Use(lambda dct: lambda st, tpl: dct.get(st, st)))
         ),
     }
@@ -73,7 +78,7 @@ def _load_graph_data(
     filenames = cfg["filenames"]
     keys = cfg["replicate_outputs"]
     file_keys = cfg["replicate_files"]
-    objectname = cfg["objects"]
+    name_function = cfg["name_function"]
     skip = cfg["skip"]
     key_order = cfg["key_order"]
     dtype = cfg["dtype"]
@@ -89,7 +94,7 @@ def _load_graph_data(
         skey = strkey(key)
         logger.log(INFO3, f"Process {skey}")
 
-        x, y = FileReader.graph[filename, objectname(skey, key)]
+        x, y = FileReader.graph[filename, name_function(skey, key)]
         x = asarray(x, dtype)
         y = asarray(y, dtype)
 

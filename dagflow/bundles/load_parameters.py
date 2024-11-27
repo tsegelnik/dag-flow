@@ -10,12 +10,12 @@ from schema import And, Optional, Or, Schema, SchemaError, Use
 from multikeydict.nestedmkdict import NestedMKDict
 from multikeydict.typing import properkey
 
-from ..exception import InitializationError
-from ..labels import format_dict, inherit_labels, mapping_append_lists
-from ..lib import Array
-from ..lib.ElSumSq import ElSumSq
+from ..core.exception import InitializationError
+from ..core.labels import format_dict, inherit_labels, mapping_append_lists
+from ..lib.common import Array
+from ..lib.summation import ElSumSq
 from ..parameters import Parameters
-from ..storage import NodeStorage
+from ..core.storage import NodeStorage
 from ..tools.schema import IsStrSeqOrStr, LoadFileWithExt, LoadYaml, MakeLoaderPy, NestedSchema
 
 if TYPE_CHECKING:
@@ -310,9 +310,9 @@ def _load_parameters(
     check_correlations_consistent(cfg)
 
     subkeys = cfg["replicate"]
-    from multikeydict.tools.map import _make_reorder_fcn
+    from multikeydict.tools.map import make_reorder_function
 
-    reorder_key = _make_reorder_fcn(cfg["keys_order"])
+    reorder_key = make_reorder_function(cfg["keys_order"])
 
     varcfgs = NestedMKDict({})
     normpars = {}
