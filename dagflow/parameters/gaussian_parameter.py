@@ -1,4 +1,5 @@
 from __future__ import annotations
+
 from typing import TYPE_CHECKING
 
 from .parameter import Parameter
@@ -73,6 +74,10 @@ class GaussianParameter(Parameter):
     @sigma_percent.setter
     def sigma_percent(self, sigma_percent: float):
         self.sigma = (0.01 * sigma_percent) * self.value
+
+    @property
+    def sigma_output(self) -> Output:
+        return self._sigma_output
 
     @property
     def normvalue(self) -> float:
