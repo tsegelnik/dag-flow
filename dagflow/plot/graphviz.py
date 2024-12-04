@@ -213,6 +213,7 @@ else:
             if minsize is not None:
                 label.append(f"{minsize=:d}")
             gd.set_label(", ".join(label))
+
             gd._transform_from_nodes(
                 nodes,
                 mindepth=mindepth,
@@ -666,6 +667,9 @@ else:
             else:
                 self._graph.layout(prog="dot")
                 self._graph.draw(fname)
+
+            if not self._nodes_map_dag:
+                logger.warning(f"No nodes saved for {fname}")
 
         def get_id(self, obj, suffix: str = "") -> str:
             name = type(obj).__name__
