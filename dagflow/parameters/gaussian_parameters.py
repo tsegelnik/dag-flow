@@ -164,12 +164,20 @@ class GaussianConstraint(Constraint):
         fmts = {
             "_cholesky_node": ("Cholesky: {}", "L({})"),
             "_covariance_node": ("Covariance: {}", "V({})"),
-            "_normvalue_node": ("{}", "{}"),
+            "_normvalue_node": ("{} (normal value)", "{}"),
         }
         for nodename in ("_cholesky_node", "_covariance_node", "_norm_node", "_sigma_node"):
             if cnode := getattr(self, nodename):
                 cnode.labels.inherit(self._pars._value_node.labels, fields=("index_values",))
-        for nodename in ("_cholesky_node", "_covariance_node", "_normvalue_node"):
+        for nodename in ("_normvalue_node", ): # TODO, clean inheritance labelling
+            if (cnode := getattr(self, nodename)) is not None:
+                fmtlong, fmtshort = fmts[nodename]
+                cnode.labels.inherit(
+                    self._pars._value_node.labels,
+                    fmtlong=fmtlong,
+                    fmtshort=fmtshort,
+                )
+        for nodename in ("_cholesky_node", "_covariance_node"):
             if (cnode := getattr(self, nodename)) is not None:
                 fmtlong, fmtshort = fmts[nodename]
                 cnode.labels.inherit(

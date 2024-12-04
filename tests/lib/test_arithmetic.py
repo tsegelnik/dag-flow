@@ -2,9 +2,17 @@ from numpy import allclose, arange, linspace, sqrt, square, sum
 from pytest import mark
 
 from dagflow.core.graph import Graph
-from dagflow.plot.graphviz import savegraph
-from dagflow.lib.arithmetic import Division, Product, Sqrt, Square, Sum
+from dagflow.lib.arithmetic import (
+    Division,
+    Product,
+    ProductShifted,
+    ProductShiftedScaled,
+    Sqrt,
+    Square,
+    Sum,
+)
 from dagflow.lib.common import Array
+from dagflow.plot.graphviz import savegraph
 
 
 @mark.parametrize("dtype", ("d", "f"))
@@ -54,6 +62,43 @@ def test_Product_01(testname, debug_graph, dtype):
     for i in range(len(arrays_in)):
         arrays_in[i][:] = 2.3 * (i + 2) ** 2 + i
         res = arrays_in[0] * arrays_in[1] * arrays_in[2]
+        arrays[i].outputs[0].set(2.3 * (i + 2) ** 2 + i)
+        assert prod.tainted == True
+        assert all(output.data == res)
+        assert prod.tainted == False
+
+    savegraph(graph, f"output/{testname}.png")
+
+
+@mark.parametrize("dtype", ("d", "f"))
+@mark.parametrize("scaled", (False, True))
+def test_ProductShifted_01(testname, debug_graph, dtype: str, scaled: bool):
+    arrays_in = tuple(arange(12, dtype=dtype) * i for i in (1, 2, 3))
+    shift = 1.23245
+
+    with Graph(close_on_exit=True, debug=debug_graph) as graph:
+        arrays = tuple(Array(f"arr_{i}", array_in) for i, array_in in enumerate(arrays_in))
+        if scaled:
+            prod = ProductShiftedScaled("prod", shift=shift)
+        else:
+            prod = ProductShifted("prod", shift=shift)
+        arrays >> prod
+
+    output = prod.outputs[0]
+    def getres():
+        if scaled:
+            return arrays_in[0] * (shift + arrays_in[1] * arrays_in[2])
+
+        return shift + arrays_in[0] * arrays_in[1] * arrays_in[2]
+    res = getres()
+
+    assert prod.tainted == True
+    assert (output.data == res).all()
+    assert prod.tainted == False
+
+    for i in range(len(arrays_in)):
+        arrays_in[i][:] = 2.3 * (i + 2) ** 2 + i
+        res = getres()
         arrays[i].outputs[0].set(2.3 * (i + 2) ** 2 + i)
         assert prod.tainted == True
         assert all(output.data == res)

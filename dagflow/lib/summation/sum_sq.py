@@ -3,8 +3,6 @@ from numpy.typing import NDArray
 
 from ...core.type_functions import (
     AllPositionals,
-    check_node_has_inputs,
-    check_inputs_equivalence,
     copy_shape_from_inputs_to_outputs,
     evaluate_dtype_of_outputs,
 )
@@ -22,20 +20,22 @@ class SumSq(ManyToOneNode):
         self._labels.setdefault("mark", "Σ()²")
 
     def _function(self):
-        out = self.outputs["result"].data
-        square(self.inputs[0].data, out=out)
-        if len(self.inputs) > 1:
-            for _input in self.inputs[1:]:
-                square(_input.data, out=self._buffer)
-                add(self._buffer, out, out=out)
+        for callback in self._input_nodes_callbacks:
+            callback()
+
+        output_data = self._output_data
+        square(self._input_data0, out=output_data)
+        for input_data in self._input_data_other:
+            square(input_data, out=self._buffer)
+            add(self._buffer, output_data, out=output_data)
 
     def _typefunc(self) -> None:
         """A output takes this function to determine the dtype and shape"""
-        check_node_has_inputs(self)
+        super()._typefunc()
         copy_shape_from_inputs_to_outputs(self, 0, "result")
-        check_inputs_equivalence(self)
         evaluate_dtype_of_outputs(self, AllPositionals, "result")
 
     def _post_allocate(self) -> None:
+        super()._post_allocate()
         inpdd = self.inputs[0].dd
         self._buffer = empty(shape=inpdd.shape, dtype=inpdd.dtype)

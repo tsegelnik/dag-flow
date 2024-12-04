@@ -110,6 +110,12 @@ IsParsCfgDict = Schema(
         Optional("keys_order", default=None): Or([[str], [str]], ((str,), (str,))),
         Optional("correlations", default={}): IsNestedCorrelationsDict,
         Optional("joint_nuisance", default=False): bool,
+        Optional("sigma_visible", default=False): bool,
+        Optional("ignore_keys", default=()): Or(
+            ({str},),
+            And(Or((str,),),[(str,)],[{str}]),
+            Use(lambda keys: tuple(map(set, keys)))
+        ),
     },
     # error = 'Invalid parameters configuration: {}'
 )
@@ -407,18 +413,27 @@ def _load_parameters(
             mapping_append_lists(labelsub, "paths", paths)
             pars[fullkey] = Parameters.from_numbers(label=labelsub, **kwargs)
 
-    for key, varcfg in varcfgs.walkdicts(ignorekeys=("label",)):
+    ignore_keys = cfg["ignore_keys"]
+    def skip_key(key):
         if key in processed_cfgs:
+            return True
+        for ignored_key in ignore_keys:
+            if ignored_key.issubset(key):
+                return True
+        return False
+    for key, varcfg in varcfgs.walkdicts(ignorekeys=("label",)):
+        if skip_key(key):
             continue
         par = Parameters.from_numbers(**varcfg.object)
         pars[key] = par
 
+    sigma_visible = cfg["sigma_visible"]
     for key, par in pars.walkitems():
         pathkey = path + key
-        if par.is_constrained:
-            targetkey = ("constrained",) + pathkey
-        elif par.is_fixed:
+        if par.is_fixed:
             targetkey = ("constant",) + pathkey
+        elif par.is_constrained:
+            targetkey = ("constrained",) + pathkey
         else:
             targetkey = ("free",) + pathkey
 
@@ -436,7 +451,10 @@ def _load_parameters(
             if par.is_constrained:
                 ret[("parameters", "central") + pathkey] = subpar.central_output
 
-        if constraint := par.constraint:
+                if sigma_visible:
+                    ret[("parameters", "sigma") + pathkey] = subpar.sigma_output
+
+        if not par.is_fixed and (constraint := par.constraint):
             normpars_i = normpars.setdefault(key[0], [])
             normpars_i.append(constraint.normvalue_final)
 
@@ -444,24 +462,25 @@ def _load_parameters(
             for subname, subpar in par.iteritems_norm():
                 ret[ntarget + subname] = subpar
 
-    joint_nuisance = cfg["joint_nuisance"]
-    nuisance_location = properkey(nuisance_location, sep=".")
-    if joint_nuisance:
-        ssq = ElSumSq(f"nuisance: {pathstr}")
-        for outputs in normpars.values():
-            outputs >> ssq
-        ssq.close()
-        cpath = nuisance_location + (path,)
-        ret[("nodes",) + cpath] = ssq
-        ret[("outputs",) + cpath] = ssq.outputs[0]
-    else:
-        for name, outputs in normpars.items():
-            ssq = ElSumSq(f"nuisance: {pathstr}.{name}")
-            outputs >> ssq
+    if state!="fixed":
+        joint_nuisance = cfg["joint_nuisance"]
+        nuisance_location = properkey(nuisance_location, sep=".")
+        if joint_nuisance:
+            ssq = ElSumSq(f"nuisance: {pathstr}")
+            for outputs in normpars.values():
+                outputs >> ssq
             ssq.close()
-            cpath = nuisance_location + (path, name)
+            cpath = nuisance_location + (path,)
             ret[("nodes",) + cpath] = ssq
             ret[("outputs",) + cpath] = ssq.outputs[0]
+        else:
+            for name, outputs in normpars.items():
+                ssq = ElSumSq(f"nuisance: {pathstr}.{name}")
+                outputs >> ssq
+                ssq.close()
+                cpath = nuisance_location + (path, name)
+                ret[("nodes",) + cpath] = ssq
+                ret[("outputs",) + cpath] = ssq.outputs[0]
 
     NodeStorage.update_current(ret, strict=True)
 

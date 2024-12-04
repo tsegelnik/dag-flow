@@ -20,5 +20,7 @@ class Proxy(ManyToOneNode):
         copyto(self._output_data, self._input_data[self._idx])
 
     def switch_input(self, idx: int) -> None:
+        if self._idx == idx:
+            return
         self._idx = idx
         self.taint()

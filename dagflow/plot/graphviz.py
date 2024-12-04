@@ -730,7 +730,10 @@ else:
             if "label" in self._show:
                 right.append(text)
             if "path" in self._show and (paths := node.labels.paths):
-                right.append(f"path: {paths[0]}")
+                if len(paths)>1:
+                    right.append(f"path[{len(paths)}]: {paths[0]}, …")
+                else:
+                    right.append(f"path: {paths[0]}")
             if "index" in self._show and (index := node.labels.index_values):
                 right.append(f'index: {", ".join(index)}')
             if "status" in self._show:

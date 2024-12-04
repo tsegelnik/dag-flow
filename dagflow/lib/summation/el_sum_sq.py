@@ -2,13 +2,7 @@ from numba import njit
 from numpy.typing import NDArray
 
 from ...core.input_handler import MissingInputAddOne
-from ...core.node import Node
-from ...core.type_functions import (
-    AllPositionals,
-    check_node_has_inputs,
-    check_inputs_have_same_dtype,
-    evaluate_dtype_of_outputs,
-)
+from ..abstract import ManyToOneNode
 
 
 @njit(cache=True)
@@ -19,8 +13,8 @@ def _sumsq(data: NDArray, out: NDArray):
     out[0] += sm
 
 
-class ElSumSq(Node):
-    """Sum of the squared of all the inputs"""
+class ElSumSq(ManyToOneNode):
+    """Sum of the squared of all the inputs."""
 
     __slots__ = ()
 
@@ -30,14 +24,16 @@ class ElSumSq(Node):
         self._labels.setdefault("mark", "Σa²")
 
     def _function(self):
-        out = self.outputs["result"].data
-        out[0] = 0.0
-        for _input in self.inputs.iter_data():
-            _sumsq(_input, out)
+        for callback in self._input_nodes_callbacks:
+            callback()
+
+        output_data = self._output_data
+        output_data[0] = 0.0
+
+        for input_data in self._input_data:
+            _sumsq(input_data, output_data)
 
     def _typefunc(self) -> None:
-        """A output takes this function to determine the dtype and shape"""
-        check_node_has_inputs(self)
-        check_inputs_have_same_dtype(self)
-        evaluate_dtype_of_outputs(self, AllPositionals, "result")
+        """A output takes this function to determine the dtype and shape."""
+        super()._typefunc()
         self.outputs[0].dd.shape = (1,)

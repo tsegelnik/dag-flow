@@ -5,7 +5,7 @@ from typing import TYPE_CHECKING
 from ordered_set import OrderedSet
 
 from multikeydict.nestedmkdict import NestedMKDict
-from multikeydict.typing import Key, KeyLike, TupleKey, strkey
+from multikeydict.typing import Key, KeyLike, TupleKey
 from multikeydict.visitor import NestedMKDictVisitor
 
 from ..tools.logger import DEBUG, INFO1, INFO3, logger
@@ -83,14 +83,26 @@ class NodeStorage(NestedMKDict):
         from os import makedirs
 
         from ..plot.graphviz import GraphDot
+        from ..parameters import Parameters
 
         items = list(self.walkitems())
         nitems = len(items)
         folder0 = folder
         for i, (key, node) in enumerate(items):
-            if not isinstance(node, Node):
-                continue
-            if not node.labels.index_in_mask(accept_index):
+            match node:
+                case Node():
+                    pass
+                case Parameters():
+                    if (constraint:=node.constraint):
+                        node = constraint._norm_node
+                    else:
+                        node = node._value_node
+                case _:
+                    continue
+            try:
+                if not node.labels.index_in_mask(accept_index):
+                    continue
+            except AttributeError:
                 continue
 
             stem, index = [], []
