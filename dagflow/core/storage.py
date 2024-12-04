@@ -5,7 +5,7 @@ from typing import TYPE_CHECKING
 from ordered_set import OrderedSet
 
 from multikeydict.nestedmkdict import NestedMKDict
-from multikeydict.typing import Key, KeyLike, TupleKey, strkey
+from multikeydict.typing import Key, KeyLike, TupleKey
 from multikeydict.visitor import NestedMKDictVisitor
 
 from ..tools.logger import DEBUG, INFO1, INFO3, logger
@@ -97,6 +97,8 @@ class NodeStorage(NestedMKDict):
                         node = constraint._norm_node
                     else:
                         node = node._value_node
+                case _:
+                    continue
             try:
                 if not node.labels.index_in_mask(accept_index):
                     continue

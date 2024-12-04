@@ -1,11 +1,16 @@
-from collections.abc import Mapping, Sequence
+from collections.abc import Sequence
 from pathlib import Path
-from typing import Any, Literal
+from typing import TYPE_CHECKING
 
 from h5py import File
 from numpy import ndarray, savez
-from numpy.typing import NDArray
 from pandas import DataFrame
+
+if TYPE_CHECKING:
+    from collections.abc import Mapping
+    from typing import Any, Literal
+
+    from numpy.typing import NDArray
 
 
 def _save_records(
@@ -86,7 +91,7 @@ def _save_records(
                 if not print_filename_global:
                     print(f"Write {koutput}")
         case _:
-            raise Exception(f"Invalid file format: {filename}")
+            raise ValueError(f"Invalid file format: {filename}")
 
     if print_filename_global:
         print(f"Write {filename}")

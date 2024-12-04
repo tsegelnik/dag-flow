@@ -50,7 +50,7 @@ class ProductShifted(ManyToOneNode):
 
     _shift: float
 
-    def __init__(self, *args, shift: float, **kwargs):
+    def __init__(self, *args, shift: float | int, **kwargs):
         kwargs.setdefault("broadcastable", True)
         super().__init__(*args, **kwargs)
 
@@ -78,7 +78,7 @@ class ProductShiftedScaled(ManyToOneNode):
 
     _shift: float
 
-    def __init__(self, *args, shift: float, **kwargs):
+    def __init__(self, *args, shift: float | int, **kwargs):
         kwargs.setdefault("broadcastable", True)
         super().__init__(*args, **kwargs)
 

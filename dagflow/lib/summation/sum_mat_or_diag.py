@@ -42,18 +42,22 @@ class SumMatOrDiag(ManyToOneNode):
         self._functions_dict.update({2: self._fcn2d, 1: self._fcn1d})
 
     def _fcn2d(self):
-        out = self.outputs["result"].data
-        inp = self.inputs[0].data
-        if len(inp.shape) == 1:
-            _settodiag1(inp, out)
+        for callback in self._input_nodes_callbacks:
+            callback()
+
+        output_data = self._output_data
+        input_data0 = self._input_data0
+        if len(input_data0.shape) == 1:
+            _settodiag1(input_data0, output_data)
         else:
-            out[:] = inp
+            output_data[:] = input_data0
+
         if len(self.inputs) > 1:
-            for _input in self.inputs[1:]:
-                if len(_input.dd.shape) == 1:
-                    _addtodiag(_input.data, out)
+            for input_data in self._input_data_other:
+                if len(input_data.shape) == 1:
+                    _addtodiag(input_data, output_data)
                 else:
-                    add(_input.data, out, out=out)
+                    add(input_data, output_data, out=output_data)
 
     def _fcn1d(self):
         for callback in self._input_nodes_callbacks:
