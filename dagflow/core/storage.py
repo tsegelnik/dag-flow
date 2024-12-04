@@ -97,6 +97,8 @@ class NodeStorage(NestedMKDict):
                         node = constraint._norm_node
                     else:
                         node = node._value_node
+                case Output():
+                    node = node.node
                 case _:
                     continue
             try:
