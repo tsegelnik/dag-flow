@@ -1,12 +1,11 @@
 import numpy as np
 
-from dagflow.node import Node
-from dagflow.graph import Graph
-from dagflow.lib import Array
-from dagflow.lib import MatrixProductDVDt
-from dagflow.lib import Sum, Product
-from dagflow.graphviz import GraphDot
-
+from dagflow.core.node import Node
+from dagflow.core.graph import Graph
+from dagflow.lib.common import Array
+from dagflow.lib.linalg import MatrixProductDVDt
+from dagflow.lib.arithmetic import Product, Sum
+from dagflow.plot.graphviz import GraphDot
 
 def graph_0() -> tuple[Graph, list[Node]]:
     with Graph(close_on_exit=True) as graph:
@@ -61,6 +60,21 @@ def graph_1() -> tuple[Graph, list[Node]]:
 
     nodes = [*array_nodes, s1, s2, p1, p2]
     return graph, nodes
+
+def test_exec_graph_0():
+    _, nodes = graph_0()
+    s3, mdvdt = nodes[-3], nodes[-1]
+    s3_data = s3.outputs['result'].data_unsafe
+    mdvdt_data = mdvdt.outputs['result'].data_unsafe
+    # check for all zeros
+    assert np.any(s3_data), "graph_0, `s3` was not evaluated"
+    assert np.any(mdvdt_data), "graph_0, `mdvdt` was not evaluated"
+
+def test_exec_graph_1():
+    _, nodes = graph_1()
+    p2 = nodes[-1]
+    p2_data = p2.outputs['result'].data_unsafe
+    assert np.any(p2_data), "graph_1, `p2` was not evaluated"
 
 def test_invoke_and_save():
     graphs = [graph_0, graph_1]
