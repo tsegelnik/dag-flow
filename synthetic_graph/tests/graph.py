@@ -1,14 +1,16 @@
 import numpy as np
 import argparse
 import timeit
-from Implementations import Implementations
+from synthetic_graph.tests.Implementations import Implementations
 
 np.random.seed(33)
 
 def make_test_graph(datasize=1, width=6, length=7):
-    input_arrays = []
     nsums = 0
     prevlayer = []
+
+    data = np.random.uniform(-100, 100, size=datasize)
+    data_node = Input(data)
 
     for ilayer in reversed(range(length)):
         ilayer_next = ilayer - 1
@@ -24,23 +26,20 @@ def make_test_graph(datasize=1, width=6, length=7):
                     array >> head
             else:
                 for isource in range(width):
-                    data = np.random.uniform(-100, 100, size=datasize)
-                    array = Input(data)
-                    input_arrays.append(array)
-                    array >> head
+                    data_node >> head
 
             thislayer.append(head)
 
         prevlayer = thislayer
 
-    return nsums, input_arrays, head
+    return nsums, data_node, head
 
 def run_test(head, runs):
     def test():
         head.run()
 
     average_time = timeit.timeit(test, number=runs) / runs
-    print(f"Среднее время выполнения за {runs} прогонов: {average_time:.4f} секунд")
+    print(f"Среднее время выполнения за {runs} прогонов: {average_time:.5e} секунд")
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Тестирование графа.")
@@ -67,11 +66,12 @@ if __name__ == "__main__":
     elif implementation == Implementations.CYTHON:
         from synthetic_graph.graph_cython import Sum, Input
 
-    nsums, input_arrays, head = make_test_graph(datasize=args.dsize, width=args.width, length=args.length)
+    nsums, data_node, head = make_test_graph(datasize=args.dsize, width=args.width, length=args.length)
     print(f"Создано узлов: {nsums}")
 
     if implementation != Implementations.PYTHON:
-        print("Компиляция...")
-        head.compile()
+        print("Перевод классов в си структуры...")
+        head.to_c_struct()
 
+    print("Запуск...")
     run_test(head, args.runs)

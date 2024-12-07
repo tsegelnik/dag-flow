@@ -17,7 +17,6 @@ def make_test_graph(storage, datasize=1, width=6, length=7):
         storage,
         FileReader
     ):
-        input_arrays = []
         nsums = 0
         prevlayer = []
 
@@ -26,12 +25,12 @@ def make_test_graph(storage, datasize=1, width=6, length=7):
             name=f"array {5}-{0}-{0}",
             array=data
         )
+
         for ilayer in reversed(range(length)):
             ilayer_next = ilayer - 1
             n_groups = int(width ** ilayer_next)
             thislayer = []
 
-            input_arrays.append(data_node)
             for igroup in range(n_groups):
                 head = Sum(name=f"sum {ilayer}-{igroup}")
                 nsums += 1
@@ -48,7 +47,7 @@ def make_test_graph(storage, datasize=1, width=6, length=7):
             prevlayer = thislayer
 
     savegraph(graph, "dagflow_example_0.dot", show=["type", "mark", "label", "path"],)
-    return nsums, input_arrays, head, graph
+    return nsums, data_node, head, graph
 
 def run_test(head, tail, runs, graph):
     def test():
@@ -69,7 +68,7 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     storage = NodeStorage()
-    nsums, input_arrays, head, graph = make_test_graph(storage, datasize=args.dsize, width=args.width, length=args.length)
+    nsums, data_node, head, graph = make_test_graph(storage, datasize=args.dsize, width=args.width, length=args.length)
     print(f"Создано узлов: {nsums}")
 
-    run_test(input_arrays[0], head, args.runs, graph)
+    run_test(data_node, head, args.runs, graph)

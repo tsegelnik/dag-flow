@@ -15,7 +15,7 @@ class Input(Node):
         self.data = data
         super().__init__(inputs=None)
 
-    def compile(self):
+    def to_c_struct(self):
         data_array = (c_double * len(self.data))(*self.data)
         self.c_data = cast(data_array, POINTER(c_double))
 

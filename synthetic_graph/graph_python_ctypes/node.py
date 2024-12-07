@@ -38,7 +38,7 @@ class Node(ABC):
         other.inputs.append(self)
         return other
 
-    def compile(self):
+    def to_c_struct(self):
         data_array = (c_double * self.get_size())()
         self.c_data = cast(data_array, POINTER(c_double))
 
@@ -47,7 +47,7 @@ class Node(ABC):
         input_sizes = (c_int * len(self.inputs))()
 
         for i, input_node in enumerate(self.inputs):
-            input_node.compile()
+            input_node.to_c_struct()
             input_sizes[i] = input_node.get_size()
 
         self.c_input_sizes = cast(input_sizes, POINTER(c_int))

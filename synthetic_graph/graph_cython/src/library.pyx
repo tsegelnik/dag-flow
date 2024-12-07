@@ -18,14 +18,11 @@ cdef class Input(Node):
         for i in range(self.size):
             self.data[i] = data[i]
 
-    cdef CNode* _compile(self):
+    cdef void _setup_cnode(self):
         self.cnode.inputs = cython.NULL
         self.cnode.input_sizes = cython.NULL
         self.cnode.input_count = 0
-        self.cnode.fcn = self.fcn
         self.cnode.data = self.data
-
-        return self.cnode
 
     @functools.cache
     def get_size(self):

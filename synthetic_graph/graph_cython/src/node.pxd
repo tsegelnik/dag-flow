@@ -7,14 +7,18 @@ ctypedef struct CNode:
     int input_count
     CFcnType* fcn
     double* data
+    int tainted
 
 
 cdef class Node:
     cdef public list inputs
     cdef CNode* cnode
     cdef CFcnType* fcn
+    cdef int initialized
 
-    cdef CNode* _compile(self)
+    cdef CNode* _to_c_struct(self)
+    
+    cdef void _setup_cnode(self)
 
     @staticmethod
     cdef double* _run(CNode* node)

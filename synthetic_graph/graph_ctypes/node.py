@@ -45,12 +45,12 @@ class Node(ABC):
         other.inputs.append(self)
         return other
 
-    def compile(self):
+    def to_c_struct(self):
         input_nodes = (POINTER(CNode) * len(self.inputs))()
         input_sizes = (c_int * len(self.inputs))()
 
         for i, input_node in enumerate(self.inputs):
-            input_nodes[i] = pointer(input_node.compile())
+            input_nodes[i] = pointer(input_node.to_c_struct())
             input_sizes[i] = input_node.get_size()
 
         data_array = (c_double * self.get_size())()
