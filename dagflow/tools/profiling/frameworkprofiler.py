@@ -8,7 +8,7 @@ from pandas import DataFrame, Series
 import numpy
 
 from .timerprofiler import TimerProfiler
-from dagflow.node import Node
+from dagflow.core.node import Node
 
 SOURCE_COL_WIDTH = 32
 SINK_COL_WIDTH = 32
@@ -21,9 +21,13 @@ _ALLOWED_GROUPBY = (
 )
 
 class FrameworkProfiler(TimerProfiler):
-    """Profiler class that used to estimate
-    the interaction time between nodes (framework time)"""
-    __slots__ = ()
+    """Profiler class used to estimate the interaction time
+    between nodes (i.e. "framework" time)
+
+    The basic idea: replace the calculating functions of a node
+    with empty stubs, while allowing the graph to be executed as usual
+    """
+    __slots__ = ("_replaced_fcns")
 
     def __init__(
         self,
@@ -43,6 +47,7 @@ class FrameworkProfiler(TimerProfiler):
             )
         self._default_agg_funcs = ("count", "single", "sum", "t_single_by_node")
         self._primary_col = "time"
+        self._replaced_fcns = {}
         if not (self._sources and self._sinks):
             self._reveal_source_sink()
 
@@ -64,13 +69,16 @@ class FrameworkProfiler(TimerProfiler):
 
     def _make_fcns_empty(self):
         for node in self._target_nodes:
-            node._stash_fcn()
-            # __get__ - the way to bind method to an instance
-            node.fcn = self.fcn_no_computation.__get__(node)
+            self._replaced_fcns[node] = node.function
+            # node._stash_fcn()
+            # __get__ - a way to bind method to an instance
+            node.function = self.fcn_no_computation.__get__(node)
 
     def _restore_fcns(self):
         for node in self._target_nodes:
-            node._unwrap_fcn()
+            node.function = self._replaced_fcns[node]
+            # node._unwrap_fcn()
+        self._replaced_fcns = {}
 
     def _estimate_framework_time(self) -> list[float]:
         self._make_fcns_empty()

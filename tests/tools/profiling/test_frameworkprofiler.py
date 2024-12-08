@@ -49,7 +49,8 @@ def test_make_fcns_empty_g0():
 
     profiling = FrameworkProfiler(nodes)
     profiling._make_fcns_empty()
-    assert all(n.fcn == types.MethodType(FrameworkProfiler.fcn_no_computation, n) for n in nodes)
+    assert all(n.function == types.MethodType(FrameworkProfiler.fcn_no_computation, n)
+               for n in nodes)
 
     profiling._taint_nodes()
     assert(a2.tainted == a1.tainted == p1.tainted == s2.tainted == True)
@@ -63,13 +64,13 @@ def test_make_fcns_empty_g0():
 def test_underscore_estimate_framework_time_g0():
     _, nodes = graph_0()
 
-    original_fcns = [n.fcn for n in nodes]
+    original_fcns = [n.function for n in nodes]
     profiling = FrameworkProfiler(nodes, n_runs=1000)
 
     results = profiling._estimate_framework_time()
     assert len(results) == profiling._n_runs
 
-    final_fcns = [n.fcn for n in profiling._target_nodes]
+    final_fcns = [n.function for n in profiling._target_nodes]
     assert final_fcns == original_fcns
 
 def test_estimate_framework_time_g0():
