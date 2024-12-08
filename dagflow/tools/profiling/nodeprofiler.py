@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from typing import TYPE_CHECKING
-from timeit import timeit, repeat
+from timeit import timeit
 from collections.abc import Sequence
 
 from pandas import DataFrame
