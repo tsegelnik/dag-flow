@@ -7,6 +7,8 @@ from dagflow.core.graph import Graph
 from dagflow.tools.profiling import NodeProfiler, FrameworkProfiler
 from dagflow.tools.profiling import DelayNode
 
+EPS = 0.05
+
 @pytest.mark.skipif("--include-long-time-tests" not in argv, reason="long-time tests switched off")
 def test_one_delay_node():
     with Graph(close_on_exit=True) as graph:
@@ -17,7 +19,8 @@ def test_one_delay_node():
     res = profiling.estimate_node(sl, n_runs=4)
     print("SL0 (must be ≈ 1):", res)
     profiling.estimate_target_nodes()
-    profiling.print_report()
+    report = profiling.print_report()
+
 
 def _gen_graph(sleep_time: float):
     with Graph(close_on_exit=True) as graph:
@@ -30,12 +33,21 @@ def _gen_graph(sleep_time: float):
 
 @pytest.mark.skipif("--include-long-time-tests" not in argv, reason="long-time tests switched off")
 def test_three_delay_nodes():
-    for x in (0.001, 0.1, 0.25, 0.5, 1):
-        g, nodes = _gen_graph(sleep_time=x)
-        print("\nsleep_time =", x)
+    for sleep_t in (0.1, 0.25, 0.5):
+        g, nodes = _gen_graph(sleep_time=sleep_t)
+        print("\nsleep_time =", sleep_t)
+
         profiling = NodeProfiler(nodes, n_runs=5)
         profiling.estimate_target_nodes()
+
+        report = profiling.make_report(group_by=None)
+        assert all(abs(report['time'] - sleep_t) < EPS)
         profiling.print_report(group_by=None)
 
         fprofiling = FrameworkProfiler(nodes)
-        fprofiling.estimate_framework_time().print_report()
+        fprofiling.estimate_framework_time()
+
+        report = fprofiling.make_report(group_by=None)
+        assert all(report['time'] < EPS)
+        fprofiling.print_report()
+
