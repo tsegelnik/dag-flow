@@ -1,6 +1,6 @@
 import pytest
 
-from dagflow.graph import Graph
+from dagflow.core.graph import Graph
 
 from dagflow.tools.profiling import NodeProfiler, FrameworkProfiler
 from dagflow.tools.profiling import DelayNode

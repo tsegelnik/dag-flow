@@ -1,11 +1,13 @@
+from __future__ import annotations
+
 from typing import TYPE_CHECKING
 from time import sleep
 
-from dagflow.node import Node
-from dagflow.inputhandler import MissingInputAdd
-from dagflow.exception import InitializationError
+from dagflow.core.node import Node
+from dagflow.core.input_handler import MissingInputAdd
+from dagflow.core.exception import InitializationError
 if TYPE_CHECKING:
-    from dagflow.output import Output
+    from dagflow.core.output import Output
 
 class DelayNode(Node):
     """
@@ -14,7 +16,7 @@ class DelayNode(Node):
 
     use `sleep_time` argument to set execution time in seconds
     """
-    _out: "Output"
+    _out: Output
     _sleep_time: float | int
     __slots__ = ("_out", "_sleep_time")
 
@@ -27,7 +29,7 @@ class DelayNode(Node):
         super().__init__(*args, **kwargs)
         self._out = self._add_output("result")
 
-    def _fcn(self):
+    def _function(self):
         for inp in self.inputs.iter_all():
             inp.touch()
         sleep(self._sleep_time)

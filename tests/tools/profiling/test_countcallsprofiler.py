@@ -3,7 +3,7 @@ from __future__ import annotations
 from pandas import DataFrame
 
 from dagflow.tools.profiling import CountCallsProfiler
-from test_helpers import graph_0, graph_1
+from test_helpers import graph_0
 
 def eval_n_times(node, n):
     """Evaluate node n times. Helper function"""

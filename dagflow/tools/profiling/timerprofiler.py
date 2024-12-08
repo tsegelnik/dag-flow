@@ -5,12 +5,12 @@ from typing import TYPE_CHECKING
 from pandas import DataFrame, Series
 import numpy
 
-from dagflow.node import Node
+from dagflow.core.node import Node
 from .profiler import Profiler
 
 if TYPE_CHECKING:
     from collections.abc import Sequence, Callable
-    from dagflow.node import Node
+    from dagflow.core.node import Node
 
 
 # prefix `t_` - time notation
