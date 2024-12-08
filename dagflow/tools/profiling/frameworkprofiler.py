@@ -70,14 +70,12 @@ class FrameworkProfiler(TimerProfiler):
     def _make_fcns_empty(self):
         for node in self._target_nodes:
             self._replaced_fcns[node] = node.function
-            # node._stash_fcn()
             # __get__ - a way to bind method to an instance
             node.function = self.fcn_no_computation.__get__(node)
 
     def _restore_fcns(self):
         for node in self._target_nodes:
             node.function = self._replaced_fcns[node]
-            # node._unwrap_fcn()
         self._replaced_fcns = {}
 
     def _estimate_framework_time(self) -> list[float]:

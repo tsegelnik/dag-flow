@@ -38,7 +38,7 @@ def test_multiple_calls_g0():
     target_calls = [11, 3, 17, 14]
     target_nodes = [mdvdt, a0, s3, p0]
     for tc, node in zip(target_calls, target_nodes):
-        eval_n_times(node, tc - 1) # "-1" sice there is one estimation already
+        eval_n_times(node, tc - 1) # "-1" since there is one estimation already
 
     cc_profiler = CountCallsProfiler(nodes).estimate_calls()
 
