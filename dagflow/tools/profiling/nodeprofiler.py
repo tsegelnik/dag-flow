@@ -1,14 +1,14 @@
 from __future__ import annotations
 
 from typing import TYPE_CHECKING
-from timeit import timeit
+from timeit import timeit, repeat
 from collections.abc import Sequence
 
 from pandas import DataFrame
 
 from .timerprofiler import TimerProfiler
 if TYPE_CHECKING:
-    from dagflow.node import Node
+    from dagflow.core.node import Node
 
 _ALLOWED_GROUPBY = ("node", "type", "name")
 
@@ -32,7 +32,10 @@ class NodeProfiler(TimerProfiler):
     def estimate_node(cls, node: Node, n_runs: int = 10_000):
         for input in node.inputs.iter_all():
             input.touch()
-        return timeit(stmt=node.fcn, number=n_runs)
+        node.fd.being_evaluated = True
+        fcn_time = timeit(stmt=node.function, number=n_runs)
+        node.fd.being_evaluated = False
+        return fcn_time
 
     def estimate_target_nodes(self) -> NodeProfiler:
         records = {col: [] for col in ("node", "type", "name", "time")}

@@ -3,7 +3,7 @@ from collections import Counter
 import pytest
 
 from dagflow.tools.profiling import NodeProfiler
-from dagflow.node import Node
+from dagflow.core.node import Node
 
 from test_helpers import graph_0, graph_1
 

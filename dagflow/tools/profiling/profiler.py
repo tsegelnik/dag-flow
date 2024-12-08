@@ -8,10 +8,10 @@ from pandas import DataFrame, Index
 from tabulate import tabulate
 
 if TYPE_CHECKING:
-    from dagflow.node import Node
     from collections.abc import Generator, Sequence, Iterable
     from pandas.api.typing import DataFrameGroupBy
     from collections.abc import Callable
+    from dagflow.core.node import Node
 
 
 class Profiler(metaclass=ABCMeta):
