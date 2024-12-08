@@ -8,13 +8,13 @@ from itertools import chain
 from pandas import DataFrame
 
 from dagflow.tools.profiling import MemoryProfiler
-from dagflow.input import Input
+from dagflow.core.input import Input
 from test_helpers import graph_0, graph_1
 
 
 if TYPE_CHECKING:
-    from dagflow.output import Output
-    from dagflow.input import Input
+    from dagflow.core.output import Output
+    from dagflow.core.input import Input
     from numpy.typing import NDArray
 
 def calc_numpy_size(data: NDArray) -> int:

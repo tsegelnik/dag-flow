@@ -6,9 +6,9 @@ from pandas import DataFrame
 
 if TYPE_CHECKING:
     from collections.abc import Sequence, Callable
-    from dagflow.node import Node
-    from dagflow.input import Input
-    from dagflow.output import Output
+    from dagflow.core.node import Node
+    from dagflow.core.input import Input
+    from dagflow.core.output import Output
 
 from .profiler import Profiler
 
