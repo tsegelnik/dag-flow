@@ -5,10 +5,11 @@ from typing import TYPE_CHECKING
 from pandas import DataFrame
 
 from .profiler import Profiler
+
 if TYPE_CHECKING:
+    from collections.abc import Callable, Sequence
+
     from dagflow.core.node import Node
-    from collections.abc import Callable
-    from collections.abc import Sequence
 
 # columnt aliases for aggregate functions
 _COLUMN_ALIASES: dict[str | Callable, str] = {
@@ -29,9 +30,11 @@ _AGG_ALIASES: dict[str, str | Callable] = {
     "var": "var",
 }
 
+
 class CountCallsProfiler(Profiler):
-    """Profiling class for estimating number of calls
-    of each node after model fit"""
+    """Profiling class for estimating number of calls of each node after model
+    fit."""
+
     __slots__ = ()
 
     def __init__(
@@ -61,14 +64,14 @@ class CountCallsProfiler(Profiler):
         self,
         group_by: str | list[str] | None = "type",
         agg_funcs: Sequence[str] | None = None,
-        sort_by: str | None = None
+        sort_by: str | None = None,
     ) -> DataFrame:
         return super().make_report(group_by, agg_funcs, sort_by)
 
     def calls_by_node(self):
-        if not hasattr(self, '_estimations_table'):
+        if not hasattr(self, "_estimations_table"):
             self.estimate_calls()
-        count =  len(self._target_nodes)
+        count = len(self._target_nodes)
         calls = self._estimations_table["calls"].sum()
         return calls / count
 
@@ -77,12 +80,14 @@ class CountCallsProfiler(Profiler):
         rows: int | None = 40,
         group_by: str | list[str] | None = "type",
         agg_funcs: Sequence[str] | None = None,
-        sort_by: str | None = None
+        sort_by: str | None = None,
     ) -> DataFrame:
         report = self.make_report(group_by, agg_funcs, sort_by)
-        print(f"\nCounts of calls profiling {hex(id(self))}, "
-              f"sort by: `{sort_by or 'default sorting'}`, "
-              f"group by: `{group_by or 'no grouping'}`")
+        print(
+            f"\nCounts of calls profiling {hex(id(self))}, "
+            f"sort by: `{sort_by or 'default sorting'}`, "
+            f"group by: `{group_by or 'no grouping'}`"
+        )
         super()._print_table(report, rows)
         print(f"Mean count of calls by node: \t{self.calls_by_node():.2f}")
         return report

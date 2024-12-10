@@ -2,14 +2,16 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-from pandas import DataFrame, Series
 import numpy
+from pandas import DataFrame, Series
 
 from dagflow.core.node import Node
+
 from .profiler import Profiler
 
 if TYPE_CHECKING:
-    from collections.abc import Sequence, Callable
+    from collections.abc import Callable, Sequence
+
     from dagflow.core.node import Node
 
 
@@ -49,6 +51,7 @@ class TimerProfiler(Profiler):
     It is not designed to be used directly,
     you should consider `NodeProfiler` or `FrameworkProfiler`.
     """
+
     __slots__ = ("_n_runs",)
     _n_runs: int
 
@@ -57,7 +60,7 @@ class TimerProfiler(Profiler):
         target_nodes: Sequence[Node] = (),
         sources: Sequence[Node] = (),
         sinks: Sequence[Node] = (),
-        n_runs: int = 100
+        n_runs: int = 100,
     ):
         self._default_agg_funcs = _DEFAULT_AGG_FUNCS
         self._column_aliases = _COLUMN_ALIASES.copy()
@@ -65,9 +68,9 @@ class TimerProfiler(Profiler):
         self._n_runs = n_runs
         self.register_agg_func(
             func=self._t_presentage,
-            aliases=['%_of_total', 'percentage', 't_percentage'],
-            column_name='%_of_total'
-            )
+            aliases=["%_of_total", "percentage", "t_percentage"],
+            column_name="%_of_total",
+        )
         super().__init__(target_nodes, sources, sinks)
 
     @property
@@ -79,20 +82,17 @@ class TimerProfiler(Profiler):
         self._n_runs = value
 
     def _t_presentage(self, _s: Series) -> Series:
-        """User-defined aggregate function
-        to calculate the percentage
-        of group given as `pandas.Series`.
-        """
+        """User-defined aggregate function to calculate the percentage of group
+        given as `pandas.Series`."""
         total = self._total_estimations_time()
-        return Series({'%_of_total': numpy.sum(_s) * 100 / total})
+        return Series({"%_of_total": numpy.sum(_s) * 100 / total})
 
     def _total_estimations_time(self):
-        return self._estimations_table['time'].sum()
+        return self._estimations_table["time"].sum()
 
     def _normalize(self, df: DataFrame) -> DataFrame:
         """Normalize `time` by `self.n_runs`"""
         for c in df.columns:
-            if c.startswith('t_') or c == 'time':
+            if c.startswith("t_") or c == "time":
                 df[c] /= self._n_runs
         return df
-

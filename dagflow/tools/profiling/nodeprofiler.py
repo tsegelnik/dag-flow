@@ -1,19 +1,22 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
-from timeit import timeit
 from collections.abc import Sequence
+from timeit import timeit
+from typing import TYPE_CHECKING
 
 from pandas import DataFrame
 
 from .timerprofiler import TimerProfiler
+
 if TYPE_CHECKING:
     from dagflow.core.node import Node
 
 _ALLOWED_GROUPBY = ("node", "type", "name")
 
+
 class NodeProfiler(TimerProfiler):
-    """Profiling class for estimating the time of individual nodes"""
+    """Profiling class for estimating the time of individual nodes."""
+
     __slots__ = ()
 
     def __init__(
@@ -22,7 +25,7 @@ class NodeProfiler(TimerProfiler):
         *,
         sources: Sequence[Node] = (),
         sinks: Sequence[Node] = (),
-        n_runs: int = 10_000
+        n_runs: int = 10_000,
     ):
         super().__init__(target_nodes, sources, sinks, n_runs)
         self._allowed_groupby = _ALLOWED_GROUPBY
@@ -53,7 +56,7 @@ class NodeProfiler(TimerProfiler):
         group_by: str | list[str] | None = "type",
         agg_funcs: Sequence[str] | None = None,
         sort_by: str | None = None,
-        normilize: bool = True
+        normilize: bool = True,
     ) -> DataFrame:
         report = super().make_report(group_by, agg_funcs, sort_by)
         if normilize:
@@ -62,8 +65,7 @@ class NodeProfiler(TimerProfiler):
 
     def _print_total_time(self):
         total = self._total_estimations_time()
-        print("total estimations time"
-              " / n_runs: %.9f sec." % (total / self._n_runs))
+        print("total estimations time" " / n_runs: %.9f sec." % (total / self._n_runs))
         print("total estimations time: %.6f sec." % total)
 
     def print_report(
@@ -71,13 +73,15 @@ class NodeProfiler(TimerProfiler):
         rows: int | None = 40,
         group_by: str | list[str] | None = "type",
         agg_funcs: Sequence[str] | None = None,
-        sort_by: str | None = None
+        sort_by: str | None = None,
     ) -> DataFrame:
         report = self.make_report(group_by, agg_funcs, sort_by)
-        print(f"\nNode Profiling {hex(id(self))}, "
-              f"n_runs for each node: {self._n_runs}\n"
-              f"sort by: `{sort_by or 'default sorting'}`, "
-              f"group by: `{group_by or 'no grouping'}`")
+        print(
+            f"\nNode Profiling {hex(id(self))}, "
+            f"n_runs for each node: {self._n_runs}\n"
+            f"sort by: `{sort_by or 'default sorting'}`, "
+            f"group by: `{group_by or 'no grouping'}`"
+        )
         super()._print_table(report, rows)
         self._print_total_time()
         return report

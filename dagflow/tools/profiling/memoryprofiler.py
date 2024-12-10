@@ -45,17 +45,19 @@ _DEFAULT_AGG_FUNCS = ("count", "sum")
 class MemoryProfiler(Profiler):
     """Memory Profiler.
 
-    It helps to estimate the size of edges of the given nodes.
-    All estimations are performed in bytes and only those edges
-    that own memory (size != 0) are taken into account.
+    It helps to estimate the size of edges of the given nodes. All
+    estimations are performed in bytes and only those edges that own
+    memory (size != 0) are taken into account.
     """
+
     __slots__ = ()
+
     def __init__(
         self,
-        target_nodes: Sequence[Node]=(),
+        target_nodes: Sequence[Node] = (),
         *,
-        sources: Sequence[Node]=(),
-        sinks: Sequence[Node]=()
+        sources: Sequence[Node] = (),
+        sinks: Sequence[Node] = (),
     ):
         self._default_agg_funcs = _DEFAULT_AGG_FUNCS
         self._column_aliases = _COLUMN_ALIASES.copy()
@@ -79,8 +81,7 @@ class MemoryProfiler(Profiler):
             else:
                 estimations[inp] = 0
         for out in node.outputs.iter_all():
-            if (out.has_data
-                and (out.owns_buffer or out._allocating_input is None)):
+            if out.has_data and (out.owns_buffer or out._allocating_input is None):
                 # If there is an _allocating_input,
                 #  the `out.data` refers to the child `Input` data.
                 # However if there is no `_allocating_input`
@@ -92,8 +93,8 @@ class MemoryProfiler(Profiler):
         return estimations
 
     def estimate_target_nodes(self, touch=False):
-        """Estimate size of edges of all `self.target_nodes`.
-        Only those edges that own memory (size != 0) are taken into account.
+        """Estimate size of edges of all `self.target_nodes`. Only those edges
+        that own memory (size != 0) are taken into account.
 
         Return current `MemoryProfiler` instance.
         """
@@ -113,9 +114,8 @@ class MemoryProfiler(Profiler):
 
     @property
     def total_size(self):
-        """Return size of all edges of '_target_nodes' in bytes
-        """
-        if not hasattr(self, '_estimations_table'):
+        """Return size of all edges of '_target_nodes' in bytes."""
+        if not hasattr(self, "_estimations_table"):
             self.estimate_target_nodes()
         return self._estimations_table["size"].sum()
 
@@ -123,32 +123,36 @@ class MemoryProfiler(Profiler):
         self,
         group_by: str | list[str] | None = "type",
         agg_funcs: Sequence[str] | None = None,
-        sort_by: str | None = None
+        sort_by: str | None = None,
     ) -> DataFrame:
         return super().make_report(group_by, agg_funcs, sort_by)
 
-    def _present_in_units(self, value, separator='\n\t') -> str:
-        """Convert the `value` in bytes to kilobytes, and megabytes
+    def _present_in_units(self, value, separator="\n\t") -> str:
+        """Convert the `value` in bytes to kilobytes, and megabytes.
 
         Return formatted string, where the values separated by `separator`:
         """
-        return separator.join((
-            f"{value:.1f} bytes",
-            f"{value / 2 ** 10:.1f} Kbytes",
-            f"{value / 2 ** 20:.1f} Mbytes",
-        ))
+        return separator.join(
+            (
+                f"{value:.1f} bytes",
+                f"{value / 2 ** 10:.1f} Kbytes",
+                f"{value / 2 ** 20:.1f} Mbytes",
+            )
+        )
 
     def print_report(
         self,
         rows: int | None = 40,
         group_by: str | list[str] | None = "type",
         agg_funcs: Sequence[str] | None = None,
-        sort_by: str | None = None
+        sort_by: str | None = None,
     ) -> DataFrame:
         report = self.make_report(group_by, agg_funcs, sort_by)
-        print(f"\nMemory Profiling {hex(id(self))}, "
-              f"sort by: `{sort_by or 'default sorting'}`, "
-              f"group by: `{group_by or 'no grouping'}`")
+        print(
+            f"\nMemory Profiling {hex(id(self))}, "
+            f"sort by: `{sort_by or 'default sorting'}`, "
+            f"group by: `{group_by or 'no grouping'}`"
+        )
         # There is a float formatting: since profiler works with bytes,
         #  it makes no sense to print more than one decimal places of float
         self._print_table(report, rows, float_fmt=".1f")
