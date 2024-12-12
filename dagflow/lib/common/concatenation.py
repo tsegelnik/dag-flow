@@ -46,7 +46,7 @@ class Concatenation(ManyToOneNode):
 
     def _function(self):
         _output = self.outputs["result"]
-        data = _output.data
+        data = _output.data_unsafe
         for offset, _input in zip(self._offsets, self.inputs):
             size = _input.dd.shape[0]
             data[offset : offset + size] = _input.data[:]

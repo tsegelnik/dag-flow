@@ -70,5 +70,5 @@ class PartialSums(OneToOneNode):
 
     def _function(self):
         data = self._array.data
-        for inp, out in zip(self.inputs, self.outputs):
-            _psum(data, inp.data, out.data)
+        for indata, outdata in zip(self.inputs.iter_data(), self.outputs.iter_data_unsafe()):
+            _psum(data, indata, outdata)

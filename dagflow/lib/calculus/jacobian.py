@@ -55,7 +55,7 @@ class Jacobian(OneToOneNode):
     def _function(self):
         c1 = 4.0 / 3.0
         c2 = 1.0 / 6.0
-        for inp, outdata in zip(self.inputs, self.outputs.iter_data()):
+        for inp, outdata in zip(self.inputs, self.outputs.iter_data_unsafe()):
             outdata[:] = 0.0
             for i, parameter in enumerate(self._parameters_list):
                 reldelta = parameter.sigma * self._scale

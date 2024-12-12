@@ -72,33 +72,33 @@ class NormalizeCorrelatedVars(Node):
         self.inputs.touch()
         L = self._matrix.data
         central = self._central.data
-        for _input, _output in zip(self.inputs.iter_data(), self.outputs.iter_data()):
-            subtract(_input, central, out=_output)
-            solve_triangular(L, _output, lower=True, overwrite_b=True, check_finite=False)
+        for indata, outdata in zip(self.inputs.iter_data(), self.outputs.iter_data_unsafe()):
+            subtract(indata, central, out=outdata)
+            solve_triangular(L, outdata, lower=True, overwrite_b=True, check_finite=False)
 
     def _fcn_backward_2d(self):
         self.inputs.touch()
         L = self._matrix.data
         central = self._central.data
-        for _input, _output in zip(self.inputs.iter_data(), self.outputs.iter_data()):
-            matmul(L, _input, out=_output)
-            add(_output, central, out=_output)
+        for indata, outdata in zip(self.inputs.iter_data(), self.outputs.iter_data_unsafe()):
+            matmul(L, indata, out=outdata)
+            add(outdata, central, out=outdata)
 
     def _fcn_forward_1d(self):
         self.inputs.touch()
         Ldiag = self._matrix.data
         central = self._central.data
-        for _input, _output in zip(self.inputs.iter_data(), self.outputs.iter_data()):
-            subtract(_input, central, out=_output)
-            divide(_output, Ldiag, out=_output)
+        for indata, outdata in zip(self.inputs.iter_data(), self.outputs.iter_data_unsafe()):
+            subtract(indata, central, out=outdata)
+            divide(outdata, Ldiag, out=outdata)
 
     def _fcn_backward_1d(self):
         self.inputs.touch()
         Ldiag = self._matrix.data
         central = self._central.data
-        for _input, _output in zip(self.inputs.iter_data(), self.outputs.iter_data()):
-            multiply(Ldiag, _input, out=_output)
-            add(_output, central, out=_output)
+        for indata, outdata in zip(self.inputs.iter_data(), self.outputs.iter_data_unsafe()):
+            multiply(Ldiag, indata, out=outdata)
+            add(outdata, central, out=outdata)
 
     def _typefunc(self) -> None:
         check_node_has_inputs(self)

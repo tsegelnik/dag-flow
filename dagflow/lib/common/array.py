@@ -82,8 +82,7 @@ class Array(Node):
         pass
 
     def _fcn_fill(self):
-        data = self._output._data
-        data[:] = self._data
+        self._output.data_unsafe[:] = self._data
 
     @classmethod
     def from_value(
@@ -161,7 +160,7 @@ class Array(Node):
         if self._mode == "fill":
             return
 
-        self._data = self._output._data
+        self._data = self._output.data_unsafe
 
     def set(self, data: ArrayLike, check_taint: bool = False) -> bool:
         return self._output.set(data, check_taint)

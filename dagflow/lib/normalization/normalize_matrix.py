@@ -42,12 +42,12 @@ class NormalizeMatrix(OneToOneNode):
         )
 
     def _fcn_norm_rows(self) -> None:
-        for input, output in zip(self.inputs, self.outputs):
-            _norm_rows(input.data, output._data)
+        for indata, outdata in zip(self.inputs.iter_data(), self.outputs.iter_data_unsafe()):
+            _norm_rows(indata, outdata)
 
     def _fcn_norm_columns(self) -> None:
-        for input, output in zip(self.inputs, self.outputs):
-            _norm_columns(input.data, output._data)
+        for indata, outdata in zip(self.inputs.iter_data(), self.outputs.iter_data_unsafe()):
+            _norm_columns(indata, outdata)
 
     def _typefunc(self) -> None:
         super()._typefunc()

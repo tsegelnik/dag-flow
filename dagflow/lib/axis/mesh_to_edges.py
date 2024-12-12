@@ -35,8 +35,8 @@ class MeshToEdges(OneToOneNode):
     __slots__ = ()
 
     def _function(self):
-        for _input, _output in zip(self.inputs.iter_data(), self.outputs.iter_data()):
-            _binedges(_input, _output)
+        for indata, outdata in zip(self.inputs.iter_data(), self.outputs.iter_data_unsafe()):
+            _binedges(indata, outdata)
 
     def _typefunc(self) -> None:
         """A output takes this function to determine the dtype and shape"""

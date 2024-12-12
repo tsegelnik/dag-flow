@@ -244,10 +244,6 @@ class Node(NodeBase):
         return self._debug
 
     @property
-    def being_evaluated(self) -> bool:
-        return self.fd.being_evaluated
-
-    @property
     def allocated(self) -> bool:
         return self.fd.allocated
 
@@ -511,10 +507,8 @@ class Node(NodeBase):
         self._eval()
 
     def _eval(self):
-        self.fd.being_evaluated = True
         self._n_calls += 1
         self.function()
-        self.fd.being_evaluated = False
 
     def touch(self, force_computation=False):
         if not force_computation:
@@ -526,10 +520,8 @@ class Node(NodeBase):
 
     def _touch(self):
         # To avoid extra function calls we copy lines below from _eval
-        self.fd.being_evaluated = True
         self._n_calls += 1
         self.function()
-        self.fd.being_evaluated = False
         self.fd.tainted = False
 
     def freeze(self):
@@ -616,7 +608,6 @@ class Node(NodeBase):
         self.logger.debug(f"Node '{self.name}': Update types...")
         self._typefunc()
         self.fd.types_tainted = False
-
         self._fd.needs_reallocation = True
 
     def allocate(self, recursive: bool = True):

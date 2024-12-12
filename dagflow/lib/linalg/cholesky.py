@@ -31,9 +31,9 @@ class Cholesky(Node):
         """
         self.inputs.touch()
 
-        for _input, _output in zip(self.inputs.iter_data(), self.outputs.iter_data()):
-            _output[:] = _input
-            cholesky(_output.T, overwrite_a=True, lower=False)  # produces L (!) inplace
+        for indata, outdata in zip(self.inputs.iter_data(), self.outputs.iter_data_unsafe()):
+            outdata[:] = indata
+            cholesky(outdata.T, overwrite_a=True, lower=False)  # produces L (!) inplace
 
     def _fcn_diagonal(self):
         """Compute "Cholesky" decomposition using of a diagonal of a square matrix.
@@ -41,8 +41,8 @@ class Cholesky(Node):
         """
         self.inputs.touch()
 
-        for _input, _output in zip(self.inputs.iter_data(), self.outputs.iter_data()):
-            sqrt(_input, out=_output)
+        for indata, outdata in zip(self.inputs.iter_data(), self.outputs.iter_data_unsafe()):
+            sqrt(indata, out=outdata)
 
     def _typefunc(self) -> None:
         check_node_has_inputs(self)

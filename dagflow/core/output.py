@@ -165,8 +165,6 @@ class Output:
 
     @property
     def data(self) -> NDArray:
-        if self.node.being_evaluated:
-            return self._data
         if not self.closed:
             raise UnclosedGraphError(
                 "Unable to get the output data from unclosed graph!",

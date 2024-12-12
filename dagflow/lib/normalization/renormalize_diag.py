@@ -55,13 +55,13 @@ class RenormalizeDiag(OneToOneNode):
 
     def _fcn_diag(self) -> None:
         scale = self._scale.data[0]
-        for input, output in zip(self.inputs, self.outputs):
-            _renorm_diag_numba(input.data, output._data, scale, self._ndiag)
+        for indata, outdata in zip(self.inputs.iter_data(), self.outputs.iter_data_unsafe()):
+            _renorm_diag_numba(indata, outdata, scale, self._ndiag)
 
     def _fcn_offdiag(self) -> None:
         scale = self._scale.data[0]
-        for input, output in zip(self.inputs, self.outputs):
-            _renorm_offdiag_numba(input.data, output._data, scale, self._ndiag)
+        for indata, outdata in zip(self.inputs.iter_data(), self.outputs.iter_data_unsafe()):
+            _renorm_offdiag_numba(indata, outdata, scale, self._ndiag)
 
     def _typefunc(self) -> None:
         super()._typefunc()

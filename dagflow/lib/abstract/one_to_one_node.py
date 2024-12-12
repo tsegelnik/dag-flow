@@ -53,6 +53,7 @@ class OneToOneNode(Node):
 
     def _post_allocate(self):
         super()._post_allocate()
+        # TODO: is it right that we get unsafe data for inputs???
         for input, output in zip(self.inputs, self.outputs):
             self._input_output_data.append((input.data_unsafe, output.data_unsafe))
 

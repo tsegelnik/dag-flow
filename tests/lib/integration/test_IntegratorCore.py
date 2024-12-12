@@ -78,14 +78,14 @@ vecFres = vectorize(fres)
 
 class Polynomial0(OneToOneNode):
     def _function(self):
-        for inp, out in zip(self.inputs, self.outputs):
-            out.data[:] = vecF0(inp.data)
+        for indata, outdata in zip(self.inputs.iter_data(), self.outputs.iter_data_unsafe()):
+            outdata[:] = vecF0(indata)
 
 
 class PolynomialRes(OneToOneNode):
     def _function(self):
-        for inp, out in zip(self.inputs, self.outputs):
-            out.data[:] = vecFres(inp.data)
+        for indata, outdata in zip(self.inputs.iter_data(), self.outputs.iter_data_unsafe()):
+            outdata[:] = vecFres(indata)
 
 
 def test_IntegratorCore_gl1d(debug_graph, testname):
@@ -117,7 +117,7 @@ def test_IntegratorCore_gl2d(debug_graph, testname):
         scale = 1.0
 
         def _function(self):
-            self.outputs["result"].data[:] = (
+            self.outputs["result"].data_unsafe[:] = (
                 self.scale * vecF0(self.inputs[1].data) * vecF0(self.inputs[0].data)
             )
 
@@ -209,7 +209,7 @@ def test_IntegratorCore_gl2d(debug_graph, testname):
 def test_IntegratorCore_gl2to1d_x(debug_graph, testname, dropdim):
     class Polynomial21(ManyToOneNode):
         def _function(self):
-            self.outputs["result"].data[:] = vecF0(self.inputs[1].data) * vecF0(self.inputs[0].data)
+            self.outputs["result"].data_unsafe[:] = vecF0(self.inputs[1].data) * vecF0(self.inputs[0].data)
 
     with Graph(debug=debug_graph, close_on_exit=True) as graph:
         npointsX = 20
@@ -272,7 +272,7 @@ def test_IntegratorCore_gl2to1d_x(debug_graph, testname, dropdim):
 def test_IntegratorCore_gl2to1d_y(debug_graph, testname, dropdim):
     class Polynomial21(ManyToOneNode):
         def _function(self):
-            self.outputs["result"].data[:] = vecF0(self.inputs[1].data) * vecF0(self.inputs[0].data)
+            self.outputs["result"].data_unsafe[:] = vecF0(self.inputs[1].data) * vecF0(self.inputs[0].data)
 
     with Graph(debug=debug_graph, close_on_exit=True) as graph:
         npointsY = 20

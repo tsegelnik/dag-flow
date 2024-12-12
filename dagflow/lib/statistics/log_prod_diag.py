@@ -41,15 +41,15 @@ class LogProdDiag(Node):
         """Compute logarithm of determinant of matrix using Cholesky decomposition"""
         self.inputs.touch()
 
-        for inp, out in zip(self.inputs, self.outputs):
-            log(diag(inp.data), out=self._buffer)
-            out.data[0] = 2 * self._buffer.sum()
+        for indata, outdata in zip(self.inputs.iter_data(), self.outputs.iter_data_unsafe()):
+            log(diag(indata), out=self._buffer)
+            outdata[0] = 2 * self._buffer.sum()
 
     def _fcn_diagonal(self):
         """Compute "LogProdDiag" using of a diagonal of a square matrix."""
-        for inp, out in zip(self.inputs, self.outputs):
-            log(inp.data, out=self._buffer)
-            out.data[0] = 2 * self._buffer.sum()
+        for indata, outdata in zip(self.inputs.iter_data(), self.outputs.iter_data_unsafe()):
+            log(indata, out=self._buffer)
+            outdata[0] = 2 * self._buffer.sum()
 
     def _typefunc(self) -> None:
         check_node_has_inputs(self, AllPositionals)

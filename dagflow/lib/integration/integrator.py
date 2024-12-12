@@ -14,7 +14,6 @@ if TYPE_CHECKING:
 
     from multikeydict.typing import Key
 
-    from ...core.node import Node
     from .integrator_sampler import ModeType
 
 

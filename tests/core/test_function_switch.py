@@ -13,10 +13,10 @@ class SumIntProductFloatElseNothing(Node):
         self._functions_dict.update({"int": self._fcn_int, "float": self._fcn_float})
 
     def _function(self):
-        return self.outputs[0].data
+        return self.outputs[0].data_unsafe
 
     def _fcn_int(self):
-        out = self.outputs[0].data
+        out = self.outputs[0].data_unsafe
         copyto(out, self.inputs[0].data.copy())
         if len(self.inputs) > 1:
             for _input in self.inputs[1:]:
@@ -24,7 +24,7 @@ class SumIntProductFloatElseNothing(Node):
         return out
 
     def _fcn_float(self):
-        out = self.outputs[0].data
+        out = self.outputs[0].data_unsafe
         copyto(out, self.inputs[0].data.copy())
         if len(self.inputs) > 1:
             for _input in self.inputs[1:]:

@@ -595,8 +595,6 @@ else:
             try:
                 if node.invalid:
                     attr["color"] = "black"
-                elif node.being_evaluated:
-                    attr["color"] = "gold"
                 elif node.tainted:
                     attr["color"] = "red"
                 elif node.frozen_tainted:
