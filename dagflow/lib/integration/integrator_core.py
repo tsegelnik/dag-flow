@@ -221,8 +221,6 @@ class IntegratorCore(OneToOneNode):
         super()._post_allocate()
         weights = self._weights_input.dd
         self.__buffer = empty(shape=weights.shape, dtype=weights.dtype)
-
-        # TODO: is it correct that we get unsafe data?
         self._weights = self._weights_input.data_unsafe
         self._orders_x = self._orders_x_input.data_unsafe
         self._orders_y = self._orders_y_input.data_unsafe if self._orders_y_input else None

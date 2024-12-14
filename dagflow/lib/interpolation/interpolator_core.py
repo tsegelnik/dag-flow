@@ -218,7 +218,6 @@ class InterpolatorCore(Node):
 
     def _post_allocate(self):
         super()._post_allocate()
-        # TODO: is it correct that the data for the inputs is unsafe?
         self._y = self._y_input.data_unsafe.ravel()
         self._coarse = self._coarse_input.data_unsafe.ravel()
         self._fine = self._fine_input.data_unsafe.ravel()
