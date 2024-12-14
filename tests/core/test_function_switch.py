@@ -3,7 +3,6 @@ from numpy import arange, array, copyto, result_type
 from dagflow.core.graph import Graph
 from dagflow.core.input_handler import MissingInputAddOne
 from dagflow.lib.common import Array
-from dagflow.core.exception import TypeFunctionError
 from dagflow.core.node import Node
 
 
