@@ -216,7 +216,7 @@ class EdgeContainer:
 
     def iter_data_unsafe(self):
         for edge in self._pos_edges_list:
-            yield edge.data_unsafe
+            yield edge._data
 
     def iter(
         self,

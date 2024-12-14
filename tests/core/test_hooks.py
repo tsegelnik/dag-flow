@@ -10,7 +10,7 @@ from dagflow.lib.summation import WeightedSum
 
 class ThreeInputsSum(ManyToOneNode):
     def _function(self):
-        out = self.outputs["result"].data_unsafe
+        out = self.outputs["result"]._data
         copyto(out, self.inputs[0].data.copy())
         for _input in self.inputs[1:3]:
             out += _input.data

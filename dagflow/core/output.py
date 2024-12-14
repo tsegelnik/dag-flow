@@ -244,10 +244,6 @@ class Output:
     def debug(self) -> bool:
         return self._debug
 
-    @property
-    def data_unsafe(self):
-        return self._data
-
     def connect_to(self, input) -> Input:
         if not self.closed and input.closed:
             raise ConnectionError(

@@ -117,7 +117,7 @@ def test_IntegratorCore_gl2d(debug_graph, testname):
         scale = 1.0
 
         def _function(self):
-            self.outputs["result"].data_unsafe[:] = (
+            self.outputs["result"]._data[:] = (
                 self.scale * vecF0(self.inputs[1].data) * vecF0(self.inputs[0].data)
             )
 
@@ -209,7 +209,7 @@ def test_IntegratorCore_gl2d(debug_graph, testname):
 def test_IntegratorCore_gl2to1d_x(debug_graph, testname, dropdim):
     class Polynomial21(ManyToOneNode):
         def _function(self):
-            self.outputs["result"].data_unsafe[:] = vecF0(self.inputs[1].data) * vecF0(self.inputs[0].data)
+            self.outputs["result"]._data[:] = vecF0(self.inputs[1].data) * vecF0(self.inputs[0].data)
 
     with Graph(debug=debug_graph, close_on_exit=True) as graph:
         npointsX = 20
@@ -272,7 +272,7 @@ def test_IntegratorCore_gl2to1d_x(debug_graph, testname, dropdim):
 def test_IntegratorCore_gl2to1d_y(debug_graph, testname, dropdim):
     class Polynomial21(ManyToOneNode):
         def _function(self):
-            self.outputs["result"].data_unsafe[:] = vecF0(self.inputs[1].data) * vecF0(self.inputs[0].data)
+            self.outputs["result"]._data[:] = vecF0(self.inputs[1].data) * vecF0(self.inputs[0].data)
 
     with Graph(debug=debug_graph, close_on_exit=True) as graph:
         npointsY = 20

@@ -207,8 +207,8 @@ class Input:
         return self._parent_output.data
 
     @property
-    def data_unsafe(self):
-        return self._parent_output.data_unsafe
+    def _data(self):
+        return self._parent_output._data
 
     @property
     def dd(self):

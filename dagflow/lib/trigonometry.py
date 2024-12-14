@@ -84,4 +84,4 @@ class ArcTan(OneToOneNode):
 
     def _function(self):
         for inp, out in zip(self.inputs, self.outputs):
-            arctan(inp.data, out=out.data_unsafe)
+            arctan(inp.data, out=out._data)

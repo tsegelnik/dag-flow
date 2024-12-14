@@ -186,5 +186,5 @@ class NormalizeCorrelatedVarsTwoWays(Node):
     def _post_allocate(self):
         super()._post_allocate()
 
-        self._matrix = self.inputs["matrix"].data_unsafe
-        self._central = self.inputs["central"].data_unsafe
+        self._matrix = self.inputs["matrix"]._data
+        self._central = self.inputs["central"]._data

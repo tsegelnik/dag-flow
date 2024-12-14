@@ -42,7 +42,7 @@ class CovmatrixFromCormatrix(Node):
         self.inputs.touch()
         C = self._cormatrix.data
         sigma = self._sigma.data
-        V = self._covmatrix.data_unsafe
+        V = self._covmatrix._data
 
         multiply(C, sigma[None, :], out=V)
         multiply(V, sigma[:, None], out=V)

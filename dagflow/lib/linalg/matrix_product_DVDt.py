@@ -45,14 +45,14 @@ class MatrixProductDVDt(Node):
     def _fcn_diagonal(self):
         left = self._left.data
         diagonal = self._square.data  # square matrix stored as diagonal
-        outdata = self._out.data_unsafe
+        outdata = self._out._data
         multiply(left, diagonal, out=self._buffer)
         matmul(self._buffer, left.T, out=outdata)
 
     def _fcn_square(self):
         left = self._left.data
         square = self._square.data
-        outdata = self._out.data_unsafe
+        outdata = self._out._data
         matmul(left, square, out=self._buffer)
         matmul(self._buffer, left.T, out=outdata)
 

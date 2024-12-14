@@ -87,7 +87,7 @@ class SegmentIndex(Node):
 
     def _function(self):
         """Uses `numpy.ndarray.searchsorted` and `numpy.ndarray.argsort`"""
-        out = self._indices.data_unsafe.ravel()
+        out = self._indices._data.ravel()
         coarse = self._coarse.data.ravel()
         fine = self._fine.data.ravel()
         if not _is_sorted(coarse):

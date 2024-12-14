@@ -54,7 +54,7 @@ class OneToOneNode(Node):
     def _post_allocate(self):
         super()._post_allocate()
         for input, output in zip(self.inputs, self.outputs):
-            self._input_output_data.append((input.data_unsafe, output.data_unsafe))
+            self._input_output_data.append((input._data, output._data))
 
     @classmethod
     def replicate(

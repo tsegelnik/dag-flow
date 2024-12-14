@@ -188,8 +188,8 @@ class IntegratorSampler(Node):
         orders_x = self._orders_x
         edges = orders_x.dd.axes_edges[0]._data  # n+1
         orders = orders_x.data  # n
-        sample = self.outputs[0].data_unsafe  # m = sum(orders)
-        weights = self._weights.data_unsafe
+        sample = self.outputs[0]._data  # m = sum(orders)
+        weights = self._weights._data
         binwidths = self.__bufferX[0]  # n
         samplewidths = self.__bufferX[1]  # n
         low = self.__bufferX[2]  # n
@@ -223,8 +223,8 @@ class IntegratorSampler(Node):
         orders_x = self._orders_x
         edges = orders_x.dd.axes_edges[0]._data  # n+1
         orders = orders_x.data  # n
-        sample = self.outputs[0].data_unsafe  # m = sum(orders)
-        weights = self._weights.data_unsafe
+        sample = self.outputs[0]._data  # m = sum(orders)
+        weights = self._weights._data
         samplewidths = self.__bufferX  # n
 
         samplewidths[:] = edges[1:] - edges[:-1]
@@ -245,8 +245,8 @@ class IntegratorSampler(Node):
         orders_x = self._orders_x
         edges = orders_x.dd.axes_edges[0]._data
         orders = orders_x.data
-        sample = self.outputs[0].data_unsafe
-        weights = self._weights.data_unsafe
+        sample = self.outputs[0]._data
+        weights = self._weights._data
 
         _gl_sampler(orders, sample, weights, edges)
 
@@ -262,9 +262,9 @@ class IntegratorSampler(Node):
         weightsY = self.__bufferY[0]  # (m, )
         sampleX = self.__bufferX[1]  # (n, )
         sampleY = self.__bufferY[1]  # (m, )
-        X = self.outputs[0].data_unsafe  # (n, m)
-        Y = self.outputs[1].data_unsafe  # (n, m)
-        weights = self._weights.data_unsafe  # (n, m)
+        X = self.outputs[0]._data  # (n, m)
+        Y = self.outputs[1]._data  # (n, m)
+        weights = self._weights._data  # (n, m)
 
         _gl_sampler(orders_x, sampleX, weightsX, edgesX)
         _gl_sampler(orders_y, sampleY, weightsY, edgesY)

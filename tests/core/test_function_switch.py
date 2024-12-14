@@ -16,7 +16,7 @@ class SumIntOrProductFloatOrDoNothing(Node):
         pass
 
     def _fcn_int(self):
-        out = self.outputs[0].data_unsafe
+        out = self.outputs[0]._data
         copyto(out, self.inputs[0].data.copy())
         if len(self.inputs) > 1:
             for _input in self.inputs[1:]:
@@ -24,7 +24,7 @@ class SumIntOrProductFloatOrDoNothing(Node):
         return out
 
     def _fcn_float(self):
-        out = self.outputs[0].data_unsafe
+        out = self.outputs[0]._data
         copyto(out, self.inputs[0].data.copy())
         if len(self.inputs) > 1:
             for _input in self.inputs[1:]:
