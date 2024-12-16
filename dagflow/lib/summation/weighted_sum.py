@@ -55,7 +55,7 @@ class WeightedSum(ManyToOneNode):
         The function for one weight for all inputs:
         `len(weight) == 1`
         """
-        out = self.outputs[0].data
+        out = self.outputs[0]._data
         weight = self._weight.data
         copyto(out, self.inputs[0].data.copy())
         for _input in self.inputs[1:]:
@@ -67,7 +67,7 @@ class WeightedSum(ManyToOneNode):
         The function for one weight for every input:
         `len(weight) == len(inputs)`
         """
-        out = self.outputs[0].data
+        out = self.outputs[0]._data
         weights = self._weight.data
         copyto(out, self.inputs[0].data * weights[0])
         for _input, weight in zip(self.inputs[1:], weights[1:]):

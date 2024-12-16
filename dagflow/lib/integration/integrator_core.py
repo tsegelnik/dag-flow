@@ -19,9 +19,10 @@ from ..abstract import OneToOneNode
 
 if TYPE_CHECKING:
     from numpy.typing import NDArray
+    from typing import Literal
 
     from ...core.input import Input
-    from ...types import ShapeLike
+    from ...core.types import ShapeLike
 
 
 @njit(cache=True)
@@ -220,10 +221,9 @@ class IntegratorCore(OneToOneNode):
         super()._post_allocate()
         weights = self._weights_input.dd
         self.__buffer = empty(shape=weights.shape, dtype=weights.dtype)
-
-        self._weights = self._weights_input.data_unsafe
-        self._orders_x = self._orders_x_input.data_unsafe
-        self._orders_y = self._orders_y_input.data_unsafe if self._orders_y_input else None
+        self._weights = self._weights_input._data
+        self._orders_x = self._orders_x_input._data
+        self._orders_y = self._orders_y_input._data if self._orders_y_input else None
 
     def _fcn_1d(self):
         """1d version of integration function."""

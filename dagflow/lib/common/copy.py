@@ -10,5 +10,5 @@ class Copy(OneToOneNode):
         self._labels.setdefault("mark", "copy")
 
     def _function(self):
-        for inp, out in zip(self.inputs, self.outputs):
-            out.data[:] = inp.data
+        for indata, outdata in zip(self.inputs.iter_data(), self.outputs.iter_data_unsafe()):
+            outdata[:] = indata

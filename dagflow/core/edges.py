@@ -214,6 +214,10 @@ class EdgeContainer:
         for edge in self._pos_edges_list:
             yield edge.data
 
+    def iter_data_unsafe(self):
+        for edge in self._pos_edges_list:
+            yield edge._data
+
     def iter(
         self,
         key: int | str | slice | Sequence,

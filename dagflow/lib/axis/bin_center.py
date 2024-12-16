@@ -33,7 +33,7 @@ class BinCenter(OneToOneNode):
     __slots__ = ()
 
     def _function(self):
-        for _input, _output in zip(self.inputs.iter_data(), self.outputs.iter_data()):
+        for _input, _output in zip(self.inputs.iter_data(), self.outputs.iter_data_unsafe()):
             _bincenter(_input, _output)
 
     def _typefunc(self) -> None:

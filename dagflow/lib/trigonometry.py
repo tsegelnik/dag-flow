@@ -13,8 +13,8 @@ class Cos(OneToOneNode):
         self._labels.setdefault("mark", "cos")
 
     def _function(self):
-        for inp, out in zip(self.inputs, self.outputs):
-            cos(inp.data, out=out.data)
+        for indata, outdata in zip(self.inputs.iter_data(), self.outputs.iter_data_unsafe()):
+            cos(indata, out=outdata)
 
 
 class Sin(OneToOneNode):
@@ -27,8 +27,8 @@ class Sin(OneToOneNode):
         self._labels.setdefault("mark", "sin")
 
     def _function(self):
-        for inp, out in zip(self.inputs, self.outputs):
-            sin(inp.data, out=out.data)
+        for indata, outdata in zip(self.inputs.iter_data(), self.outputs.iter_data_unsafe()):
+            sin(indata, out=outdata)
 
 
 class ArcCos(OneToOneNode):
@@ -41,8 +41,8 @@ class ArcCos(OneToOneNode):
         self._labels.setdefault("mark", "acos")
 
     def _function(self):
-        for inp, out in zip(self.inputs, self.outputs):
-            arccos(inp.data, out=out.data)
+        for indata, outdata in zip(self.inputs.iter_data(), self.outputs.iter_data_unsafe()):
+            arccos(indata, out=outdata)
 
 
 class ArcSin(OneToOneNode):
@@ -55,8 +55,8 @@ class ArcSin(OneToOneNode):
         self._labels.setdefault("mark", "asin")
 
     def _function(self):
-        for inp, out in zip(self.inputs, self.outputs):
-            arcsin(inp.data, out=out.data)
+        for indata, outdata in zip(self.inputs.iter_data(), self.outputs.iter_data_unsafe()):
+            arcsin(indata, out=outdata)
 
 
 class Tan(OneToOneNode):
@@ -69,8 +69,8 @@ class Tan(OneToOneNode):
         self._labels.setdefault("mark", "tan")
 
     def _function(self):
-        for inp, out in zip(self.inputs, self.outputs):
-            tan(inp.data, out=out.data)
+        for indata, outdata in zip(self.inputs.iter_data(), self.outputs.iter_data_unsafe()):
+            tan(indata, out=outdata)
 
 
 class ArcTan(OneToOneNode):
@@ -84,4 +84,4 @@ class ArcTan(OneToOneNode):
 
     def _function(self):
         for inp, out in zip(self.inputs, self.outputs):
-            arctan(inp.data, out=out.data)
+            arctan(inp.data, out=out._data)

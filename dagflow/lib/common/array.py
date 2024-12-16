@@ -82,8 +82,7 @@ class Array(Node):
         pass
 
     def _fcn_fill(self):
-        data = self._output._data
-        data[:] = self._data
+        self._output._data[:] = self._data
 
     @classmethod
     def from_value(

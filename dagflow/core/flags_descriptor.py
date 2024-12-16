@@ -21,7 +21,6 @@ class FlagsDescriptor:
         "allocated",
         "needs_reallocation",
         "needs_post_allocate",
-        "being_evaluated",
         "types_tainted",
         "_children",
         "_parents",
@@ -36,7 +35,6 @@ class FlagsDescriptor:
     allocated: bool
     needs_reallocation: bool
     needs_post_allocate: bool
-    being_evaluated: bool
     types_tainted: bool
     # observers and observed
     # _node: Node
@@ -57,7 +55,6 @@ class FlagsDescriptor:
         self.invalid = False
         self.closed = False
         self.allocated = False
-        self.being_evaluated = False
         self.types_tainted = True
         self.needs_reallocation = False
         self.needs_post_allocate = False

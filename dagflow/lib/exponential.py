@@ -13,8 +13,8 @@ class Exp(OneToOneNode):
         self._labels.setdefault("mark", "exp")
 
     def _function(self):
-        for inp, out in zip(self.inputs, self.outputs):
-            exp(inp.data, out=out.data)
+        for indata, outdata in zip(self.inputs.iter_data(), self.outputs.iter_data_unsafe()):
+            exp(indata, out=outdata)
 
 
 class Expm1(OneToOneNode):
@@ -27,8 +27,8 @@ class Expm1(OneToOneNode):
         self._labels.setdefault("mark", "exp-1")
 
     def _function(self):
-        for inp, out in zip(self.inputs, self.outputs):
-            expm1(inp.data, out=out.data)
+        for indata, outdata in zip(self.inputs.iter_data(), self.outputs.iter_data_unsafe()):
+            expm1(indata, out=outdata)
 
 
 class Log(OneToOneNode):
@@ -41,8 +41,8 @@ class Log(OneToOneNode):
         self._labels.setdefault("mark", "log")
 
     def _function(self):
-        for inp, out in zip(self.inputs, self.outputs):
-            log(inp.data, out=out.data)
+        for indata, outdata in zip(self.inputs.iter_data(), self.outputs.iter_data_unsafe()):
+            log(indata, out=outdata)
 
 
 class Log1p(OneToOneNode):
@@ -55,8 +55,8 @@ class Log1p(OneToOneNode):
         self._labels.setdefault("mark", "log(x+1)")
 
     def _function(self):
-        for inp, out in zip(self.inputs, self.outputs):
-            log1p(inp.data, out=out.data)
+        for indata, outdata in zip(self.inputs.iter_data(), self.outputs.iter_data_unsafe()):
+            log1p(indata, out=outdata)
 
 
 class Log10(OneToOneNode):
@@ -69,5 +69,5 @@ class Log10(OneToOneNode):
         self._labels.setdefault("mark", "log₁₀")
 
     def _function(self):
-        for inp, out in zip(self.inputs, self.outputs):
-            log10(inp.data, out=out.data)
+        for indata, outdata in zip(self.inputs.iter_data(), self.outputs.iter_data_unsafe()):
+            log10(indata, out=outdata)

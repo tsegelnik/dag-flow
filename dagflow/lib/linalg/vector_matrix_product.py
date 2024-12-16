@@ -59,23 +59,23 @@ class VectorMatrixProduct(Node):
 
     def _fcn_row_block(self):
         mat = self._mat.data
-        for row, out in zip(self.inputs.iter_data(), self.outputs.iter_data()):
-            matmul(row, mat, out=out)
+        for row, outdata in zip(self.inputs.iter_data(), self.outputs.iter_data_unsafe()):
+            matmul(row, mat, out=outdata)
 
     def _fcn_block_column(self):
         mat = self._mat.data
-        for column, out in zip(self.inputs.iter_data(), self.outputs.iter_data()):
-            matmul(mat, column, out=out)
+        for column, outdata in zip(self.inputs.iter_data(), self.outputs.iter_data_unsafe()):
+            matmul(mat, column, out=outdata)
 
     def _fcn_row_diagonal(self):
         mat = self._mat.data
-        for diag, out in zip(self.inputs.iter_data(), self.outputs.iter_data()):
-            multiply(mat, diag, out=out)
+        for diag, outdata in zip(self.inputs.iter_data(), self.outputs.iter_data_unsafe()):
+            multiply(mat, diag, out=outdata)
 
     def _fcn_diagonal_column(self):
         diag = self._mat.data
-        for col, out in zip(self.inputs.iter_data(), self.outputs.iter_data()):
-            multiply(diag, col, out=out)
+        for col, outdata in zip(self.inputs.iter_data(), self.outputs.iter_data_unsafe()):
+            multiply(diag, col, out=outdata)
 
     def _typefunc(self) -> None:
         check_dimension_of_inputs(self, AllPositionals, ndim=1)

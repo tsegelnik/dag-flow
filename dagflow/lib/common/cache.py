@@ -10,8 +10,8 @@ class Cache(OneToOneNode):
         self._labels.setdefault("mark", "cache")
 
     def _function(self):
-        for inp, out in zip(self.inputs, self.outputs):
-            out.data[:] = inp.data
+        for indata, outdata in zip(self.inputs.iter_data(), self.outputs.iter_data_unsafe()):
+            outdata[:] = indata
         # We need to set the flag frozen manually
         self.fd.frozen = True
 

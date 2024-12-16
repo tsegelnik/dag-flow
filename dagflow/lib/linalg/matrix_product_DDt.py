@@ -30,8 +30,7 @@ class MatrixProductDDt(Node):
 
     def _function(self):
         matrix = self._matrix.data
-        out = self._out.data
-        matmul(matrix, matrix.T, out=out)
+        matmul(matrix, matrix.T, out=self._out._data)
 
     def _typefunc(self) -> None:
         check_dimension_of_inputs(self, "matrix", ndim=2)

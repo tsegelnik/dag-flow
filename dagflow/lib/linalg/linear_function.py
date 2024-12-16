@@ -33,8 +33,8 @@ class LinearFunction(OneToOneNode):
     def _function(self):
         a = self._a.data[0]
         b = self._b.data[0]
-        for inp, out in zip(self.inputs.iter_data(), self.outputs.iter_data()):
-            _linear_function(inp, out, a, b)
+        for indata, outdata in zip(self.inputs.iter_data(), self.outputs.iter_data_unsafe()):
+            _linear_function(indata, outdata, a, b)
 
 
 @njit(cache=True)

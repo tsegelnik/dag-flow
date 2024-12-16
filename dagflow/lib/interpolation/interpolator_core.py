@@ -218,12 +218,11 @@ class InterpolatorCore(Node):
 
     def _post_allocate(self):
         super()._post_allocate()
-
-        self._y = self._y_input.data_unsafe.ravel()
-        self._coarse = self._coarse_input.data_unsafe.ravel()
-        self._fine = self._fine_input.data_unsafe.ravel()
-        self._indices = self._indices_input.data_unsafe.ravel()
-        self._result = self._result_output.data_unsafe.ravel()
+        self._y = self._y_input._data.ravel()
+        self._coarse = self._coarse_input._data.ravel()
+        self._fine = self._fine_input._data.ravel()
+        self._indices = self._indices_input._data.ravel()
+        self._result = self._result_output._data.ravel()
 
     def _function(self):
         """Runs interpolation method chosen within `method` arg"""
