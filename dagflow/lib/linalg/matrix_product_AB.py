@@ -46,28 +46,16 @@ class MatrixProductAB(Node):
         )
 
     def _fcn_block_block(self):
-        left = self._left.data
-        right = self._right.data
-        outdata = self._out._data
-        matmul(left, right, out=outdata)
+        matmul(self._left.data, self._right.data, out=self._out._data)
 
     def _fcn_block_diagonal(self):
-        left = self._left.data
-        right = self._right.data
-        outdata = self._out._data
-        multiply(left, right, out=outdata)
+        multiply(self._left.data, self._right.data, out=self._out._data)
 
     def _fcn_diagonal_block(self):
-        left = self._left.data
-        right = self._right.data
-        outdata = self._out._data
-        multiply(left[:, None], right, out=outdata)
+        multiply(self._left.data[:, None], self._right.data, out=self._out._data)
 
     def _fcn_diagonal_diagonal(self):
-        left = self._left.data
-        right = self._right.data
-        outdata = self._out._data
-        multiply(left, right, out=outdata)
+        multiply(self._left.data, self._right.data, out=self._out._data)
 
     def _typefunc(self) -> None:
         check_node_has_inputs(self, ("left", "right"))
