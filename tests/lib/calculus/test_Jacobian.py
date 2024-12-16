@@ -6,6 +6,7 @@ from dagflow.plot.graphviz import savegraph
 from dagflow.lib.arithmetic import Product, Sum
 from dagflow.lib.common import Array, Concatenation
 from dagflow.lib.calculus import Jacobian
+from dagflow.lib.calculus.jacobian import compute_jacobian
 from dagflow.lib.linalg import LinearFunction
 from dagflow.parameters import GaussianParameter
 
@@ -174,5 +175,8 @@ def test_Jacobian_03(dtype, testname):
     assert allclose(res[:, 2], 1, atol=factors[dtype][2] * finfo(dtype).resolution, rtol=0)
     assert allclose(res[:, 1], x, atol=factors[dtype][1] * finfo(dtype).resolution, rtol=0)
     assert allclose(res[:, 0], dax, atol=factors[dtype][0] * finfo(dtype).resolution, rtol=0)
+
+    jac2 = compute_jacobian(Y.outputs[0], pars, scale=scale)
+    assert allclose(res, jac2, atol=0, rtol=0)
 
     savegraph(graph, f"output/{testname}.png", show="full")
