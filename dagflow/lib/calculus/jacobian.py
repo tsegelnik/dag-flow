@@ -4,7 +4,7 @@ from collections.abc import Iterable, Sequence
 from typing import TYPE_CHECKING
 
 from numba import njit
-from numpy import zeros
+from numpy import empty, outer, zeros
 
 from ...core.exception import InitializationError
 from ...parameters import AnyGaussianParameter, GaussianParameter, NormalizedGaussianParameter
@@ -97,6 +97,7 @@ def _do_step(
 def compute_jacobian(
     model: Output,
     parameters: Iterable[AnyGaussianParameter],
+    *,
     out: NDArray | None = None,
     scale: float = 0.1,
 ):
@@ -107,9 +108,11 @@ def compute_jacobian(
         parameters = list(parameters)
     npars = len(parameters)
 
-    assert len(model.dd.shape)==1
+    assert len(model.dd.shape) == 1
     if out is None:
         out = zeros((model.dd.shape[0], npars), dtype=model.dd.dtype)
+    else:
+        out[:] = 0.0
 
     for i, parameter in enumerate(parameters):
         reldelta = parameter.sigma * scale
@@ -123,6 +126,30 @@ def compute_jacobian(
         _do_step(i, parameter, x0 - reldelta, f2, model, out)
         parameter.value = x0
         model.touch()
+
+    return out
+
+
+def compute_covariance_matrix(
+    model: Output,
+    parameters: Iterable[NormalizedGaussianParameter],
+    *,
+    out: NDArray | None = None,
+    scale: float = 0.1,
+):
+    assert len(model.dd.shape) == 1
+    if out is None:
+        out = zeros((model.dd.shape[0],) * 2, dtype=model.dd.dtype)
+    else:
+        out[:] = 0
+
+    buffer = empty((model.dd.shape[0],) * 2, dtype=model.dd.dtype)
+    out_jac1 = empty((model.dd.shape[0], 1), dtype=model.dd.dtype)
+
+    for parameter in parameters:
+        compute_jacobian(model, (parameter,), out=out_jac1, scale=scale)
+        outer(out_jac1, out_jac1, out=buffer)
+        out += buffer
 
     return out
 
