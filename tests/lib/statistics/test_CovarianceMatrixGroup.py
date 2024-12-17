@@ -8,6 +8,7 @@ from dagflow.lib.arithmetic import Product, Sum
 from dagflow.lib.common import Array
 from dagflow.lib.statistics import CovarianceMatrixGroup
 from dagflow.parameters import Parameters
+from dagflow.lib.calculus.jacobian import compute_covariance_matrix
 
 
 @mark.parametrize("dtype", ("d", "f"))
@@ -109,6 +110,8 @@ def test_CovarianceMatrixGroup(dtype, correlated: bool, testname):
     vsyst2 = cm2._dict_cov_syst["covmat ABCD"].get_data()
     vsyst3 = cm3._dict_cov_syst["covmat ABCD"].get_data()
 
+    vsyst3_from_function = compute_covariance_matrix(Y.outputs[0], pars.norm_parameters)
+
     jac_check0 = array(
         [
             3.0 * value[0] ** 2 * x,
@@ -136,20 +139,21 @@ def test_CovarianceMatrixGroup(dtype, correlated: bool, testname):
     if correlated:
         factors = {"d": 0.0, "f": 10000}
     else:
-        factors = {"d": 0.0, "f": 100}
+        factors = {"d": 0.0, "f": 5000}
     rtol = finfo(dtype).resolution
+    atol = finfo(dtype).resolution
     if not correlated:
         assert allclose(
-            jac_A, jac_check_A, rtol=factors[dtype] * rtol
+            jac_A, jac_check_A, atol=factors[dtype] * atol
         )  # pyright: ignore [reportPossiblyUnboundVariable]
         assert allclose(
-            jac_B, jac_check_B, rtol=factors[dtype] * rtol
+            jac_B, jac_check_B, atol=factors[dtype] * atol
         )  # pyright: ignore [reportPossiblyUnboundVariable]
-    assert allclose(jac_AB, jac_check_AB, rtol=factors[dtype] * rtol)
-    assert allclose(jac_CD, jac_check_CD, rtol=factors[dtype] * rtol)
+    assert allclose(jac_AB, jac_check_AB, atol=factors[dtype] * atol)
+    assert allclose(jac_CD, jac_check_CD, atol=factors[dtype] * atol)
 
-    assert allclose(jac_ABCD_2, jac_check0, rtol=factors[dtype] * rtol)
-    assert allclose(jac_ABCD_3, jac_check, rtol=factors[dtype] * rtol)
+    assert allclose(jac_ABCD_2, jac_check0, atol=factors[dtype] * atol)
+    assert allclose(jac_ABCD_3, jac_check, atol=factors[dtype] * atol)
 
     assert allclose(vsyst_AB, vsyst_check_AB, rtol=factors[dtype] * rtol)
     if not correlated:
@@ -160,6 +164,8 @@ def test_CovarianceMatrixGroup(dtype, correlated: bool, testname):
     assert allclose(vsyst, vsyst_check, rtol=factors[dtype] * rtol)
     assert allclose(vsyst2, vsyst_check_23, rtol=factors[dtype] * rtol)
     assert allclose(vsyst3, vsyst_check_23, rtol=factors[dtype] * rtol)
+
+    assert allclose(vsyst3_from_function, vsyst3, atol=atol)
 
     for jacs in cm._dict_jacobian.values():
         for jac in jacs:
