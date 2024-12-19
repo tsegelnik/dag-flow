@@ -88,7 +88,7 @@ def _do_step(
     coeff: float,
     model: Output,
     res: NDArray,
-) -> NDArray:
+) -> None:
     param.value = newval
     model.touch()
     _step_in_numba(res, model.data, coeff, icol)
@@ -100,7 +100,7 @@ def compute_jacobian(
     *,
     out: NDArray | None = None,
     scale: float = 0.1,
-):
+) -> NDArray:
     c1 = 4.0 / 3.0
     c2 = 1.0 / 6.0
 
@@ -136,7 +136,7 @@ def compute_covariance_matrix(
     *,
     out: NDArray | None = None,
     scale: float = 0.1,
-):
+) -> NDArray:
     assert len(model.dd.shape) == 1
     if out is None:
         out = zeros((model.dd.shape[0],) * 2, dtype=model.dd.dtype)
