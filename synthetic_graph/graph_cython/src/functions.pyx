@@ -1,6 +1,10 @@
 from libc.math cimport sin
 
 
+cdef int fcn_ds_default(int* input_sizes):
+    return input_sizes[0]
+
+
 cdef double* fcn_default(double** inputs, int* input_sizes, int input_count, double* data):
     return data
 

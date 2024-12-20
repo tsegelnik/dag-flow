@@ -38,7 +38,7 @@ def make_test_graph(datasize=1, width=6, length=7):
     return nsums, data_node, head
 
 # tracemalloc.reset_peak()
-nsums, data_node, head = make_test_graph(datasize=1, width=6, length=8)
+nsums, data_node, head = make_test_graph(datasize=1, width=7, length=7)
 print(nsums)
 # create_size, create_peak = tracemalloc.get_traced_memory()
 # print(create_size, create_peak)

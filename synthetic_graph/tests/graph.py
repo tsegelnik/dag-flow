@@ -3,6 +3,7 @@ import argparse
 import timeit
 from synthetic_graph.tests.Implementations import Implementations
 
+
 np.random.seed(33)
 
 def make_test_graph(datasize=1, width=6, length=7):

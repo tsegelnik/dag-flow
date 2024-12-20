@@ -1,11 +1,8 @@
 import cython
-import functools
-from libc.stdlib cimport malloc, free
+from libc.stdlib cimport malloc, free, calloc
 
-from functions cimport fcn_default
-import time
+from functions cimport fcn_default, fcn_ds_default
 
-cdef double tm = 0.0
 
 cdef class Node:
     def __init__(self, inputs=None):
@@ -15,6 +12,7 @@ cdef class Node:
         self.initialized = 0
 
         self.fcn = fcn_default
+        self.fcn_ds = fcn_ds_default
 
     def __rshift__(self, other):
         other.inputs.append(self)
@@ -39,16 +37,17 @@ cdef class Node:
         cdef Node input_node
         for i in range(input_count):
             input_node = self.inputs[i]
-            input_sizes[i] = input_node.get_size()
             input_nodes[i] = <CNode*>input_node._to_c_struct()
+            input_sizes[i] = input_nodes[i].data_size
 
-        cdef int size = self.get_size()
-        cdef double* data_array = <double*>malloc(sizeof(double) * size)
+        cdef int data_size = self.fcn_ds(input_sizes)
+        cdef double* data_array = <double*>calloc(sizeof(double), data_size)
 
         self.cnode.inputs = input_nodes
         self.cnode.input_sizes = input_sizes
         self.cnode.input_count = input_count
         self.cnode.data = data_array
+        self.cnode.data_size = data_size
 
     def to_c_struct(self):
         self._to_c_struct()
@@ -75,11 +74,7 @@ cdef class Node:
         return result
 
     def run(self):
-        return [i for i in Node._run(self.cnode)[:self.get_size()]]
-
-    @functools.cache
-    def get_size(self):
-        return self.inputs[0].get_size()
+        return [i for i in Node._run(self.cnode)[:self.cnode.data_size]]
 
     def __dealloc__(self):
         if self.cnode:
