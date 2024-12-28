@@ -29,7 +29,7 @@ def get_input_size(inp: Input) -> int:
 
 def get_output_size(out: Output) -> int:
     if out.owns_buffer or (out.has_data and out._allocating_input is None):
-        return calc_numpy_size(out.data_unsafe)
+        return calc_numpy_size(out._data)
     return 0
 
 def edge_size(edge: Output | Input) -> int:

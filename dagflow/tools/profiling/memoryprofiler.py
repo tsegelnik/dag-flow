@@ -87,7 +87,7 @@ class MemoryProfiler(Profiler):
                 # However if there is no `_allocating_input`
                 #  and owns_buffer=False (and `out.data` is not `None` of course)
                 #  then it means there is allocated memory for this Output.
-                estimations[out] = out.data_unsafe.nbytes
+                estimations[out] = out._data.nbytes
             else:
                 estimations[out] = 0
         return estimations
