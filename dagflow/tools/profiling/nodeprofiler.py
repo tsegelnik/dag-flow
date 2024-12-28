@@ -35,10 +35,7 @@ class NodeProfiler(TimerProfiler):
     def estimate_node(cls, node: Node, n_runs: int = 10_000):
         for input in node.inputs.iter_all():
             input.touch()
-        node.fd.being_evaluated = True
-        fcn_time = timeit(stmt=node.function, number=n_runs)
-        node.fd.being_evaluated = False
-        return fcn_time
+        return timeit(stmt=node.function, number=n_runs)
 
     def estimate_target_nodes(self) -> NodeProfiler:
         records = {col: [] for col in ("node", "type", "name", "time")}
