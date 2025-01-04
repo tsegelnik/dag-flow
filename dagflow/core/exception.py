@@ -34,10 +34,7 @@ class DagflowError(RuntimeError):
         self.output = output
 
         if node is not None and hasattr(node, "_exception"):
-            if args is not None:
-                node._exception = "\\n".join((message,) + args)
-            else:
-                node._exception = message
+            node._exception = message if args is None else "\\n".join((message,) + args)
 
 
 class CriticalError(DagflowError):

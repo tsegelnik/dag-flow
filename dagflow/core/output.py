@@ -300,21 +300,40 @@ class Output:
         from .input import Input
         from .node import Node
 
-        if isinstance(other, Input):
-            self.connect_to(other)
-        elif isinstance(other, Node):
-            rshift(self, other)
-        elif isinstance(other, Sequence):
-            for subother in other:
-                self >> subother
-        elif isinstance(other, Mapping):
-            for subother in other.values():
-                self >> subother
-        elif isinstance(other, NestedMKDict):
-            for subother in other.walkvalues():
-                self >> subother
-        else:
-            rshift(self, other)
+        match other:
+            case Input():
+                self.connect_to(other)
+            case Node():
+                inp = None
+                try:
+                    for inpt in other.inputs:
+                        if not inpt.connected():
+                            inp = inpt
+                            break
+                    if inp is None:
+                        raise IndexError()
+                except IndexError:
+                    inp = other._make_input()
+                if inp is None:
+                    raise ConnectionError(
+                        "Unable to find unconnected input or create a new one!",
+                        node=other,
+                        output=self,
+                    )
+                self.connect_to(inp)
+            case Sequence():
+                for subother in other:
+                    self >> subother
+            case NestedMKDict():
+                for subother in other.walkvalues():
+                    self >> subother
+            case Mapping():
+                self >> NestedMKDict(dic=other)
+            case _:
+                raise ConnectionError(
+                    f"Unable to connect the input to {other=}!",
+                    output=self,
+                )
 
     def taint_children(
         self,

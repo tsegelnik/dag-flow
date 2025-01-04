@@ -1,19 +1,83 @@
-from pytest import raises
+from collections.abc import Mapping, Sequence
+
+from pytest import mark, raises
 
 from dagflow.core.exception import ClosedGraphError, ConnectionError, UnclosedGraphError
 from dagflow.core.graph import Graph
-from dagflow.plot.graphviz import savegraph
 from dagflow.core.input import Input
-from dagflow.lib.common import Dummy
+from dagflow.core.input_handler import MissingInputAddOne
 from dagflow.core.node import Node
 from dagflow.core.output import Output
+from dagflow.lib.common import Dummy
+from dagflow.plot.graphviz import savegraph
+from multikeydict.nestedmkdict import NestedMKDict
 
 
-def test_01():
-    i = Input("input", None)
-    o = Output("output", None)
+class NodeWithMIAO(Node):
+    """The node with `missing_input_handler` = `MissingInputAddOne`"""
 
-    o >> i
+    def __init__(self, *args, **kwargs):
+        kwargs.setdefault("missing_input_handler", MissingInputAddOne)
+        super().__init__(*args, **kwargs)
+
+
+def check_connection(obj):
+    if isinstance(obj, Input):
+        return obj.connected()
+    if isinstance(obj, Node):
+        return all(res.connected() for res in obj.inputs)
+    if isinstance(obj, Sequence):
+        return all(check_connection(res) for res in obj)
+
+
+@mark.parametrize(
+    "rhs",
+    (
+        Input("input", None),
+        NodeWithMIAO("node"),
+        [Input(f"input_{i}", None) for i in range(3)],
+        [NodeWithMIAO(f"node_{i}") for i in range(3)],
+        {f"i{i}": Input(f"input_{i}", None) for i in range(3)},
+        {f"n{i}": NodeWithMIAO(f"node_{i}") for i in range(3)},
+        {f"i{i}": [Input(f"input_{j}{i}", None) for j in range(3)] for i in range(3)},
+        {f"n{i}": [NodeWithMIAO(f"node_{j}{i}") for j in range(3)] for i in range(3)},
+        NestedMKDict(dic={f"i{i}": Input(f"input_{i}", None) for i in range(3)}),
+        NestedMKDict(dic={f"n{i}": NodeWithMIAO(f"node_{i}") for i in range(3)}),
+        NestedMKDict(
+            dic={f"i{i}": [Input(f"input_{j}{i}", None) for j in range(3)] for i in range(3)}
+        ),
+        NestedMKDict(
+            dic={f"n{i}": [NodeWithMIAO(f"node_{j}{i}") for j in range(3)] for i in range(3)}
+        ),
+    ),
+)
+def test_output_lhs(rhs):
+    """
+    Test a connection in the following cases:
+      * `Output >> Input`;
+      * `Output >> Node`;
+      * `Output >> Sequence[Input]`;
+      * `Output >> Sequence[Node]`;
+      * `Output >> NestedMkDict[Input | Sequence[Input]]`;
+      * `Output >> NestedMkDict[Node | Sequence[Node]]`;
+      * `Output >> Mapping[Input | Sequence[Input]]`;
+      * `Output >> Mapping[Node | Sequence[Node]]`.
+    """
+    lhs = Output("output", None)
+    lhs >> rhs
+
+    assert lhs.connected()
+    if isinstance(rhs, (Input, Node)):
+        assert check_connection(rhs)
+    elif isinstance(rhs, Sequence):
+        for obj in rhs:
+            assert check_connection(obj)
+    elif isinstance(rhs, NestedMKDict):
+        for obj in rhs.walkvalues():
+            assert check_connection(obj)
+    elif isinstance(rhs, Mapping):
+        for obj in NestedMKDict(dic=rhs).walkvalues():
+            assert check_connection(obj)
 
 
 def test_02():

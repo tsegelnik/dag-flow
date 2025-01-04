@@ -119,8 +119,6 @@ class NodeBase:
         """
         self >> other
         """
-        from .node import Node
-
         if isinstance(other, Input):
             if len(self.outputs) != 1:
                 raise ConnectionError(
