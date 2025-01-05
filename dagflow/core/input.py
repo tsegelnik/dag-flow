@@ -13,7 +13,6 @@ from .shift import rshift
 
 if TYPE_CHECKING:
     from collections.abc import Iterator
-    from typing import Any
 
     from numpy.typing import DTypeLike, NDArray
 
@@ -249,10 +248,6 @@ class Input:
         if self._child_output:
             raise StopNesting(self._child_output)
         return iter(tuple())
-
-    def __rrshift__(self, other):
-        """Other >> self."""
-        return rshift(other, self)
 
     def allocate(self, **kwargs) -> bool:
         """Returns True if data was reassigned."""

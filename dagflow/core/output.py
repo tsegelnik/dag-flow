@@ -18,7 +18,6 @@ from .exception import (
     UnclosedGraphError,
 )
 from .iter import StopNesting
-from .shift import rshift
 
 if TYPE_CHECKING:
     from numpy.typing import ArrayLike, DTypeLike, NDArray

@@ -1,4 +1,4 @@
-from collections.abc import Mapping, Sequence
+from collections.abc import Sequence
 
 from pytest import mark, raises
 
@@ -9,6 +9,7 @@ from dagflow.core.input_handler import MissingInputAddOne
 from dagflow.core.node import Node
 from dagflow.core.output import Output
 from dagflow.lib.common import Dummy
+from dagflow.lib.abstract import BlockToOneNode
 from dagflow.plot.graphviz import savegraph
 from multikeydict.nestedmkdict import NestedMKDict
 
@@ -22,12 +23,14 @@ class NodeWithMIAO(Node):
 
 
 def check_connection(obj):
+    """Useful method for a check whether the object is connected or not"""
     if isinstance(obj, Input):
         return obj.connected()
     if isinstance(obj, Node):
         return all(res.connected() for res in obj.inputs)
     if isinstance(obj, Sequence):
         return all(check_connection(res) for res in obj)
+    return False
 
 
 @mark.parametrize(
@@ -37,10 +40,61 @@ def check_connection(obj):
         NodeWithMIAO("node"),
         [Input(f"input_{i}", None) for i in range(3)],
         [NodeWithMIAO(f"node_{i}") for i in range(3)],
+    ),
+)
+def test_Output_to_Input_or_Node_or_Sequence(rhs):
+    """
+    Test of a connection in the following cases:
+      * `Output >> Input`;
+      * `Output >> Node`;
+      * `Output >> Sequence[Input]`;
+      * `Output >> Sequence[Node]`;
+    """
+    lhs = Output("output", None)
+    lhs >> rhs
+
+    assert lhs.connected()
+    if isinstance(rhs, Input):
+        assert check_connection(rhs)
+        assert rhs.parent_output == lhs
+    elif isinstance(rhs, Node):
+        assert check_connection(rhs)
+        assert len(rhs.outputs) == 1
+    elif isinstance(rhs, Sequence):
+        for obj in rhs:
+            assert check_connection(obj)
+            if isinstance(rhs, Input):
+                assert rhs.parent_output == lhs
+            elif isinstance(rhs, Node):
+                assert len(obj.outputs) == 1
+
+
+@mark.parametrize(
+    "rhs",
+    (
         {f"i{i}": Input(f"input_{i}", None) for i in range(3)},
         {f"n{i}": NodeWithMIAO(f"node_{i}") for i in range(3)},
         {f"i{i}": [Input(f"input_{j}{i}", None) for j in range(3)] for i in range(3)},
         {f"n{i}": [NodeWithMIAO(f"node_{j}{i}") for j in range(3)] for i in range(3)},
+    ),
+)
+def test_Output_to_Mapping(rhs):
+    """
+    Test of a connection in the following cases:
+      * `Output >> Mapping[Input | Sequence[Input]]`;
+      * `Output >> Mapping[Node | Sequence[Node]]`.
+    """
+    lhs = Output("output", None)
+    lhs >> rhs
+
+    assert lhs.connected()
+    for obj in NestedMKDict(dic=rhs).walkvalues():
+        assert check_connection(obj)
+
+
+@mark.parametrize(
+    "rhs",
+    (
         NestedMKDict(dic={f"i{i}": Input(f"input_{i}", None) for i in range(3)}),
         NestedMKDict(dic={f"n{i}": NodeWithMIAO(f"node_{i}") for i in range(3)}),
         NestedMKDict(
@@ -51,33 +105,35 @@ def check_connection(obj):
         ),
     ),
 )
-def test_output_lhs(rhs):
+def test_Output_to_NestedMKDict(rhs):
     """
-    Test a connection in the following cases:
-      * `Output >> Input`;
-      * `Output >> Node`;
-      * `Output >> Sequence[Input]`;
-      * `Output >> Sequence[Node]`;
+    Test of a connection in the following cases:
       * `Output >> NestedMkDict[Input | Sequence[Input]]`;
       * `Output >> NestedMkDict[Node | Sequence[Node]]`;
-      * `Output >> Mapping[Input | Sequence[Input]]`;
-      * `Output >> Mapping[Node | Sequence[Node]]`.
     """
     lhs = Output("output", None)
     lhs >> rhs
 
     assert lhs.connected()
-    if isinstance(rhs, (Input, Node)):
-        assert check_connection(rhs)
-    elif isinstance(rhs, Sequence):
-        for obj in rhs:
-            assert check_connection(obj)
-    elif isinstance(rhs, NestedMKDict):
-        for obj in rhs.walkvalues():
-            assert check_connection(obj)
-    elif isinstance(rhs, Mapping):
-        for obj in NestedMKDict(dic=rhs).walkvalues():
-            assert check_connection(obj)
+    for obj in rhs.walkvalues():
+        assert check_connection(obj)
+
+
+@mark.parametrize("lcls", (tuple, list))
+@mark.parametrize("rcls", (NodeWithMIAO, BlockToOneNode))
+def test_Sequence_Output_to_Node(lcls, rcls):
+    """
+    Test of a connection in the following cases:
+      * `Sequence[Output] >> Node`;
+      * `Sequence[Output] >> BlockToOneNode`;
+    """
+    lhs = lcls(Output(f"output_{i}", None) for i in range(3))
+    rhs = rcls("node")
+    lhs >> rhs
+
+    assert all(obj.connected() for obj in lhs)
+    assert check_connection(rhs)
+    assert len(rhs.outputs) == 1 if isinstance(rhs, BlockToOneNode) else 3
 
 
 def test_02():
