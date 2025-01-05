@@ -457,3 +457,28 @@ class Outputs(EdgeContainer):
         return f"○[{tuple(obj.name for obj in self)}]→"
 
     _repr_pretty_ = repr_pretty
+
+    def __rshift__(self, other: Input | Node | Sequence[Input] | Sequence[Node]):
+        """
+        self >> other
+        """
+        from .node import Node
+
+        match other:
+            case Node():
+                if (x := len(other.inputs)) != (y := len(self)):
+                    raise ConnectionError(
+                        f"The outputs length must coincide with len(other.inputs), but given {x} vs. {y}",
+                        node=other,
+                    )
+                for inp, out in zip(self, other.inputs):
+                    inp >> out
+            case Sequence():
+                if (x := len(other)) != (y := len(self)):
+                    raise ConnectionError(
+                        f"The outputs length must coincide with len(other), but given {x} vs. {y}"
+                    )
+                for inp, subother in zip(self, other):
+                    inp >> subother
+            case _:
+                raise ConnectionError(f"Unable to connect the outputs={self} to {other=}!")

@@ -7,7 +7,7 @@ from dagflow.core.graph import Graph
 from dagflow.core.input import Input
 from dagflow.core.input_handler import MissingInputAddOne
 from dagflow.core.node import Node
-from dagflow.core.output import Output
+from dagflow.core.output import Output, Outputs
 from dagflow.lib.common import Dummy
 from dagflow.lib.abstract import BlockToOneNode
 from dagflow.plot.graphviz import savegraph
@@ -134,6 +134,26 @@ def test_Sequence_Output_to_Node(lcls, rcls):
     assert all(obj.connected() for obj in lhs)
     assert check_connection(rhs)
     assert len(rhs.outputs) == 1 if isinstance(rhs, BlockToOneNode) else 3
+
+
+@mark.parametrize("rseqcls", (tuple, list))
+@mark.parametrize("rcls", (NodeWithMIAO, Input))
+def test_Sequence_Output_to_Sequence(rseqcls, rcls):
+    """
+    Test of a connection in the following cases:
+      * `Outputs >> Sequence[Node]`;
+      * `Outputs >> Sequence[Input]`.
+    """
+    lhs = Outputs(Output(f"output_{i}", None) for i in range(3))
+    rhs = rseqcls(rcls(f"node_{i}") for i in range(3))
+    lhs >> rhs
+
+    assert all(obj.connected() for obj in lhs)
+    assert all(check_connection(obj) for obj in rhs)
+    if rcls == NodeWithMIAO:
+        assert all(len(obj.outputs) == 1 for obj in rhs)
+    else:
+        assert all(l == r.parent_output for l, r in zip(lhs, rhs))
 
 
 def test_02():
