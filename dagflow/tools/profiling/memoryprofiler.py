@@ -102,13 +102,17 @@ class MemoryProfiler(Profiler):
             self._touch_nodes()
 
         records = {col: [] for col in ("node", "type", "edge_count", "size")}
+
         for node in self._target_nodes:
             estimations = self.estimate_node(node)
+            # 0 size is not counted as an edge of the node
             sizes = tuple(size for _, size in estimations.items() if size)
+
             records["node"].append(str(node))
             records["type"].append(type(node).__name__)
             records["edge_count"].append(len(sizes))
             records["size"].append(sum(sizes))
+
         self._estimations_table = DataFrame(records)
         return self
 
