@@ -114,12 +114,13 @@ class FrameworkProfiler(TimerProfiler):
 
     def estimate_framework_time(self) -> FrameworkProfiler:
         results = self._estimate_framework_time()
-        df = DataFrame(results, columns=["time"])
         sinks_short = self._shorten_names(self._sinks, SINK_COL_WIDTH)
         sources_short = self._shorten_names(self._sources, SOURCE_COL_WIDTH)
-        df.insert(0, "sink nodes", sinks_short)
-        df.insert(0, "source nodes", sources_short)
-        self._estimations_table = df
+        self._estimations_table = DataFrame({
+            "source nodes": sources_short,
+            "sink nodes": sinks_short,
+            "time": results
+        })
         return self
 
     def make_report(
