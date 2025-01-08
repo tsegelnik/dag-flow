@@ -38,26 +38,31 @@ class NodeProfiler(TimerProfiler):
         return timeit(stmt=node.function, number=n_runs)
 
     def estimate_target_nodes(self) -> NodeProfiler:
-        records = {col: [] for col in ("node", "type", "name", "time")}
-        for node in self._target_nodes:
-            estimations = self.estimate_node(node, self._n_runs)
-            records["node"].append(str(node))
-            records["type"].append(type(node).__name__)
-            records["name"].append(node.name)
-            records["time"].append(estimations)
-        self._estimations_table = DataFrame(records)
+        """
+        Estimate all nodes in `self.target_nodes`.
+
+        Return the current `NodeProfiler` instance.
+        """
+        self._estimations_table = DataFrame({
+            "node": (str(node) for node in self._target_nodes),
+            "type": (type(node).__name__ for node in self._target_nodes),
+            "name": (node.name for node in self._target_nodes),
+            "time": (self.estimate_node(node, self._n_runs)
+                     for node in self._target_nodes)
+        })
         return self
+
 
     def make_report(
         self,
         group_by: str | list[str] | None = "type",
         agg_funcs: Sequence[str] | None = None,
-        sort_by: str | None = None,
-        normilize: bool = True,
+        sort_by: str | None = None  ,
+        average_by_runs: bool = True,
     ) -> DataFrame:
         report = super().make_report(group_by, agg_funcs, sort_by)
-        if normilize:
-            return self._normalize(report)
+        if average_by_runs:
+            return self._compute_average(report)
         return report
 
     def _print_total_time(self):
