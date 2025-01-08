@@ -116,7 +116,7 @@ class MemoryProfiler(Profiler):
     def total_size(self):
         """Return size of all edges of '_target_nodes' in bytes."""
         if not hasattr(self, "_estimations_table"):
-            self.estimate_target_nodes()
+            return None
         return self._estimations_table["size"].sum()
 
     def make_report(
