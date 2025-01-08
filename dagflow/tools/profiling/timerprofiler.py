@@ -90,7 +90,7 @@ class TimerProfiler(Profiler):
     def _total_estimations_time(self):
         return self._estimations_table["time"].sum()
 
-    def _normalize(self, df: DataFrame) -> DataFrame:
+    def _compute_average(self, df: DataFrame) -> DataFrame:
         """Normalize `time` by `self.n_runs`"""
         for c in df.columns:
             if c.startswith("t_") or c == "time":
