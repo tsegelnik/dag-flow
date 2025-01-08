@@ -51,13 +51,12 @@ class CountCallsProfiler(Profiler):
         self._column_aliases = _COLUMN_ALIASES.copy()
 
     def estimate_calls(self) -> CountCallsProfiler:
-        records = {col: [] for col in ("node", "type", "name", "calls")}
-        for node in self._target_nodes:
-            records["node"].append(str(node))
-            records["type"].append(type(node).__name__)
-            records["name"].append(node.name)
-            records["calls"].append(node.n_calls)
-        self._estimations_table = DataFrame(records)
+        self._estimations_table = DataFrame({
+            "node": (str(node) for node in self._target_nodes),
+            "type": (type(node).__name__ for node in self._target_nodes),
+            "name": (node.name for node in self._target_nodes),
+            "calls": (node.n_calls for node in self._target_nodes),
+        })
         return self
 
     def make_report(
