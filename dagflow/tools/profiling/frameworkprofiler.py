@@ -66,23 +66,26 @@ class FrameworkProfiler(TimerProfiler):
             node.taint()
 
     @staticmethod
-    def fcn_no_computation(node: Node):
+    def function_stub(node: Node):
+        """An empty stub function of Node that touches parent nodes
+        to start a recursive execution of a graph (without computations)
+        """
         for input in node.inputs.iter_all():
             input.touch()
 
-    def _make_fcns_empty(self):
+    def _make_functions_empty(self):
         for node in self._target_nodes:
             self._replaced_fcns[node] = node.function
             # __get__ - a way to bind method to an instance
-            node.function = self.fcn_no_computation.__get__(node)
+            node.function = self.function_stub.__get__(node)
 
-    def _restore_fcns(self):
+    def _restore_functions(self):
         for node in self._target_nodes:
             node.function = self._replaced_fcns[node]
         self._replaced_fcns = {}
 
     def _estimate_framework_time(self) -> list[float]:
-        self._make_fcns_empty()
+        self._make_functions_empty()
 
         def repeat_stmt():
             for sink_node in self._sinks:
@@ -90,7 +93,7 @@ class FrameworkProfiler(TimerProfiler):
 
         repeat_stmt()  # touch all dependent nodes before estimations
         results = repeat(stmt=repeat_stmt, setup=self._taint_nodes, repeat=self._n_runs, number=1)
-        self._restore_fcns()
+        self._restore_functions()
         self._taint_nodes()
         return results
 
