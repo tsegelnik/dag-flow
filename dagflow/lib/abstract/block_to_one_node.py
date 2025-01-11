@@ -4,7 +4,7 @@ from typing import TYPE_CHECKING
 
 from multikeydict.typing import properkey
 
-from ...core.input_handler import MissingInputAddEach
+from ...core.input_strategy import AddNewInputAddNewOutputForBlock
 from ...core.node import Node
 from ...core.storage import NodeStorage
 from ...core.type_functions import (
@@ -33,8 +33,8 @@ class BlockToOneNode(Node):
 
     def __init__(self, *args, broadcastable: bool = False, output_name: str = "result", **kwargs):
         kwargs.setdefault(
-            "missing_input_handler",
-            MissingInputAddEach(input_fmt=self._input_names(), output_fmt=output_name),
+            "input_strategy",
+            AddNewInputAddNewOutputForBlock(input_fmt=self._input_names(), output_fmt=output_name),
         )
         super().__init__(*args, **kwargs)
         self._broadcastable = broadcastable
@@ -47,7 +47,7 @@ class BlockToOneNode(Node):
     def _inputs_block_size(cls) -> int:
         return len(cls._input_names())
 
-    def _typefunc(self) -> None:
+    def _type_function(self) -> None:
         """A output takes this function to determine the dtype and shape"""
         check_node_has_inputs(self)  # at least one input
         check_inputs_equivalence(

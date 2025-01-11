@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from collections.abc import Mapping, Sequence
+from collections.abc import Generator, Mapping, Sequence
 from typing import TYPE_CHECKING
 
 from numpy import zeros
@@ -17,15 +17,16 @@ from .exception import (
     InitializationError,
     UnclosedGraphError,
 )
-from .iter import StopNesting
 
 if TYPE_CHECKING:
     from numpy.typing import ArrayLike, DTypeLike, NDArray
 
     from multikeydict.nestedmkdict import NestedMKDict
 
-    from .input import Input
+    from ..tools.logger import Logger
+    from .input import Input, Inputs
     from .node import Node
+    from .node_base import NodeBase
     from .types import EdgesLike, ShapeLike
 
 
@@ -107,16 +108,19 @@ class Output:
 
     _repr_pretty_ = repr_pretty
 
+    #################################################################
+    #####                   PROPERTIES
+    #################################################################
     @property
-    def name(self):
+    def name(self) -> str:
         return self._name
 
     @name.setter
-    def name(self, name):
+    def name(self, name) -> None:
         self._name = name
 
     @property
-    def allocatable(self):
+    def allocatable(self) -> bool:
         return self._allocatable
 
     @property
@@ -124,7 +128,7 @@ class Output:
         return self._data is not None
 
     @property
-    def node(self):
+    def node(self) -> Node:
         return self._node
 
     @property
@@ -132,32 +136,32 @@ class Output:
         return self._labels if self._labels is not None else self._node and self._node.labels
 
     @labels.setter
-    def labels(self, labels: Labels):
+    def labels(self, labels: Labels) -> None:
         self._labels = labels
 
     @property
-    def child_inputs(self):
+    def child_inputs(self) -> list[Input]:
         return self._child_inputs
 
     @property
-    def parent_input(self):
+    def parent_input(self) -> Input | None:
         return self._parent_input
 
     @parent_input.setter
-    def parent_input(self, input):
+    def parent_input(self, input) -> None:
         self._parent_input = input
 
     @property
-    def logger(self):
+    def logger(self) -> Logger:
         return self._node.logger
 
     @property
-    def invalid(self):
+    def invalid(self) -> bool:
         """Checks the validity of the current node"""
         return self._node.invalid
 
     @invalid.setter
-    def invalid(self, invalid):
+    def invalid(self, invalid) -> None:
         """Sets the validity of the following nodes"""
         for input in self.child_inputs:
             input.invalid = invalid
@@ -180,6 +184,79 @@ class Output:
                 output=self,
                 args=exc.args,
             ) from exc
+
+    @property
+    def dd(self) -> DataDescriptor:
+        return self._dd
+
+    @property
+    def owns_buffer(self):
+        return self._owns_buffer
+
+    @property
+    def forbid_reallocation(self):
+        return self._forbid_reallocation
+
+    @property
+    def closed(self):
+        return self.node.closed if self.node else False
+
+    @property
+    def tainted(self) -> bool:
+        return self._node.tainted
+
+    @property
+    def debug(self) -> bool:
+        return self._debug
+
+    def connected(self):
+        return bool(self._child_inputs)
+
+    def to_dict(self, *, label_from: str = "text") -> dict:
+        shape = self.dd.shape
+        size = self.dd.size
+        ret = {
+            "label": self.labels[label_from],
+            "shape": shape[0] if shape and len(shape) == 1 else shape,
+        }
+
+        if size is not None:
+            if size > 1:
+                ret["value"] = "…"
+            elif size == 1:
+                try:
+                    data = self.data
+                except DagflowError:
+                    ret["value"] = "???"
+                else:
+                    ret["value"] = float(data.ravel()[0])
+
+        return ret
+
+    #################################################################
+    #####                   DATA SETTERS
+    #################################################################
+    def set(self, data: ArrayLike, check_taint: bool = False, force_taint: bool = False) -> bool:
+        if self.node.frozen and not force_taint:
+            return False
+
+        tainted = (self._data != data).any() if check_taint else True
+        if tainted:
+            self._data[:] = data
+            self.__taint_children()
+        return tainted
+
+    def seti(
+        self, idx: int, value: float, check_taint: bool = False, force_taint: bool = False
+    ) -> bool:
+        if self.node.frozen and not force_taint:
+            return False
+
+        tainted = self._data[idx] != value if check_taint else True
+        if tainted:
+            self._data[idx] = value
+            self.__taint_children()
+        return tainted
 
     def _set_data(
         self,
@@ -219,140 +296,11 @@ class Output:
         self._owns_buffer = owns_buffer
         self._forbid_reallocation = forbid_reallocation
 
-    @property
-    def dd(self) -> DataDescriptor:
-        return self._dd
-
-    @property
-    def owns_buffer(self):
-        return self._owns_buffer
-
-    @property
-    def forbid_reallocation(self):
-        return self._forbid_reallocation
-
-    @property
-    def closed(self):
-        return self.node.closed if self.node else False
-
-    @property
-    def tainted(self) -> bool:
-        return self._node.tainted
-
-    @property
-    def debug(self) -> bool:
-        return self._debug
-
-    def connect_to(self, input) -> Input:
-        if not self.closed and input.closed:
-            raise ConnectionError(
-                "Cannot connect an output to a closed input!",
-                node=self.node,
-                output=self,
-                input=input,
-            )
-        if self.closed and input.allocatable:
-            raise ConnectionError(
-                "Cannot connect a closed output to an allocatable input!",
-                node=self.node,
-                output=self,
-                input=input,
-            )
-        return self._connect_to(input)
-
-    def _connect_to(self, input) -> Input:
-        if input.allocatable:
-            if self._allocating_input:
-                raise ConnectionError(
-                    "Output has multiple allocatable/allocated child inputs",
-                    node=self._node,
-                    output=self,
-                )
-            if self._forbid_reallocation:
-                raise ConnectionError(
-                    "Output forbids reallocation and may not connect to allocating inputs",
-                    node=self._node,
-                    output=self,
-                )
-            self._allocating_input = input
-        self._child_inputs.append(input)
-        input.set_parent_output(self)
-        return input
-
-    def deep_iter_outputs(self, disconnected_only=False):
-        if disconnected_only and self.connected():
-            return iter(tuple())
-        raise StopNesting(self)
-
-    def deep_iter_child_outputs(self):
-        raise StopNesting(self)
-
-    def __rshift__(
-        self,
-        other: Input | Node | Sequence[Input] | Sequence[Node] | Mapping[str, Node] | NestedMKDict,
-    ):
-        """
-        self >> other
-        """
-        from multikeydict.nestedmkdict import NestedMKDict
-
-        from .input import Input
-        from .node import Node
-
-        match other:
-            case Input():
-                self.connect_to(other)
-            case Node():
-                inp = None
-                try:
-                    for inpt in other.inputs:
-                        if not inpt.connected():
-                            inp = inpt
-                            break
-                    if inp is None:
-                        raise IndexError()
-                except IndexError:
-                    inp = other._make_input()
-                if inp is None:
-                    raise ConnectionError(
-                        "Unable to find unconnected input or create a new one!",
-                        node=other,
-                        output=self,
-                    )
-                self.connect_to(inp)
-            case Sequence():
-                for subother in other:
-                    self >> subother
-            case NestedMKDict():
-                for subother in other.walkvalues():
-                    self >> subother
-            case Mapping():
-                self >> NestedMKDict(dic=other)
-            case _:
-                raise ConnectionError(
-                    f"Unable to connect the input to {other=}!",
-                    output=self,
-                )
-
-    def taint_children(
-        self,
-        *,
-        force_taint: bool = False,
-        force_computation: bool = False,
-        caller: Input | None = None,
-    ) -> None:
-        for input in self._child_inputs:
-            input.taint(force_taint=force_taint, force_computation=force_computation, caller=caller)
-
-    def taint_children_type(self, force_taint: bool = False) -> None:
-        for input in self._child_inputs:
-            input.taint_type(force_taint=force_taint)
-
+    #################################################################
+    #####                   EVALUATION
+    #################################################################
     def touch(self, force_computation=False):
         return self._node.touch(force_computation=force_computation)
-
-    def connected(self):
-        return bool(self._child_inputs)
 
     def allocate(self, **kwargs) -> bool:
         """returns True if data was reassigned"""
@@ -396,54 +344,124 @@ class Output:
 
         return True
 
-    def seti(
-        self, idx: int, value: float, check_taint: bool = False, force_taint: bool = False
-    ) -> bool:
-        if self.node.frozen and not force_taint:
-            return False
-
-        tainted = self._data[idx] != value if check_taint else True
-        if tainted:
-            self._data[idx] = value
-            self.__taint_children()
-        return tainted
-
-    def set(self, data: ArrayLike, check_taint: bool = False, force_taint: bool = False) -> bool:
-        if self.node.frozen and not force_taint:
-            return False
-
-        tainted = (self._data != data).any() if check_taint else True
-        if tainted:
-            self._data[:] = data
-            self.__taint_children()
-        return tainted
-
     # TODO: maybe move it into `self.taint_children()`?
     def __taint_children(self):
         self.taint_children()
         self.node.invalidate_parents()
         self.node.fd.tainted = False
 
-    def to_dict(self, *, label_from: str = "text") -> dict:
-        shape = self.dd.shape
-        size = self.dd.size
-        ret = {
-            "label": self.labels[label_from],
-            "shape": shape[0] if shape and len(shape) == 1 else shape,
-        }
+    def taint_children(
+        self,
+        *,
+        force_taint: bool = False,
+        force_computation: bool = False,
+        caller: Input | None = None,
+    ) -> None:
+        for input in self._child_inputs:
+            input.taint(force_taint=force_taint, force_computation=force_computation, caller=caller)
 
-        if size is not None:
-            if size > 1:
-                ret["value"] = "…"
-            elif size == 1:
-                try:
-                    data = self.data
-                except DagflowError:
-                    ret["value"] = "???"
-                else:
-                    ret["value"] = float(data.ravel()[0])
+    def taint_children_type(self, force_taint: bool = False) -> None:
+        for input in self._child_inputs:
+            input.taint_type(force_taint=force_taint)
 
-        return ret
+    #################################################################
+    #####                   CONNECTION
+    #################################################################
+    def connect_to_input(self, input) -> None:
+        if not self.closed and input.closed:
+            raise ConnectionError(
+                "Cannot connect an output to a closed input!",
+                node=self.node,
+                output=self,
+                input=input,
+            )
+        if self.closed and input.allocatable:
+            raise ConnectionError(
+                "Cannot connect a closed output to an allocatable input!",
+                node=self.node,
+                output=self,
+                input=input,
+            )
+        self._connect_to_input(input)
+
+    def _connect_to_input(self, input) -> None:
+        if input.allocatable:
+            if self._allocating_input:
+                raise ConnectionError(
+                    "Output has multiple allocatable/allocated child inputs",
+                    node=self._node,
+                    output=self,
+                )
+            if self._forbid_reallocation:
+                raise ConnectionError(
+                    "Output forbids reallocation and may not connect to allocating inputs",
+                    node=self._node,
+                    output=self,
+                )
+            self._allocating_input = input
+        self._child_inputs.append(input)
+        input.set_parent_output(self)
+
+    def connect_to_node(self, node, scope=None, reassign_scope=False) -> None:
+        inp = None
+        try:
+            for inpt in node.inputs:
+                if not inpt.connected():
+                    inp = inpt
+                    break
+            if inp is None:
+                raise IndexError()
+        except IndexError:
+            inp = node._make_input(scope=scope)
+        if inp is None:
+            raise ConnectionError(
+                "Unable to find unconnected input or create a new one!",
+                node=node,
+                output=self,
+            )
+        self.connect_to_input(inp)
+        if reassign_scope:
+            node.input_strategy._scope = scope
+
+    def __rshift__(
+        self,
+        other: (
+            Input
+            | Inputs
+            | Sequence[Input]
+            | NodeBase
+            | Sequence[NodeBase]
+            | Mapping[str, NodeBase]
+            | NestedMKDict
+        ),
+    ) -> None:
+        """
+        self >> other
+        """
+        from multikeydict.nestedmkdict import NestedMKDict
+
+        from .input import Input, Inputs
+        from .node_base import NodeBase
+
+        match other:
+            case Input():
+                self.connect_to_input(other)
+            case NodeBase():
+                scope = other._input_strategy._scope + 1
+                self.connect_to_node(other, scope=scope, reassign_scope=True)
+            case Sequence() | Inputs() | Generator():
+                for subother in other:
+                    self >> subother
+            case NestedMKDict():
+                for subother in other.walkvalues():
+                    self >> subother
+            case Mapping():
+                self >> NestedMKDict(dic=other)
+            case _:
+                raise ConnectionError(
+                    f"Unable to connect the input to {other=}!",
+                    output=self,
+                )
 
 
 class Outputs(EdgeContainer):
@@ -458,27 +476,29 @@ class Outputs(EdgeContainer):
 
     _repr_pretty_ = repr_pretty
 
-    def __rshift__(self, other: Input | Node | Sequence[Input] | Sequence[Node]):
+    def __rshift__(self, other: Node | Inputs | Sequence[Input] | Sequence[Node]):
         """
         self >> other
         """
-        from .node import Node
+        from .input import Inputs
+        from .node_base import NodeBase
 
         match other:
-            case Node():
-                if (x := len(other.inputs)) != (y := len(self)):
-                    raise ConnectionError(
-                        f"The outputs length must coincide with len(other.inputs), but given {x} vs. {y}",
-                        node=other,
-                    )
-                for inp, out in zip(self, other.inputs):
-                    inp >> out
-            case Sequence():
+            case NodeBase():
+                scope = other._input_strategy._scope + 1
+                self.connect_to_node(other, scope=scope, reassign_scope=True)
+            case Sequence() | Inputs():
                 if (x := len(other)) != (y := len(self)):
                     raise ConnectionError(
                         f"The outputs length must coincide with len(other), but given {x} vs. {y}"
                     )
-                for inp, subother in zip(self, other):
-                    inp >> subother
+                for out, subother in zip(self, other):
+                    out >> subother
             case _:
                 raise ConnectionError(f"Unable to connect the outputs={self} to {other=}!")
+
+    def connect_to_node(self, other, scope=None, reassign_scope=False):
+        for out in self:
+            out.connect_to_node(other, scope=scope)
+        if reassign_scope:
+            other._input_strategy._scope = scope

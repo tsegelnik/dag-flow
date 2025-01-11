@@ -23,9 +23,9 @@ class WeightedSum(ManyToOneNode):
         self._weight = self._add_input("weight", positional=False)
         self._functions_dict.update({"number": self._fcn_number, "iterable": self._fcn_iterable})
 
-    def _typefunc(self) -> None:
+    def _type_function(self) -> None:
         """A output takes this function to determine the dtype and shape"""
-        super()._typefunc()
+        super()._type_function()
         check_node_has_inputs(self, "weight")
         weight = self._weight
         shape = weight.dd.shape[0]

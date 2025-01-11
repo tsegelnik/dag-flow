@@ -77,7 +77,7 @@ class SegmentIndex(Node):
     def mode(self) -> str:
         return self._mode
 
-    def _typefunc(self) -> None:
+    def _type_function(self) -> None:
         """
         The function to determine the dtype and shape of the ouput.
         """

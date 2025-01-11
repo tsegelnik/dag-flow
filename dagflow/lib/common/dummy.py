@@ -9,5 +9,5 @@ class Dummy(Node):
     def __init__(self, name, **kwargs):
         super().__init__(name, **kwargs)
 
-    def _typefunc(self):
+    def _type_function(self):
         pass

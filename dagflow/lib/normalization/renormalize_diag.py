@@ -4,7 +4,7 @@ from typing import TYPE_CHECKING
 
 from numba import njit
 
-from ...core.input_handler import MissingInputAddPair
+from ...core.input_strategy import AddNewInputAddNewOutput
 from ...core.type_functions import (
     AllPositionals,
     check_shape_of_inputs,
@@ -34,7 +34,7 @@ class RenormalizeDiag(OneToOneNode):
     ) -> None:
         super().__init__(
             *args,
-            missing_input_handler=MissingInputAddPair(input_fmt="matrix", output_fmt="result"),
+            input_strategy=AddNewInputAddNewOutput(input_fmt="matrix", output_fmt="result"),
             **kwargs,
         )
 
@@ -63,8 +63,8 @@ class RenormalizeDiag(OneToOneNode):
         for indata, outdata in zip(self.inputs.iter_data(), self.outputs.iter_data_unsafe()):
             _renorm_offdiag_numba(indata, outdata, scale, self._ndiag)
 
-    def _typefunc(self) -> None:
-        super()._typefunc()
+    def _type_function(self) -> None:
+        super()._type_function()
         check_shape_of_inputs(self, "scale", (1,))
         check_inputs_are_square_matrices(self, 0)
         check_inputs_equivalence(self, AllPositionals, check_dtype=True, check_shape=True)

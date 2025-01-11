@@ -49,7 +49,7 @@ class Jacobian(OneToOneNode):
             )
         self._parameters_list.append(par)
 
-    def _typefunc(self) -> None:
+    def _type_function(self) -> None:
         n = len(self._parameters_list)
         for inp, out in zip(self.inputs, self.outputs):
             out.dd.dtype = inp.dd.dtype

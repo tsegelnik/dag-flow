@@ -2,7 +2,7 @@ from numba import njit
 from numpy import add, copyto
 from numpy.typing import NDArray
 
-from ...core.input_handler import MissingInputAddOne
+from ...core.input_strategy import AddNewInputAddAndKeepSingleOutput
 from ...core.type_functions import (
     AllPositionals,
     check_inputs_consistency_with_square_matrices_or_diagonals,
@@ -37,7 +37,7 @@ class SumMatOrDiag(ManyToOneNode):
     _ndim: int
 
     def __init__(self, *args, **kwargs):
-        kwargs.setdefault("missing_input_handler", MissingInputAddOne(output_fmt="result"))
+        kwargs.setdefault("input_strategy", AddNewInputAddAndKeepSingleOutput(output_fmt="result"))
         super().__init__(*args, **kwargs)
         self._functions_dict.update({2: self._fcn2d, 1: self._fcn1d})
 
@@ -68,7 +68,7 @@ class SumMatOrDiag(ManyToOneNode):
         for input_data in self._input_data_other:
             add(output_data, input_data, out=output_data)
 
-    def _typefunc(self) -> None:
+    def _type_function(self) -> None:
         """A output takes this function to determine the dtype and shape"""
         check_node_has_inputs(self)
         copy_shape_from_inputs_to_outputs(self, 0, "result")

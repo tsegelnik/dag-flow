@@ -16,9 +16,9 @@ class ThreeInputsSum(ManyToOneNode):
             out += _input.data
         return out
 
-    def _typefunc(self) -> None:
+    def _type_function(self) -> None:
         """A output takes this function to determine the dtype and shape"""
-        super()._typefunc()
+        super()._type_function()
         if (y := len(self.inputs)) != 3:
             raise CriticalError(
                 f"The node must have only 3 inputs, but given {y}: {self.inputs}!"

@@ -6,7 +6,7 @@ from numpy import add, divide, matmul, multiply, subtract
 from scipy.linalg import solve_triangular
 
 from ...core.exception import InitializationError
-from ...core.input_handler import MissingInputAddPair
+from ...core.input_strategy import AddNewInputAddNewOutput
 from ...core.node import Node
 from ...core.type_functions import (
     check_node_has_inputs,
@@ -50,7 +50,7 @@ class NormalizeCorrelatedVars(Node):
 
         super().__init__(
             *args,
-            missing_input_handler=MissingInputAddPair(),
+            input_strategy=AddNewInputAddNewOutput(),
             **kwargs,
             allowed_kw_inputs=("matrix", "central"),
         )
@@ -100,7 +100,7 @@ class NormalizeCorrelatedVars(Node):
             multiply(Ldiag, indata, out=outdata)
             add(outdata, central, out=outdata)
 
-    def _typefunc(self) -> None:
+    def _type_function(self) -> None:
         check_node_has_inputs(self)
         ndim = check_inputs_are_matrices_or_diagonals(self, "matrix", check_square=True)
         check_dimension_of_inputs(self, "central", 1)

@@ -24,7 +24,7 @@ class ViewConcat(Node):
         self._output = self._add_output(outname, allocatable=False, forbid_reallocation=True)
         self._offsets = []
 
-    def missing_input_handler(self, idx: int | None = None, scope: int | None = None) -> Input:
+    def input_strategy(self, idx: int | None = None, scope: int | None = None) -> Input:
         idx = idx if idx is not None else len(self.inputs)
         iname = f"input_{idx:02d}"
         return self._add_input(iname, allocatable=True, child_output=self._output)
@@ -32,7 +32,7 @@ class ViewConcat(Node):
     def _function(self):
         self.inputs.touch()
 
-    def _typefunc(self) -> None:
+    def _type_function(self) -> None:
         """A output takes this function to determine the dtype and shape"""
         size = 0
         self._offsets = []

@@ -4,7 +4,7 @@ from numpy import result_type
 
 from dagflow.core.graph import Graph
 from dagflow.plot.graphviz import savegraph
-from dagflow.core.input_handler import MissingInputAddEach
+from dagflow.core.input_strategy import AddNewInputAddNewOutputForBlock
 from dagflow.lib.common import Array
 from dagflow.lib.arithmetic import Product
 from dagflow.lib.arithmetic import Sum
@@ -17,7 +17,7 @@ debug = False
 
 class ThreeInputsOneOutput(Node):
     def __init__(self, *args, **kwargs):
-        kwargs.setdefault("missing_input_handler", MissingInputAddEach())
+        kwargs.setdefault("input_strategy", AddNewInputAddNewOutputForBlock())
         super().__init__(*args, **kwargs)
 
     def _function(self, _, inputs, outputs):
@@ -32,7 +32,7 @@ class ThreeInputsOneOutput(Node):
     def result(self):
         return [out.data for out in self.outputs]
 
-    def _typefunc(self) -> None:
+    def _type_function(self) -> None:
         """A output takes this function to determine the dtype and shape"""
         for i, output in enumerate(self.outputs):
             inputs = self.inputs[2 * i : 2 * (1 + i)]

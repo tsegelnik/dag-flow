@@ -1,7 +1,7 @@
 from numpy import diag, empty, log
 from numpy.typing import NDArray
 
-from ...core.input_handler import MissingInputAddPair
+from ...core.input_strategy import AddNewInputAddNewOutput
 from ...core.node import Node
 from ...core.type_functions import (
     AllPositionals,
@@ -29,8 +29,8 @@ class LogProdDiag(Node):
 
     def __init__(self, *args, **kwargs):
         kwargs.setdefault(
-            "missing_input_handler",
-            MissingInputAddPair(input_fmt="matrix", output_fmt="log_V"),
+            "input_strategy",
+            AddNewInputAddNewOutput(input_fmt="matrix", output_fmt="log_V"),
         )
         super().__init__(*args, **kwargs)
         self._labels.setdefault("mark", r"2log\|L\|")
@@ -51,7 +51,7 @@ class LogProdDiag(Node):
             log(indata, out=self._buffer)
             outdata[0] = 2 * self._buffer.sum()
 
-    def _typefunc(self) -> None:
+    def _type_function(self) -> None:
         check_node_has_inputs(self, AllPositionals)
         ndim = check_inputs_are_matrices_or_diagonals(self, AllPositionals, check_square=True)
         copy_dtype_from_inputs_to_outputs(self, AllPositionals, AllPositionals)

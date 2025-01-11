@@ -25,8 +25,8 @@ class LinearFunction(OneToOneNode):
         self._a = self._add_input("a", positional=False)
         self._b = self._add_input("b", positional=False)
 
-    def _typefunc(self) -> None:
-        super()._typefunc()
+    def _type_function(self) -> None:
+        super()._type_function()
         check_size_of_inputs(self, ("a", "b"), exact=1)
         check_inputs_have_same_dtype(self, ("a", "b", AllPositionals))
 

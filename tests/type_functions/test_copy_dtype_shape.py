@@ -3,7 +3,7 @@ from pytest import mark
 
 from dagflow.core.graph import Graph
 from dagflow.plot.graphviz import savegraph
-from dagflow.core.input_handler import MissingInputAddEach, MissingInputAddOne
+from dagflow.core.input_strategy import AddNewInputAddNewOutputForBlock, AddNewInputAddAndKeepSingleOutput
 from dagflow.lib.common import Array
 from dagflow.lib.common import Dummy
 from dagflow.core.type_functions import (
@@ -29,7 +29,7 @@ def test_copy_input_dtype_and_shape(testname, debug_graph, data, dtype):
         arr1 = Array("arr1", arrdata)
         node = Dummy(
             "node",
-            missing_input_handler=MissingInputAddOne(output_fmt="result"),
+            input_strategy=AddNewInputAddAndKeepSingleOutput(output_fmt="result"),
         )
         arr1 >> node
     copy_shape_from_inputs_to_outputs(node, 0, "result")
@@ -47,7 +47,7 @@ def test_output_eval_dtype(testname, debug_graph, dtype):
         arr2 = Array("arr2", array([3, 2, 1], dtype=dtype))
         node = Dummy(
             "node",
-            missing_input_handler=MissingInputAddOne(output_fmt="result"),
+            input_strategy=AddNewInputAddAndKeepSingleOutput(output_fmt="result"),
         )
         (arr1, arr2) >> node
     copy_shape_from_inputs_to_outputs(node, 1, "result")
@@ -87,7 +87,7 @@ def test_copy_from_input_01(testname, debug_graph, dtype):
         arr2 = Array("arr2", array([3, 2, 1], dtype=dtype), edges=edges2)  # , nodes=nodes2)
         node = Dummy(
             "node",
-            missing_input_handler=MissingInputAddEach(),
+            input_strategy=AddNewInputAddNewOutputForBlock(),
         )
         arr1 >> node
         arr2 >> node

@@ -1,14 +1,14 @@
 from numpy import arange, array, copyto, result_type
 
 from dagflow.core.graph import Graph
-from dagflow.core.input_handler import MissingInputAddOne
+from dagflow.core.input_strategy import AddNewInputAddAndKeepSingleOutput
 from dagflow.lib.common import Array
 from dagflow.core.node import Node
 
 
 class SumIntOrProductFloatOrDoNothing(Node):
     def __init__(self, name, **kwargs):
-        kwargs.setdefault("missing_input_handler", MissingInputAddOne(output_fmt="result"))
+        kwargs.setdefault("input_strategy", AddNewInputAddAndKeepSingleOutput(output_fmt="result"))
         super().__init__(name, **kwargs)
         self._functions_dict.update({"int": self._fcn_int, "float": self._fcn_float})
 
@@ -31,7 +31,7 @@ class SumIntOrProductFloatOrDoNothing(Node):
                 out *= _input.data
         return out
 
-    def _typefunc(self) -> bool:
+    def _type_function(self) -> bool:
         if self.inputs[0].dd.dtype == "i":
             self.function = self._functions_dict.get("int")
         elif self.inputs[0].dd.dtype == "d":

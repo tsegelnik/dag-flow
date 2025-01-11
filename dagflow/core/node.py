@@ -3,6 +3,7 @@ from __future__ import annotations
 from typing import TYPE_CHECKING, Callable
 from weakref import ref as weakref
 
+from dagflow.core.input_strategy import InputStrategyBase
 from multikeydict.typing import KeyLike, properkey
 
 from ..core.labels import Labels
@@ -76,13 +77,13 @@ class Node(NodeBase):
         graph: Graph | None = None,
         debug: bool | None = None,
         logger: Any | None = None,
-        missing_input_handler: Callable | None = None,
+        input_strategy: InputStrategyBase | None = None,
         immediate: bool = False,
         frozen: bool = False,
         allowed_kw_inputs: Sequence[str] = (),
         **kwargs,
     ):
-        super().__init__(missing_input_handler=missing_input_handler)
+        super().__init__(input_strategy=input_strategy)
         self._graph = None
         self._exception = None
         self._meta_node = None
@@ -303,15 +304,13 @@ class Node(NodeBase):
         """
         Returns an existing input by `name`, else try to create new one.
         If `name` is given, creates an input by the default way,
-        otherwise tries to use `missing_input_handler`.
+        otherwise tries to use `input_strategy`.
         If `name` is not given simply uses the input handler.
 
         .. note:: creation of a new input is restricted for a *closed* graph
         """
         if name is None:
-            self.logger.debug(
-                f"Node '{self.name}': Try to create an input with `missing_input_handler`"
-            )
+            self.logger.debug(f"Node '{self.name}': Try to create an input with `input_strategy`")
             if not self.closed:
                 return self._make_input(*args, **kwargs)
             raise ClosedGraphError(node=self)
@@ -329,12 +328,14 @@ class Node(NodeBase):
         """
         Creates a single input via an input handler
         """
-        handler = self._missing_input_handler
-        if handler is None:
+        try:
+            return self.input_strategy(*args, **kwargs)
+        except Exception as exc:
             if exception:
-                raise RuntimeError("Unable to make an input automatically as no handler is set")
+                raise RuntimeError(
+                    "Unable to make an input automatically as no handler is set"
+                ) from exc
             return None
-        return handler(*args, **kwargs)
 
     def add_input(self, name: str, **kwargs) -> Input:
         """
@@ -540,7 +541,11 @@ class Node(NodeBase):
             self.taint()
 
     def taint(
-        self, *, force_taint: bool = False, force_computation: bool = False, caller: Input | None = None
+        self,
+        *,
+        force_taint: bool = False,
+        force_computation: bool = False,
+        caller: Input | None = None,
     ):
         if self.tainted and not force_taint:
             return
@@ -551,14 +556,22 @@ class Node(NodeBase):
         self.fd.tainted = True
         ret = self._touch() if (self._immediate or force_computation) else None
         # TODO:  maybe here it is better to avoid extra call from FlagsDescriptor
-        self.fd.taint_children(force_taint=force_taint, force_computation=force_computation, caller=caller)
+        self.fd.taint_children(
+            force_taint=force_taint, force_computation=force_computation, caller=caller
+        )
 
         return ret
 
     def taint_children(
-        self, *, force_taint: bool = False, force_computation: bool = False, caller: Input | None = None
+        self,
+        *,
+        force_taint: bool = False,
+        force_computation: bool = False,
+        caller: Input | None = None,
     ):
-        self.fd.taint_children(force_taint=force_taint, force_computation=force_computation, caller=caller)
+        self.fd.taint_children(
+            force_taint=force_taint, force_computation=force_computation, caller=caller
+        )
 
     def taint_type(self, force_taint: bool = False):
         if self.closed:
@@ -581,7 +594,7 @@ class Node(NodeBase):
             "label": self.labels[label_from],
         }
 
-    def _typefunc(self) -> None:
+    def _type_function(self) -> None:
         """A output takes this function to determine the dtype and shape"""
         raise DagflowError("Unimplemented method: the method must be overridden!")
 
@@ -606,7 +619,7 @@ class Node(NodeBase):
                     raise ClosingError("Input is not connected", node=self, input=input)
                 input.parent_node.update_types(recursive)
         self.logger.debug(f"Node '{self.name}': Update types...")
-        self._typefunc()
+        self._type_function()
         self.fd.types_tainted = False
         self._fd.needs_reallocation = True
 
@@ -683,7 +696,9 @@ class Node(NodeBase):
             return True
         self.logger.debug(f"Node '{self.name}': Open")
         if not all(
-            _input.node.open(force_taint) for output in self.outputs for _input in output.child_inputs
+            _input.node.open(force_taint)
+            for output in self.outputs
+            for _input in output.child_inputs
         ):
             raise OpeningError(node=self)
         self.unfreeze()

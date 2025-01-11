@@ -32,7 +32,7 @@ class MatrixProductDDt(Node):
         matrix = self._matrix.data
         matmul(matrix, matrix.T, out=self._out._data)
 
-    def _typefunc(self) -> None:
+    def _type_function(self) -> None:
         check_dimension_of_inputs(self, "matrix", ndim=2)
         evaluate_dtype_of_outputs(self, slice(None), "result")
         self._out.dd.shape = (self._matrix.dd.shape[0], self._matrix.dd.shape[0])

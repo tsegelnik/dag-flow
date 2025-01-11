@@ -154,7 +154,7 @@ class NormalizeCorrelatedVarsTwoWays(Node):
             self.function = self._functions_dict[f"forward_{self._ndim}"]
         super().taint(force_taint=force_taint, force_computation=force_computation, caller=caller)
 
-    def _typefunc(self) -> None:
+    def _type_function(self) -> None:
         check_node_has_inputs(self)
         ndim = check_inputs_are_matrices_or_diagonals(self, "matrix", check_square=True)
         check_dimension_of_inputs(self, "central", 1)

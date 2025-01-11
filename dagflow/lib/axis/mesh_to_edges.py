@@ -38,7 +38,7 @@ class MeshToEdges(OneToOneNode):
         for indata, outdata in zip(self.inputs.iter_data(), self.outputs.iter_data_unsafe()):
             _binedges(indata, outdata)
 
-    def _typefunc(self) -> None:
+    def _type_function(self) -> None:
         """A output takes this function to determine the dtype and shape"""
         check_node_has_inputs(self, check_named=True)
         check_dimension_of_inputs(self, (AllPositionals, *self.inputs.kw.keys()), ndim=1)

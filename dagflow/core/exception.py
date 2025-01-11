@@ -4,19 +4,19 @@ from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
     from .input import Input
-    from .node import Node
+    from .node_base import NodeBase
     from .output import Output
 
 
 class DagflowError(RuntimeError):
-    node: Node | None
+    node: NodeBase | None
     input: Input | None
     output: Output | None
 
     def __init__(
         self,
         message: str,
-        node: Node | None = None,
+        node: NodeBase | None = None,
         *,
         input: Input | None = None,
         output: Output | None = None,

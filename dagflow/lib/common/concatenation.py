@@ -1,4 +1,4 @@
-from ...core.input_handler import MissingInputAddOne
+from ...core.input_strategy import AddNewInputAddAndKeepSingleOutput
 from ...core.type_functions import check_node_has_inputs, check_dimension_of_inputs, check_dtype_of_inputs
 from ..abstract import ManyToOneNode
 
@@ -18,12 +18,12 @@ class Concatenation(ManyToOneNode):
     _sizes: tuple[int,...]
 
     def __init__(self, name, **kwargs):
-        kwargs.setdefault("missing_input_handler", MissingInputAddOne(output_fmt="result"))
+        kwargs.setdefault("input_strategy", AddNewInputAddAndKeepSingleOutput(output_fmt="result"))
         super().__init__(name, **kwargs)
         self._offsets = ()
         self._sizes = ()
 
-    def _typefunc(self) -> None:
+    def _type_function(self) -> None:
         """A output takes this function to determine the dtype and shape"""
         check_node_has_inputs(self)
         cdtype = self.inputs[0].dd.dtype

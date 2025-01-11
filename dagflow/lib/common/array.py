@@ -152,7 +152,7 @@ class Array(Node):
             for key in used_array_keys:
                 localstorage.delete_with_parents(key)
 
-    def _typefunc(self) -> None:
+    def _type_function(self) -> None:
         check_dtype_of_edges(self, slice(None), "array")  # checks List[Output]
         check_edges_consistency_with_array(self, "array")  # checks dim and N+1 size
 

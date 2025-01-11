@@ -1,7 +1,7 @@
 from numpy import sqrt
 from scipy.linalg import cholesky
 
-from ...core.input_handler import MissingInputAddPair
+from ...core.input_strategy import AddNewInputAddNewOutput
 from ...core.node import Node
 from ...core.type_functions import check_node_has_inputs, check_inputs_are_matrices_or_diagonals, copy_from_inputs_to_outputs
 
@@ -14,8 +14,8 @@ class Cholesky(Node):
 
     def __init__(self, *args, **kwargs):
         kwargs.setdefault(
-            "missing_input_handler",
-            MissingInputAddPair(input_fmt="matrix", output_fmt="L"),
+            "input_strategy",
+            AddNewInputAddNewOutput(input_fmt="matrix", output_fmt="L"),
         )
         super().__init__(*args, **kwargs)
         self._labels.setdefault("mark", "V→L")
@@ -44,7 +44,7 @@ class Cholesky(Node):
         for indata, outdata in zip(self.inputs.iter_data(), self.outputs.iter_data_unsafe()):
             sqrt(indata, out=outdata)
 
-    def _typefunc(self) -> None:
+    def _type_function(self) -> None:
         check_node_has_inputs(self)
         ndim = check_inputs_are_matrices_or_diagonals(self, slice(None), check_square=True)
         copy_from_inputs_to_outputs(self, slice(None), slice(None))

@@ -53,7 +53,7 @@ class MatrixProductDVDt(Node):
         matmul(left, self._square.data, out=self._buffer)
         matmul(self._buffer, left.T, out=self._out._data)
 
-    def _typefunc(self) -> None:
+    def _type_function(self) -> None:
         check_node_has_inputs(self, ("left", "square"))
         check_dimension_of_inputs(self, "left", ndim=2)
         ndim = check_inputs_are_matrices_or_diagonals(self, "square", check_square=True)

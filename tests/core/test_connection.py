@@ -4,22 +4,13 @@ from pytest import mark, raises
 
 from dagflow.core.exception import ClosedGraphError, ConnectionError, UnclosedGraphError
 from dagflow.core.graph import Graph
-from dagflow.core.input import Input
-from dagflow.core.input_handler import MissingInputAddOne
+from dagflow.core.input import Input, Inputs
 from dagflow.core.node import Node
 from dagflow.core.output import Output, Outputs
+from dagflow.lib.abstract import BlockToOneNode, OneToOneNode
 from dagflow.lib.common import Dummy
-from dagflow.lib.abstract import BlockToOneNode
 from dagflow.plot.graphviz import savegraph
 from multikeydict.nestedmkdict import NestedMKDict
-
-
-class NodeWithMIAO(Node):
-    """The node with `missing_input_handler` = `MissingInputAddOne`"""
-
-    def __init__(self, *args, **kwargs):
-        kwargs.setdefault("missing_input_handler", MissingInputAddOne)
-        super().__init__(*args, **kwargs)
 
 
 def check_connection(obj):
@@ -28,7 +19,7 @@ def check_connection(obj):
         return obj.connected()
     if isinstance(obj, Node):
         return all(res.connected() for res in obj.inputs)
-    if isinstance(obj, Sequence):
+    if isinstance(obj, (Sequence, Inputs)):
         return all(check_connection(res) for res in obj)
     return False
 
@@ -37,9 +28,10 @@ def check_connection(obj):
     "rhs",
     (
         Input("input", None),
-        NodeWithMIAO("node"),
+        OneToOneNode("node"),
+        Inputs([Input(f"input_{i}", None) for i in range(3)]),
         [Input(f"input_{i}", None) for i in range(3)],
-        [NodeWithMIAO(f"node_{i}") for i in range(3)],
+        [OneToOneNode(f"node_{i}") for i in range(3)],
     ),
 )
 def test_Output_to_Input_or_Node_or_Sequence(rhs):
@@ -47,6 +39,7 @@ def test_Output_to_Input_or_Node_or_Sequence(rhs):
     Test of a connection in the following cases:
       * `Output >> Input`;
       * `Output >> Node`;
+      * `Output >> Inputs`;
       * `Output >> Sequence[Input]`;
       * `Output >> Sequence[Node]`;
     """
@@ -60,7 +53,7 @@ def test_Output_to_Input_or_Node_or_Sequence(rhs):
     elif isinstance(rhs, Node):
         assert check_connection(rhs)
         assert len(rhs.outputs) == 1
-    elif isinstance(rhs, Sequence):
+    elif isinstance(rhs, (Sequence, Inputs)):
         for obj in rhs:
             assert check_connection(obj)
             if isinstance(rhs, Input):
@@ -73,15 +66,16 @@ def test_Output_to_Input_or_Node_or_Sequence(rhs):
     "rhs",
     (
         {f"i{i}": Input(f"input_{i}", None) for i in range(3)},
-        {f"n{i}": NodeWithMIAO(f"node_{i}") for i in range(3)},
+        {f"n{i}": OneToOneNode(f"node_{i}") for i in range(3)},
+        {f"i{i}": Inputs([Input(f"input_{j}{i}", None) for j in range(3)]) for i in range(3)},
         {f"i{i}": [Input(f"input_{j}{i}", None) for j in range(3)] for i in range(3)},
-        {f"n{i}": [NodeWithMIAO(f"node_{j}{i}") for j in range(3)] for i in range(3)},
+        {f"n{i}": [OneToOneNode(f"node_{j}{i}") for j in range(3)] for i in range(3)},
     ),
 )
 def test_Output_to_Mapping(rhs):
     """
     Test of a connection in the following cases:
-      * `Output >> Mapping[Input | Sequence[Input]]`;
+      * `Output >> Mapping[Input | Sequence[Input] | Inputs]`;
       * `Output >> Mapping[Node | Sequence[Node]]`.
     """
     lhs = Output("output", None)
@@ -96,19 +90,24 @@ def test_Output_to_Mapping(rhs):
     "rhs",
     (
         NestedMKDict(dic={f"i{i}": Input(f"input_{i}", None) for i in range(3)}),
-        NestedMKDict(dic={f"n{i}": NodeWithMIAO(f"node_{i}") for i in range(3)}),
+        NestedMKDict(dic={f"n{i}": OneToOneNode(f"node_{i}") for i in range(3)}),
+        NestedMKDict(
+            dic={
+                f"i{i}": Inputs([Input(f"input_{j}{i}", None) for j in range(3)]) for i in range(3)
+            }
+        ),
         NestedMKDict(
             dic={f"i{i}": [Input(f"input_{j}{i}", None) for j in range(3)] for i in range(3)}
         ),
         NestedMKDict(
-            dic={f"n{i}": [NodeWithMIAO(f"node_{j}{i}") for j in range(3)] for i in range(3)}
+            dic={f"n{i}": [OneToOneNode(f"node_{j}{i}") for j in range(3)] for i in range(3)}
         ),
     ),
 )
 def test_Output_to_NestedMKDict(rhs):
     """
     Test of a connection in the following cases:
-      * `Output >> NestedMkDict[Input | Sequence[Input]]`;
+      * `Output >> NestedMkDict[Input | Sequence[Input] | Inputs]`;
       * `Output >> NestedMkDict[Node | Sequence[Node]]`;
     """
     lhs = Output("output", None)
@@ -119,11 +118,13 @@ def test_Output_to_NestedMKDict(rhs):
         assert check_connection(obj)
 
 
-@mark.parametrize("lcls", (tuple, list))
-@mark.parametrize("rcls", (NodeWithMIAO, BlockToOneNode))
+@mark.parametrize("lcls", (tuple, list, Outputs))
+@mark.parametrize("rcls", (OneToOneNode, BlockToOneNode))
 def test_Sequence_Output_to_Node(lcls, rcls):
     """
     Test of a connection in the following cases:
+      * `Outputs >> Node`;
+      * `Outputs >> BlockToOneNode`;
       * `Sequence[Output] >> Node`;
       * `Sequence[Output] >> BlockToOneNode`;
     """
@@ -133,30 +134,64 @@ def test_Sequence_Output_to_Node(lcls, rcls):
 
     assert all(obj.connected() for obj in lhs)
     assert check_connection(rhs)
-    assert len(rhs.outputs) == 1 if isinstance(rhs, BlockToOneNode) else 3
+    assert len(rhs.outputs) == (1 if isinstance(rhs, BlockToOneNode) else 3)
 
 
 @mark.parametrize("rseqcls", (tuple, list))
-@mark.parametrize("rcls", (NodeWithMIAO, Input))
-def test_Sequence_Output_to_Sequence(rseqcls, rcls):
+@mark.parametrize("rcls", (OneToOneNode, Input))
+def test_Outputs_to_Sequence(rseqcls, rcls):
     """
     Test of a connection in the following cases:
       * `Outputs >> Sequence[Node]`;
       * `Outputs >> Sequence[Input]`.
     """
     lhs = Outputs(Output(f"output_{i}", None) for i in range(3))
-    rhs = rseqcls(rcls(f"node_{i}") for i in range(3))
+    rhs = rseqcls(rcls(f"rhs_{i}") for i in range(3))
     lhs >> rhs
 
     assert all(obj.connected() for obj in lhs)
     assert all(check_connection(obj) for obj in rhs)
-    if rcls == NodeWithMIAO:
+    if rcls == OneToOneNode:
         assert all(len(obj.outputs) == 1 for obj in rhs)
     else:
         assert all(l == r.parent_output for l, r in zip(lhs, rhs))
 
 
-def test_02():
+@mark.parametrize("rseqcls", (tuple, list))
+@mark.parametrize("rcls", (OneToOneNode, Input))
+def test_Outputs_to_SequenceSequence(rseqcls, rcls):
+    """
+    Test of a connection in the following cases:
+      * `Outputs >> Sequence[Sequence[Node]]`;
+      * `Outputs >> Sequence[Sequence[Input]]`.
+    """
+    lhs = Outputs(Output(f"output_{i}", None) for i in range(3))
+    rhs = rseqcls(rseqcls(rcls(f"rhs_{i}{j}") for i in range(3)) for j in range(3))
+    lhs >> rhs
+
+    assert all(obj.connected() for obj in lhs)
+    assert all(all(check_connection(obj2) for obj2 in obj) for obj in rhs)
+    if rcls == OneToOneNode:
+        assert all(all(len(obj2.outputs) == 1 for obj2 in obj) for obj in rhs)
+    else:
+        assert all(all(l == r2.parent_output for r2 in r) for l, r in zip(lhs, rhs))
+
+
+def test_Outputs_to_Inputs():
+    """
+    Test of a connection in the following cases:
+      * `Outputs >> Inputs`.
+    """
+    lhs = Outputs(Output(f"output_{i}", None) for i in range(3))
+    rhs = Inputs(Input(f"input_{i}", None) for i in range(3))
+    lhs >> rhs
+
+    assert all(obj.connected() for obj in lhs)
+    assert all(check_connection(obj) for obj in rhs)
+    assert all(l == r.parent_output for l, r in zip(lhs, rhs))
+
+
+def test_Node_to_Node():
     n1 = Node("node1")
     n2 = Node("node2")
 
@@ -167,7 +202,8 @@ def test_02():
     n2._add_input("i2")
     n2._add_output("o1")
 
-    n1 >> n2
+    with raises(ConnectionError):
+        n1 >> n2
 
 
 def test_03():
@@ -175,7 +211,6 @@ def test_03():
     n2 = Node("node2")
 
     out = n1._add_output("o1")
-
     n2._add_input("i1")
     n2._add_output("o1")
 
@@ -187,7 +222,6 @@ def test_04():
     n2 = Node("node2")
 
     out = n1._add_output("o1")
-
     n2._add_pair("i1", "o1")
 
     out >> n2
@@ -244,13 +278,13 @@ def test_07():
         n1 = Dummy("node1")
         n2 = Dummy("node2")
 
-    out1 = n1._add_output("o1", allocatable=False)
-    out2 = n1._add_output("o2", allocatable=False)
+        out1 = n1._add_output("o1", allocatable=False)
+        out2 = n1._add_output("o2", allocatable=False)
 
-    _, final = n2._add_pair("i1", "o1", output_kws={"allocatable": False})
-    n2._add_input("i2")
+        _, final = n2._add_pair("i1", "o1", output_kws={"allocatable": False})
+        n2._add_input("i2")
 
-    (out1, out2) >> n2
+        (out1, out2) >> n2
 
     with raises(UnclosedGraphError):
         final.data
@@ -268,16 +302,16 @@ def test_08():
         n2 = Dummy("node2")
         n3 = Dummy("node3")
 
-    out1 = n1._add_output("o1", allocatable=False)
-    out2 = n1._add_output("o2", allocatable=False)
+        out1 = n1._add_output("o1", allocatable=False)
+        out2 = n1._add_output("o2", allocatable=False)
 
-    _, out3 = n2._add_pair("i1", "o1", output_kws={"allocatable": False})
-    n2._add_input("i2")
+        _, out3 = n2._add_pair("i1", "o1", output_kws={"allocatable": False})
+        n2._add_input("i2")
 
-    _, final = n3._add_pair("i1", "o1", output_kws={"allocatable": False})
+        _, final = n3._add_pair("i1", "o1", output_kws={"allocatable": False})
 
-    (out1, out2) >> n2
-    out3 >> n3
+        (out1, out2) >> n2
+        out3 >> n3
 
     with raises(UnclosedGraphError):
         final.data

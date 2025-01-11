@@ -4,7 +4,7 @@ from typing import TYPE_CHECKING
 
 from numpy import matmul, multiply
 
-from dagflow.core.input_handler import MissingInputAddPair
+from dagflow.core.input_strategy import AddNewInputAddNewOutput
 
 from ...core.exception import TypeFunctionError
 from ...core.node import Node
@@ -34,7 +34,7 @@ class VectorMatrixProduct(Node):
 
     def __init__(self, *args, mode: Literal["column", "row"] = "column", **kwargs) -> None:
         kwargs.setdefault(
-            "missing_input_handler", MissingInputAddPair(input_fmt="vector", output_fmt="result")
+            "input_strategy", AddNewInputAddNewOutput(input_fmt="vector", output_fmt="result")
         )
         super().__init__(*args, **kwargs, allowed_kw_inputs=("matrix",))
         self._mat = self._add_input("matrix", positional=False)
@@ -77,7 +77,7 @@ class VectorMatrixProduct(Node):
         for col, outdata in zip(self.inputs.iter_data(), self.outputs.iter_data_unsafe()):
             multiply(diag, col, out=outdata)
 
-    def _typefunc(self) -> None:
+    def _type_function(self) -> None:
         check_dimension_of_inputs(self, AllPositionals, ndim=1)
         ndim_mat = check_inputs_are_matrices_or_diagonals(self, "matrix")
         if ndim_mat not in (1, 2):

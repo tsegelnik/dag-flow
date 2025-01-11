@@ -57,7 +57,7 @@ class MatrixProductAB(Node):
     def _fcn_diagonal_diagonal(self):
         multiply(self._left.data, self._right.data, out=self._out._data)
 
-    def _typefunc(self) -> None:
+    def _type_function(self) -> None:
         check_node_has_inputs(self, ("left", "right"))
         ndim_left = check_inputs_are_matrices_or_diagonals(self, "left")
         ndim_right = check_inputs_are_matrices_or_diagonals(self, "right")

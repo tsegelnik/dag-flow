@@ -30,7 +30,7 @@ class MetaNode(NodeBase):
         "_call_functions",
         "_node_inputs_pos",
         "_node_outputs_pos",
-        "_missing_input_handler",
+        "_input_strategy",
         "_call_positional_input",
         "__weakref__",  # needed for weakref
     )
@@ -42,7 +42,7 @@ class MetaNode(NodeBase):
     _call_functions: dict[str, Callable]
     _node_inputs_pos: Node | None
     _node_outputs_pos: Node | None
-    _missing_input_handler: Callable
+    _input_strategy: Callable
     _call_positional_input: Callable
 
     def __init__(
@@ -61,7 +61,7 @@ class MetaNode(NodeBase):
         self._leading_node = None
         self._node_inputs_pos = None
         self._node_outputs_pos = None
-        self._missing_input_handler = lambda *_, **__: None
+        self._input_strategy = lambda *_, **__: None
         self._call_functions = {
             "LeadingNode": self._call_leading_node,
             "NewNode": self._call_new_node,
@@ -201,7 +201,7 @@ class MetaNode(NodeBase):
             self._import_kw_outputs(node, kw_outputs_optional, optional=True)
 
         if missing_inputs:
-            self._missing_input_handler = MissingInputInherit(
+            self._input_strategy = MissingInputInherit(
                 node, self, inherit_outputs=also_missing_outputs
             )
         if not missing_inputs and also_missing_outputs:
@@ -322,7 +322,7 @@ class MissingInputInherit:
         self._inherit_outputs = inherit_outputs
 
         try:
-            self._source_handler = source_node._missing_input_handler
+            self._source_handler = source_node._input_strategy
         except AttributeError as exc:
             raise RuntimeError(f"Node {source_node!s} has no missing input handler") from exc
 
