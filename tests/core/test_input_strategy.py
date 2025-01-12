@@ -8,8 +8,10 @@ from dagflow.core.input_strategy import (
     AddNewInputAddAndKeepSingleOutput,
     AddNewInputAddNewOutput,
     AddNewInputAddNewOutputForBlock,
+    AddNewInputAddNewOutputForNInputs,
     InputStrategyBase,
 )
+from dagflow.core.output import Output, Outputs
 from dagflow.lib.common import Dummy
 from dagflow.plot.graphviz import savegraph
 
@@ -129,8 +131,10 @@ def test_AddNewInputAddAndKeepSingleOutput(testname, child_output):
     )
 
 
+@mark.parametrize("n_blocks", (1, 2, 3, 4))
 @mark.parametrize("child_output", (False, True))
-def test_AddNewInputAddNewOutputForBlock(testname, child_output):
+@mark.parametrize("connection_type", (Outputs, Output))
+def test_AddNewInputAddNewOutputForBlock(testname, child_output, n_blocks, connection_type):
     """
     Test AddNewInputAddNewOutputForBlock strategy: add new input on each new connect and
     add an output for each >> group
@@ -147,24 +151,96 @@ def test_AddNewInputAddNewOutputForBlock(testname, child_output):
             ),
         )
 
-    #(node.outputs for node in nodes[:-1]) >> s
-    #nodes[-1].outputs >> s
-    (node.outputs[0] for node in nodes[:-1]) >> s
-    print(s.input_strategy._scope)
-    nodes[-1].outputs[0] >> s
-    print(s.input_strategy._scope)
+    get_output = lambda obj: obj if connection_type is Outputs else obj[0]
+    match n_blocks:
+        case 1:
+            (get_output(node.outputs) for node in nodes) >> s
+        case 2:
+            (get_output(node.outputs) for node in nodes[:2]) >> s
+            (get_output(node.outputs) for node in nodes[2:]) >> s
+        case 3:
+            for node in nodes[:2]:
+                get_output(node.outputs) >> s
+            (get_output(node.outputs) for node in nodes[2:]) >> s
+        case 4:
+            for node in nodes:
+                get_output(node.outputs) >> s
+        case _:
+            pass
 
     print()
     print(testname)
     s.print()
 
-    assert len(s.outputs) == 2
+    assert len(s.outputs) == n_blocks
     if child_output:
-        o1, o2 = s.outputs
-        for input in s.inputs[:3]:
-            assert input.child_output is o1
-        for input in s.inputs[3:]:
-            assert input.child_output is o2
+        match n_blocks:
+            case 1:
+                for inp in s.inputs:
+                    assert inp.child_output is s.outputs[0]
+            case 2:
+                for inp in s.inputs[:2]:
+                    assert inp.child_output is s.outputs[0]
+                for inp in s.inputs[2:]:
+                    assert inp.child_output is s.outputs[1]
+            case 3:
+                assert s.inputs[0].child_output is s.outputs[0]
+                assert s.inputs[1].child_output is s.outputs[1]
+                for inp in s.inputs[2:]:
+                    assert inp.child_output is s.outputs[2]
+            case 4:
+                for inp, out in zip(s.inputs, s.outputs):
+                    assert inp.child_output is out
+            case _:
+                pass
+    graph.close()
+
+    savegraph(
+        graph,
+        f"output/{testname}.pdf",
+        label="Add inputs and an output for each block",
+    )
+
+
+@mark.parametrize("n_inp", (1, 2, 4))
+@mark.parametrize("child_output", (False, True))
+@mark.parametrize("connection_type", (Outputs, Output))
+def test_AddNewInputAddNewOutputForNInputs(testname, child_output, n_inp, connection_type):
+    """
+    Test AddNewInputAddNewOutputForNInputs strategy: add new input on each new connect and
+    add an output for each n inputs in >> operator
+    """
+    with Graph() as graph:
+        nodes = [Dummy(f"n{i}") for i in range(4)]
+        for node in nodes:
+            node.add_output("o1", allocatable=False)
+
+        s = Dummy(
+            "add",
+            input_strategy=AddNewInputAddNewOutputForNInputs(
+                n=n_inp, add_child_output=child_output, output_kws={"allocatable": False}
+            ),
+        )
+
+    get_output = lambda obj: obj if connection_type is Outputs else obj[0]
+    (get_output(node.outputs) for node in nodes) >> s
+    assert len(s.outputs) == int(4 / n_inp)
+
+    print()
+    print(testname)
+    s.print()
+
+    if child_output:
+        match n_inp:
+            case 1:
+                for inp, out in zip(s.inputs, s.outputs):
+                    assert inp.child_output is out
+            case 2:
+                # TODO: is it correct? maybe 1 -> 0 and 2 -> 1?
+                assert s.inputs[0].child_output is s.outputs[0]
+                assert s.inputs[2].child_output is s.outputs[1]
+            case 4:
+                assert s.inputs[0].child_output is s.outputs[-1]
     graph.close()
 
     savegraph(
