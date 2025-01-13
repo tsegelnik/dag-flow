@@ -205,7 +205,10 @@ def test_AddNewInputAddNewOutputForBlock(testname, child_output, n_blocks, conne
 @mark.parametrize("n_inp", (1, 2, 4))
 @mark.parametrize("child_output", (False, True))
 @mark.parametrize("connection_type", (Outputs, Output))
-def test_AddNewInputAddNewOutputForNInputs(testname, child_output, n_inp, connection_type):
+@mark.parametrize("starts_from_0", (False, True))
+def test_AddNewInputAddNewOutputForNInputs(
+    testname, child_output, n_inp, connection_type, starts_from_0
+):
     """
     Test AddNewInputAddNewOutputForNInputs strategy: add new input on each new connect and
     add an output for each n inputs in >> operator
@@ -218,7 +221,10 @@ def test_AddNewInputAddNewOutputForNInputs(testname, child_output, n_inp, connec
         s = Dummy(
             "add",
             input_strategy=AddNewInputAddNewOutputForNInputs(
-                n=n_inp, add_child_output=child_output, output_kws={"allocatable": False}
+                n=n_inp,
+                starts_from_0=starts_from_0,
+                add_child_output=child_output,
+                output_kws={"allocatable": False},
             ),
         )
 
@@ -236,11 +242,21 @@ def test_AddNewInputAddNewOutputForNInputs(testname, child_output, n_inp, connec
                 for inp, out in zip(s.inputs, s.outputs):
                     assert inp.child_output is out
             case 2:
-                # TODO: is it correct? maybe 1 -> 0 and 2 -> 1?
-                assert s.inputs[0].child_output is s.outputs[0]
-                assert s.inputs[2].child_output is s.outputs[1]
+                # TODO: Now it starts from `0`-input -> there is a shift in 1 element.
+                #       Instead of 2 and 4 we get 0 and 2. Is it correct?
+                if starts_from_0:
+                    assert s.inputs[0].child_output is s.outputs[0]
+                    assert s.inputs[2].child_output is s.outputs[1]
+                else:
+                    assert s.inputs[1].child_output is s.outputs[0]
+                    assert s.inputs[3].child_output is s.outputs[1]
             case 4:
-                assert s.inputs[0].child_output is s.outputs[-1]
+                # TODO: Now it starts from `0`-input.
+                #       Instead of the adding output within the last input. Is it correct?
+                if starts_from_0:
+                    assert s.inputs[0].child_output is s.outputs[-1]
+                else:
+                    assert s.inputs[3].child_output is s.outputs[-1]
     graph.close()
 
     savegraph(

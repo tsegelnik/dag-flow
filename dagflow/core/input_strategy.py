@@ -181,7 +181,7 @@ class AddNewInputAddNewOutputForNInputs(AddNewInput):
     Adds an output for each N inputs.
     """
 
-    __slots__ = ("add_child_output", "n", "input_fmts")
+    __slots__ = ("add_child_output", "n", "input_fmts", "starts_from_0")
 
     add_child_output: bool
     n: int
@@ -191,25 +191,32 @@ class AddNewInputAddNewOutputForNInputs(AddNewInput):
         n: int,
         node: NodeBase | None = None,
         *,
-        init_with_no_inputs: bool = False,
+        starts_from_0: bool = False,
         add_child_output=False,
         **kwargs,
     ):
         super().__init__(node, **kwargs)
         self.n = n
-        self._scope = 1 if init_with_no_inputs else 0
+        if not isinstance(n, int) or n < 1:
+            raise InitializationError(f"'n' must be int > 0, but given {n=}, {type(n)=}!")
+        self.starts_from_0 = starts_from_0
+        self._scope = 0
         self.add_child_output = add_child_output
 
     def __call__(self, idx=None, scope=None, **kwargs):
         out = None
-        if scope == self.scope != 0:
-            out = self.node.outputs[-1]
-        elif self.node.inputs.len_pos() % self.n == 0:
-            out = self.node._add_output(
+        create_output = lambda : self.node._add_output(
                 self.output_fmt.format(len(self.node.outputs)),
-                **self.output_kws,
+                **self.output_kws
             )
-            scope = self.scope
+        if self.n == 1:
+            out = create_output()
+        elif self._scope % self.n == 0:
+            if self._scope == 0 and self.starts_from_0 or self._scope != 0:
+                out = create_output()
+            else:
+                self._scope += 1
+        self._scope += 1
         if self.add_child_output:
             return super().__call__(idx, child_output=out, scope=scope)
         return super().__call__(idx, scope=scope)
