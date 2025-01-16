@@ -18,7 +18,7 @@ _COLUMN_ALIASES: dict[str | Callable, str] = {
 }
 
 # The same names are needed to show possible aggregation functions in case of error
-_AGG_ALIASES: dict[str, str | Callable] = {
+_AGGREGATE_ALIASES: dict[str, str | Callable] = {
     "single": "mean",
     "mean": "mean",
     "median": "median",
@@ -46,8 +46,8 @@ class CountCallsProfiler(Profiler):
     ):
         super().__init__(target_nodes, sources, sinks)
         self._primary_col = "calls"
-        self._default_agg_funcs = ("count", "mean", "sum")
-        self._agg_aliases = _AGG_ALIASES.copy()
+        self._default_aggregations = ("count", "mean", "sum")
+        self._aggregate_aliases = _AGGREGATE_ALIASES.copy()
         self._column_aliases = _COLUMN_ALIASES.copy()
 
     def estimate_calls(self) -> CountCallsProfiler:
@@ -62,10 +62,10 @@ class CountCallsProfiler(Profiler):
     def make_report(
         self,
         group_by: str | list[str] | None = "type",
-        agg_funcs: Sequence[str] | None = None,
+        aggregations: Sequence[str] | None = None,
         sort_by: str | None = None,
     ) -> DataFrame:
-        return super().make_report(group_by, agg_funcs, sort_by)
+        return super().make_report(group_by, aggregations, sort_by)
 
     def calls_by_node(self):
         if not hasattr(self, "_estimations_table"):
@@ -78,10 +78,10 @@ class CountCallsProfiler(Profiler):
         self,
         rows: int | None = 40,
         group_by: str | list[str] | None = "type",
-        agg_funcs: Sequence[str] | None = None,
+        aggregations: Sequence[str] | None = None,
         sort_by: str | None = None,
     ) -> DataFrame:
-        report = self.make_report(group_by, agg_funcs, sort_by)
+        report = self.make_report(group_by, aggregations, sort_by)
         print(
             f"\nCounts of calls profiling {hex(id(self))}, "
             f"sort by: `{sort_by or 'default sorting'}`, "

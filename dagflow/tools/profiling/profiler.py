@@ -24,9 +24,9 @@ class Profiler(metaclass=ABCMeta):
         "_sinks",
         "_estimations_table",
         "_allowed_groupby",
-        "_default_agg_funcs",
+        "_default_aggregations",
         "_primary_col",
-        "_agg_aliases",
+        "_aggregate_aliases",
         "_column_aliases",
     )
     _target_nodes: Sequence[Node]
@@ -34,10 +34,10 @@ class Profiler(metaclass=ABCMeta):
     _sinks: Sequence[Node]
     _estimations_table: DataFrame
     _allowed_groupby: tuple[list[str] | str, ...]
-    _default_agg_funcs: tuple[str | Callable, ...]
+    _default_aggregations: tuple[str, ...]
     _primary_col: str
     _column_aliases: dict[str | Callable, str]
-    _agg_aliases: dict[str, str | Callable]
+    _aggregate_aliases: dict[str, str | Callable]
 
     def __init__(
         self,
@@ -129,69 +129,79 @@ class Profiler(metaclass=ABCMeta):
         self._sources = sources
         self._sinks = sinks
 
-    def register_agg_func(self, func, aliases, column_name):
-        """Add user-defined function for the Profiler for using it on a grouped
-        data.
+    def register_aggregate_func(
+        self,
+        func: Callable,
+        aliases: Sequence[str],
+        column_name: str
+    ) -> None:
+        """Add user-defined function for the Profiler.
 
-        Note: The function is called for each group
-        in the grouped DataFrame separately
+        The function applied for each group in grouped
+        data (i.e. data returned by `pandas.DataFrame.groupby()`)
+        separately.
         """
         for al in aliases:
-            self._agg_aliases[al] = func
+            self._aggregate_aliases[al] = func
             self._column_aliases[al] = column_name
         self._column_aliases[func] = column_name
 
-    def _cols_from_aliases(self, aliases: Iterable[str | Callable]) -> list[str]:
+    def _cols_from_aliases(self, aliases: Iterable[str]) -> list[str]:
         """Return the column names if aliases exists, otherwise return the same
         strings."""
         return [self._column_aliases.get(al, al) for al in aliases]
 
-    def _col_from_alias(self, alias: str | Callable | None) -> str | None:
+    def _col_from_alias(self, alias: str) -> str:
         """Return the column name if an alias exists, otherwise return the same
         object."""
         return self._column_aliases.get(alias, alias)
 
-    def _aggs_from_aliases(self, aliases: Iterable[str | Callable]) -> list[str | Callable]:
+    def _aggregations_from_aliases(self, aliases: Iterable[str]) -> list[str | Callable]:
         """Return aggregate function names if aliases exists, otherwise return
         the same object."""
-        return [self._agg_aliases.get(al, al) for al in aliases]
+        return [self._aggregate_aliases.get(al, al) for al in aliases]
 
-    def _agg_from_alias(self, alias: str | Callable | None) -> str | Callable | None:
+    def _aggregate_from_alias(self, alias: str) -> str | Callable:
         """Return aggregate function name if an alias exists, otherwise return
         the same object."""
-        return self._agg_aliases.get(alias, alias)
+        return self._aggregate_aliases.get(alias, alias)
 
     def _aggregate_df(
-        self, grouped_df: DataFrameGroupBy, grouped_by: str | list[str], agg_funcs: Sequence[str]
+        self,
+        grouped_df: DataFrameGroupBy,
+        grouped_by: str | list[str],
+        aggregate_names: Sequence[str]
     ) -> DataFrame:
         """Apply pandas built-ins and user-defined aggregate functions (given
         as their aliases) on the `self._primary_col` column of the grouped data
-        `grouped_df`"""
-        agg_funcs = self._aggs_from_aliases(agg_funcs)
-        df = grouped_df.agg({self._primary_col: agg_funcs})
+        `grouped_df`
+        """
+        aggregate_funcs = self._aggregations_from_aliases(aggregate_names)
+        df = grouped_df.agg({self._primary_col: aggregate_funcs})
         # grouped_by can be ["col1", "col2", ...] or "col"
         if isinstance(grouped_by, list):
             new_columns = grouped_by.copy()
         else:
             new_columns = [grouped_by]
         # get rid of multiindex
-        new_columns += self._cols_from_aliases(agg_funcs)
+        new_columns += self._cols_from_aliases(aggregate_names)
         df.columns = Index(new_columns)
         return df
 
-    def __possible_agg_values(self):
-        """Return set of all possible values for `agg_funcs` argument of
-        `make_report` and `print_report` methods.
+    def __possible_aggregations(self):
+        """Return set of all possible values for `aggregations`
+        argument of `make_report` and `print_report` methods.
 
-        Helper method for `_check_report_consistency`
+        Helper method for `_check_report_consistency`.
+        Called on exception.
         """
-        values = set(self._agg_aliases.keys())
-        for agg_name in self._agg_aliases.values():
+        values = set(self._aggregate_aliases.keys())
+        for agg_name in self._aggregate_aliases.values():
             if isinstance(agg_name, str):
                 values.add(agg_name)
         return values
 
-    def _check_report_consistency(self, group_by, agg_funcs):
+    def _check_report_consistency(self, group_by, aggregate_funcs):
         """Check if it is possible to create a report table."""
         if not hasattr(self, "_estimations_table"):
             raise AttributeError(
@@ -206,44 +216,45 @@ class Profiler(metaclass=ABCMeta):
                 f'Invalid `group_by` name "{group_by}".'
                 f"You must use one of these: {self._allowed_groupby}"
             )
-        for a in self._aggs_from_aliases(agg_funcs):
-            if a not in self._agg_aliases.values():
+        for a in self._aggregations_from_aliases(aggregate_funcs):
+            if a not in self._aggregate_aliases.values():
                 raise ValueError(
                     f"Invalid aggregate function `{a}`. "
                     "You should use one of these: "
-                    f"{self.__possible_agg_values()}"
+                    f"{self.__possible_aggregations()}"
                 )
 
     @abstractmethod
     def make_report(
-        self, group_by: str | list[str] | None, agg_funcs: Sequence[str] | None, sort_by: str | None
+        self,
+        group_by: str | list[str] | None,
+        aggregations: Sequence[str] | None,
+        sort_by: str | None,
     ) -> DataFrame:
         """Make a report table.
 
-        \n
         Note: Since the report table is just a `Pandas.DataFrame`,
         you can call Pandas methods like `.to_csv()` or `.to_excel()`
         to export your data in appropriate format.
         """
-        if not agg_funcs:
-            agg_funcs = self._default_agg_funcs
-        self._check_report_consistency(group_by, agg_funcs)
-        sort_by = self._col_from_alias(sort_by)
+        aggregate_names = aggregations if aggregations else self._default_aggregations
+        self._check_report_consistency(group_by, aggregate_names)
+        sort_by = self._col_from_alias(sort_by) if sort_by else None
         report = self._estimations_table.copy()
         if group_by is None:
             sort_by = sort_by or self._primary_col
         else:
             grouped = report.groupby(group_by, as_index=False)
-            report = self._aggregate_df(grouped, group_by, agg_funcs)
+            report = self._aggregate_df(grouped, group_by, aggregate_names)
             if sort_by is None:
-                sort_by = self._col_from_alias(agg_funcs[0])
+                sort_by = self._col_from_alias(aggregate_names[0])
         report.sort_values(sort_by, ascending=False, ignore_index=True, inplace=True)
         return report
 
     def _print_table(self, df: DataFrame, rows, *, float_fmt="g", int_fmt=","):
         print(
             tabulate(
-                tabular_data=df.head(rows),
+                tabular_data=df.head(rows), # type: ignore
                 headers="keys",
                 tablefmt="psql",
                 floatfmt=float_fmt,
@@ -258,15 +269,14 @@ class Profiler(metaclass=ABCMeta):
         self,
         rows: int | None,
         group_by: str | list[str] | None,
-        agg_funcs: Sequence[str] | None,
+        aggregations: Sequence[str] | None,
         sort_by: str | None,
     ) -> DataFrame:
         """Make report and print it.
 
-        \n
         Return `Pandas.DataPrame` as report
         ( See: `self.make_report()` )
         """
-        report = self.make_report(group_by, agg_funcs, sort_by)
+        report = self.make_report(group_by, aggregations, sort_by)
         self._print_table(report, rows)
         raise NotImplementedError("You must override `print_report` in subclass")

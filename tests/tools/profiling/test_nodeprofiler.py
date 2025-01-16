@@ -73,28 +73,28 @@ def test_make_report_g1():
     profiling = NodeProfiler(target_nodes, n_runs=n_runs)
     profiling.estimate_target_nodes()
 
-    profiling.make_report(agg_funcs=['min', 'std', 'count'])
-    profiling.make_report(agg_funcs=['t_min', 't_std', 't_count'])
-    profiling.make_report(agg_funcs=['t_mean', 't_percentage', 't_count'])
-    profiling.make_report(agg_funcs=['median', '%_of_total'])
-    profiling.make_report(agg_funcs=['count', 'min', 'std'])
+    profiling.make_report(aggregations=['min', 'std', 'count'])
+    profiling.make_report(aggregations=['t_min', 't_std', 't_count'])
+    profiling.make_report(aggregations=['t_mean', 't_percentage', 't_count'])
+    profiling.make_report(aggregations=['median', '%_of_total'])
+    profiling.make_report(aggregations=['count', 'min', 'std'])
 
-    report = profiling.make_report(agg_funcs=['count', 'min', 'percentage'])
+    report = profiling.make_report(aggregations=['count', 'min', 'percentage'])
     assert 't_sum' not in report.columns
-    report = profiling.make_report(agg_funcs=['sum', 'percentage'])
+    report = profiling.make_report(aggregations=['sum', 'percentage'])
     assert 't_sum' in report.columns
 
     with pytest.raises(ValueError) as excinfo:
-        profiling.make_report(agg_funcs=['bad_function'])
+        profiling.make_report(aggregations=['bad_function'])
     assert 'Invalid aggregate function' in str(excinfo.value)
 
-    profiling.make_report(agg_funcs=['count', 'single', 'min'],
+    profiling.make_report(aggregations=['count', 'single', 'min'],
                           sort_by='min')
-    profiling.make_report(agg_funcs=['single', 'count', 'min'],
+    profiling.make_report(aggregations=['single', 'count', 'min'],
                           sort_by='t_single')
-    profiling.make_report(agg_funcs=['single', 'count', 'min'],
+    profiling.make_report(aggregations=['single', 'count', 'min'],
                           sort_by='count')
-    profiling.make_report(agg_funcs=['min', 'count', 'single'],
+    profiling.make_report(aggregations=['min', 'count', 'single'],
                           sort_by=None)
 
 def test_print_report_g1_1():
@@ -103,11 +103,11 @@ def test_print_report_g1_1():
     profiling = NodeProfiler(target_nodes, n_runs=n_runs)
     profiling.estimate_target_nodes()
 
-    profiling.print_report(agg_funcs=['min', 'single', 'count'], rows=500)
-    profiling.print_report(agg_funcs=['min'], rows=1)
+    profiling.print_report(aggregations=['min', 'single', 'count'], rows=500)
+    profiling.print_report(aggregations=['min'], rows=1)
     profiling.print_report(group_by=None, rows=2)
     profiling.print_report(group_by=None, rows=20)
-    profiling.print_report(agg_funcs=['single', 'count',
+    profiling.print_report(aggregations=['single', 'count',
                                       'sum', 'percentage'],
                            sort_by='single')
 
@@ -119,7 +119,7 @@ def test_print_report_g1_2():
         n_runs = 10 ** i
         profiling = NodeProfiler(target_nodes, n_runs=n_runs)
         profiling.estimate_target_nodes()
-        profiling.print_report(agg_funcs=['single', 'count',
+        profiling.print_report(aggregations=['single', 'count',
                                           'sum', 'percentage'])
 
 def test_print_report_g1_3():
@@ -128,8 +128,8 @@ def test_print_report_g1_3():
     profiling = NodeProfiler(target_nodes, n_runs=n_runs)
     profiling.estimate_target_nodes()
 
-    profiling.print_report(agg_funcs=['single', 'percentage', 'count'])
-    profiling.print_report(agg_funcs=['count', 't_percentage'])
-    profiling.make_report(agg_funcs=['t_percentage', 'count'])
+    profiling.print_report(aggregations=['single', 'percentage', 'count'])
+    profiling.print_report(aggregations=['count', 't_percentage'])
+    profiling.make_report(aggregations=['t_percentage', 'count'])
 
 

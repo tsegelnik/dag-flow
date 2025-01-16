@@ -26,7 +26,7 @@ _COLUMN_ALIASES: dict[str | Callable, str] = {
     "max": "size_max",
     "var": "size_var",
 }
-_AGG_ALIASES: dict[str, str | Callable] = {
+_AGGREGATE_ALIASES: dict[str, str | Callable] = {
     "single": "mean",
     "size_single": "mean",
     "size_mean": "mean",
@@ -39,7 +39,7 @@ _AGG_ALIASES: dict[str, str | Callable] = {
     "size_var": "var",
 }
 
-_DEFAULT_AGG_FUNCS = ("count", "sum")
+_DEFAULT_AGGREGATIONS = ("count", "sum")
 
 
 class MemoryProfiler(Profiler):
@@ -59,9 +59,9 @@ class MemoryProfiler(Profiler):
         sources: Sequence[Node] = (),
         sinks: Sequence[Node] = (),
     ):
-        self._default_agg_funcs = _DEFAULT_AGG_FUNCS
+        self._default_aggregations = _DEFAULT_AGGREGATIONS
         self._column_aliases = _COLUMN_ALIASES.copy()
-        self._agg_aliases = _AGG_ALIASES.copy()
+        self._aggregate_aliases = _AGGREGATE_ALIASES.copy()
         self._primary_col = "size"
         super().__init__(target_nodes, sources, sinks)
 
@@ -126,10 +126,10 @@ class MemoryProfiler(Profiler):
     def make_report(
         self,
         group_by: str | list[str] | None = "type",
-        agg_funcs: Sequence[str] | None = None,
+        aggregations: Sequence[str] | None = None,
         sort_by: str | None = None,
     ) -> DataFrame:
-        return super().make_report(group_by, agg_funcs, sort_by)
+        return super().make_report(group_by, aggregations, sort_by)
 
     def _present_in_units(self, value, separator="\n\t") -> str:
         """Convert the `value` in bytes to kilobytes, and megabytes.
@@ -148,10 +148,10 @@ class MemoryProfiler(Profiler):
         self,
         rows: int | None = 40,
         group_by: str | list[str] | None = "type",
-        agg_funcs: Sequence[str] | None = None,
+        aggregations: Sequence[str] | None = None,
         sort_by: str | None = None,
     ) -> DataFrame:
-        report = self.make_report(group_by, agg_funcs, sort_by)
+        report = self.make_report(group_by, aggregations, sort_by)
         print(
             f"\nMemory Profiling {hex(id(self))}, "
             f"sort by: `{sort_by or 'default sorting'}`, "

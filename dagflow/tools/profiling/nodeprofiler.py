@@ -56,11 +56,11 @@ class NodeProfiler(TimerProfiler):
     def make_report(
         self,
         group_by: str | list[str] | None = "type",
-        agg_funcs: Sequence[str] | None = None,
+        aggregations: Sequence[str] | None = None,
         sort_by: str | None = None  ,
         average_by_runs: bool = True,
     ) -> DataFrame:
-        report = super().make_report(group_by, agg_funcs, sort_by)
+        report = super().make_report(group_by, aggregations, sort_by)
         if average_by_runs:
             return self._compute_average(report)
         return report
@@ -74,10 +74,10 @@ class NodeProfiler(TimerProfiler):
         self,
         rows: int | None = 40,
         group_by: str | list[str] | None = "type",
-        agg_funcs: Sequence[str] | None = None,
+        aggregations: Sequence[str] | None = None,
         sort_by: str | None = None,
     ) -> DataFrame:
-        report = self.make_report(group_by, agg_funcs, sort_by)
+        report = self.make_report(group_by, aggregations, sort_by)
         print(
             f"\nNode Profiling {hex(id(self))}, "
             f"n_runs for each node: {self._n_runs}\n"

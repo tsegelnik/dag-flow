@@ -134,16 +134,16 @@ def test_print_report_g0():
     _, nodes = graph_0()
 
     mp = MemoryProfiler(nodes).estimate_target_nodes()
-    mp.print_report(40, group_by=None, sort_by='type', agg_funcs=None)
+    mp.print_report(40, group_by=None, sort_by='type', aggregations=None)
     mp.print_report()
 
     mp = MemoryProfiler(nodes).estimate_target_nodes()
     mp.print_report()
 
-    mp.print_report(group_by="node", agg_funcs=("sum", "mean"), sort_by="sum")
+    mp.print_report(group_by="node", aggregations=("sum", "mean"), sort_by="sum")
 
     # "single" also means "mean"
-    mp.print_report(group_by="type", agg_funcs=["var", "single"])
+    mp.print_report(group_by="type", aggregations=["var", "single"])
 
     mp.print_report(group_by="edge_count")
 

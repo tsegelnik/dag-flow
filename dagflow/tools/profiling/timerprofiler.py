@@ -29,7 +29,7 @@ _COLUMN_ALIASES: dict[str | Callable, str] = {
     "max": "t_max",
     "var": "t_var",
 }
-_AGG_ALIASES: dict[str, str | Callable] = {
+_AGGREGATE_ALIASES: dict[str, str | Callable] = {
     "single": "mean",
     "t_single": "mean",
     "t_mean": "mean",
@@ -42,7 +42,7 @@ _AGG_ALIASES: dict[str, str | Callable] = {
     "t_var": "var",
 }
 
-_DEFAULT_AGG_FUNCS = ("count", "single", "sum", "%_of_total")
+_DEFAULT_AGGREGATIONS = ("count", "single", "sum", "%_of_total")
 
 
 class TimerProfiler(Profiler):
@@ -62,11 +62,11 @@ class TimerProfiler(Profiler):
         sinks: Sequence[Node] = (),
         n_runs: int = 100,
     ):
-        self._default_agg_funcs = _DEFAULT_AGG_FUNCS
+        self._default_aggregations = _DEFAULT_AGGREGATIONS
         self._column_aliases = _COLUMN_ALIASES.copy()
-        self._agg_aliases = _AGG_ALIASES.copy()
+        self._aggregate_aliases = _AGGREGATE_ALIASES.copy()
         self._n_runs = n_runs
-        self.register_agg_func(
+        self.register_aggregate_func(
             func=self._t_presentage,
             aliases=["%_of_total", "percentage", "t_percentage"],
             column_name="%_of_total",

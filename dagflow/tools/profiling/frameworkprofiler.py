@@ -42,12 +42,12 @@ class FrameworkProfiler(TimerProfiler):
     ):
         super().__init__(target_nodes, sources, sinks, n_runs)
         self._allowed_groupby = _ALLOWED_GROUPBY
-        self.register_agg_func(
+        self.register_aggregate_func(
             func=self._t_single_node,
             aliases=["t_single_by_node", "single_by_node", "mean_by_node", "t_mean_by_node"],
             column_name="t_single_by_node",
         )
-        self._default_agg_funcs = ("count", "single", "sum", "t_single_by_node")
+        self._default_aggregations = ("count", "single", "sum", "t_single_by_node")
         self._primary_col = "time"
         self._replaced_fcns = {}
         if not (self._sources and self._sinks):
@@ -67,7 +67,7 @@ class FrameworkProfiler(TimerProfiler):
 
     @staticmethod
     def function_stub(node: Node):
-        """An empty stub function of Node that touches parent nodes
+        """An empty function stub of the Node that touches parent nodes
         to start a recursive execution of a graph (without computations)
         """
         for input in node.inputs.iter_all():
@@ -126,19 +126,19 @@ class FrameworkProfiler(TimerProfiler):
     def make_report(
         self,
         group_by: str | list[str] | None = ["source nodes", "sink nodes"],
-        agg_funcs: Sequence[str] | None = None,
+        aggregations: Sequence[str] | None = None,
         sort_by: str | None = None,
     ) -> DataFrame:
-        return super().make_report(group_by, agg_funcs, sort_by)
+        return super().make_report(group_by, aggregations, sort_by)
 
     def print_report(
         self,
         rows: int | None = 40,
         group_by: str | list[str] | None = ["source nodes", "sink nodes"],
-        agg_funcs: Sequence[str] | None = None,
+        aggregations: Sequence[str] | None = None,
         sort_by: str | None = None,
     ) -> DataFrame:
-        report = self.make_report(group_by, agg_funcs, sort_by)
+        report = self.make_report(group_by, aggregations, sort_by)
         print(
             f"\nFramework Profiling {hex(id(self))}, "
             f"n_runs for given subgraph: {self._n_runs}, "
