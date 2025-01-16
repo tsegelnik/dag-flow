@@ -73,7 +73,7 @@ class FrameworkProfiler(TimerProfiler):
         for input in node.inputs.iter_all():
             input.touch()
 
-    def _make_functions_empty(self):
+    def _set_functions_empty(self):
         for node in self._target_nodes:
             self._replaced_fcns[node] = node.function
             # __get__ - a way to bind method to an instance
@@ -85,7 +85,7 @@ class FrameworkProfiler(TimerProfiler):
         self._replaced_fcns = {}
 
     def _estimate_framework_time(self) -> list[float]:
-        self._make_functions_empty()
+        self._set_functions_empty()
 
         def repeat_statement():
             for sink_node in self._sinks:

@@ -48,7 +48,7 @@ def test_make_fcns_empty_g0():
     a0, a1, a2, a3, p0, p1, s0, s1, s2, s3, l_matrix, mdvdt = nodes
 
     profiling = FrameworkProfiler(nodes)
-    profiling._make_functions_empty()
+    profiling._set_functions_empty()
     assert all(n.function == types.MethodType(FrameworkProfiler.function_stub, n)
                for n in nodes)
 
