@@ -89,9 +89,9 @@ def test_CovarianceMatrixGroup(dtype, correlated: bool, testname):
         with raises(RuntimeError):
             cm.add_covariance_for("covmat AB", [pars.norm_parameters[:2]])
 
-        Y >> cm
-        Y >> cm2
-        Y >> cm3
+        Y >> tuple(cm._dict_jacobian.values())
+        Y >> tuple(cm2._dict_jacobian.values())
+        Y >> tuple(cm3._dict_jacobian.values())
 
     if not correlated:
         jac_A = cm._dict_jacobian["covmat A,B"][0].get_data().T

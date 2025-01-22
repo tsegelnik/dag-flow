@@ -4,6 +4,8 @@ from typing import TYPE_CHECKING
 
 from numpy import zeros
 
+from dagflow.core.input_strategy import InputStrategyBase
+
 from ...core.node import Node
 from ...core.type_functions import check_dimension_of_inputs, check_dtype_of_inputs
 
@@ -11,6 +13,11 @@ if TYPE_CHECKING:
     from ...core.input import Input
     from ...core.output import Output
 
+class InputStrategyViewConcat(InputStrategyBase):
+    def __call__(self, idx: int | None = None, scope: int | None = None) -> Input:
+        idx = idx if idx is not None else len(self.node.inputs)
+        iname = f"input_{idx:02d}"
+        return self.node._add_input(iname, allocatable=True, child_output=self.node._output)
 
 class ViewConcat(Node):
     """Creates a node with a single data output which is a concatenated memory of the inputs"""
@@ -20,14 +27,9 @@ class ViewConcat(Node):
     _offsets: list[int]
 
     def __init__(self, name, outname="concat", **kwargs) -> None:
-        super().__init__(name, **kwargs)
+        super().__init__(name, **kwargs, input_strategy=InputStrategyViewConcat(node=self))
         self._output = self._add_output(outname, allocatable=False, forbid_reallocation=True)
         self._offsets = []
-
-    def input_strategy(self, idx: int | None = None, scope: int | None = None) -> Input:
-        idx = idx if idx is not None else len(self.inputs)
-        iname = f"input_{idx:02d}"
-        return self._add_input(iname, allocatable=True, child_output=self._output)
 
     def _function(self):
         self.inputs.touch()

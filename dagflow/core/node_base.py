@@ -78,10 +78,20 @@ class NodeBase:
             print(i, output)
 
     def __rshift__(self, other):
-        """self >> other"""
-        raise ConnectionError(
-            f"The connection of {type(self)} >> {type(other)} is not implemented!", node=self
-        )
+        """
+        self >> other
+
+        .. note:: now the connection for the node supports only one output
+        """
+        if self.outputs.len_all() == 1:
+            out = tuple(self.outputs.all_edges.values())[0]
+        else:
+            raise ConnectionError(
+                f"The connection of {type(self)} >> {type(other)} is not implemented!"
+                " The connection `Node >> ...` supported only for nodes with only 1 output!",
+                node=self,
+            )
+        out >> other
 
     def __rrshift__(self, other: Sequence | Generator):
         """other >> self"""

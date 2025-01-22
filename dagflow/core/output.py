@@ -412,7 +412,7 @@ class Output:
             if inp is None:
                 raise IndexError()
         except IndexError:
-            inp = node._make_input(scope=scope)
+            inp = node(scope=scope)
         if inp is None:
             raise ConnectionError(
                 "Unable to find unconnected input or create a new one!",

@@ -1,7 +1,10 @@
 from __future__ import annotations
 
-from collections.abc import Sequence
+from collections.abc import Generator, Sequence
 from typing import TYPE_CHECKING, Literal
+
+from dagflow.core.input_strategy import InputStrategyBase
+from dagflow.core.output import Output, Outputs
 
 from .exception import CriticalError, InitializationError
 from .node import Node
@@ -309,7 +312,7 @@ class MetaNode(NodeBase):
                 node.print()
 
 
-class MissingInputInherit:
+class MissingInputInherit(InputStrategyBase):
     __slots__ = ("_source_node", "_target_node", "_source_handler", "_inherit_outputs")
     _source_node: Node
     _target_node: MetaNode
@@ -317,6 +320,7 @@ class MissingInputInherit:
     _inherit_outputs: bool
 
     def __init__(self, source_node: Node, target_node: MetaNode, *, inherit_outputs: bool = False):
+        super().__init__()
         self._source_node = source_node
         self._target_node = target_node
         self._inherit_outputs = inherit_outputs
