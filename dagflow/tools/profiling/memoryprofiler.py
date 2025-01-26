@@ -139,8 +139,8 @@ class MemoryProfiler(Profiler):
         return separator.join(
             (
                 f"{value:.1f} bytes",
-                f"{value / 2 ** 10:.1f} KB",
-                f"{value / 2 ** 20:.1f} MB",
+                f"{value / 2**10:.1f} KB",
+                f"{value / 2**20:.1f} MB",
             )
         )
 

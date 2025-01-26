@@ -1,19 +1,19 @@
 from __future__ import annotations
 
-from collections.abc import Sequence
 from textwrap import shorten
 from timeit import repeat
 from typing import TYPE_CHECKING
 
-import numpy
+from numpy import mean
 from pandas import DataFrame, Series
-
-from dagflow.core.node import Node
 
 from .timerprofiler import TimerProfiler
 
 if TYPE_CHECKING:
     from collections.abc import Sequence
+
+    from dagflow.core.node import Node
+
 SOURCE_COL_WIDTH = 32
 SINK_COL_WIDTH = 32
 
@@ -47,7 +47,12 @@ class FrameworkProfiler(TimerProfiler):
         self._allowed_groupby = _ALLOWED_GROUPBY
         self.register_aggregate_func(
             func=self._t_single_node,
-            aliases=["t_single_by_node", "single_by_node", "mean_by_node", "t_mean_by_node"],
+            aliases=[
+                "t_single_by_node",
+                "single_by_node",
+                "mean_by_node",
+                "t_mean_by_node",
+            ],
             column_name="t_single_by_node",
         )
         self._default_aggregations = ("count", "single", "sum", "t_single_by_node")
@@ -61,8 +66,7 @@ class FrameworkProfiler(TimerProfiler):
 
         This as also an example of user-defined aggregate function
         """
-        nodes_count = len(self._target_nodes)
-        return Series({"t_single_by_node": numpy.mean(_s) / nodes_count})
+        return Series({"t_single_by_node": mean(_s) / len(self._target_nodes)})
 
     def _taint_nodes(self):
         for node in self._target_nodes:

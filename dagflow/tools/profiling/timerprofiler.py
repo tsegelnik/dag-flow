@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-import numpy
+from numpy import sum as npsum
 from pandas import DataFrame, Series
 
 from dagflow.core.node import Node
@@ -85,7 +85,7 @@ class TimerProfiler(Profiler):
         """User-defined aggregate function to calculate the percentage of group
         given as `pandas.Series`."""
         total = self._total_estimations_time()
-        return Series({"%_of_total": numpy.sum(_s) * 100 / total})
+        return Series({"%_of_total": npsum(_s) * 100 / total})
 
     def _total_estimations_time(self):
         return self._estimations_table["time"].sum()
