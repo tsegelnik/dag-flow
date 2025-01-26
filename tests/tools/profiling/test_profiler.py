@@ -37,6 +37,7 @@ def test_init_g0(monkeypatch):
         Profiler()
     assert "You shoud provide profiler with `target_nodes`" in str(excinfo.value)
 
+
 def test_init_g1(monkeypatch):
     monkeypatch.setattr(Profiler, "__abstractmethods__", set())
     graph, nodes = graph_1()

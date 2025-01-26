@@ -17,20 +17,24 @@ if TYPE_CHECKING:
     from dagflow.core.input import Input
     from numpy.typing import NDArray
 
+
 def calc_numpy_size(data: NDArray) -> int:
     """Size of Numpy's `NDArray` in bytes"""
     length = reduce(mul, data.shape)
     return length * data.dtype.itemsize
+
 
 def get_input_size(inp: Input) -> int:
     if inp.owns_buffer:
         return calc_numpy_size(inp.own_data)
     return 0
 
+
 def get_output_size(out: Output) -> int:
     if out.owns_buffer or (out.has_data and out._allocating_input is None):
         return calc_numpy_size(out._data)
     return 0
+
 
 def edge_size(edge: Output | Input) -> int:
     """Return size of `edge` data in bytes"""
@@ -44,7 +48,7 @@ def test_basic_edges_g0():
     a0, a1, a2, a3, p0, p1, s0, s1, s2, s3, l_matrix, mdvdt = nodes
 
     # A2 (1 output)
-    out: Output = a2.outputs['array'] # 'array' - default name for Array output
+    out: Output = a2.outputs["array"]  # 'array' - default name for Array output
 
     actual_sizes = MemoryProfiler.estimate_node(a2)
     o_expected = edge_size(out)
@@ -70,7 +74,7 @@ def test_array_store_mods_g0():
 
     # P1 (2 inputs, 2 outputs)
     #  parent output from 'A1' has Array node type with 'store_weak' mode
-    sw_out: Output = a1.outputs['array']
+    sw_out: Output = a1.outputs["array"]
     conn_input: Input = p1.inputs[0]
 
     assert conn_input.parent_output == sw_out
@@ -87,10 +91,11 @@ def test_array_store_mods_g0():
 
     # S0 (2 inputs, 1 output)
     #  parent output from 'A3' has Array node type with 'fill' mode
-    f_out: Output = a3.outputs['array']
+    f_out: Output = a3.outputs["array"]
     conn_input: Input = s0.inputs[1]
 
     assert conn_input.parent_output == f_out
+
 
 def test_estimate_all_edges():
     for graph in (graph_0, graph_1):
@@ -112,7 +117,8 @@ def test_estimate_all_edges():
 
         assert expected == actual, (
             "expected and actual sizes of all edges does not match"
-            )
+        )
+
 
 def test_total_size_property():
     _, nodes = graph_0()
@@ -122,6 +128,7 @@ def test_total_size_property():
 
     assert sum(mp._estimations_table["size"]) == mp.total_size
 
+
 def test_make_report():
     _, nodes = graph_0()
 
@@ -130,11 +137,12 @@ def test_make_report():
 
     assert isinstance(report, DataFrame)
 
+
 def test_print_report_g0():
     _, nodes = graph_0()
 
     mp = MemoryProfiler(nodes).estimate_target_nodes()
-    mp.print_report(40, group_by=None, sort_by='type', aggregations=None)
+    mp.print_report(40, group_by=None, sort_by="type", aggregations=None)
     mp.print_report()
 
     mp = MemoryProfiler(nodes).estimate_target_nodes()
@@ -156,9 +164,3 @@ def test_chain_methods_g1():
 
     report = MemoryProfiler(nodes).estimate_target_nodes().make_report()
     assert isinstance(report, DataFrame)
-
-
-
-
-
-

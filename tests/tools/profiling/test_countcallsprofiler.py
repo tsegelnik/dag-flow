@@ -5,10 +5,12 @@ from pandas import DataFrame
 from dagflow.tools.profiling import CountCallsProfiler
 from test_helpers import graph_0
 
+
 def eval_n_times(node, n):
     """Evaluate node n times. Helper function"""
     for _ in range(n):
         node.eval()
+
 
 def get_estimated_calls(profiler, node):
     """Return the estimated number of calls for the given node.
@@ -16,9 +18,10 @@ def get_estimated_calls(profiler, node):
     Note: This method of retrieving the number of calls should never be used in
     production code, as some nodes could have the same name.
     """
-    indexing = profiler._estimations_table['name'] == node.name
-    estimated_calls = profiler._estimations_table.loc[indexing, 'calls']
+    indexing = profiler._estimations_table["name"] == node.name
+    estimated_calls = profiler._estimations_table.loc[indexing, "calls"]
     return estimated_calls.iloc[0]
+
 
 def test_one_call_g0():
     g, nodes = graph_0()
@@ -31,6 +34,7 @@ def test_one_call_g0():
         assert est_calls == 1
         assert est_calls == node.n_calls
 
+
 def test_multiple_calls_g0():
     g, nodes = graph_0()
     a0, a1, a2, a3, p0, p1, s0, s1, s2, s3, l_matrix, mdvdt = nodes
@@ -38,7 +42,7 @@ def test_multiple_calls_g0():
     target_calls = [11, 3, 17, 14]
     target_nodes = [mdvdt, a0, s3, p0]
     for tc, node in zip(target_calls, target_nodes):
-        eval_n_times(node, tc - 1) # "-1" since there is one estimation already
+        eval_n_times(node, tc - 1)  # "-1" since there is one estimation already
 
     cc_profiler = CountCallsProfiler(nodes).estimate_calls()
 
@@ -51,6 +55,7 @@ def test_multiple_calls_g0():
         calls = get_estimated_calls(cc_profiler, node)
         assert calls == 1
 
+
 def test_reports_g1():
     g, nodes = graph_0()
     a0, a1, a2, a3, p0, p1, s0, s1, s2, s3, l_matrix, mdvdt = nodes
@@ -61,11 +66,10 @@ def test_reports_g1():
 
     cc_profiler = CountCallsProfiler(nodes).estimate_calls()
     report = cc_profiler.make_report()
-    print('\n', report)
+    print("\n", report)
 
     assert isinstance(report, DataFrame)
     assert report.empty == False, "report's DataFrame is empty"
 
     cc_profiler.print_report(group_by=None)
-    cc_profiler.print_report(sort_by='sum')
-
+    cc_profiler.print_report(sort_by="sum")
