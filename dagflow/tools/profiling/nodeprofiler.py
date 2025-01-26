@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-from collections.abc import Sequence
 from timeit import timeit
 from typing import TYPE_CHECKING
 
@@ -9,6 +8,8 @@ from pandas import DataFrame
 from .timerprofiler import TimerProfiler
 
 if TYPE_CHECKING:
+    from collections.abc import Sequence
+
     from dagflow.core.node import Node
 
 _ALLOWED_GROUPBY = ("node", "type", "name")
