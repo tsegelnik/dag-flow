@@ -1,5 +1,6 @@
 from collections import Counter
 
+from pandas import Series
 import pytest
 
 from dagflow.tools.profiling import NodeProfiler
@@ -46,6 +47,15 @@ def test_estimate_target_nodes_g0():
     profiling = NodeProfiler(target_nodes, n_runs=n_runs)
     profiling.estimate_target_nodes()
     assert hasattr(profiling, "_estimations_table")
+
+def test_t_persentage():
+    _, _n = graph_0()
+    profiler = NodeProfiler(_n).estimate_target_nodes()
+    some_group = Series({"time": [0, 0, 0, 0, 0]})
+    profiler._estimations_table['time'].values[:] = 0
+    with pytest.raises(ZeroDivisionError) as excinfo:
+        profiler._t_percentage(some_group)
+    assert "is zero" in str(excinfo.value)
 
 def test_make_report_g0():
     g, _ = graph_0()
@@ -131,5 +141,4 @@ def test_print_report_g1_3():
     profiling.print_report(aggregations=['single', 'percentage', 'count'])
     profiling.print_report(aggregations=['count', 't_percentage'])
     profiling.make_report(aggregations=['t_percentage', 'count'])
-
 

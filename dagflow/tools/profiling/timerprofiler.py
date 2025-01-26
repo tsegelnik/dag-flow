@@ -67,7 +67,7 @@ class TimerProfiler(Profiler):
         self._aggregate_aliases = _AGGREGATE_ALIASES.copy()
         self._n_runs = n_runs
         self.register_aggregate_func(
-            func=self._t_presentage,
+            func=self._t_percentage,
             aliases=["%_of_total", "percentage", "t_percentage"],
             column_name="%_of_total",
         )
@@ -81,10 +81,12 @@ class TimerProfiler(Profiler):
     def n_runs(self, value):
         self._n_runs = value
 
-    def _t_presentage(self, _s: Series) -> Series:
+    def _t_percentage(self, _s: Series) -> Series:
         """User-defined aggregate function to calculate the percentage of group
         given as `pandas.Series`."""
         total = self._total_estimations_time()
+        if total == 0:
+            raise ZeroDivisionError("The total calculated \"time\" is zero!")
         return Series({"%_of_total": npsum(_s) * 100 / total})
 
     def _total_estimations_time(self):
