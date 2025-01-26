@@ -67,8 +67,8 @@ class NodeProfiler(TimerProfiler):
 
     def _print_total_time(self):
         total = self._total_estimations_time()
-        print("total estimations time" " / n_runs: %.9f sec." % (total / self._n_runs))
-        print("total estimations time: %.6f sec." % total)
+        print(f"total estimations time / n_runs: {total / self._n_runs:.9f} sec.")
+        print(f"total estimations time: {total:.6f} sec.")
 
     def print_report(
         self,

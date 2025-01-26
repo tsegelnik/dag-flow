@@ -157,13 +157,13 @@ class MemoryProfiler(Profiler):
             f"sort by: `{sort_by or 'default sorting'}`, "
             f"group by: `{group_by or 'no grouping'}`"
         )
-        # There is a float formatting: since profiler works with bytes,
-        #  it makes no sense to print more than one decimal places of float
+        # Limit float formatting to one decimal place,
+        #  since we are working with bytes and higher precision is unnecessary
         self._print_table(report, rows, float_fmt=".1f")
         size_bytes = self.total_size
-        print(f"TOTAL SIZE:")
+        print("TOTAL SIZE:")
         print(f"\t{self._present_in_units(size_bytes)}")
         s_node = size_bytes / len(self._target_nodes)
-        print(f"TOTAL SIZE / node count:")
+        print("TOTAL SIZE / node count:")
         print(f"\t{self._present_in_units(s_node)}")
         return report
