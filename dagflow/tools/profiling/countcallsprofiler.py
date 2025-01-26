@@ -61,7 +61,7 @@ class CountCallsProfiler(Profiler):
 
     def make_report(
         self,
-        group_by: str | list[str] | None = "type",
+        group_by: str | Sequence[str] | None = "type",
         aggregations: Sequence[str] | None = None,
         sort_by: str | None = None,
     ) -> DataFrame:
@@ -77,7 +77,7 @@ class CountCallsProfiler(Profiler):
     def print_report(
         self,
         rows: int | None = 40,
-        group_by: str | list[str] | None = "type",
+        group_by: str | Sequence[str] | None = "type",
         aggregations: Sequence[str] | None = None,
         sort_by: str | None = None,
     ) -> DataFrame:

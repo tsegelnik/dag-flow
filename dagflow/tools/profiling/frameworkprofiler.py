@@ -3,6 +3,7 @@ from __future__ import annotations
 from collections.abc import Sequence
 from textwrap import shorten
 from timeit import repeat
+from typing import TYPE_CHECKING
 
 import numpy
 from pandas import DataFrame, Series
@@ -11,12 +12,14 @@ from dagflow.core.node import Node
 
 from .timerprofiler import TimerProfiler
 
+if TYPE_CHECKING:
+    from collections.abc import Sequence
 SOURCE_COL_WIDTH = 32
 SINK_COL_WIDTH = 32
 
 # it is possible to group by two columns
 _ALLOWED_GROUPBY = (
-    ["source nodes", "sink nodes"],
+    ("source nodes", "sink nodes"),
     "source nodes",
     "sink nodes",
 )
@@ -96,7 +99,7 @@ class FrameworkProfiler(TimerProfiler):
             stmt=repeat_statement,
             setup=self._taint_nodes,
             repeat=self._n_runs,
-            number=1
+            number=1,
         )
         self._restore_functions()
         self._taint_nodes()
@@ -125,7 +128,7 @@ class FrameworkProfiler(TimerProfiler):
 
     def make_report(
         self,
-        group_by: str | list[str] | None = ["source nodes", "sink nodes"],
+        group_by: str | Sequence[str] | None = ("source nodes", "sink nodes"),
         aggregations: Sequence[str] | None = None,
         sort_by: str | None = None,
     ) -> DataFrame:
@@ -134,7 +137,7 @@ class FrameworkProfiler(TimerProfiler):
     def print_report(
         self,
         rows: int | None = 40,
-        group_by: str | list[str] | None = ["source nodes", "sink nodes"],
+        group_by: str | Sequence[str] | None = ("source nodes", "sink nodes"),
         aggregations: Sequence[str] | None = None,
         sort_by: str | None = None,
     ) -> DataFrame:

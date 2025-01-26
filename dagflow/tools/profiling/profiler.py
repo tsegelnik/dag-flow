@@ -2,13 +2,14 @@ from __future__ import annotations
 
 from abc import ABCMeta, abstractmethod
 from collections import deque
+from collections.abc import Sequence
 from typing import TYPE_CHECKING
 
 from pandas import DataFrame, Index
 from tabulate import tabulate
 
 if TYPE_CHECKING:
-    from collections.abc import Callable, Generator, Iterable, Sequence
+    from collections.abc import Callable, Generator, Iterable
 
     from pandas.api.typing import DataFrameGroupBy
 
@@ -33,7 +34,7 @@ class Profiler(metaclass=ABCMeta):
     _sources: Sequence[Node]
     _sinks: Sequence[Node]
     _estimations_table: DataFrame
-    _allowed_groupby: tuple[list[str] | str, ...]
+    _allowed_groupby: tuple[Sequence[str] | str, ...]
     _default_aggregations: tuple[str, ...]
     _primary_col: str
     _column_aliases: dict[str | Callable, str]
@@ -169,7 +170,7 @@ class Profiler(metaclass=ABCMeta):
     def _aggregate_df(
         self,
         grouped_df: DataFrameGroupBy,
-        grouped_by: str | list[str],
+        grouped_by: str | Sequence[str],
         aggregate_names: Sequence[str]
     ) -> DataFrame:
         """Apply pandas built-ins and user-defined aggregate functions (given
@@ -209,12 +210,12 @@ class Profiler(metaclass=ABCMeta):
                 "Note: first esimate your nodes "
                 "with methods like `estimate_*`"
             )
-        if group_by != None and (
+        if group_by is not None and (
             hasattr(self, "_allowed_groupby") and group_by not in self._allowed_groupby
         ):
             raise ValueError(
-                f'Invalid `group_by` name "{group_by}".'
-                f"You must use one of these: {self._allowed_groupby}"
+                f'Invalid `group_by` name "{group_by}".\n'
+                f"You must use one of these: {', '.join(map(str, self._allowed_groupby))}"
             )
         for a in self._aggregations_from_aliases(aggregate_funcs):
             if a not in self._aggregate_aliases.values():
@@ -227,7 +228,7 @@ class Profiler(metaclass=ABCMeta):
     @abstractmethod
     def make_report(
         self,
-        group_by: str | list[str] | None,
+        group_by: str | Sequence[str] | None,
         aggregations: Sequence[str] | None,
         sort_by: str | None,
     ) -> DataFrame:
@@ -244,6 +245,8 @@ class Profiler(metaclass=ABCMeta):
         if group_by is None:
             sort_by = sort_by or self._primary_col
         else:
+            if isinstance(group_by, Sequence) and not isinstance(group_by, str):
+                group_by = list(group_by)   # pandas accepts only lists
             grouped = report.groupby(group_by, as_index=False)
             report = self._aggregate_df(grouped, group_by, aggregate_names)
             if sort_by is None:
@@ -268,7 +271,7 @@ class Profiler(metaclass=ABCMeta):
     def print_report(
         self,
         rows: int | None,
-        group_by: str | list[str] | None,
+        group_by: str | Sequence[str] | None,
         aggregations: Sequence[str] | None,
         sort_by: str | None,
     ) -> DataFrame:
