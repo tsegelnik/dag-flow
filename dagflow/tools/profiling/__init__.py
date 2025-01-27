@@ -1,8 +1,8 @@
-from .nodeprofiler import NodeProfiler
-from .frameworkprofiler import FrameworkProfiler
-from .memoryprofiler import MemoryProfiler
-from .countcallsprofiler import CountCallsProfiler
-from .DelayNode import DelayNode
+from .node_profiler import NodeProfiler
+from .framework_profiler import FrameworkProfiler
+from .memory_profiler import MemoryProfiler
+from .count_calls_profiler import CountCallsProfiler
+from .delay_node import DelayNode
 
 __all__ = [
     "NodeProfiler",
