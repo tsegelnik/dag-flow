@@ -1,7 +1,7 @@
 from collections import Counter
 
 from pandas import Series
-import pytest
+from pytest import raises
 
 from dagflow.tools.profiling import NodeProfiler
 from dagflow.core.node import Node
@@ -61,7 +61,7 @@ def test_t_persentage():
     profiler = NodeProfiler(_n).estimate_target_nodes()
     some_group = Series({"time": [0, 0, 0, 0, 0]})
     profiler._estimations_table["time"].values[:] = 0
-    with pytest.raises(ZeroDivisionError) as excinfo:
+    with raises(ZeroDivisionError) as excinfo:
         profiler._t_percentage(some_group)
     assert "is zero" in str(excinfo.value)
 
@@ -78,11 +78,11 @@ def test_make_report_g0():
     profiling.make_report(group_by="name")
     profiling.make_report(group_by="type")
 
-    with pytest.raises(ValueError) as excinfo:
+    with raises(ValueError) as excinfo:
         profiling.make_report(group_by="something wrong")
     assert "Invalid `group_by` name" in str(excinfo.value)
 
-    with pytest.raises(AttributeError) as excinfo:
+    with raises(AttributeError) as excinfo:
         NodeProfiler(target_nodes).make_report()
     assert "No estimations found" in str(excinfo.value)
 
@@ -104,7 +104,7 @@ def test_make_report_g1():
     report = profiling.make_report(aggregations=["sum", "percentage"])
     assert "t_sum" in report.columns
 
-    with pytest.raises(ValueError) as excinfo:
+    with raises(ValueError) as excinfo:
         profiling.make_report(aggregations=["bad_function"])
     assert "Invalid aggregate function" in str(excinfo.value)
 

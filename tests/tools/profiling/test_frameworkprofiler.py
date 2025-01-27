@@ -1,4 +1,4 @@
-import types
+from types import MethodType
 from collections import Counter
 
 from dagflow.tools.profiling import FrameworkProfiler
@@ -53,7 +53,7 @@ def test_make_fcns_empty_g0():
     profiling = FrameworkProfiler(nodes)
     profiling._set_functions_empty()
     assert all(
-        n.function == types.MethodType(FrameworkProfiler.function_stub, n)
+        n.function == MethodType(FrameworkProfiler.function_stub, n)
         for n in nodes
     )
 
