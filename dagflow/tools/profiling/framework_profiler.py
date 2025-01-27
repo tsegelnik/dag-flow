@@ -7,7 +7,7 @@ from typing import TYPE_CHECKING
 from numpy import mean
 from pandas import DataFrame, Series
 
-from .timerprofiler import TimerProfiler
+from .timer_profiler import TimerProfiler
 
 if TYPE_CHECKING:
     from collections.abc import Sequence

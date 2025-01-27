@@ -5,7 +5,7 @@ from typing import TYPE_CHECKING
 
 from pandas import DataFrame
 
-from .timerprofiler import TimerProfiler
+from .timer_profiler import TimerProfiler
 
 if TYPE_CHECKING:
     from collections.abc import Sequence
