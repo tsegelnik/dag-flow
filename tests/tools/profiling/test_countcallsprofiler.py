@@ -24,7 +24,7 @@ def get_estimated_calls(profiler, node):
 
 
 def test_one_call_g0():
-    g, nodes = graph_0()
+    _, nodes = graph_0()
 
     cc_profiler = CountCallsProfiler(nodes)
     cc_profiler.estimate_calls()
@@ -36,8 +36,8 @@ def test_one_call_g0():
 
 
 def test_multiple_calls_g0():
-    g, nodes = graph_0()
-    a0, a1, a2, a3, p0, p1, s0, s1, s2, s3, l_matrix, mdvdt = nodes
+    _, nodes = graph_0()
+    a0, _, _, _, p0, _, _, _, _, s3, _, mdvdt = nodes
 
     target_calls = [11, 3, 17, 14]
     target_nodes = [mdvdt, a0, s3, p0]
@@ -57,8 +57,8 @@ def test_multiple_calls_g0():
 
 
 def test_reports_g1():
-    g, nodes = graph_0()
-    a0, a1, a2, a3, p0, p1, s0, s1, s2, s3, l_matrix, mdvdt = nodes
+    _, nodes = graph_0()
+    _, _, _, a3, _, p1, _, _, _, _, l_matrix, _ = nodes
 
     eval_n_times(a3, 42)
     eval_n_times(p1, 19)

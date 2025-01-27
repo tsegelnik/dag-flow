@@ -18,23 +18,20 @@ if TYPE_CHECKING:
     from numpy.typing import NDArray
 
 
-def calc_numpy_size(data: NDArray) -> int:
+def _calc_numpy_size(data: NDArray) -> int:
     """Size of Numpy's `NDArray` in bytes"""
     length = reduce(mul, data.shape)
     return length * data.dtype.itemsize
 
-
 def get_input_size(inp: Input) -> int:
     if inp.owns_buffer:
-        return calc_numpy_size(inp.own_data)
+        return _calc_numpy_size(inp.own_data)
     return 0
-
 
 def get_output_size(out: Output) -> int:
     if out.owns_buffer or (out.has_data and out._allocating_input is None):
-        return calc_numpy_size(out._data)
+        return _calc_numpy_size(out._data)
     return 0
-
 
 def edge_size(edge: Output | Input) -> int:
     """Return size of `edge` data in bytes"""
@@ -44,8 +41,8 @@ def edge_size(edge: Output | Input) -> int:
 
 
 def test_basic_edges_g0():
-    g, nodes = graph_0()
-    a0, a1, a2, a3, p0, p1, s0, s1, s2, s3, l_matrix, mdvdt = nodes
+    _, nodes = graph_0()
+    _, _, a2, _, _, _, _, s1, _, _, _, _ = nodes
 
     # A2 (1 output)
     out: Output = a2.outputs["array"]  # 'array' - default name for Array output
@@ -69,8 +66,8 @@ def test_basic_edges_g0():
 
 def test_array_store_mods_g0():
     """Test profiling behavior with different array store modes"""
-    g, nodes = graph_0()
-    a0, a1, a2, a3, p0, p1, s0, s1, s2, s3, l_matrix, mdvdt = nodes
+    _, nodes = graph_0()
+    _, a1, _, a3, _, p1, s0, _, _, _, _, _ = nodes
 
     # P1 (2 inputs, 2 outputs)
     #  parent output from 'A1' has Array node type with 'store_weak' mode

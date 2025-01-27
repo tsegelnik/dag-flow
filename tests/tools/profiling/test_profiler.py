@@ -8,8 +8,8 @@ from test_helpers import graph_0, graph_1
 
 def test_init_g0(monkeypatch):
     monkeypatch.setattr(Profiler, "__abstractmethods__", set())
-    graph, nodes = graph_0()
-    a0, a1, a2, a3, p0, p1, s0, s1, s2, s3, l_matrix, mdvdt = nodes
+    _, nodes = graph_0()
+    a0, a1, a2, a3, _, p1, s0, s1, s2, s3, l_matrix, mdvdt = nodes
 
     target_nodes = [p1, s1, s2]
     profiling = Profiler(target_nodes)
@@ -40,7 +40,7 @@ def test_init_g0(monkeypatch):
 
 def test_init_g1(monkeypatch):
     monkeypatch.setattr(Profiler, "__abstractmethods__", set())
-    graph, nodes = graph_1()
+    _, nodes = graph_1()
     a0, a1, a2, a3, a4, s1, s2, p1, p2 = nodes
 
     sources, sinks = [a4, s1], [p2]

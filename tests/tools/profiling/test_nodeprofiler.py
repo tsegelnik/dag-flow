@@ -56,7 +56,7 @@ def test_estimate_target_nodes_g0():
     assert hasattr(profiling, "_estimations_table")
 
 
-def test_t_persentage():
+def test_t_percentage():
     _, _n = graph_0()
     profiler = NodeProfiler(_n).estimate_target_nodes()
     some_group = Series({"time": [0, 0, 0, 0, 0]})

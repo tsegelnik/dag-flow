@@ -6,8 +6,8 @@ from test_helpers import graph_0, graph_1
 
 
 def test_init_g0():
-    g, nodes = graph_0()
-    a0, a1, a2, a3, p0, p1, s0, s1, s2, s3, l_matrix, mdvdt = nodes
+    _, nodes = graph_0()
+    _, a1, a2, _, p0, p1, s0, s1, s2, s3, _, _ = nodes
 
     target_nodes = [a1, a2, s0, p1, p0, s1, s2, s3]
     profiling = FrameworkProfiler(target_nodes, n_runs=123)
@@ -23,7 +23,7 @@ def test_init_g0():
 
 def test_reveal_source_sink_g0():
     _, nodes = graph_0()
-    a0, a1, a2, a3, p0, p1, s0, s1, s2, s3, l_matrix, mdvdt = nodes
+    a0, a1, a2, a3, _, _, _, s1, s2, s3, l_matrix, mdvdt = nodes
 
     sources, sinks = [a0, a1, a2, a3, l_matrix], [mdvdt, s3]
     profiling = FrameworkProfiler(nodes)
@@ -37,7 +37,7 @@ def test_reveal_source_sink_g0():
     assert Counter(profiling._sinks) == Counter(sinks)
 
 
-def test__taint_nodes_g0():
+def test_taint_nodes_g0():
     _, nodes = graph_0()
 
     profiling = FrameworkProfiler(nodes)
@@ -48,13 +48,12 @@ def test__taint_nodes_g0():
 
 def test_make_fcns_empty_g0():
     _, nodes = graph_0()
-    a0, a1, a2, a3, p0, p1, s0, s1, s2, s3, l_matrix, mdvdt = nodes
+    _, a1, a2, _, _, p1, _, _, s2, s3, _, _ = nodes
 
     profiling = FrameworkProfiler(nodes)
     profiling._set_functions_empty()
     assert all(
-        n.function == MethodType(FrameworkProfiler.function_stub, n)
-        for n in nodes
+        n.function == MethodType(FrameworkProfiler.function_stub, n) for n in nodes
     )
 
     profiling._taint_nodes()
