@@ -55,7 +55,7 @@ class Profiler(metaclass=ABCMeta):
         else:
             raise ValueError(
                 "You shoud provide profiler with `target_nodes` "
-                "or provide `sources` and `sinks` arguments"
+                "or provide `sources` and `sinks` arguments "
                 "to automatically find the target nodes"
             )
 

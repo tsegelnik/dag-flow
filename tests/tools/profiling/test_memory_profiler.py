@@ -139,7 +139,7 @@ def test_print_report_g0():
     _, nodes = graph_0()
 
     mp = MemoryProfiler(nodes).estimate_target_nodes()
-    mp.print_report(40, group_by=None, sort_by="type", aggregations=None)
+    mp.print_report(rows=40, group_by=None, sort_by="type", aggregations=None)
     mp.print_report()
 
     mp = MemoryProfiler(nodes).estimate_target_nodes()

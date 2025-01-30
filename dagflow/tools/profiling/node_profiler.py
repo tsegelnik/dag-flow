@@ -56,6 +56,7 @@ class NodeProfiler(TimerProfiler):
 
     def make_report(
         self,
+        *,
         group_by: str | Sequence[str] | None = "type",
         aggregations: Sequence[str] | None = None,
         sort_by: str | None = None  ,
@@ -73,12 +74,17 @@ class NodeProfiler(TimerProfiler):
 
     def print_report(
         self,
+        *,
         rows: int | None = 40,
         group_by: str | Sequence[str] | None = "type",
         aggregations: Sequence[str] | None = None,
         sort_by: str | None = None,
     ) -> DataFrame:
-        report = self.make_report(group_by, aggregations, sort_by)
+        report = self.make_report(
+            group_by=group_by,
+            aggregations=aggregations,
+            sort_by=sort_by
+        )
         print(
             f"\nNode Profiling {hex(id(self))}, "
             f"n_runs for each node: {self._n_runs}\n"

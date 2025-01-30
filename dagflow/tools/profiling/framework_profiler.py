@@ -132,6 +132,7 @@ class FrameworkProfiler(TimerProfiler):
 
     def make_report(
         self,
+        *,
         group_by: str | Sequence[str] | None = ("source nodes", "sink nodes"),
         aggregations: Sequence[str] | None = None,
         sort_by: str | None = None,
@@ -140,12 +141,17 @@ class FrameworkProfiler(TimerProfiler):
 
     def print_report(
         self,
+        *,
         rows: int | None = 40,
         group_by: str | Sequence[str] | None = ("source nodes", "sink nodes"),
         aggregations: Sequence[str] | None = None,
         sort_by: str | None = None,
     ) -> DataFrame:
-        report = self.make_report(group_by, aggregations, sort_by)
+        report = self.make_report(
+            group_by=group_by,
+            aggregations=aggregations,
+            sort_by=sort_by
+        )
         print(
             f"\nFramework Profiling {hex(id(self))}, "
             f"n_runs for given subgraph: {self._n_runs}, "
