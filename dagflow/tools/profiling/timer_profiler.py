@@ -86,7 +86,7 @@ class TimerProfiler(Profiler):
         given as `pandas.Series`."""
         total = self._total_estimations_time()
         if total == 0:
-            raise ZeroDivisionError("The total calculated \"time\" is zero!")
+            raise ZeroDivisionError('The total calculated "time" is zero!')
         return Series({"%_of_total": npsum(_s) * 100 / total})
 
     def _total_estimations_time(self):

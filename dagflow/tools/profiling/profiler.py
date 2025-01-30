@@ -238,7 +238,7 @@ class Profiler(metaclass=ABCMeta):
         you can call Pandas methods like `.to_csv()` or `.to_excel()`
         to export your data in appropriate format.
         """
-        aggregate_names = aggregations if aggregations else self._default_aggregations
+        aggregate_names = aggregations or self._default_aggregations
         self._check_report_consistency(group_by, aggregate_names)
         sort_by = self._col_from_alias(sort_by) if sort_by else None
         report = self._estimations_table.copy()
@@ -265,7 +265,7 @@ class Profiler(metaclass=ABCMeta):
             )
         )
         if len(df) > rows:
-            print(f" [!] showing only first {rows} rows ")
+            print(f" --- showing first {rows} rows --- \n")
 
     @abstractmethod
     def print_report(
@@ -278,7 +278,7 @@ class Profiler(metaclass=ABCMeta):
         """Make report and print it.
 
         Return `Pandas.DataPrame` as report
-        ( See: `self.make_report()` )
+        ( See: `make_report()` method )
         """
         report = self.make_report(group_by, aggregations, sort_by)
         self._print_table(report, rows)
