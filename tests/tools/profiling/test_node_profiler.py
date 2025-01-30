@@ -13,8 +13,8 @@ n_runs = 1000
 
 
 def test_init():
-    g, nodes = graph_0()
-    a0, a1, a2, a3, p0, p1, s0, s1, s2, s3, l_matrix, mdvdt = nodes
+    _, nodes = graph_0()
+    a0, a1, a2, _, _, p1, _, _, s2, s3, _, _ = nodes
     target_nodes = [a0, a1, s3, s2]
     profiling = NodeProfiler(target_nodes)
     assert Counter(profiling._target_nodes) == Counter(target_nodes)
