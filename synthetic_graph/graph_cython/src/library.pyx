@@ -2,7 +2,7 @@ import cython
 import functools
 from libc.stdlib cimport malloc, free
 
-from node cimport Node, CNode
+from node cimport Node
 from functions cimport fcn_sum, fcn_product, fcn_sin
 
 
