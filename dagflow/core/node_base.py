@@ -3,7 +3,7 @@ from __future__ import annotations
 from collections.abc import Generator, Mapping, Sequence
 
 from ..core.labels import repr_pretty
-from ..tools.logger import logger
+from ..tools.logger import logger  # TODO: bad thing due to Node has logger
 from .exception import ConnectionError, InitializationError
 from .input import Inputs
 from .input_strategy import InputStrateges, InputStrategyBase
@@ -97,11 +97,12 @@ class NodeBase:
         """other >> self"""
         if not isinstance(other, (Sequence, Generator)):
             raise ConnectionError(
-                f"The connection {type(other)=} >> {type(self)=} is not implemented", node=self
+                f"The connection {type(other)=} >> {type(self)=} is not implemented",
+                node=self,
             )
         scope = self._input_strategy._scope + 1
         for out in other:
-            if isinstance(out, (Output, Outputs)):
+            if isinstance(out, Output):
                 out.connect_to_node(self, scope=scope, reassign_scope=False)
             else:
                 out >> self
@@ -127,6 +128,7 @@ class NodeBase:
 
             for input in inputs:
                 if not input.connected():
+                    # TODO: maybe we set logger as a field?
                     logger.debug(f"[<<] connect {name}")
                     output >> input
 

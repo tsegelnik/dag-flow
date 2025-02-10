@@ -6,7 +6,7 @@ from dagflow.core.exception import ClosedGraphError, ConnectionError, UnclosedGr
 from dagflow.core.graph import Graph
 from dagflow.core.input import Input, Inputs
 from dagflow.core.node import Node
-from dagflow.core.output import Output, Outputs
+from dagflow.core.output import Output
 from dagflow.lib.abstract import BlockToOneNode, OneToOneNode
 from dagflow.lib.common import Dummy
 from dagflow.plot.graphviz import savegraph
@@ -118,13 +118,11 @@ def test_Output_to_NestedMKDict(rhs):
         assert check_connection(obj)
 
 
-@mark.parametrize("lcls", (tuple, list, Outputs))
+@mark.parametrize("lcls", (tuple, list))
 @mark.parametrize("rcls", (OneToOneNode, BlockToOneNode))
 def test_Sequence_Output_to_Node(lcls, rcls):
     """
     Test of a connection in the following cases:
-      * `Outputs >> Node`;
-      * `Outputs >> BlockToOneNode`;
       * `Sequence[Output] >> Node`;
       * `Sequence[Output] >> BlockToOneNode`;
     """
@@ -135,60 +133,6 @@ def test_Sequence_Output_to_Node(lcls, rcls):
     assert all(obj.connected() for obj in lhs)
     assert check_connection(rhs)
     assert len(rhs.outputs) == (1 if isinstance(rhs, BlockToOneNode) else 3)
-
-
-@mark.parametrize("rseqcls", (tuple, list))
-@mark.parametrize("rcls", (OneToOneNode, Input))
-def test_Outputs_to_Sequence(rseqcls, rcls):
-    """
-    Test of a connection in the following cases:
-      * `Outputs >> Sequence[Node]`;
-      * `Outputs >> Sequence[Input]`.
-    """
-    lhs = Outputs(Output(f"output_{i}", None) for i in range(3))
-    rhs = rseqcls(rcls(f"rhs_{i}") for i in range(3))
-    lhs >> rhs
-
-    assert all(obj.connected() for obj in lhs)
-    assert all(check_connection(obj) for obj in rhs)
-    if rcls == OneToOneNode:
-        assert all(len(obj.outputs) == 1 for obj in rhs)
-    else:
-        assert all(l == r.parent_output for l, r in zip(lhs, rhs))
-
-
-@mark.parametrize("rseqcls", (tuple, list))
-@mark.parametrize("rcls", (OneToOneNode, Input))
-def test_Outputs_to_SequenceSequence(rseqcls, rcls):
-    """
-    Test of a connection in the following cases:
-      * `Outputs >> Sequence[Sequence[Node]]`;
-      * `Outputs >> Sequence[Sequence[Input]]`.
-    """
-    lhs = Outputs(Output(f"output_{i}", None) for i in range(3))
-    rhs = rseqcls(rseqcls(rcls(f"rhs_{i}{j}") for i in range(3)) for j in range(3))
-    lhs >> rhs
-
-    assert all(obj.connected() for obj in lhs)
-    assert all(all(check_connection(obj2) for obj2 in obj) for obj in rhs)
-    if rcls == OneToOneNode:
-        assert all(all(len(obj2.outputs) == 1 for obj2 in obj) for obj in rhs)
-    else:
-        assert all(all(l == r2.parent_output for r2 in r) for l, r in zip(lhs, rhs))
-
-
-def test_Outputs_to_Inputs():
-    """
-    Test of a connection in the following cases:
-      * `Outputs >> Inputs`.
-    """
-    lhs = Outputs(Output(f"output_{i}", None) for i in range(3))
-    rhs = Inputs(Input(f"input_{i}", None) for i in range(3))
-    lhs >> rhs
-
-    assert all(obj.connected() for obj in lhs)
-    assert all(check_connection(obj) for obj in rhs)
-    assert all(l == r.parent_output for l, r in zip(lhs, rhs))
 
 
 def test_Node_to_Node():

@@ -476,29 +476,30 @@ class Outputs(EdgeContainer):
 
     _repr_pretty_ = repr_pretty
 
-    def __rshift__(self, other: Node | Inputs | Sequence[Input] | Sequence[Node]):
-        """
-        self >> other
-        """
-        from .input import Inputs
-        from .node_base import NodeBase
-
-        match other:
-            case NodeBase():
-                scope = other._input_strategy._scope + 1
-                self.connect_to_node(other, scope=scope, reassign_scope=True)
-            case Sequence() | Inputs():
-                if (x := len(other)) != (y := len(self)):
-                    raise ConnectionError(
-                        f"The outputs length must coincide with len(other), but given {x} vs. {y}"
-                    )
-                for out, subother in zip(self, other):
-                    out >> subother
-            case _:
-                raise ConnectionError(f"Unable to connect the outputs={self} to {other=}!")
-
-    def connect_to_node(self, other, scope=None, reassign_scope=False):
-        for out in self:
-            out.connect_to_node(other, scope=scope)
-        if reassign_scope:
-            other._input_strategy._scope = scope
+# NOTE: now the connetion is not allowed
+#    def __rshift__(self, other: Node | Inputs | Sequence[Input] | Sequence[Node]):
+#        """
+#        self >> other
+#        """
+#        from .input import Inputs
+#        from .node_base import NodeBase
+#
+#        match other:
+#            case NodeBase():
+#                scope = other._input_strategy._scope + 1
+#                self.connect_to_node(other, scope=scope, reassign_scope=True)
+#            case Sequence() | Inputs():
+#                if (x := len(other)) != (y := len(self)):
+#                    raise ConnectionError(
+#                        f"The outputs length must coincide with len(other), but given {x} vs. {y}"
+#                    )
+#                for out, subother in zip(self, other):
+#                    out >> subother
+#            case _:
+#                raise ConnectionError(f"Unable to connect the outputs={self} to {other=}!")
+#
+#    def connect_to_node(self, other, scope=None, reassign_scope=False):
+#        for out in self:
+#            out.connect_to_node(other, scope=scope)
+#        if reassign_scope:
+#            other._input_strategy._scope = scope

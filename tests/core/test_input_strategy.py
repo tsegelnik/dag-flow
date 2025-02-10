@@ -11,11 +11,11 @@ from dagflow.core.input_strategy import (
     AddNewInputAddNewOutputForNInputs,
     InputStrategyBase,
 )
-from dagflow.core.output import Output, Outputs
 from dagflow.lib.common import Dummy
 from dagflow.plot.graphviz import savegraph
 
-# TODO: add a test for AddNewInputAddNewOutputForNInputs
+def get_output(outs):
+    return outs[0]
 
 
 @mark.parametrize("strategy", (None, InputStrategyBase))
@@ -32,7 +32,7 @@ def test_InputStrategyBase(strategy, testname):
     with raises(RuntimeError):
         nodes[0].outputs >> s
     with raises(RuntimeError):
-        (node.outputs for node in nodes[:-1]) >> s
+        ([out for out in node.outputs] for node in nodes[:-1]) >> s
     savegraph(graph, f"output/{testname}.pdf", label="Fail on connect")
 
 
@@ -48,8 +48,8 @@ def test_AddNewInput(testname):
             input_strategy=AddNewInput(output_kws={"allocatable": False}),
         )
 
-    (node.outputs for node in nodes[:-1]) >> s
-    nodes[-1].outputs >> s
+    (get_output(node.outputs) for node in nodes[:-1]) >> s
+    (out for out in nodes[-1].outputs) >> s
 
     print()
     print(testname)
@@ -74,8 +74,8 @@ def test_AddNewInputAddNewOutput(testname):
             input_strategy=AddNewInputAddNewOutput(output_kws={"allocatable": False}),
         )
 
-    (node.outputs for node in nodes[:-1]) >> s
-    nodes[-1].outputs >> s
+    (get_output(node.outputs) for node in nodes[:-1]) >> s
+    (out for out in nodes[-1].outputs) >> s
 
     print()
     print(testname)
@@ -110,8 +110,8 @@ def test_AddNewInputAddAndKeepSingleOutput(testname, child_output):
             ),
         )
 
-    (node.outputs for node in nodes[:-1]) >> s
-    nodes[-1].outputs >> s
+    (get_output(node.outputs) for node in nodes[:-1]) >> s
+    (out for out in nodes[-1].outputs) >> s
 
     print()
     print(testname)
@@ -133,8 +133,7 @@ def test_AddNewInputAddAndKeepSingleOutput(testname, child_output):
 
 @mark.parametrize("n_blocks", (1, 2, 3, 4))
 @mark.parametrize("child_output", (False, True))
-@mark.parametrize("connection_type", (Outputs, Output))
-def test_AddNewInputAddNewOutputForBlock(testname, child_output, n_blocks, connection_type):
+def test_AddNewInputAddNewOutputForBlock(testname, child_output, n_blocks):
     """
     Test AddNewInputAddNewOutputForBlock strategy: add new input on each new connect and
     add an output for each >> group
@@ -151,7 +150,6 @@ def test_AddNewInputAddNewOutputForBlock(testname, child_output, n_blocks, conne
             ),
         )
 
-    get_output = lambda obj: obj if connection_type is Outputs else obj[0]
     match n_blocks:
         case 1:
             (get_output(node.outputs) for node in nodes) >> s
@@ -204,11 +202,8 @@ def test_AddNewInputAddNewOutputForBlock(testname, child_output, n_blocks, conne
 
 @mark.parametrize("n_inp", (1, 2, 4))
 @mark.parametrize("child_output", (False, True))
-@mark.parametrize("connection_type", (Outputs, Output))
 @mark.parametrize("starts_from_0", (False, True))
-def test_AddNewInputAddNewOutputForNInputs(
-    testname, child_output, n_inp, connection_type, starts_from_0
-):
+def test_AddNewInputAddNewOutputForNInputs(testname, child_output, n_inp, starts_from_0):
     """
     Test AddNewInputAddNewOutputForNInputs strategy: add new input on each new connect and
     add an output for each n inputs in >> operator
@@ -228,7 +223,6 @@ def test_AddNewInputAddNewOutputForNInputs(
             ),
         )
 
-    get_output = lambda obj: obj if connection_type is Outputs else obj[0]
     (get_output(node.outputs) for node in nodes) >> s
     assert len(s.outputs) == int(4 / n_inp)
 
