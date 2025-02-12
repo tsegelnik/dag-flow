@@ -88,7 +88,7 @@ class NodeBase:
         else:
             raise ConnectionError(
                 f"The connection of {type(self)} >> {type(other)} is not implemented!"
-                " The connection `Node >> ...` supported only for nodes with only 1 output!",
+                " The connection `Node >> Node` is supported only nodes with only 1 output!",
                 node=self,
             )
         out >> other
@@ -104,8 +104,19 @@ class NodeBase:
         for out in other:
             if isinstance(out, Output):
                 out.connect_to_node(self, scope=scope, reassign_scope=False)
+            elif isinstance(out, NodeBase):
+                outs = out.outputs
+                if outs.len_all() != 1:
+                    raise ConnectionError(
+                        "The connection `Node >> Node` is supported for nodes with only 1 output!",
+                        node=out, output=outs
+                    )
+                outs[0].connect_to_node(self, scope=scope, reassign_scope=False)
             else:
-                out >> self
+                raise ConnectionError(
+                    f"The connection `Sequence[{type(out)}] >> Node` is not allowed!",
+                    node=self,
+                )
         self._input_strategy._scope = scope
 
     def __lshift__(self, storage: Mapping[str, Output]) -> None:

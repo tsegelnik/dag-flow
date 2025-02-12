@@ -135,7 +135,37 @@ def test_Sequence_Output_to_Node(lcls, rcls):
     assert len(rhs.outputs) == (1 if isinstance(rhs, BlockToOneNode) else 3)
 
 
-def test_Node_to_Node():
+def test_NodeWith1Output_to_Node():
+    """Such connections is the same as `Node.outputs[0] >> ...`"""
+    n1 = Node("node1")
+    n2 = Node("node2")
+
+    n1._add_output("o1")
+    n2._add_input("i1")
+
+    n1 >> n2
+    assert n2.inputs[0].connected()
+    assert n1.outputs.len_all() == 1
+    assert n2.inputs.len_all() == 1
+
+
+@mark.parametrize("nodes_count", (1, 2, 3, 4))
+def test_BlockOfNodesWith1Outputs_to_BlockToOneNode(nodes_count):
+    """Such connections is the same as `(Node.outputs[0], ..., Node.outputs[0]) >> BlockToOneNode`"""
+    blocknode = BlockToOneNode("BlockToOneNode")
+
+    nodes = [Node(f"node_{i}") for i in range(nodes_count)]
+    for node in nodes:
+        node._add_output("o1")
+    nodes >> blocknode
+
+    assert blocknode.outputs.len_all() == 1
+    assert blocknode.inputs.len_all() == nodes_count
+    assert all(inp.connected() for inp in blocknode.inputs)
+
+
+def test_NodeWith2Outputs_to_Node():
+    """Such connections are ambiguous, so not allowed"""
     n1 = Node("node1")
     n2 = Node("node2")
 

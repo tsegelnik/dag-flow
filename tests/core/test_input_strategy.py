@@ -14,9 +14,6 @@ from dagflow.core.input_strategy import (
 from dagflow.lib.common import Dummy
 from dagflow.plot.graphviz import savegraph
 
-def get_output(outs):
-    return outs[0]
-
 
 @mark.parametrize("strategy", (None, InputStrategyBase))
 def test_InputStrategyBase(strategy, testname):
@@ -33,6 +30,10 @@ def test_InputStrategyBase(strategy, testname):
         nodes[0].outputs >> s
     with raises(RuntimeError):
         ([out for out in node.outputs] for node in nodes[:-1]) >> s
+    with raises(RuntimeError):
+        nodes[0].outputs[0] >> s
+    with raises(RuntimeError):
+        (node.outputs[0] for node in nodes[:-1]) >> s
     savegraph(graph, f"output/{testname}.pdf", label="Fail on connect")
 
 
@@ -48,7 +49,7 @@ def test_AddNewInput(testname):
             input_strategy=AddNewInput(output_kws={"allocatable": False}),
         )
 
-    (get_output(node.outputs) for node in nodes[:-1]) >> s
+    (node.outputs[0] for node in nodes[:-1]) >> s
     (out for out in nodes[-1].outputs) >> s
 
     print()
@@ -74,7 +75,7 @@ def test_AddNewInputAddNewOutput(testname):
             input_strategy=AddNewInputAddNewOutput(output_kws={"allocatable": False}),
         )
 
-    (get_output(node.outputs) for node in nodes[:-1]) >> s
+    (node.outputs[0] for node in nodes[:-1]) >> s
     (out for out in nodes[-1].outputs) >> s
 
     print()
@@ -110,7 +111,7 @@ def test_AddNewInputAddAndKeepSingleOutput(testname, child_output):
             ),
         )
 
-    (get_output(node.outputs) for node in nodes[:-1]) >> s
+    (node.outputs[0] for node in nodes[:-1]) >> s
     (out for out in nodes[-1].outputs) >> s
 
     print()
@@ -152,17 +153,17 @@ def test_AddNewInputAddNewOutputForBlock(testname, child_output, n_blocks):
 
     match n_blocks:
         case 1:
-            (get_output(node.outputs) for node in nodes) >> s
+            (node.outputs[0] for node in nodes) >> s
         case 2:
-            (get_output(node.outputs) for node in nodes[:2]) >> s
-            (get_output(node.outputs) for node in nodes[2:]) >> s
+            (node.outputs[0] for node in nodes[:2]) >> s
+            (node.outputs[0] for node in nodes[2:]) >> s
         case 3:
             for node in nodes[:2]:
-                get_output(node.outputs) >> s
-            (get_output(node.outputs) for node in nodes[2:]) >> s
+                node.outputs[0] >> s
+            (node.outputs[0] for node in nodes[2:]) >> s
         case 4:
             for node in nodes:
-                get_output(node.outputs) >> s
+                node.outputs[0] >> s
         case _:
             pass
 
@@ -223,7 +224,7 @@ def test_AddNewInputAddNewOutputForNInputs(testname, child_output, n_inp, starts
             ),
         )
 
-    (get_output(node.outputs) for node in nodes) >> s
+    (node.outputs[0] for node in nodes) >> s
     assert len(s.outputs) == int(4 / n_inp)
 
     print()
