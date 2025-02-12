@@ -151,6 +151,8 @@ class Array(Node):
         if remove_used_arrays:
             for key in used_array_keys:
                 localstorage.delete_with_parents(key)
+            if not localstorage:
+                storage.delete_with_parents(path)
 
     def _type_function(self) -> None:
         check_dtype_of_edges(self, slice(None), "array")  # checks List[Output]
