@@ -247,7 +247,11 @@ class Output:
         return tainted
 
     def seti(
-        self, idx: int, value: float, check_taint: bool = False, force_taint: bool = False
+        self,
+        idx: int,
+        value: float,
+        check_taint: bool = False,
+        force_taint: bool = False,
     ) -> bool:
         if self.node.frozen and not force_taint:
             return False
@@ -358,7 +362,11 @@ class Output:
         caller: Input | None = None,
     ) -> None:
         for input in self._child_inputs:
-            input.taint(force_taint=force_taint, force_computation=force_computation, caller=caller)
+            input.taint(
+                force_taint=force_taint,
+                force_computation=force_computation,
+                caller=caller,
+            )
 
     def taint_children_type(self, force_taint: bool = False) -> None:
         for input in self._child_inputs:
@@ -441,11 +449,27 @@ class Output:
         from multikeydict.nestedmkdict import NestedMKDict
 
         from .input import Input, Inputs
+        from .meta_node import MetaNode
         from .node_base import NodeBase
 
         match other:
             case Input():
                 self.connect_to_input(other)
+            case MetaNode():
+                try:
+                    # try firstly a connection like Node
+                    scope = other._input_strategy._scope + 1
+                    self.connect_to_node(other, scope=scope, reassign_scope=True)
+                except AttributeError:
+                    try:
+                        # try use custom implementation of connection in the certain MetaNode
+                        other.__rrshift__(self)  # pyright: ignore
+                    except Exception as exc:
+                        raise ConnectionError(
+                            "Cannot connect an output to MetaNode due to exceptions",
+                            node=other,
+                            output=self,
+                        ) from exc
             case NodeBase():
                 scope = other._input_strategy._scope + 1
                 self.connect_to_node(other, scope=scope, reassign_scope=True)
@@ -475,6 +499,7 @@ class Outputs(EdgeContainer):
         return f"○[{tuple(obj.name for obj in self)}]→"
 
     _repr_pretty_ = repr_pretty
+
 
 # NOTE: now the connetion is not allowed
 #    def __rshift__(self, other: Node | Inputs | Sequence[Input] | Sequence[Node]):

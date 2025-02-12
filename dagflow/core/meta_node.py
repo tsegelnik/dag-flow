@@ -1,10 +1,9 @@
 from __future__ import annotations
 
-from collections.abc import Generator, Sequence
+from collections.abc import Sequence
 from typing import TYPE_CHECKING, Literal
 
 from dagflow.core.input_strategy import InputStrategyBase
-from dagflow.core.output import Output, Outputs
 
 from .exception import CriticalError, InitializationError
 from .node import Node
@@ -45,7 +44,7 @@ class MetaNode(NodeBase):
     _call_functions: dict[str, Callable]
     _node_inputs_pos: Node | None
     _node_outputs_pos: Node | None
-    _input_strategy: Callable
+    _input_strategy: InputStrategyBase
     _call_positional_input: Callable
 
     def __init__(
@@ -64,7 +63,7 @@ class MetaNode(NodeBase):
         self._leading_node = None
         self._node_inputs_pos = None
         self._node_outputs_pos = None
-        self._input_strategy = lambda *_, **__: None
+        self._input_strategy = InputStrategyBase(node=self)
         self._call_functions = {
             "LeadingNode": self._call_leading_node,
             "NewNode": self._call_new_node,
@@ -195,7 +194,7 @@ class MetaNode(NodeBase):
         if inputs_pos:
             self._import_pos_inputs(node)
         if outputs_pos:
-            self._import_pos_outputs(node, namefmt = outputs_pos_fmt)
+            self._import_pos_outputs(node, namefmt=outputs_pos_fmt)
         self._import_kw_inputs(node, kw_inputs, merge=merge_inputs)
         if kw_inputs_optional:
             self._import_kw_inputs(node, kw_inputs_optional, merge=merge_inputs, optional=True)
@@ -221,11 +220,7 @@ class MetaNode(NodeBase):
             self.inputs.add(input, positional=True, keyword=keyword)
 
     def _import_pos_outputs(
-        self,
-        node: Node,
-        *,
-        namefmt: str | None = None,
-        keyword: bool = True
+        self, node: Node, *, namefmt: str | None = None, keyword: bool = True
     ) -> None:
         if self._strategy == "LeadingNode" and self.leading_node is not None:
             keyword = False
@@ -237,8 +232,8 @@ class MetaNode(NodeBase):
             self.outputs.add(
                 output,
                 positional=True,
-                name = namefmt and namefmt.format(output.name),
-                keyword=keyword
+                name=namefmt and namefmt.format(output.name),
+                keyword=keyword,
             )
 
     def _import_kw_inputs(
@@ -283,7 +278,7 @@ class MetaNode(NodeBase):
 
         def getstr(prefix_disconnected, prefix_connected, name, obj):
             if isinstance(obj, tuple):
-                Nconnected = sum(1 for node in obj if node.connected())
+                Nconnected = sum(bool(node.connected()) for node in obj)
                 Nnode = len(obj)
                 Ndisconnected = Nnode - Nconnected
                 if Nconnected == 0:
@@ -316,7 +311,7 @@ class MissingInputInherit(InputStrategyBase):
     __slots__ = ("_source_node", "_target_node", "_source_handler", "_inherit_outputs")
     _source_node: Node
     _target_node: MetaNode
-    _source_handler: Callable
+    _source_handler: InputStrategyBase
     _inherit_outputs: bool
 
     def __init__(self, source_node: Node, target_node: MetaNode, *, inherit_outputs: bool = False):

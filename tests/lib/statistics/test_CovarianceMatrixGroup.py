@@ -89,9 +89,9 @@ def test_CovarianceMatrixGroup(dtype, correlated: bool, testname):
         with raises(RuntimeError):
             cm.add_covariance_for("covmat AB", [pars.norm_parameters[:2]])
 
-        Y >> tuple(cm._dict_jacobian.values())
-        Y >> tuple(cm2._dict_jacobian.values())
-        Y >> tuple(cm3._dict_jacobian.values())
+        Y >> cm
+        Y >> cm2
+        Y >> cm3
 
     if not correlated:
         jac_A = cm._dict_jacobian["covmat A,B"][0].get_data().T
@@ -136,10 +136,7 @@ def test_CovarianceMatrixGroup(dtype, correlated: bool, testname):
     if not correlated:
         vsyst_check = 2.0 * vsyst_check_AB + vsyst_check_CD  # because of using AB and A,B
 
-    if correlated:
-        factors = {"d": 0.0, "f": 10000}
-    else:
-        factors = {"d": 0.0, "f": 5000}
+    factors = {"d": 0.0, "f": 10000} if correlated else {"d": 0.0, "f": 5000}
     rtol = finfo(dtype).resolution
     atol = finfo(dtype).resolution
     if not correlated:

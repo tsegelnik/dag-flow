@@ -1,23 +1,24 @@
 from __future__ import annotations
 
 from collections import defaultdict
+from collections.abc import Generator
 from contextlib import suppress
 from typing import TYPE_CHECKING, Sequence
 
 from multikeydict.nestedmkdict import NestedMKDict
 from multikeydict.typing import KeyLike, TupleKey, properkey
 
+from ...core.exception import ConnectionError
 from ...core.meta_node import MetaNode
-from ...parameters import GaussianParameter, NormalizedGaussianParameter
+from ...core.node import Node, Output
 from ...core.storage import NodeStorage
+from ...parameters import GaussianParameter, NormalizedGaussianParameter
 from ..arithmetic import Sum
 from ..calculus import Jacobian
 from ..linalg import MatrixProductDDt, MatrixProductDVDt
 
 if TYPE_CHECKING:
     from typing import Mapping
-
-    from ...core.node import Node, Output
 
 CovarianceMatrixParameterType = (
     NormalizedGaussianParameter
@@ -108,7 +109,9 @@ class CovarianceMatrixGroup(MetaNode):
             npars_total += npars
 
             jacobian = Jacobian(
-                f"Jacobian ({npars} pars): {name}", parameters=pars, **self._jacobian_kwargs
+                f"Jacobian ({npars} pars): {name}",
+                parameters=pars,
+                **self._jacobian_kwargs,
             )
             jacobian()
             self._add_node(jacobian, kw_inputs={"input": "model"}, merge_inputs=("model",))
@@ -229,9 +232,7 @@ class CovarianceMatrixGroup(MetaNode):
             case [[NormalizedGaussianParameter() | GaussianParameter(), *_], *_]:
                 return parameter_groups
             case [NestedMKDict(), *_]:
-                return tuple(
-                    tuple(group.walkvalues()) for group in parameter_groups
-                )  # pyright: ignore [reportReturnType]
+                return tuple(tuple(group.walkvalues()) for group in parameter_groups)  # pyright: ignore [reportReturnType]
 
         raise RuntimeError("Invalid parameter_groups type")
 
@@ -247,3 +248,13 @@ class CovarianceMatrixGroup(MetaNode):
             return
 
         raise RuntimeError(f"CovarianceMatrixGroup: duplicated parameter {par!s}")
+
+    def __rrshift__(self, other: Output | Node | Sequence | Generator):
+        """Reimplement connection due to uniqueness of the CovarianceMatrixGroup node"""
+        if isinstance(other, (Output, Node)):
+            other >> tuple(self._dict_jacobian.values())  # pyright:ignore
+        elif isinstance(other, (Sequence, Generator)):
+            for lhs, rhs in zip(other, tuple(self._dict_jacobian.values())):
+                lhs >> rhs
+        else:
+            raise ConnectionError(f"Cannot connect {other=} to node", node=self)
