@@ -1,13 +1,19 @@
 from __future__ import annotations
 
 from collections.abc import Generator, Mapping, Sequence
+from typing import TYPE_CHECKING
+
+from multikeydict.nestedmkdict import NestedMKDict
 
 from ..core.labels import repr_pretty
 from ..tools.logger import logger  # TODO: bad thing due to Node has logger
 from .exception import ConnectionError, InitializationError
 from .input import Inputs
-from .input_strategy import InputStrateges, InputStrategyBase
+from .input_strategy import InputStrategyBase
 from .output import Output, Outputs
+
+if TYPE_CHECKING:
+    from ..parameters import Parameter
 
 
 class NodeBase:
@@ -34,6 +40,8 @@ class NodeBase:
         elif issubclass(input_strategy, InputStrategyBase):
             self._input_strategy = input_strategy(node=self)
         else:
+            from .input_strategy import InputStrateges
+
             raise InitializationError(
                 f"Wrong {input_strategy=}! Must be in {InputStrateges}", node=self
             )
@@ -109,7 +117,8 @@ class NodeBase:
                 if outs.len_all() != 1:
                     raise ConnectionError(
                         "The connection `Node >> Node` is supported for nodes with only 1 output!",
-                        node=out, output=outs
+                        node=out,
+                        output=outs,
                     )
                 outs[0].connect_to_node(self, scope=scope, reassign_scope=False)
             else:
@@ -119,20 +128,25 @@ class NodeBase:
                 )
         self._input_strategy._scope = scope
 
-    def __lshift__(self, storage: Mapping[str, Output]) -> None:
+    def __lshift__(self, storage: Mapping[str, Output | Parameter] | NestedMKDict) -> None:
         """
         self << other
 
         For each not connected input try to find output with the same name in storage, then connect.
         """
+        if not isinstance(storage, (Mapping, NestedMKDict)):
+            raise ConnectionError(f"Cannot connect `Node << {type(storage)}`", node=self)
+
+        from ..parameters import Parameter
+
         for name, inputs in self.inputs.all_edges.items():
             output = storage.get(name, None)
             if output is None:
                 continue
+            elif isinstance(output, Parameter):
+                output = output.output
             elif not isinstance(output, Output):
-                output = getattr(output, "output", None)  # TODO: ugly, try something else
-                if not isinstance(output, Output):
-                    raise ConnectionError('[<<] invalid "output"', input=inputs, output=output)
+                raise ConnectionError('[<<] invalid "output"', input=inputs, output=output)
 
             if not isinstance(inputs, Sequence):
                 inputs = (inputs,)
@@ -140,6 +154,7 @@ class NodeBase:
             for input in inputs:
                 if not input.connected():
                     # TODO: maybe we set logger as a field?
+                    #       do we need this logging actually?
                     logger.debug(f"[<<] connect {name}")
                     output >> input
 

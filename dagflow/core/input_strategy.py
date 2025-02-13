@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-from collections.abc import Sequence
 from typing import TYPE_CHECKING
 
 from dagflow.core.exception import InitializationError
@@ -8,8 +7,11 @@ from dagflow.core.exception import InitializationError
 from ..tools.formatter import Formattable, Formatter, SimpleFormatter
 
 if TYPE_CHECKING:
-    from .node_base import NodeBase
+    from collections.abc import Sequence
+
     from .input import Input
+    from .meta_node import MetaNode
+    from .node_base import NodeBase
 
 
 class InputStrategyBase:
@@ -23,7 +25,7 @@ class InputStrategyBase:
     def __init__(self, node: NodeBase | None = None) -> None:
         self.node = node
         self.scope = 0
-    
+
     @property
     def scope(self) -> int:
         return self._scope
@@ -36,7 +38,6 @@ class InputStrategyBase:
             self._scope = 0
         else:
             raise InitializationError(f"Wrong type for scope={val}. Must be int.")
-            
 
     @property
     def node(self) -> NodeBase:
@@ -205,10 +206,9 @@ class AddNewInputAddNewOutputForNInputs(AddNewInput):
 
     def __call__(self, idx=None, scope=None, **kwargs):
         out = None
-        create_output = lambda : self.node._add_output(
-                self.output_fmt.format(len(self.node.outputs)),
-                **self.output_kws
-            )
+        create_output = lambda: self.node._add_output(
+            self.output_fmt.format(len(self.node.outputs)), **self.output_kws
+        )
         if self.n == 1:
             out = create_output()
         elif self._scope % self.n == 0:
@@ -222,10 +222,49 @@ class AddNewInputAddNewOutputForNInputs(AddNewInput):
         return super().__call__(idx, scope=scope)
 
 
+class InheritInputStrategy(InputStrategyBase):
+    """
+    Inherit an input strategy from the source node. It is a special strategy for MetaNode.
+    """
+
+    __slots__ = ("_source_node", "_target_node", "_source_handler", "_inherit_outputs")
+    _source_node: NodeBase
+    _target_node: MetaNode
+    _source_handler: InputStrategyBase
+    _inherit_outputs: bool
+
+    def __init__(
+        self,
+        source_node: NodeBase,
+        target_node: MetaNode,
+        *,
+        inherit_outputs: bool = False,
+    ):
+        super().__init__()
+        self._source_node = source_node
+        self._target_node = target_node
+        self._inherit_outputs = inherit_outputs
+
+        try:
+            self._source_handler = source_node._input_strategy
+        except AttributeError as exc:
+            raise RuntimeError(f"Node {source_node!s} has no missing input handler") from exc
+
+    def __call__(self, *args, **kwargs):
+        newinput = self._source_handler(*args, **kwargs)
+        self._target_node.inputs.add(newinput)
+
+        if self._inherit_outputs and newinput.child_output is not None:
+            self._target_node.outputs.add(newinput.child_output)
+
+        return newinput
+
+
 InputStrateges = {
     AddNewInput,
     AddNewInputAddNewOutput,
     AddNewInputAddAndKeepSingleOutput,
     AddNewInputAddNewOutputForBlock,
     AddNewInputAddNewOutputForNInputs,
+    InheritInputStrategy,
 }
