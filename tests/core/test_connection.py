@@ -1,3 +1,9 @@
+"""
+The file contains tests of graph parts connections via `>>` and `<<` operators.
+Names of tests refer to the corresponding operator:
+`..._to_...` means ``>>`  and `..._from_...` means `<<`
+"""
+
 from collections.abc import Sequence
 
 from pytest import mark, raises
@@ -9,6 +15,7 @@ from dagflow.core.node import Node
 from dagflow.core.output import Output
 from dagflow.lib.abstract import BlockToOneNode, OneToOneNode
 from dagflow.lib.common import Dummy
+from dagflow.parameters import Parameter
 from dagflow.plot.graphviz import savegraph
 from multikeydict.nestedmkdict import NestedMKDict
 
@@ -35,21 +42,43 @@ def check_connection(obj):
     ),
 )
 def test_Output_to_Input_or_Node_or_Sequence(rhs):
+    body_Output_or_Parameter_to_Input_or_Node_or_Sequence(Output("output", None), rhs)
+
+
+@mark.parametrize(
+    "rhs",
+    (
+        Input("input", None),
+        OneToOneNode("node"),
+        Inputs([Input(f"input_{i}", None) for i in range(3)]),
+        [Input(f"input_{i}", None) for i in range(3)],
+        [OneToOneNode(f"node_{i}") for i in range(3)],
+    ),
+)
+def test_Parameter_to_Input_or_Node_or_Sequence(rhs):
+    body_Output_or_Parameter_to_Input_or_Node_or_Sequence(
+        Parameter(Output("output", None), parent=None), rhs
+    )
+
+
+def body_Output_or_Parameter_to_Input_or_Node_or_Sequence(lhs, rhs):
     """
     Test of a connection in the following cases:
-      * `Output >> Input`;
-      * `Output >> Node`;
-      * `Output >> Inputs`;
-      * `Output >> Sequence[Input]`;
-      * `Output >> Sequence[Node]`;
+      * `Output | Parameter >> Input`;
+      * `Output | Parameter >> Node`;
+      * `Output | Parameter >> Inputs`;
+      * `Output | Parameter >> Sequence[Input]`;
+      * `Output | Parameter >> Sequence[Node]`;
     """
-    lhs = Output("output", None)
     lhs >> rhs
 
     assert lhs.connected()
     if isinstance(rhs, Input):
         assert check_connection(rhs)
-        assert rhs.parent_output == lhs
+        if isinstance(lhs, Output):
+            assert rhs.parent_output == lhs
+        elif isinstance(lhs, Parameter):
+            assert rhs.parent_output == lhs.output
     elif isinstance(rhs, Node):
         assert check_connection(rhs)
         assert len(rhs.outputs) == 1
@@ -109,6 +138,38 @@ def test_Output_to_NestedMKDict(rhs):
     Test of a connection in the following cases:
       * `Output >> NestedMkDict[Input | Sequence[Input] | Inputs]`;
       * `Output >> NestedMkDict[Node | Sequence[Node]]`;
+    """
+    lhs = Output("output", None)
+    lhs >> rhs
+
+    assert lhs.connected()
+    for obj in rhs.walkvalues():
+        assert check_connection(obj)
+
+
+@mark.parametrize(
+    "rhs",
+    (
+        NestedMKDict(dic={f"i{i}": Input(f"input_{i}", None) for i in range(3)}),
+        NestedMKDict(dic={f"n{i}": OneToOneNode(f"node_{i}") for i in range(3)}),
+        NestedMKDict(
+            dic={
+                f"i{i}": Inputs([Input(f"input_{j}{i}", None) for j in range(3)]) for i in range(3)
+            }
+        ),
+        NestedMKDict(
+            dic={f"i{i}": [Input(f"input_{j}{i}", None) for j in range(3)] for i in range(3)}
+        ),
+        NestedMKDict(
+            dic={f"n{i}": [OneToOneNode(f"node_{j}{i}") for j in range(3)] for i in range(3)}
+        ),
+    ),
+)
+def test_NestedMKDict_to_NestedMKDict(rhs):
+    """
+    Test of a connection in the following cases:
+      * `NestedMkDict[Output] >> NestedMkDict[Input | Sequence[Input] | Inputs]`;
+      * `NestedMkDict[Output] >> NestedMkDict[Node | Sequence[Node]]`;
     """
     lhs = Output("output", None)
     lhs >> rhs

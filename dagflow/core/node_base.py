@@ -143,9 +143,7 @@ class NodeBase:
             output = storage.get(name, None)
             if output is None:
                 continue
-            elif isinstance(output, Parameter):
-                output = output.output
-            elif not isinstance(output, Output):
+            elif not isinstance(output, (Output, Parameter)):
                 raise ConnectionError('[<<] invalid "output"', input=inputs, output=output)
 
             if not isinstance(inputs, Sequence):
