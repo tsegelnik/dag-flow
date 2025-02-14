@@ -5,6 +5,7 @@ Names of tests refer to the corresponding operator:
 """
 
 from collections.abc import Sequence
+from copy import deepcopy
 
 from pytest import mark, raises
 
@@ -13,6 +14,7 @@ from dagflow.core.graph import Graph
 from dagflow.core.input import Input, Inputs
 from dagflow.core.node import Node
 from dagflow.core.output import Output
+from dagflow.core.storage import NodeStorage
 from dagflow.lib.abstract import BlockToOneNode, OneToOneNode
 from dagflow.lib.common import Dummy
 from dagflow.parameters import Parameter
@@ -31,8 +33,9 @@ def check_connection(obj):
     return False
 
 
+@mark.parametrize("LHS", (Output("output", None), Parameter(Output("output", None), parent=None)))
 @mark.parametrize(
-    "rhs",
+    "RHS",
     (
         Input("input", None),
         OneToOneNode("node"),
@@ -41,27 +44,7 @@ def check_connection(obj):
         [OneToOneNode(f"node_{i}") for i in range(3)],
     ),
 )
-def test_Output_to_Input_or_Node_or_Sequence(rhs):
-    body_Output_or_Parameter_to_Input_or_Node_or_Sequence(Output("output", None), rhs)
-
-
-@mark.parametrize(
-    "rhs",
-    (
-        Input("input", None),
-        OneToOneNode("node"),
-        Inputs([Input(f"input_{i}", None) for i in range(3)]),
-        [Input(f"input_{i}", None) for i in range(3)],
-        [OneToOneNode(f"node_{i}") for i in range(3)],
-    ),
-)
-def test_Parameter_to_Input_or_Node_or_Sequence(rhs):
-    body_Output_or_Parameter_to_Input_or_Node_or_Sequence(
-        Parameter(Output("output", None), parent=None), rhs
-    )
-
-
-def body_Output_or_Parameter_to_Input_or_Node_or_Sequence(lhs, rhs):
+def test_Output_or_Parameter_to_Input_or_Node_or_Sequence(LHS, RHS):
     """
     Test of a connection in the following cases:
       * `Output | Parameter >> Input`;
@@ -70,6 +53,9 @@ def body_Output_or_Parameter_to_Input_or_Node_or_Sequence(lhs, rhs):
       * `Output | Parameter >> Sequence[Input]`;
       * `Output | Parameter >> Sequence[Node]`;
     """
+    # NOTE: LHS and RHS are initialized only once for all the test cases,
+    #       so we need to create their copies to avoid reconnections!
+    lhs, rhs = deepcopy(LHS), deepcopy(RHS)
     lhs >> rhs
 
     assert lhs.connected()
@@ -91,8 +77,9 @@ def body_Output_or_Parameter_to_Input_or_Node_or_Sequence(lhs, rhs):
                 assert len(obj.outputs) == 1
 
 
+@mark.parametrize("LHS", (Output("output", None), Parameter(Output("output", None), parent=None)))
 @mark.parametrize(
-    "rhs",
+    "RHS",
     (
         {f"i{i}": Input(f"input_{i}", None) for i in range(3)},
         {f"n{i}": OneToOneNode(f"node_{i}") for i in range(3)},
@@ -101,13 +88,15 @@ def body_Output_or_Parameter_to_Input_or_Node_or_Sequence(lhs, rhs):
         {f"n{i}": [OneToOneNode(f"node_{j}{i}") for j in range(3)] for i in range(3)},
     ),
 )
-def test_Output_to_Mapping(rhs):
+def test_Output_or_Parameter_to_Mapping(LHS, RHS):
     """
     Test of a connection in the following cases:
-      * `Output >> Mapping[Input | Sequence[Input] | Inputs]`;
-      * `Output >> Mapping[Node | Sequence[Node]]`.
+      * `Output | Parameter >> Mapping[Input | Sequence[Input] | Inputs]`;
+      * `Output | Parameter >> Mapping[Node | Sequence[Node]]`.
     """
-    lhs = Output("output", None)
+    # NOTE: LHS and RHS are initialized only once for all the test cases,
+    #       so we need to create their copies to avoid reconnections!
+    lhs, rhs = deepcopy(LHS), deepcopy(RHS)
     lhs >> rhs
 
     assert lhs.connected()
@@ -115,8 +104,9 @@ def test_Output_to_Mapping(rhs):
         assert check_connection(obj)
 
 
+@mark.parametrize("LHS", (Output("output", None), Parameter(Output("output", None), parent=None)))
 @mark.parametrize(
-    "rhs",
+    "RHS",
     (
         NestedMKDict(dic={f"i{i}": Input(f"input_{i}", None) for i in range(3)}),
         NestedMKDict(dic={f"n{i}": OneToOneNode(f"node_{i}") for i in range(3)}),
@@ -133,13 +123,15 @@ def test_Output_to_Mapping(rhs):
         ),
     ),
 )
-def test_Output_to_NestedMKDict(rhs):
+def test_Output_or_Parameter_to_NestedMKDict(LHS, RHS):
     """
     Test of a connection in the following cases:
-      * `Output >> NestedMkDict[Input | Sequence[Input] | Inputs]`;
-      * `Output >> NestedMkDict[Node | Sequence[Node]]`;
+      * `Output | Parameter >> NestedMkDict[Input | Sequence[Input] | Inputs]`;
+      * `Output | Parameter >> NestedMkDict[Node | Sequence[Node]]`;
     """
-    lhs = Output("output", None)
+    # NOTE: LHS and RHS are initialized only once for all the test cases,
+    #       so we need to create their copies to avoid reconnections!
+    lhs, rhs = deepcopy(LHS), deepcopy(RHS)
     lhs >> rhs
 
     assert lhs.connected()
@@ -147,47 +139,21 @@ def test_Output_to_NestedMKDict(rhs):
         assert check_connection(obj)
 
 
-@mark.parametrize(
-    "rhs",
-    (
-        NestedMKDict(dic={f"i{i}": Input(f"input_{i}", None) for i in range(3)}),
-        NestedMKDict(dic={f"n{i}": OneToOneNode(f"node_{i}") for i in range(3)}),
-        NestedMKDict(
-            dic={
-                f"i{i}": Inputs([Input(f"input_{j}{i}", None) for j in range(3)]) for i in range(3)
-            }
-        ),
-        NestedMKDict(
-            dic={f"i{i}": [Input(f"input_{j}{i}", None) for j in range(3)] for i in range(3)}
-        ),
-        NestedMKDict(
-            dic={f"n{i}": [OneToOneNode(f"node_{j}{i}") for j in range(3)] for i in range(3)}
-        ),
-    ),
-)
-def test_NestedMKDict_to_NestedMKDict(rhs):
-    """
-    Test of a connection in the following cases:
-      * `NestedMkDict[Output] >> NestedMkDict[Input | Sequence[Input] | Inputs]`;
-      * `NestedMkDict[Output] >> NestedMkDict[Node | Sequence[Node]]`;
-    """
-    lhs = Output("output", None)
-    lhs >> rhs
-
-    assert lhs.connected()
-    for obj in rhs.walkvalues():
-        assert check_connection(obj)
-
-
-@mark.parametrize("lcls", (tuple, list))
+@mark.parametrize("lcls", (Output, Parameter))
+@mark.parametrize("lclsseq", (tuple, list))
 @mark.parametrize("rcls", (OneToOneNode, BlockToOneNode))
-def test_Sequence_Output_to_Node(lcls, rcls):
+def test_Sequence_Output_to_Node(lcls, lclsseq, rcls):
     """
     Test of a connection in the following cases:
-      * `Sequence[Output] >> Node`;
-      * `Sequence[Output] >> BlockToOneNode`;
+      * `Sequence[Output|Parameter] >> Node`;
+      * `Sequence[Output|Parameter] >> BlockToOneNode`;
     """
-    lhs = lcls(Output(f"output_{i}", None) for i in range(3))
+    constructor = (
+        lambda name: Output(name, None)
+        if isinstance(lcls, Output)
+        else Parameter(Output(name, None), parent=None)
+    )
+    lhs = lclsseq(constructor(f"output_{i}") for i in range(3))
     rhs = rcls("node")
     lhs >> rhs
 
@@ -394,11 +360,7 @@ def test_09(testname):
         with raises(ConnectionError):
             n2 << {"i2": object()}
 
-        n2 << {
-            "i1": out11,
-            "i2": out12,
-            "i3": out13,
-        }
+        n2 << {"i1": out11, "i2": out12, "i3": out13}
 
     out2.data
 

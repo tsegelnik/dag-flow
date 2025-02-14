@@ -108,10 +108,14 @@ class NodeBase:
                 f"The connection {type(other)=} >> {type(self)=} is not implemented",
                 node=self,
             )
+        from ..parameters import Parameter
+
         scope = self._input_strategy._scope + 1
         for out in other:
             if isinstance(out, Output):
                 out.connect_to_node(self, scope=scope, reassign_scope=False)
+            elif isinstance(out, Parameter):
+                out._common_output.connect_to_node(self, scope=scope, reassign_scope=False)
             elif isinstance(out, NodeBase):
                 outs = out.outputs
                 if outs.len_all() != 1:
@@ -146,7 +150,7 @@ class NodeBase:
             elif not isinstance(output, (Output, Parameter)):
                 raise ConnectionError('[<<] invalid "output"', input=inputs, output=output)
 
-            if not isinstance(inputs, Sequence):
+            if not isinstance(inputs, (Sequence, Generator)):
                 inputs = (inputs,)
 
             for input in inputs:

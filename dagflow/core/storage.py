@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from collections.abc import Generator
 from typing import TYPE_CHECKING
 
 from ordered_set import OrderedSet
@@ -18,17 +19,16 @@ if TYPE_CHECKING:
     from typing import TYPE_CHECKING, Any, Literal
 
     from collections.abc import Mapping, MutableSet, Sequence, Container
+    from pandas import DataFrame
 
-from LaTeXDatax import datax
 from numpy import nan, ndarray
-from pandas import DataFrame
+
+# TODO: Maybe this import and set options should be in some function?
+#       Set options in the current file may lead to unexpected results in other places
 from pandas import set_option as pandas_set_option
-from tabulate import tabulate
 
 pandas_set_option("display.max_rows", None)
 pandas_set_option("display.max_colwidth", 100)
-
-from shutil import get_terminal_size
 
 
 def trunc(text: str, width: int) -> str:
@@ -82,8 +82,8 @@ class NodeStorage(NestedMKDict):
     ):
         from os import makedirs
 
-        from ..plot.graphviz import GraphDot
         from ..parameters import Parameters
+        from ..plot.graphviz import GraphDot
 
         items = list(self.walkitems())
         nitems = len(items)
@@ -93,7 +93,7 @@ class NodeStorage(NestedMKDict):
                 case Node():
                     pass
                 case Parameters():
-                    if (constraint:=node.constraint):
+                    if constraint := node.constraint:
                         node = constraint._norm_node
                     else:
                         node = node._value_node
@@ -125,7 +125,7 @@ class NodeStorage(NestedMKDict):
             gd = GraphDot.from_nodes([node], mindepth=mindepth, maxdepth=maxdepth, **kwargs)
             gd.savegraph(fullname, quiet=True)
 
-            logger.log(INFO1, f"Write: {fullname} [{i+1}/{nitems}]")
+            logger.log(INFO1, f"Write: {fullname} [{i + 1}/{nitems}]")
 
     def __setitem__(self, key: KeyLike, item: Any) -> None:
         from ..parameters import Parameter, Parameters
@@ -156,17 +156,17 @@ class NodeStorage(NestedMKDict):
 
         def function(i: int, outkey: TupleKey, inkey: TupleKey):
             nonlocal nconnections
-            output = self[outkey]
-            input = other[inkey]
+            out = self[outkey]
+            inp = other[inkey]
 
             try:
-                output >> input
+                out >> inp
             except TypeError as e:
                 raise ConnectionError(
-                    f"Invalid NodeStorage>> types for {outkey}/{inkey}: {type(output)}/{type(input)}"
+                    f"Invalid NodeStorage>> types for {outkey}/{inkey}: {type(out)}/{type(inp)}"
                 ) from e
 
-            if self._remove_connected_inputs and isinstance(input, (Input, tuple)):
+            if self._remove_connected_inputs and isinstance(inp, (Input, tuple)):
                 to_remove.append(inkey)
 
             nconnections += 1
@@ -300,7 +300,6 @@ class NodeStorage(NestedMKDict):
     #
     # Converters
     #
-
     def to_list(self, **kwargs) -> list:
         return self.visit(ParametersVisitor(kwargs)).data_list
 
@@ -308,9 +307,20 @@ class NodeStorage(NestedMKDict):
         return self.visit(ParametersVisitor(kwargs)).data_dict
 
     def to_df(self, *, columns: list[str] | None = None, **kwargs) -> DataFrame:
+        from pandas import DataFrame
+
         dct = self.to_list(**kwargs)
         if columns is None:
-            columns = ["path", "value", "central", "sigma", "flags", "count", "shape", "label"]
+            columns = [
+                "path",
+                "value",
+                "central",
+                "sigma",
+                "flags",
+                "count",
+                "shape",
+                "label",
+            ]
         df = DataFrame(dct, columns=columns)
 
         df.insert(4, "sigma_rel_perc", df["sigma"])
@@ -342,9 +352,18 @@ class NodeStorage(NestedMKDict):
         return df.to_string(**kwargs)
 
     def to_table(
-        self, *, df_kwargs: Mapping = {}, truncate: int | bool | Literal["auto"] = False, **kwargs
+        self,
+        *,
+        df_kwargs: Mapping = {},
+        truncate: int | bool | Literal["auto"] = False,
+        **kwargs,
     ) -> str:
+        from shutil import get_terminal_size
+
+        from tabulate import tabulate
+
         df = self.to_df(**df_kwargs)
+
         kwargs.setdefault("headers", df.columns)
         kwargs.setdefault("showindex", False)
         ret = tabulate(df, **kwargs)
@@ -357,17 +376,11 @@ class NodeStorage(NestedMKDict):
             case "auto":
                 from sys import stdout
 
-                if stdout.isatty():
-                    truncate = get_terminal_size().columns
-                else:
-                    truncate = False
+                truncate = get_terminal_size().columns if stdout.isatty() else False
             case _:
                 raise RuntimeError(f"Invalid {truncate=} value")
 
-        if truncate:
-            return trunc(ret, width=truncate)
-
-        return ret
+        return trunc(ret, width=truncate) if truncate else ret
 
     def print(self, *args, **kwargs) -> None:
         print(self.to_table(*args, **kwargs))
@@ -393,6 +406,8 @@ class NodeStorage(NestedMKDict):
         return tex, df if return_df else tex
 
     def to_datax(self, filename: str, **kwargs) -> None:
+        from LaTeXDatax import datax
+
         data = self.to_dict(**kwargs)
         include = ("value", "central", "sigma", "sigma_rel_perc")
         odict = {".".join(k): v for k, v in data.walkitems() if (k and k[-1] in include)}
@@ -434,6 +449,42 @@ class NodeStorage(NestedMKDict):
             common_storage ^= storage
         else:
             common_storage |= storage
+
+    #
+    # Graph connection via >> and <<
+    #
+    ### TODO: should we catch exceptions here explicitly?
+    def __rshift__(self, other):
+        """self >> other"""
+        from ..parameters import Parameter
+        from .node_base import NodeBase
+
+        for obj in self.walkvalues():
+            if isinstance(obj, (Output, Parameter)) and not obj.connected():
+                obj >> other
+            elif isinstance(obj, NodeBase) and obj.outputs.len_all() == 1:
+                out = obj.outputs[0]
+                if not out.connected():
+                    out >> other
+
+    def __lshift__(self, other):
+        """self << other"""
+        from .node_base import NodeBase
+
+        for obj in self.walkvalues():
+            if isinstance(obj, NodeBase):
+                obj << other
+
+    def __rlshift__(self, other):
+        """other << self"""
+        from ..parameters import Parameter
+
+        if not isinstance(other, (Sequence, Generator)):
+            raise RuntimeError(f"Cannot connect `{type(other)} << NodeStorage`")
+
+        for obj in self.walkvalues():
+            if isinstance(obj, (Output, Parameter)):
+                obj << other
 
 
 _context_storage: list[NodeStorage] = []
@@ -571,7 +622,7 @@ class PlotVisitor(NestedMKDictVisitor):
             self._currently_active_overlay = None
 
     def visit(self, key, output):
-        from .plot import plot_auto
+        from ..plot.plot import plot_auto
 
         if not isinstance(output, Output) or not output.labels.plottable:
             return
@@ -666,13 +717,11 @@ class ParametersVisitor(NestedMKDictVisitor):
         if not self._localdata:
             return
 
-        self._data_list.append(
-            {
-                "path": f"group: {'.'.join(self._path)} [{len(self._localdata)}]",
-                "count": len(self._localdata),
-                "label": "[group]",
-            }
-        )
+        self._data_list.append({
+            "path": f"group: {'.'.join(self._path)} [{len(self._localdata)}]",
+            "count": len(self._localdata),
+            "label": "[group]",
+        })
         self._data_list.extend(self._localdata)
         self._localdata = []
 
