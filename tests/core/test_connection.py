@@ -33,6 +33,9 @@ def check_connection(obj):
     return False
 
 
+##################################################################################
+######### Operator >>
+##################################################################################
 @mark.parametrize("LHS", (Output("output", None), Parameter(Output("output", None), parent=None)))
 @mark.parametrize(
     "RHS",
@@ -175,7 +178,7 @@ def test_NodeStorage_to_NodeStorage(lcls, RHS):
 @mark.parametrize("lcls", (Output, Parameter))
 @mark.parametrize("lclsseq", (tuple, list))
 @mark.parametrize("rcls", (OneToOneNode, BlockToOneNode))
-def test_Sequence_Output_to_Node(lcls, lclsseq, rcls):
+def test_Sequence_Output_or_Parameter_to_Node(lcls, lclsseq, rcls):
     """
     Test of a connection in the following cases:
       * `Sequence[Output|Parameter] >> Node`;
@@ -240,6 +243,72 @@ def test_NodeWith2Outputs_to_Node():
         n1 >> n2
 
 
+##################################################################################
+######### Operator <<
+##################################################################################
+@mark.parametrize("lcls", (OneToOneNode, BlockToOneNode))
+@mark.parametrize("rcls", (Output, Parameter))
+def test_Node_from_NodeStorage(lcls, rcls):
+    """
+    Test of a connection in the following cases:
+      * `Node << NodeStorage[Output|Parameter]`;
+      * `Node << NodeStorage[Output|Parameter]`;
+    """
+    constructor = (
+        lambda name: Output(name, None)
+        if isinstance(rcls, Output)
+        else Parameter(Output(name, None), parent=None)
+    )
+    lhs = lcls(name="node")
+    lhs._add_input("arr_1")
+    lhs._add_input("arr_2")
+    rhs = NodeStorage(dic={f"arr_{i}": constructor(name=f"arr_{i}") for i in range(3)})
+    lhs << rhs
+
+    for obj in rhs.walkvalues():
+        if isinstance(obj, Parameter):
+            name = obj._connectible_output.name
+            if name == "arr_0":
+                assert not obj.connected()
+                with raises(KeyError):
+                    lhs.inputs[name]
+                continue
+            assert obj.connected() and obj._connectible_output.child_inputs[0] == lhs.inputs[name]
+        elif isinstance(obj, Output):
+            name = obj.name
+            if name == "arr_0":
+                assert not obj.connected()
+                with raises(KeyError):
+                    lhs.inputs[name]
+                continue
+            assert obj.connected() and obj.child_inputs[0] == lhs.inputs[name]
+    assert check_connection(lhs)
+
+
+@mark.parametrize("lclsseq", (tuple, list))
+@mark.parametrize("rcls", (Output, Parameter))
+def test_Sequence_Node_from_NodeStorage(lclsseq, rcls):
+    """
+    Test of a connection in the following cases:
+      * `Sequence[Node] << NodeStorage[Output|Parameter]`;
+      * `Sequence[Node] << NodeStorage[Output|Parameter]`;
+    """
+    constructor = (
+        lambda name: Output(name, None)
+        if isinstance(rcls, Output)
+        else Parameter(Output(name, None), parent=None)
+    )
+    lhs = lclsseq(OneToOneNode(name=f"node_{i}") for i in range(3))
+    rhs = NodeStorage(dic={f"out_{i}": constructor(name=f"out_{i}") for i in range(3)})
+    lhs << rhs
+
+    assert all(obj.connected() for obj in rhs.walkvalues())
+    assert check_connection(lhs)
+
+
+##################################################################################
+######### Other old tests
+##################################################################################
 def test_03():
     n1 = Node("node1")
     n2 = Node("node2")

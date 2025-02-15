@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from collections.abc import Generator
+from collections.abc import Generator, Sequence
 from typing import TYPE_CHECKING
 
 from numpy import nan, ndarray
@@ -16,7 +16,7 @@ from .node import Node
 from .output import Output
 
 if TYPE_CHECKING:
-    from collections.abc import Container, Mapping, MutableSet, Sequence
+    from collections.abc import Container, Mapping, MutableSet
     from typing import Any, Literal
 
     from matplotlib.axes import Axes
@@ -201,7 +201,7 @@ class NodeStorage(NestedMKDict):
 
         for obj in self.walkvalues():
             if isinstance(obj, (Output, Parameter, Node)):
-                obj << other
+                obj >> other
 
     #
     # Finalizers
