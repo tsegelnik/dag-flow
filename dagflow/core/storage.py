@@ -22,8 +22,6 @@ if TYPE_CHECKING:
     from matplotlib.axes import Axes
     from pandas import DataFrame
 
-    from .node_base import NodeBase
-
 # TODO: Maybe this import and set options should be in some function?
 #       Set options in the current file may lead to unexpected results in other places
 from pandas import set_option as pandas_set_option
@@ -181,6 +179,7 @@ class NodeStorage(NestedMKDict):
             del other[key]
 
     def __lshift__(self, other: NestedMKDict):
+        """self << other"""
         if not isinstance(other, NestedMKDict):
             raise RuntimeError("Operator >> RHS should be NestedMKDict")
 
@@ -194,14 +193,14 @@ class NodeStorage(NestedMKDict):
 
     def __rlshift__(self, other):
         """other << self"""
-        from ..parameters import Parameter
-
         if not isinstance(other, (Sequence, Generator)):
-            raise RuntimeError(f"Cannot connect `{type(other)} << NodeStorage`")
+            raise RuntimeError(f"Cannot connect `{type(other)} << NodeStorage`!")
 
-        for obj in self.walkvalues():
-            if isinstance(obj, (Output, Parameter, Node)):
-                obj >> other
+        for obj in other:
+            try:
+                obj << self
+            except Exception as exc:
+                raise RuntimeError(f"Cannot connect `{type(obj)} << NodeStorage`!") from exc
 
     #
     # Finalizers

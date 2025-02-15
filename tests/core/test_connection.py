@@ -287,7 +287,8 @@ def test_Node_from_NodeStorage(lcls, rcls):
 
 @mark.parametrize("lclsseq", (tuple, list))
 @mark.parametrize("rcls", (Output, Parameter))
-def test_Sequence_Node_from_NodeStorage(lclsseq, rcls):
+@mark.parametrize("add_inputs", (True, False))
+def test_Sequence_Node_from_NodeStorage(lclsseq, rcls, add_inputs):
     """
     Test of a connection in the following cases:
       * `Sequence[Node] << NodeStorage[Output|Parameter]`;
@@ -299,37 +300,25 @@ def test_Sequence_Node_from_NodeStorage(lclsseq, rcls):
         else Parameter(Output(name, None), parent=None)
     )
     lhs = lclsseq(OneToOneNode(name=f"node_{i}") for i in range(3))
-    rhs = NodeStorage(dic={f"out_{i}": constructor(name=f"out_{i}") for i in range(3)})
+    if add_inputs:
+        for node in lhs:
+            for i in range(3):
+                node._add_input(f"arr_{i}")
+    rhs = NodeStorage(dic={f"arr_{i}": constructor(name=f"arr_{i}") for i in range(3)})
     lhs << rhs
 
-    assert all(obj.connected() for obj in rhs.walkvalues())
-    assert check_connection(lhs)
+    if add_inputs:
+        assert all(obj.connected() for obj in rhs.walkvalues())
+        assert check_connection(lhs)
+    else:
+        assert all(not obj.connected() for obj in rhs.walkvalues())
+        assert all(node.inputs.len_all() == 0 for node in lhs)
+    assert all(node.outputs.len_all() == 0 for node in lhs)
 
 
 ##################################################################################
 ######### Other old tests
 ##################################################################################
-def test_03():
-    n1 = Node("node1")
-    n2 = Node("node2")
-
-    out = n1._add_output("o1")
-    n2._add_input("i1")
-    n2._add_output("o1")
-
-    out >> n2
-
-
-def test_04():
-    n1 = Node("node1")
-    n2 = Node("node2")
-
-    out = n1._add_output("o1")
-    n2._add_pair("i1", "o1")
-
-    out >> n2
-
-
 def test_05():
     n1 = Dummy("node1")
     n2 = Dummy("node2")
