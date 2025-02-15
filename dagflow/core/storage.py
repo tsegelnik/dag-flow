@@ -3,6 +3,7 @@ from __future__ import annotations
 from collections.abc import Generator
 from typing import TYPE_CHECKING
 
+from numpy import nan, ndarray
 from ordered_set import OrderedSet
 
 from multikeydict.nestedmkdict import NestedMKDict
@@ -15,13 +16,13 @@ from .node import Node
 from .output import Output
 
 if TYPE_CHECKING:
-    from matplotlib.axes import Axes
-    from typing import TYPE_CHECKING, Any, Literal
+    from collections.abc import Container, Mapping, MutableSet, Sequence
+    from typing import Any, Literal
 
-    from collections.abc import Mapping, MutableSet, Sequence, Container
+    from matplotlib.axes import Axes
     from pandas import DataFrame
 
-from numpy import nan, ndarray
+    from .node_base import NodeBase
 
 # TODO: Maybe this import and set options should be in some function?
 #       Set options in the current file may lead to unexpected results in other places
@@ -190,6 +191,17 @@ class NodeStorage(NestedMKDict):
                 raise ConnectionError(
                     f"Invalid NodeStorage<< types for {keyleft}: {type(node)} {type(other)}"
                 ) from e
+
+    def __rlshift__(self, other):
+        """other << self"""
+        from ..parameters import Parameter
+
+        if not isinstance(other, (Sequence, Generator)):
+            raise RuntimeError(f"Cannot connect `{type(other)} << NodeStorage`")
+
+        for obj in self.walkvalues():
+            if isinstance(obj, (Output, Parameter, Node)):
+                obj << other
 
     #
     # Finalizers
@@ -449,42 +461,6 @@ class NodeStorage(NestedMKDict):
             common_storage ^= storage
         else:
             common_storage |= storage
-
-    #
-    # Graph connection via >> and <<
-    #
-    ### TODO: should we catch exceptions here explicitly?
-    def __rshift__(self, other):
-        """self >> other"""
-        from ..parameters import Parameter
-        from .node_base import NodeBase
-
-        for obj in self.walkvalues():
-            if isinstance(obj, (Output, Parameter)) and not obj.connected():
-                obj >> other
-            elif isinstance(obj, NodeBase) and obj.outputs.len_all() == 1:
-                out = obj.outputs[0]
-                if not out.connected():
-                    out >> other
-
-    def __lshift__(self, other):
-        """self << other"""
-        from .node_base import NodeBase
-
-        for obj in self.walkvalues():
-            if isinstance(obj, NodeBase):
-                obj << other
-
-    def __rlshift__(self, other):
-        """other << self"""
-        from ..parameters import Parameter
-
-        if not isinstance(other, (Sequence, Generator)):
-            raise RuntimeError(f"Cannot connect `{type(other)} << NodeStorage`")
-
-        for obj in self.walkvalues():
-            if isinstance(obj, (Output, Parameter)):
-                obj << other
 
 
 _context_storage: list[NodeStorage] = []

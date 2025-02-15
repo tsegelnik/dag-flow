@@ -47,11 +47,8 @@ def check_connection(obj):
 def test_Output_or_Parameter_to_Input_or_Node_or_Sequence(LHS, RHS):
     """
     Test of a connection in the following cases:
-      * `Output | Parameter >> Input`;
-      * `Output | Parameter >> Node`;
-      * `Output | Parameter >> Inputs`;
-      * `Output | Parameter >> Sequence[Input]`;
-      * `Output | Parameter >> Sequence[Node]`;
+      * `Output | Parameter >> Input | Node | Inputs`;
+      * `Output | Parameter >> Sequence[Input | Node]`;
     """
     # NOTE: LHS and RHS are initialized only once for all the test cases,
     #       so we need to create their copies to avoid reconnections!
@@ -82,21 +79,26 @@ def test_Output_or_Parameter_to_Input_or_Node_or_Sequence(LHS, RHS):
     "RHS",
     (
         {f"i{i}": Input(f"input_{i}", None) for i in range(3)},
-        {f"n{i}": OneToOneNode(f"node_{i}") for i in range(3)},
         {f"i{i}": Inputs([Input(f"input_{j}{i}", None) for j in range(3)]) for i in range(3)},
         {f"i{i}": [Input(f"input_{j}{i}", None) for j in range(3)] for i in range(3)},
+        {f"n{i}": OneToOneNode(f"node_{i}") for i in range(3)},
         {f"n{i}": [OneToOneNode(f"node_{j}{i}") for j in range(3)] for i in range(3)},
     ),
 )
-def test_Output_or_Parameter_to_Mapping(LHS, RHS):
+@mark.parametrize("rhscls", (dict, NestedMKDict, NodeStorage))
+def test_Output_or_Parameter_to_Mapping(LHS, RHS, rhscls):
     """
     Test of a connection in the following cases:
       * `Output | Parameter >> Mapping[Input | Sequence[Input] | Inputs]`;
       * `Output | Parameter >> Mapping[Node | Sequence[Node]]`.
+
+    Here `Mapping` is `dict | NestedMKDict | NodeStorage`.
     """
     # NOTE: LHS and RHS are initialized only once for all the test cases,
     #       so we need to create their copies to avoid reconnections!
     lhs, rhs = deepcopy(LHS), deepcopy(RHS)
+    constructor = lambda obj: obj if isinstance(rhscls, dict) else rhscls(dic=obj)
+    rhs = constructor(rhs)
     lhs >> rhs
 
     assert lhs.connected()
@@ -104,37 +106,68 @@ def test_Output_or_Parameter_to_Mapping(LHS, RHS):
         assert check_connection(obj)
 
 
-@mark.parametrize("LHS", (Output("output", None), Parameter(Output("output", None), parent=None)))
+@mark.parametrize("lcls", (Output, Parameter))
 @mark.parametrize(
     "RHS",
     (
-        NestedMKDict(dic={f"i{i}": Input(f"input_{i}", None) for i in range(3)}),
-        NestedMKDict(dic={f"n{i}": OneToOneNode(f"node_{i}") for i in range(3)}),
-        NestedMKDict(
+        NodeStorage(
+            dic={"storage": {"objects": {f"i_{i}": Input(f"input_{i}", None) for i in range(3)}}}
+        ),
+        NodeStorage(
             dic={
-                f"i{i}": Inputs([Input(f"input_{j}{i}", None) for j in range(3)]) for i in range(3)
+                "storage": {
+                    "objects": {
+                        f"i_{i}": Inputs([Input(f"input_{j}{i}", None) for j in range(3)])
+                        for i in range(3)
+                    }
+                }
             }
         ),
-        NestedMKDict(
-            dic={f"i{i}": [Input(f"input_{j}{i}", None) for j in range(3)] for i in range(3)}
+        NodeStorage(
+            dic={
+                "storage": {
+                    "objects": {
+                        f"i_{i}": [Input(f"input_{j}{i}", None) for j in range(3)] for i in range(3)
+                    }
+                }
+            }
         ),
-        NestedMKDict(
-            dic={f"n{i}": [OneToOneNode(f"node_{j}{i}") for j in range(3)] for i in range(3)}
+        NodeStorage(
+            dic={"storage": {"objects": {f"i_{i}": OneToOneNode(f"node_{i}") for i in range(3)}}}
+        ),
+        NodeStorage(
+            dic={
+                "storage": {
+                    "objects": {
+                        f"i_{i}": [OneToOneNode(f"node_{j}{i}") for j in range(3)] for i in range(3)
+                    }
+                }
+            }
         ),
     ),
 )
-def test_Output_or_Parameter_to_NestedMKDict(LHS, RHS):
+def test_NodeStorage_to_NodeStorage(lcls, RHS):
     """
     Test of a connection in the following cases:
-      * `Output | Parameter >> NestedMkDict[Input | Sequence[Input] | Inputs]`;
-      * `Output | Parameter >> NestedMkDict[Node | Sequence[Node]]`;
+      * `NodeStorage[Output | Parameter] >> NodeStorage[Input | Sequence[Input] | Inputs]`;
+      * `NodeStorage[Output | Parameter] >> NodeStorage[Node | Sequence[Node]]`;
     """
     # NOTE: LHS and RHS are initialized only once for all the test cases,
     #       so we need to create their copies to avoid reconnections!
-    lhs, rhs = deepcopy(LHS), deepcopy(RHS)
+    constructor = (
+        lambda name: Output(name, None)
+        if isinstance(lcls, Output)
+        else Parameter(Output(name, None), parent=None)
+    )
+    lhs = NodeStorage(
+        dic={"storage": {"objects": {f"i_{i}": constructor(f"output_{i}") for i in range(3)}}}
+    )
+    rhs = deepcopy(RHS)
+
     lhs >> rhs
 
-    assert lhs.connected()
+    for obj in lhs.walkvalues():
+        assert obj.connected()
     for obj in rhs.walkvalues():
         assert check_connection(obj)
 
