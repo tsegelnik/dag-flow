@@ -87,9 +87,10 @@ class NodeBase:
 
     def __rshift__(self, other):
         """
-        self >> other
+        `self >> other`
 
-        .. note:: now the connection for the node supports only one output
+        The method to connect `Node.outputs` to `other`.
+        Now the connection is allowed only for the `Node` with only one output!
         """
         if self.outputs.len_all() == 1:
             out = tuple(self.outputs.all_edges.values())[0]
@@ -102,7 +103,12 @@ class NodeBase:
         out >> other
 
     def __rrshift__(self, other: Sequence | Generator):
-        """other >> self"""
+        """
+        `other >> self`
+
+        The nethod connects `Sequence[Output | Parameter | NodeBase]` to `Node`.
+        The connection to the `Node` is allowed only if it is contain single output.
+        """
         if not isinstance(other, (Sequence, Generator)):
             raise ConnectionError(
                 f"The connection {type(other)=} >> {type(self)=} is not implemented",

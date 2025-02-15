@@ -141,6 +141,12 @@ class NodeStorage(NestedMKDict):
     # Connectors
     #
     def __rshift__(self, other: NestedMKDict):
+        """
+        `self >> other`
+
+        The connection is allowed only with `NestedMKDict`.
+        It is done within strict matching (by names) of objects in the two dicts.
+        """
         if not isinstance(other, NestedMKDict):
             raise RuntimeError("Operator >> RHS should be NestedMKDict")
 
@@ -179,7 +185,13 @@ class NodeStorage(NestedMKDict):
             del other[key]
 
     def __lshift__(self, other: NestedMKDict):
-        """self << other"""
+        """
+        `self << other`
+
+        Such connection iterates over child objects and attemps
+        to use `<<` operator implemented inside them. Usually, such child objects are `Node`,
+        where non-strict pattern matching is used for connection.
+        """
         if not isinstance(other, NestedMKDict):
             raise RuntimeError("Operator >> RHS should be NestedMKDict")
 
@@ -192,7 +204,13 @@ class NodeStorage(NestedMKDict):
                 ) from e
 
     def __rlshift__(self, other):
-        """other << self"""
+        """
+        `other << self`
+
+        Such connection iterates over `other` and attemps to use `<<` operator
+        for every element. Usually, such child objects are `Node`,
+        where non-strict pattern matching is used for connection.
+        """
         if not isinstance(other, (Sequence, Generator)):
             raise RuntimeError(f"Cannot connect `{type(other)} << NodeStorage`!")
 

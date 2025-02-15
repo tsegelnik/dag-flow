@@ -376,23 +376,33 @@ class Output:
     #####                   CONNECTION
     #################################################################
     def connect_to_input(self, input) -> None:
-        if not self.closed and input.closed:
+        """
+        The method to connect `Output` to the `Input`.
+        It is not possible to connect closed input and not closed output,
+        also the connection of allocatable input to closed output is restricted.
+        For allocatable inputs there are two checks:
+        the ouput must not have an allocating input and the output must allow reallocation.
+        After all the checks are passed, the input is added to the input list of the output,
+        and the output is set as parent output to the input.
+
+        .. note:: it is supposed that the `input` is `Input` and there is no such check!
+        """
+        if self.closed:
+            if input.allocatable:
+                raise ConnectionError(
+                    "Cannot connect a closed output to an allocatable input!",
+                    node=self.node,
+                    output=self,
+                    input=input,
+                )
+        elif input.closed:
             raise ConnectionError(
                 "Cannot connect an output to a closed input!",
                 node=self.node,
                 output=self,
                 input=input,
             )
-        if self.closed and input.allocatable:
-            raise ConnectionError(
-                "Cannot connect a closed output to an allocatable input!",
-                node=self.node,
-                output=self,
-                input=input,
-            )
-        self._connect_to_input(input)
 
-    def _connect_to_input(self, input) -> None:
         if input.allocatable:
             if self._allocating_input:
                 raise ConnectionError(
@@ -407,10 +417,20 @@ class Output:
                     output=self,
                 )
             self._allocating_input = input
+
         self._child_inputs.append(input)
         input.set_parent_output(self)
 
     def connect_to_node(self, node, scope=None, reassign_scope=False) -> None:
+        """
+        The method to connect `Output` to `Node`:
+        if there is no unconnected inputs, attempts to create a new one using `Node(scope=scope)`.
+
+        The method receives `scope`, which is needed to `Node.input_strategy`.
+        Also it is possible to reassign current scope in the `node` by passing `reassign_scope=True`.
+
+        .. note:: it is supposed that the `node` is `Node` and there is no such check!
+        """
         inp = None
         try:
             for inpt in node.inputs:
@@ -444,7 +464,16 @@ class Output:
         ),
     ) -> None:
         """
-        self >> other
+        `self >> other`
+
+        Connects `Output` to `Input | Node | MetaNode | Inputs | Sequence| Generator | Mapping | NestedMKDict`.
+
+        For `Node` and `MetaNode` iterates `scope` and then connects with reassigning the scope.
+        It is done to work with certain `InputStrategy`.
+
+        Connection of `Mapping` is the same as connection of `NestedMKDict`.
+
+        Sequences are connected simply by iteration over them.
         """
         from multikeydict.nestedmkdict import NestedMKDict
 
@@ -457,12 +486,13 @@ class Output:
                 self.connect_to_input(other)
             case MetaNode():
                 try:
-                    # try firstly a connection like Node
+                    # Firstly try a Node-like connection
                     scope = other._input_strategy._scope + 1
                     self.connect_to_node(other, scope=scope, reassign_scope=True)
-                except AttributeError:
+                except Exception:
                     try:
-                        # try use custom implementation of connection in the certain MetaNode
+                        # Try to use any custom implementation of connection in the certain MetaNode.
+                        # For instance, such connection is designed in `CovarianceMatrixGroup`
                         other.__rrshift__(self)  # pyright: ignore
                     except Exception as exc:
                         raise ConnectionError(
