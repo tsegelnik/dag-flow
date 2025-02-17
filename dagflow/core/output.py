@@ -378,7 +378,7 @@ class Output:
     def connect_to_input(self, input) -> None:
         """
         The method to connect `Output` to the `Input`.
-        It is not possible to connect closed input and not closed output,
+        It is not possible to connect a closed input and an opened output,
         also the connection of allocatable input to closed output is restricted.
         For allocatable inputs there are two checks:
         the ouput must not have an allocating input and the output must allow reallocation.
@@ -423,7 +423,7 @@ class Output:
 
     def connect_to_node(self, node, scope=None, reassign_scope=False) -> None:
         """
-        The method to connect `Output` to `Node`:
+        The method connects `Output` to `Node`:
         if there is no unconnected inputs, attempts to create a new one using `Node(scope=scope)`.
 
         The method receives `scope`, which is needed to `Node.input_strategy`.
@@ -461,6 +461,7 @@ class Output:
             | Sequence[NodeBase]
             | Mapping[str, NodeBase]
             | NestedMKDict
+            | Generator
         ),
     ) -> None:
         """
@@ -496,7 +497,8 @@ class Output:
                         other.__rrshift__(self)  # pyright: ignore
                     except Exception as exc:
                         raise ConnectionError(
-                            "Cannot connect an output to MetaNode due to exceptions",
+                            "Cannot connect an output to MetaNode: configure `input_strategy` "
+                            f"or implement `__rrshift__` in the `{type(other).__name__}` class!",
                             node=other,
                             output=self,
                         ) from exc

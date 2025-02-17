@@ -148,7 +148,10 @@ class NodeBase:
         For each not connected input try to find output with the same name in storage, then connect.
         """
         if not isinstance(storage, (Mapping, NestedMKDict)):
-            raise ConnectionError(f"Cannot connect `Node << {type(storage)}`", node=self)
+            raise ConnectionError(
+                f"Cannot connect `Node << {type(storage)}` due to such connection is not supported!",
+                node=self,
+            )
 
         from ..parameters import Parameter
 

@@ -13,11 +13,11 @@ class LimbNameFormatter:
 
     @staticmethod
     def from_string(string: str):
-        return string if "{" in string else SimpleFormatter(string)
+        return string if "{" in string else SimpleLimbNameFormatter(string)
 
     @staticmethod
     def from_sequence(seq: Sequence[str]):
-        return SequentialFormatter(seq)
+        return SequentialLimbNameFormatter(seq)
 
     @staticmethod
     def from_value(value: str | Sequence[str] | LimbNameFormatter):
@@ -36,7 +36,7 @@ class LimbNameFormatter:
 Formattable = LimbNameFormatter | str
 
 
-class SimpleFormatter(LimbNameFormatter):
+class SimpleLimbNameFormatter(LimbNameFormatter):
     __slots__ = ("_base", "_numfmt")
     _base: str
     _numfmt: str
@@ -49,7 +49,7 @@ class SimpleFormatter(LimbNameFormatter):
         return self._base + self._numfmt.format(num) if num > 0 else self._base
 
 
-class SequentialFormatter(LimbNameFormatter):
+class SequentialLimbNameFormatter(LimbNameFormatter):
     __slots__ = ("_base", "_numfmt", "_startidx")
 
     _base: tuple[str, ...]
@@ -69,6 +69,6 @@ class SequentialFormatter(LimbNameFormatter):
         if groupnum > 0:
             return base + self._numfmt.format(groupnum)
         elif num < 0:
-            raise ValueError(f"SequentialFormatter got num={num}<0")
+            raise ValueError(f"SequentialLimbNameFormatter got num={num}<0")
 
         return base

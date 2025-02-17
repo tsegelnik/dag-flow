@@ -4,7 +4,7 @@ from typing import TYPE_CHECKING
 
 from dagflow.core.exception import InitializationError
 
-from ..tools.formatter import Formattable, LimbNameFormatter, SimpleFormatter
+from ..tools.formatter import Formattable, LimbNameFormatter, SimpleLimbNameFormatter
 
 if TYPE_CHECKING:
     from collections.abc import Sequence
@@ -67,9 +67,9 @@ class AddNewInput(InputStrategyBase):
         self,
         node: NodeBase | None = None,
         *,
-        input_fmt: str | Sequence[str] | LimbNameFormatter = SimpleFormatter("input", "_{:02d}"),
+        input_fmt: str | Sequence[str] | LimbNameFormatter = SimpleLimbNameFormatter("input", "_{:02d}"),
         input_kws: dict | None = None,
-        output_fmt: str | Sequence[str] | LimbNameFormatter = SimpleFormatter("output", "_{:02d}"),
+        output_fmt: str | Sequence[str] | LimbNameFormatter = SimpleLimbNameFormatter("output", "_{:02d}"),
         output_kws: dict | None = None,
     ):
         if input_kws is None:
