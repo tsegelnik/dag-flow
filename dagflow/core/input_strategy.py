@@ -17,27 +17,27 @@ if TYPE_CHECKING:
 class InputStrategyBase:
     """The base class for a behaviour when output is connecting to the node with missing input via >>/<<"""
 
-    __slots__ = ("_node", "_scope")
+    __slots__ = ("_node", "_idx_scope")
 
     _node: NodeBase
-    _scope: int
+    _idx_scope: int
 
     def __init__(self, node: NodeBase | None = None) -> None:
         self.node = node
-        self.scope = 0
+        self.idx_scope = 0
 
     @property
-    def scope(self) -> int:
-        return self._scope
+    def idx_scope(self) -> int:
+        return self._idx_scope
 
-    @scope.setter
-    def scope(self, val) -> None:
+    @idx_scope.setter
+    def idx_scope(self, val) -> None:
         if isinstance(val, int):
-            self._scope = val
+            self._idx_scope = val
         elif val is None:
-            self._scope = 0
+            self._idx_scope = 0
         else:
-            raise InitializationError(f"Wrong type for scope={val}. Must be int.")
+            raise InitializationError(f"Wrong type for idx_scope={val}. Must be int.")
 
     @property
     def node(self) -> NodeBase:
@@ -67,9 +67,13 @@ class AddNewInput(InputStrategyBase):
         self,
         node: NodeBase | None = None,
         *,
-        input_fmt: str | Sequence[str] | LimbNameFormatter = SimpleLimbNameFormatter("input", "_{:02d}"),
+        input_fmt: str | Sequence[str] | LimbNameFormatter = SimpleLimbNameFormatter(
+            "input", "_{:02d}"
+        ),
         input_kws: dict | None = None,
-        output_fmt: str | Sequence[str] | LimbNameFormatter = SimpleLimbNameFormatter("output", "_{:02d}"),
+        output_fmt: str | Sequence[str] | LimbNameFormatter = SimpleLimbNameFormatter(
+            "output", "_{:02d}"
+        ),
         output_kws: dict | None = None,
     ):
         if input_kws is None:
@@ -82,16 +86,22 @@ class AddNewInput(InputStrategyBase):
         self.input_fmt = LimbNameFormatter.from_value(input_fmt)
         self.output_fmt = LimbNameFormatter.from_value(output_fmt)
 
-    def __call__(self, idx=None, scope=None, *, fmt: Formattable | None = None, **kwargs):
+    def __call__(
+        self,
+        idx_input=None,
+        idx_scope=None,
+        *,
+        fmt: Formattable | None = None,
+        **kwargs,
+    ):
         kwargs_combined = dict(self.input_kws, **kwargs)
         if fmt is None:
             fmt = self.input_fmt
-        if scope is None:
-            scope = self.scope
-        return self.node._add_input(
-            fmt.format(idx if idx is not None else len(self.node.inputs)),
-            **kwargs_combined,
-        )
+        if idx_scope is None:
+            idx_scope = self.idx_scope
+        if idx_input is None:
+            idx_input = len(self.node.inputs)
+        return self.node._add_input(fmt.format(idx_input), **kwargs_combined)
 
 
 class AddNewInputAddNewOutput(AddNewInput):
@@ -105,13 +115,13 @@ class AddNewInputAddNewOutput(AddNewInput):
     def __init__(self, node: NodeBase | None = None, **kwargs):
         super().__init__(node, **kwargs)
 
-    def __call__(self, idx=None, scope=None, idx_out=None, **kwargs):
-        if idx_out is None:
-            idx_out = len(self.node.outputs)
-        if scope is None:
-            scope = self.scope
-        out = self.node._add_output(self.output_fmt.format(idx_out), **self.output_kws)
-        return super().__call__(idx, child_output=out, scope=scope, **kwargs)
+    def __call__(self, idx_input=None, idx_scope=None, idx_output=None, **kwargs):
+        if idx_output is None:
+            idx_output = len(self.node.outputs)
+        if idx_scope is None:
+            idx_scope = self.idx_scope
+        out = self.node._add_output(self.output_fmt.format(idx_output), **self.output_kws)
+        return super().__call__(idx_input, child_output=out, idx_scope=idx_scope, **kwargs)
 
 
 class AddNewInputAddAndKeepSingleOutput(AddNewInput):
@@ -128,18 +138,18 @@ class AddNewInputAddAndKeepSingleOutput(AddNewInput):
         super().__init__(node, **kwargs)
         self.add_child_output = add_child_output
 
-    def __call__(self, idx=None, scope=None, idx_out=None, **kwargs):
-        if idx_out is not None:
-            out = self.node._add_output(self.output_fmt.format(idx_out), **self.output_kws)
-        elif (idx_out := len(self.node.outputs)) == 0:
-            out = self.node._add_output(self.output_fmt.format(idx_out), **self.output_kws)
+    def __call__(self, idx_input=None, idx_scope=None, idx_output=None, **kwargs):
+        if idx_output is not None:
+            out = self.node._add_output(self.output_fmt.format(idx_output), **self.output_kws)
+        elif (idx_output := len(self.node.outputs)) == 0:
+            out = self.node._add_output(self.output_fmt.format(idx_output), **self.output_kws)
         else:
             out = self.node.outputs[-1]
-        if scope is None:
-            scope = self.scope
+        if idx_scope is None:
+            idx_scope = self.idx_scope
         if self.add_child_output:
-            return super().__call__(idx, child_output=out, scope=scope)
-        return super().__call__(idx, scope=scope, **kwargs)
+            return super().__call__(idx_input, child_output=out, idx_scope=idx_scope)
+        return super().__call__(idx_input, idx_scope=idx_scope, **kwargs)
 
 
 class AddNewInputAddNewOutputForBlock(AddNewInput):
@@ -156,8 +166,8 @@ class AddNewInputAddNewOutputForBlock(AddNewInput):
         super().__init__(node, **kwargs)
         self.add_child_output = add_child_output
 
-    def __call__(self, idx=None, scope=None, **kwargs):
-        if scope == self.scope or scope is None:
+    def __call__(self, idx_input=None, idx_scope=None, **kwargs):
+        if idx_scope == self.idx_scope or idx_scope is None:
             try:
                 out = self.node.outputs[-1]
             except IndexError:
@@ -170,10 +180,10 @@ class AddNewInputAddNewOutputForBlock(AddNewInput):
                 self.output_fmt.format(len(self.node.outputs)),
                 **self.output_kws,
             )
-            self._scope = scope
+            self._idx_scope = idx_scope
         if self.add_child_output:
-            return super().__call__(idx, child_output=out, scope=scope)
-        return super().__call__(idx, scope=scope, **kwargs)
+            return super().__call__(idx_input, child_output=out, idx_scope=idx_scope)
+        return super().__call__(idx_input, idx_scope=idx_scope, **kwargs)
 
 
 class AddNewInputAddNewOutputForNInputs(AddNewInput):
@@ -201,30 +211,41 @@ class AddNewInputAddNewOutputForNInputs(AddNewInput):
         if not isinstance(n, int) or n < 1:
             raise InitializationError(f"'n' must be int > 0, but given {n=}, {type(n)=}!")
         self.starts_from_0 = starts_from_0
-        self._scope = 0
+        self._idx_scope = 0
         self.add_child_output = add_child_output
 
-    def __call__(self, idx=None, scope=None, **kwargs):
+    def __call__(self, idx_input=None, idx_scope=None, **kwargs):
         out = None
         create_output = lambda: self.node._add_output(
             self.output_fmt.format(len(self.node.outputs)), **self.output_kws
         )
         if self.n == 1:
             out = create_output()
-        elif self._scope % self.n == 0:
-            if self._scope == 0 and self.starts_from_0 or self._scope != 0:
+        elif self._idx_scope % self.n == 0:
+            if self._idx_scope == 0 and self.starts_from_0 or self._idx_scope != 0:
                 out = create_output()
             else:
-                self._scope += 1
-        self._scope += 1
+                self._idx_scope += 1
+        self._idx_scope += 1
         if self.add_child_output:
-            return super().__call__(idx, child_output=out, scope=scope)
-        return super().__call__(idx, scope=scope)
+            return super().__call__(idx_input, child_output=out, idx_scope=idx_scope)
+        return super().__call__(idx_input, idx_scope=idx_scope)
+
+
+class InputStrategyViewConcat(InputStrategyBase):
+    """Special strategy for `ViewConcat` node"""
+
+    def __call__(self, idx_input: int | None = None, idx_scope: int | None = None) -> Input:
+        if idx_input is None:
+            idx_input = len(self.node.inputs)
+        return self.node._add_input(
+            f"input_{idx_input:02d}", allocatable=True, child_output=self.node._output
+        )
 
 
 class InheritInputStrategy(InputStrategyBase):
     """
-    Inherit an input strategy from the source node. It is a special strategy for MetaNode.
+    Inherit an input strategy from the source node. It is a special strategy for `MetaNode`.
     """
 
     __slots__ = ("_source_node", "_target_node", "_source_handler", "_inherit_outputs")
@@ -266,5 +287,6 @@ InputStrategies = {
     AddNewInputAddAndKeepSingleOutput,
     AddNewInputAddNewOutputForBlock,
     AddNewInputAddNewOutputForNInputs,
+    InputStrategyViewConcat,
     InheritInputStrategy,
 }

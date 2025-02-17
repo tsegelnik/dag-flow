@@ -421,13 +421,13 @@ class Output:
         self._child_inputs.append(input)
         input.set_parent_output(self)
 
-    def connect_to_node(self, node, scope=None, reassign_scope=False) -> None:
+    def connect_to_node(self, node, idx_scope=None, reassign_idx_scope=False) -> None:
         """
         The method connects `Output` to `Node`:
-        if there is no unconnected inputs, attempts to create a new one using `Node(scope=scope)`.
+        if there is no unconnected inputs, attempts to create a new one using `Node(idx_scope=idx_scope)`.
 
-        The method receives `scope`, which is needed to `Node.input_strategy`.
-        Also it is possible to reassign current scope in the `node` by passing `reassign_scope=True`.
+        The method receives `idx_scope`, which is needed to `Node.input_strategy`.
+        Also it is possible to reassign current idx_scope in the `node` by passing `reassign_idx_scope=True`.
 
         .. note:: it is supposed that the `node` is `Node` and there is no such check!
         """
@@ -440,7 +440,7 @@ class Output:
             if inp is None:
                 raise IndexError()
         except IndexError:
-            inp = node(scope=scope)
+            inp = node(idx_scope=idx_scope)
         if inp is None:
             raise ConnectionError(
                 "Unable to find unconnected input or create a new one!",
@@ -448,8 +448,8 @@ class Output:
                 output=self,
             )
         self.connect_to_input(inp)
-        if reassign_scope:
-            node.input_strategy._scope = scope
+        if reassign_idx_scope:
+            node.input_strategy._idx_scope = idx_scope
 
     def __rshift__(
         self,
@@ -469,7 +469,7 @@ class Output:
 
         Connects `Output` to `Input | Node | MetaNode | Inputs | Sequence| Generator | Mapping | NestedMKDict`.
 
-        For `Node` and `MetaNode` iterates `scope` and then connects with reassigning the scope.
+        For `Node` and `MetaNode` iterates `idx_scope` and then connects with reassigning the idx_scope.
         It is done to work with certain `InputStrategy`.
 
         Connection of `Mapping` is the same as connection of `NestedMKDict`.
@@ -488,8 +488,8 @@ class Output:
             case MetaNode():
                 try:
                     # Firstly try a Node-like connection
-                    scope = other._input_strategy._scope + 1
-                    self.connect_to_node(other, scope=scope, reassign_scope=True)
+                    idx_scope = other._input_strategy._idx_scope + 1
+                    self.connect_to_node(other, idx_scope=idx_scope, reassign_idx_scope=True)
                 except Exception:
                     try:
                         # Try to use any custom implementation of connection in the certain MetaNode.
@@ -503,8 +503,8 @@ class Output:
                             output=self,
                         ) from exc
             case NodeBase():
-                scope = other._input_strategy._scope + 1
-                self.connect_to_node(other, scope=scope, reassign_scope=True)
+                idx_scope = other._input_strategy._idx_scope + 1
+                self.connect_to_node(other, idx_scope=idx_scope, reassign_idx_scope=True)
             case Sequence() | Inputs() | Generator():
                 for subother in other:
                     self >> subother

@@ -4,20 +4,14 @@ from typing import TYPE_CHECKING
 
 from numpy import zeros
 
-from dagflow.core.input_strategy import InputStrategyBase
+from dagflow.core.input_strategy import InputStrategyViewConcat
 
 from ...core.node import Node
 from ...core.type_functions import check_dimension_of_inputs, check_dtype_of_inputs
 
 if TYPE_CHECKING:
-    from ...core.input import Input
     from ...core.output import Output
 
-class InputStrategyViewConcat(InputStrategyBase):
-    def __call__(self, idx: int | None = None, scope: int | None = None) -> Input:
-        idx = idx if idx is not None else len(self.node.inputs)
-        iname = f"input_{idx:02d}"
-        return self.node._add_input(iname, allocatable=True, child_output=self.node._output)
 
 class ViewConcat(Node):
     """Creates a node with a single data output which is a concatenated memory of the inputs"""

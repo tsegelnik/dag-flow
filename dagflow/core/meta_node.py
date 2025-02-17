@@ -111,12 +111,13 @@ class MetaNode(NodeBase):
             meta_node_args = {}
         if new_node_cls is None:  # use default cls
             new_node_cls = self.new_node_cls
+
         node = new_node_cls(**node_args)
         self._add_node(node, **meta_node_args)
-        # NOTE: pass idx adn idx_out to avoid same naming of the inputs and outputs
-        return self._add_input_to_node(
-            node, idx=len(self._nodes), idx_out=len(self._nodes), **input_args
-        )
+
+        # set input and output indices as nodes count to avoid same naming
+        ln = len(self._nodes)
+        return self._add_input_to_node(node, idx_input=ln, idx_output=ln, **input_args)
 
     def _call_leading_node(self, *args, **kwargs) -> Input | None:
         """

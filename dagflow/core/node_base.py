@@ -119,12 +119,14 @@ class NodeBase:
             )
         from ..parameters import Parameter
 
-        scope = self._input_strategy._scope + 1
+        idx_scope = self._input_strategy._idx_scope + 1
         for out in other:
             if isinstance(out, Output):
-                out.connect_to_node(self, scope=scope, reassign_scope=False)
+                out.connect_to_node(self, idx_scope=idx_scope, reassign_idx_scope=False)
             elif isinstance(out, Parameter):
-                out._connectible_output.connect_to_node(self, scope=scope, reassign_scope=False)
+                out._connectible_output.connect_to_node(
+                    self, idx_scope=idx_scope, reassign_idx_scope=False
+                )
             elif isinstance(out, NodeBase):
                 outs = out.outputs
                 if outs.len_all() != 1:
@@ -133,13 +135,13 @@ class NodeBase:
                         node=out,
                         output=outs,
                     )
-                outs[0].connect_to_node(self, scope=scope, reassign_scope=False)
+                outs[0].connect_to_node(self, idx_scope=idx_scope, reassign_idx_scope=False)
             else:
                 raise ConnectionError(
                     f"The connection `Sequence[{type(out)}] >> Node` is not allowed!",
                     node=self,
                 )
-        self._input_strategy._scope = scope
+        self._input_strategy._idx_scope = idx_scope
 
     def __lshift__(self, storage: Mapping[str, Output | Parameter] | NestedMKDict) -> None:
         """
