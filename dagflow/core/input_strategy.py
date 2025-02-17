@@ -4,7 +4,7 @@ from typing import TYPE_CHECKING
 
 from dagflow.core.exception import InitializationError
 
-from ..tools.formatter import Formattable, Formatter, SimpleFormatter
+from ..tools.formatter import Formattable, LimbNameFormatter, SimpleFormatter
 
 if TYPE_CHECKING:
     from collections.abc import Sequence
@@ -67,9 +67,9 @@ class AddNewInput(InputStrategyBase):
         self,
         node: NodeBase | None = None,
         *,
-        input_fmt: str | Sequence[str] | Formatter = SimpleFormatter("input", "_{:02d}"),
+        input_fmt: str | Sequence[str] | LimbNameFormatter = SimpleFormatter("input", "_{:02d}"),
         input_kws: dict | None = None,
-        output_fmt: str | Sequence[str] | Formatter = SimpleFormatter("output", "_{:02d}"),
+        output_fmt: str | Sequence[str] | LimbNameFormatter = SimpleFormatter("output", "_{:02d}"),
         output_kws: dict | None = None,
     ):
         if input_kws is None:
@@ -79,8 +79,8 @@ class AddNewInput(InputStrategyBase):
         super().__init__(node)
         self.input_kws = input_kws
         self.output_kws = output_kws
-        self.input_fmt = Formatter.from_value(input_fmt)
-        self.output_fmt = Formatter.from_value(output_fmt)
+        self.input_fmt = LimbNameFormatter.from_value(input_fmt)
+        self.output_fmt = LimbNameFormatter.from_value(output_fmt)
 
     def __call__(self, idx=None, scope=None, *, fmt: Formattable | None = None, **kwargs):
         kwargs_combined = dict(self.input_kws, **kwargs)

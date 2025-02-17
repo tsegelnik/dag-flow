@@ -5,7 +5,7 @@ from collections.abc import Sequence
 from ..core.exception import InitializationError
 
 
-class Formatter:
+class LimbNameFormatter:
     __slots__ = ()
 
     def format(self, num: int) -> str:
@@ -20,23 +20,23 @@ class Formatter:
         return SequentialFormatter(seq)
 
     @staticmethod
-    def from_value(value: str | Sequence[str] | Formatter):
-        if isinstance(value, Formatter):
+    def from_value(value: str | Sequence[str] | LimbNameFormatter):
+        if isinstance(value, LimbNameFormatter):
             return value
         elif isinstance(value, str):
-            return Formatter.from_string(value)
+            return LimbNameFormatter.from_string(value)
         elif isinstance(value, Sequence):
-            return Formatter.from_sequence(value)
+            return LimbNameFormatter.from_sequence(value)
 
         raise InitializationError(
-            f"Expect str, Tuple[str] or Formatter, got {type(value).__name__}"
+            f"Expect str, Tuple[str] or LimbNameFormatter, got {type(value).__name__}"
         )
 
 
-Formattable = Formatter | str
+Formattable = LimbNameFormatter | str
 
 
-class SimpleFormatter(Formatter):
+class SimpleFormatter(LimbNameFormatter):
     __slots__ = ("_base", "_numfmt")
     _base: str
     _numfmt: str
@@ -49,7 +49,7 @@ class SimpleFormatter(Formatter):
         return self._base + self._numfmt.format(num) if num > 0 else self._base
 
 
-class SequentialFormatter(Formatter):
+class SequentialFormatter(LimbNameFormatter):
     __slots__ = ("_base", "_numfmt", "_startidx")
 
     _base: tuple[str, ...]

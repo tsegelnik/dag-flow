@@ -250,7 +250,18 @@ class CovarianceMatrixGroup(MetaNode):
         raise RuntimeError(f"CovarianceMatrixGroup: duplicated parameter {par!s}")
 
     def __rrshift__(self, other: Output | Node | Sequence | Generator):
-        """Reimplement connection due to uniqueness of the CovarianceMatrixGroup node"""
+        """
+        `other >> self`
+
+        The node has a complicate structure (namely, dictionaries of nodes),
+        so default connection and input strategies in the MetaNode do not work.
+
+        The method connects `Output` or `Node` with all the nodes from `_dict_jacobian`.
+        If `other` is a `Sequence` or `Generator`, the method connects zipped objects
+        from `other` and `_dict_jacobian`.
+
+        Also the method is used for `Output >> self` in the `Output.__rshift__`.
+        """
         if isinstance(other, (Output, Node)):
             other >> tuple(self._dict_jacobian.values())  # pyright:ignore
         elif isinstance(other, (Sequence, Generator)):

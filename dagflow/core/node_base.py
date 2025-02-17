@@ -106,7 +106,7 @@ class NodeBase:
         """
         `other >> self`
 
-        The nethod connects `Sequence[Output | Parameter | NodeBase]` to `Node`.
+        The method connects `Sequence[Output | Parameter | NodeBase]` to `Node`.
         The connection to the `Node` is allowed only if it is contain single output.
         """
         if not isinstance(other, (Sequence, Generator)):
