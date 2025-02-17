@@ -107,7 +107,7 @@ class NodeBase:
         `other >> self`
 
         The method connects `Sequence[Output | Parameter | NodeBase]` to `Node`.
-        The connection to the `Node` is allowed only if it is contain single output.
+        The connection to the `Node` is allowed only if it contains a single output.
         """
         if not isinstance(other, (Sequence, Generator)):
             raise ConnectionError(
@@ -121,7 +121,7 @@ class NodeBase:
             if isinstance(out, Output):
                 out.connect_to_node(self, scope=scope, reassign_scope=False)
             elif isinstance(out, Parameter):
-                out._common_output.connect_to_node(self, scope=scope, reassign_scope=False)
+                out._connectible_output.connect_to_node(self, scope=scope, reassign_scope=False)
             elif isinstance(out, NodeBase):
                 outs = out.outputs
                 if outs.len_all() != 1:
