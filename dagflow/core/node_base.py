@@ -31,19 +31,22 @@ class NodeBase:
         return self._input_strategy
 
     @input_strategy.setter
-    def input_strategy(self, input_strategy):
-        if input_strategy is None:
+    def input_strategy(self, new_input_strategy):
+        if new_input_strategy is None:
+            # initialize with default strategy
             self._input_strategy = InputStrategyBase()
-        elif isinstance(input_strategy, InputStrategyBase):
-            self._input_strategy = input_strategy
+        elif isinstance(new_input_strategy, InputStrategyBase):
+            # if `new_input_strategy` is an certain implementation of the input strategy
+            self._input_strategy = new_input_strategy
             self._input_strategy.node = self
-        elif issubclass(input_strategy, InputStrategyBase):
-            self._input_strategy = input_strategy(node=self)
+        elif issubclass(new_input_strategy, InputStrategyBase):
+            # if `new_input_strategy` is an type (not instance!) inherited from `InputStrategyBase`
+            self._input_strategy = new_input_strategy(node=self)
         else:
-            from .input_strategy import InputStrateges
+            from .input_strategy import InputStrategies
 
             raise InitializationError(
-                f"Wrong {input_strategy=}! Must be in {InputStrateges}", node=self
+                f"Wrong {new_input_strategy=}! Must be in {InputStrategies}", node=self
             )
 
     def __getitem__(self, key):
@@ -96,7 +99,7 @@ class NodeBase:
             out = tuple(self.outputs.all_edges.values())[0]
         else:
             raise ConnectionError(
-                f"The connection of {type(self)} >> {type(other)} is not implemented!"
+                f"The connection of {type(self)} >> {type(other)} is not supported!"
                 " The connection `Node >> Node` is supported only nodes with only 1 output!",
                 node=self,
             )
@@ -111,7 +114,7 @@ class NodeBase:
         """
         if not isinstance(other, (Sequence, Generator)):
             raise ConnectionError(
-                f"The connection {type(other)=} >> {type(self)=} is not implemented",
+                f"The connection {type(other)=} >> {type(self)=} is not supported",
                 node=self,
             )
         from ..parameters import Parameter

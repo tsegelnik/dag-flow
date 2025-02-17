@@ -49,7 +49,7 @@ class InputStrategyBase:
 
     def __call__(self, *args, **kwargs) -> None | Input:
         raise RuntimeError(
-            f"Cannot create new inputs due to unimplemented strategy. Use one from {InputStrateges}"
+            f"Cannot create new inputs due to unimplemented strategy. Use one from {InputStrategies}"
         )
 
 
@@ -260,7 +260,7 @@ class InheritInputStrategy(InputStrategyBase):
         return newinput
 
 
-InputStrateges = {
+InputStrategies = {
     AddNewInput,
     AddNewInputAddNewOutput,
     AddNewInputAddAndKeepSingleOutput,
