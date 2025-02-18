@@ -29,9 +29,9 @@ class SumSq(ManyToOneNode):
             square(input_data, out=self._buffer)
             add(self._buffer, output_data, out=output_data)
 
-    def _typefunc(self) -> None:
+    def _type_function(self) -> None:
         """A output takes this function to determine the dtype and shape"""
-        super()._typefunc()
+        super()._type_function()
         copy_shape_from_inputs_to_outputs(self, 0, "result")
         evaluate_dtype_of_outputs(self, AllPositionals, "result")
 

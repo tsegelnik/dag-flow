@@ -4,11 +4,12 @@ from typing import TYPE_CHECKING
 
 from numpy import zeros
 
+from dagflow.core.input_strategy import InputStrategyViewConcat
+
 from ...core.node import Node
 from ...core.type_functions import check_dimension_of_inputs, check_dtype_of_inputs
 
 if TYPE_CHECKING:
-    from ...core.input import Input
     from ...core.output import Output
 
 
@@ -20,19 +21,14 @@ class ViewConcat(Node):
     _offsets: list[int]
 
     def __init__(self, name, outname="concat", **kwargs) -> None:
-        super().__init__(name, **kwargs)
+        super().__init__(name, **kwargs, input_strategy=InputStrategyViewConcat(node=self))
         self._output = self._add_output(outname, allocatable=False, forbid_reallocation=True)
         self._offsets = []
-
-    def missing_input_handler(self, idx: int | None = None, scope: int | None = None) -> Input:
-        idx = idx if idx is not None else len(self.inputs)
-        iname = f"input_{idx:02d}"
-        return self._add_input(iname, allocatable=True, child_output=self._output)
 
     def _function(self):
         self.inputs.touch()
 
-    def _typefunc(self) -> None:
+    def _type_function(self) -> None:
         """A output takes this function to determine the dtype and shape"""
         size = 0
         self._offsets = []

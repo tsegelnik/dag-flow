@@ -4,19 +4,19 @@ from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
     from .input import Input
-    from .node import Node
+    from .node_base import NodeBase
     from .output import Output
 
 
 class DagflowError(RuntimeError):
-    node: Node | None
+    node: NodeBase | None
     input: Input | None
     output: Output | None
 
     def __init__(
         self,
         message: str,
-        node: Node | None = None,
+        node: NodeBase | None = None,
         *,
         input: Input | None = None,
         output: Output | None = None,
@@ -34,10 +34,7 @@ class DagflowError(RuntimeError):
         self.output = output
 
         if node is not None and hasattr(node, "_exception"):
-            if args is not None:
-                node._exception = "\\n".join((message,) + args)
-            else:
-                node._exception = message
+            node._exception = message if args is None else "\\n".join((message,) + args)
 
 
 class CriticalError(DagflowError):

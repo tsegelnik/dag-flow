@@ -35,7 +35,8 @@ class Integrator(MetaNode):
             return
 
         self._init_sampler(mode, "sampler", labels.get("sampler", {}))
-        self._add_integrator("integrator", labels.get("integrator", {}), dropdim=dropdim)
+        node = self._add_integrator("integrator", labels.get("integrator", {}), dropdim=dropdim)
+        self._leading_node = node
 
     def _init_sampler(self, mode: ModeType, name: str = "sampler", label: Mapping = {}):
         self._sampler = IntegratorSampler(name, mode=mode, label=label)

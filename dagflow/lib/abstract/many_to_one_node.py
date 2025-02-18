@@ -6,7 +6,7 @@ from numpy.typing import NDArray
 
 from multikeydict.typing import properkey
 
-from ...core.input_handler import MissingInputAddOne
+from ...core.input_strategy import AddNewInputAddAndKeepSingleOutput
 from ...core.node import Node
 from ...core.storage import NodeStorage
 from ...core.type_functions import (
@@ -56,7 +56,7 @@ class ManyToOneNode(Node):
         **kwargs,
     ):
         kwargs.setdefault(
-            "missing_input_handler", MissingInputAddOne(input_fmt=self._input_names())
+            "input_strategy", AddNewInputAddAndKeepSingleOutput(input_fmt=self._input_names())
         )
         super().__init__(*args, **kwargs)
         self._add_output(output_name)
@@ -72,7 +72,7 @@ class ManyToOneNode(Node):
     def _input_names() -> tuple[str, ...]:
         return ("input",)
 
-    def _typefunc(self) -> None:
+    def _type_function(self) -> None:
         """A output takes this function to determine the dtype and shape"""
         check_node_has_inputs(self)  # at least one input
         check_inputs_equivalence(

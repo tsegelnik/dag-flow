@@ -18,7 +18,8 @@ def test_View_00():
         view = View("view")
         view2 = View("view2")
 
-        initial >> view >> view2
+        initial >> view
+        view >> view2
 
     assert initial.tainted == True
     assert view.tainted == True

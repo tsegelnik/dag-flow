@@ -140,7 +140,7 @@ class IntegratorSampler(Node):
     def align(self) -> str | None:
         return self._align
 
-    def _typefunc(self) -> None:
+    def _type_function(self) -> None:
         """The function to determine the dtype and shape.
 
         Checks self.inputs dimension and, selects an integration

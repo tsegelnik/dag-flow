@@ -1,7 +1,7 @@
 from numba import njit
 from numpy.typing import NDArray
 
-from ...core.input_handler import MissingInputAddOne
+from ...core.input_strategy import AddNewInputAddAndKeepSingleOutput
 from ..abstract import ManyToOneNode
 
 
@@ -19,7 +19,7 @@ class ElSumSq(ManyToOneNode):
     __slots__ = ()
 
     def __init__(self, *args, **kwargs):
-        kwargs.setdefault("missing_input_handler", MissingInputAddOne(output_fmt="result"))
+        kwargs.setdefault("input_strategy", AddNewInputAddAndKeepSingleOutput(output_fmt="result"))
         super().__init__(*args, **kwargs)
         self._labels.setdefault("mark", "Σa²")
 
@@ -33,7 +33,7 @@ class ElSumSq(ManyToOneNode):
         for input_data in self._input_data:
             _sumsq(input_data, output_data)
 
-    def _typefunc(self) -> None:
+    def _type_function(self) -> None:
         """A output takes this function to determine the dtype and shape."""
-        super()._typefunc()
+        super()._type_function()
         self.outputs[0].dd.shape = (1,)

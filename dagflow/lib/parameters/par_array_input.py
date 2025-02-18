@@ -46,7 +46,7 @@ class ParArrayInput(Node):
             raise RuntimeError(f"par must be a Parameter, but given {par=}, {type(par)=}!")
         self._parameters_list.append(par)
 
-    def _typefunc(self) -> None:
+    def _type_function(self) -> None:
         # TODO: check dtype of input and parameters?
         check_number_of_inputs(self, 1)
         check_dimension_of_inputs(self, 0, 1)

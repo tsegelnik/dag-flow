@@ -21,7 +21,7 @@ class ArraySum(OneToOneNode):
         super().__init__(*args, **kwargs)
         self._labels.setdefault("mark", "Σᵢ")
 
-    def _typefunc(self) -> None:
+    def _type_function(self) -> None:
         check_node_has_inputs(self, AllPositionals)
         copy_dtype_from_inputs_to_outputs(self, AllPositionals, AllPositionals)
         for out in self.outputs:

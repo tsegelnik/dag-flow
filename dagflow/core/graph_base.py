@@ -5,8 +5,6 @@ from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     from .node import Node
 
-from .shift import rshift
-
 
 class GraphBase:
     __slots__ = ("_nodes", "_nodes_set", "_new_nodes")
@@ -42,16 +40,6 @@ class GraphBase:
         for node in self._nodes:
             node.print()
 
-    def __rrshift__(self, other):
-        """
-        other >> self
-        """
-        return rshift(other, self)
-
     def __iter__(self):
-        """
-        iterate inputs
-
-        To be used with >>/<< operators which take only disconnected inputs
-        """
+        """Iterate nodes"""
         return iter(self._nodes)

@@ -29,7 +29,8 @@ def test_ViewConcat_00(closemode):
         concat = ViewConcat("concat")
         view = View("view")
 
-        inputs >> concat >> view
+        inputs >> concat
+        concat >> view
 
     if not closegraph:
         view.close()

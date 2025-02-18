@@ -76,6 +76,7 @@ class Parameter:
                 label["paths"] = [label_parent["paths"][idx]]
 
             from ..lib.common import View  # fmt: skip
+
             self._view = View(
                 f"{self._common_output.node.name}.{idxname}",
                 self._common_connectible_output,
@@ -123,6 +124,9 @@ class Parameter:
     @property
     def connectible(self) -> Output | None:
         return self._connectible_output
+
+    def connected(self) -> bool:
+        return self._connectible_output and self._connectible_output.connected()
 
     def label(self, source: str = "text") -> str:
         return self._labelfmt.format(self._value_output.node.labels[source])

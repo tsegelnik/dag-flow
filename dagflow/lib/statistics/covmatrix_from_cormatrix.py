@@ -47,7 +47,7 @@ class CovmatrixFromCormatrix(Node):
         multiply(C, sigma[None, :], out=V)
         multiply(V, sigma[:, None], out=V)
 
-    def _typefunc(self) -> None:
+    def _type_function(self) -> None:
         check_inputs_are_square_matrices(self, "cormatrix")
         check_dimension_of_inputs(self, "sigma", 1)
         check_inputs_are_matrix_multipliable(self, "cormatrix", "sigma")

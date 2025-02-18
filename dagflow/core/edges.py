@@ -93,11 +93,12 @@ class EdgeContainer:
         else:
             try:
                 self._pos_edges_list[index] = limb
-            except IndexError:
+            except IndexError as e:
                 if index==len(self._pos_edges_list):
                     self._pos_edges_list.append(limb)
                 else:
-                    raise RuntimeError(f"EdgeContainer.make_positional: invalid index {index}")
+                    raise RuntimeError(f"EdgeContainer.make_positional: invalid index {index}") from e
+
 
         self._pos_edges[name] = limb
         del self._nonpos_edges[name]

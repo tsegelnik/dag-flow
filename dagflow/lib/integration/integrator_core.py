@@ -6,7 +6,7 @@ from numba import njit
 from numpy import empty, floating, integer, multiply
 
 from ...core.exception import TypeFunctionError
-from ...core.input_handler import MissingInputAddPair
+from ...core.input_strategy import AddNewInputAddNewOutput
 from ...core.type_functions import (
     check_node_has_inputs,
     check_dimension_of_inputs,
@@ -123,7 +123,7 @@ class IntegratorCore(OneToOneNode):
     _weights: NDArray
 
     def __init__(self, *args, dropdim: bool = True, ndim: Literal[1, 2] | None = None, **kwargs):
-        kwargs.setdefault("missing_input_handler", MissingInputAddPair())
+        kwargs.setdefault("input_strategy", AddNewInputAddNewOutput())
         super().__init__(*args, **kwargs, allowed_kw_inputs=("orders_x", "orders_y", "weights"))
         self._dropdim = dropdim
         self._weights_input = self._add_input("weights", positional=False)
@@ -147,7 +147,7 @@ class IntegratorCore(OneToOneNode):
     def dropdim(self) -> bool:
         return self._dropdim
 
-    def _typefunc(self) -> None:
+    def _type_function(self) -> None:
         """The function to determine the dtype and shape.
 
         Checks self.inputs dimension and, selects an integration

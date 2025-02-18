@@ -1,52 +1,53 @@
 from __future__ import annotations
 
-from collections.abc import Mapping, Sequence
+from collections.abc import Generator, Mapping, Sequence
 from typing import TYPE_CHECKING
 
 from multikeydict.nestedmkdict import NestedMKDict
 
 from ..core.labels import repr_pretty
-from ..tools.logger import logger
-from . import input_handler
-from .exception import ConnectionError
-from .input import Input, Inputs
-from .iter import StopNesting
+from ..tools.logger import logger  # TODO: bad thing due to Node has logger
+from .exception import ConnectionError, InitializationError
+from .input import Inputs
+from .input_strategy import InputStrategyBase
 from .output import Output, Outputs
-from .shift import rshift
 
 if TYPE_CHECKING:
-    from .node import Node
+    from ..parameters import Parameter
 
 
 class NodeBase:
-    __slots__ = ("inputs", "outputs", "__missing_input_handler")
+    __slots__ = ("inputs", "outputs", "_input_strategy")
     inputs: Inputs
     outputs: Outputs
 
-    def __init__(self, inputs=None, outputs=None, missing_input_handler=None):
-        self._missing_input_handler = missing_input_handler
+    def __init__(self, inputs=None, outputs=None, input_strategy=None):
+        self.input_strategy = input_strategy
         self.inputs = Inputs(inputs)
         self.outputs = Outputs(outputs)
 
     @property
-    def _missing_input_handler(self):
-        return self.__missing_input_handler
+    def input_strategy(self):
+        return self._input_strategy
 
-    @_missing_input_handler.setter
-    def _missing_input_handler(self, handler):
-        if handler:
-            if isinstance(handler, str):
-                sethandler = getattr(input_handler, handler)(self)
-            elif isinstance(handler, type):
-                sethandler = handler(self)
-            else:
-                sethandler = handler
-                sethandler.node = self
-        elif hasattr(self, "missing_input_handler"):
-            sethandler = self.missing_input_handler
+    @input_strategy.setter
+    def input_strategy(self, new_input_strategy):
+        if new_input_strategy is None:
+            # initialize with default strategy
+            self._input_strategy = InputStrategyBase()
+        elif isinstance(new_input_strategy, InputStrategyBase):
+            # if `new_input_strategy` is an certain implementation of the input strategy
+            self._input_strategy = new_input_strategy
+            self._input_strategy.node = self
+        elif issubclass(new_input_strategy, InputStrategyBase):
+            # if `new_input_strategy` is an type (not instance!) inherited from `InputStrategyBase`
+            self._input_strategy = new_input_strategy(node=self)
         else:
-            sethandler = input_handler.MissingInputFail(self)
-        self.__missing_input_handler = sethandler
+            from .input_strategy import InputStrategies
+
+            raise InitializationError(
+                f"Wrong {new_input_strategy=}! Must be in {InputStrategies}", node=self
+            )
 
     def __getitem__(self, key):
         if isinstance(key, (int, slice, str)):
@@ -62,7 +63,7 @@ class NodeBase:
             return NodeBase(
                 self.inputs[ikey],
                 self.outputs[okey],
-                missing_input_handler=self.__missing_input_handler,
+                input_strategy=self._input_strategy,
             )
         if ikey:
             return self.inputs[ikey]
@@ -81,98 +82,95 @@ class NodeBase:
 
     _repr_pretty_ = repr_pretty
 
-    def deep_iter_outputs(self):
-        return iter(self.outputs)
-
-    def deep_iter_inputs(self, disconnected_only=False):
-        return iter(self.inputs)
-
-    def deep_iter_child_outputs(self):
-        raise StopNesting(self)
-
     def print(self):
         for i, input in enumerate(self.inputs):
             print(i, input)
         for i, output in enumerate(self.outputs):
             print(i, output)
 
-    def __rshift_sequence(self, other: Sequence[Input]):
-        # TODO: should choose only one possible option
-        if len(self.outputs) == 1:
-            # raise ConnectionError("NodeBase>>Tuple only supported when NodeBase has only 1 positional output", node=self)
-            output = self.outputs[0]
-            for input in other:
-                output >> input
-        elif len(self.outputs) == len(other):
-            for output, input in zip(self.outputs, other):
-                output >> input
+    def __rshift__(self, other):
+        """
+        `self >> other`
+
+        The method to connect `Node.outputs` to `other`.
+        Now the connection is allowed only for the `Node` with only one output!
+        """
+        if self.outputs.len_all() == 1:
+            out = tuple(self.outputs.all_edges.values())[0]
         else:
             raise ConnectionError(
-                f"Inconsistent outputs/inputs: {len(self.outputs), len(other)}",
+                f"The connection of {type(self)} >> {type(other)} is not supported!"
+                " The connection `Node >> Node` is supported only nodes with only 1 output!",
                 node=self,
             )
+        out >> other
 
-    def __rshift__(
-        self,
-        other: Input | Node | NodeBase | Sequence[Input] | Mapping[str, Output] | NestedMKDict,
-    ):
+    def __rrshift__(self, other: Sequence | Generator):
         """
-        self >> other
-        """
-        from .node import Node
+        `other >> self`
 
-        if isinstance(other, Input):
-            if len(self.outputs) != 1:
+        The method connects `Sequence[Output | Parameter | NodeBase]` to `Node`.
+        The connection to the `Node` is allowed only if it contains a single output.
+        """
+        if not isinstance(other, (Sequence, Generator)):
+            raise ConnectionError(
+                f"The connection {type(other)=} >> {type(self)=} is not supported",
+                node=self,
+            )
+        from ..parameters import Parameter
+
+        idx_scope = self._input_strategy._idx_scope + 1
+        for out in other:
+            if isinstance(out, Output):
+                out._connect_to_node(self, idx_scope=idx_scope, reassign_idx_scope=False)
+            elif isinstance(out, Parameter):
+                out._connectible_output._connect_to_node(
+                    self, idx_scope=idx_scope, reassign_idx_scope=False
+                )
+            elif isinstance(out, NodeBase):
+                outs = out.outputs
+                if outs.len_all() != 1:
+                    raise ConnectionError(
+                        "The connection `Node >> Node` is supported for nodes with only 1 output!",
+                        node=out,
+                        output=outs,
+                    )
+                outs[0]._connect_to_node(self, idx_scope=idx_scope, reassign_idx_scope=False)
+            else:
                 raise ConnectionError(
-                    "NodeBase>>Input only supported when NodeBase has only 1 positional output",
+                    f"The connection `Sequence[{type(out)}] >> Node` is not allowed!",
                     node=self,
                 )
-            self.outputs[0] >> other
-        elif isinstance(other, Sequence):
-            self.__rshift_sequence(other)
-        elif isinstance(other, (Mapping, NestedMKDict)):
-            raise RuntimeError("Outdated logick. Reimplement!")
-            # for name, output in self.outputs.iter_kw_items():
-            #     try:
-            #         input = other[name]
-            #     except KeyError as e:
-            #         raise ConnectionError(f"Unable to find input {name}", node=self) from e
-            #     else:
-            #         output >> input
-        elif isinstance(other, NodeBase):
-            return rshift(self, other)
-        else:
-            raise ConnectionError(f"Unsupported >>RHS type: {type(other)}", node=self)
+        self._input_strategy._idx_scope = idx_scope
 
-    def __rrshift__(self, other: Output | Sequence[Output]):
-        """
-        other >> self
-        """
-        if not isinstance(other, Output):
-            return rshift(other, self)
-        for input in self.inputs:
-            other >> input
-
-    def __lshift__(self, storage: Mapping[str, Output]) -> None:
+    def __lshift__(self, storage: Mapping[str, Output | Parameter] | NestedMKDict) -> None:
         """
         self << other
 
         For each not connected input try to find output with the same name in storage, then connect.
         """
+        if not isinstance(storage, (Mapping, NestedMKDict)):
+            raise ConnectionError(
+                f"Cannot connect `Node << {type(storage)}` due to such connection is not supported!",
+                node=self,
+            )
+
+        from ..parameters import Parameter
+
         for name, inputs in self.inputs.all_edges.items():
             output = storage.get(name, None)
             if output is None:
                 continue
-            elif not isinstance(output, Output):
-                output = getattr(output, "output", None)  # TODO: ugly, try something else
-                if not isinstance(output, Output):
-                    raise ConnectionError('[<<] invalid "output"', input=inputs, output=output)
+            elif not isinstance(output, (Output, Parameter)):
+                raise ConnectionError('[<<] invalid "output"', input=inputs, output=output)
 
-            if not isinstance(inputs, Sequence):
+            if not isinstance(inputs, (Sequence, Generator)):
                 inputs = (inputs,)
 
             for input in inputs:
                 if not input.connected():
+                    # TODO: maybe we set logger as a field?
+                    #       do we need this logging actually?
                     logger.debug(f"[<<] connect {name}")
                     output >> input
 

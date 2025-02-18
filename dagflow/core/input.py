@@ -8,16 +8,11 @@ from ..core.labels import repr_pretty
 from .data_descriptor import DataDescriptor
 from .edges import EdgeContainer
 from .exception import AllocationError, ClosedGraphError, InitializationError, ReconnectionError
-from .iter import StopNesting
-from .shift import rshift
 
 if TYPE_CHECKING:
-    from collections.abc import Iterator
-    from typing import Any
-
     from numpy.typing import DTypeLike, NDArray
 
-    from .node import Node
+    from .node_base import NodeBase
     from .output import Output
     from .types import EdgesLike, ShapeLike
 
@@ -37,7 +32,7 @@ class Input:
     _own_data: NDArray | None
     _own_dd: DataDescriptor
 
-    _node: Node | None
+    _node: NodeBase | None
     _name: str | None
 
     _parent_output: Output | None
@@ -51,7 +46,7 @@ class Input:
     def __init__(
         self,
         name: str | None = None,
-        node: Node | None = None,
+        node: NodeBase | None = None,
         *,
         child_output: Output | None = None,
         parent_output: Output | None = None,
@@ -161,11 +156,11 @@ class Input:
         self._name = name
 
     @property
-    def node(self) -> Node | None:
+    def node(self) -> NodeBase | None:
         return self._node
 
     @property
-    def parent_node(self) -> Node | None:
+    def parent_node(self) -> NodeBase | None:
         return self._parent_output.node
 
     @property
@@ -240,20 +235,6 @@ class Input:
     def connected(self) -> bool:
         return self._parent_output is not None
 
-    def deep_iter_inputs(self, disconnected_only=False):
-        if disconnected_only and self.connected():
-            return iter(tuple())
-        raise StopNesting(self)
-
-    def deep_iter_child_outputs(self):
-        if self._child_output:
-            raise StopNesting(self._child_output)
-        return iter(tuple())
-
-    def __rrshift__(self, other):
-        """Other >> self."""
-        return rshift(other, self)
-
     def allocate(self, **kwargs) -> bool:
         """Returns True if data was reassigned."""
         if not self._allocatable or (
@@ -298,16 +279,6 @@ class Inputs(EdgeContainer):
         return f"→[{tuple(obj.name for obj in self)}]○"
 
     _repr_pretty_ = repr_pretty
-
-    def deep_iter_inputs(self, disconnected_only: bool = False) -> Iterator[Input]:
-        for input in self:
-            if disconnected_only and input.connected():
-                continue
-            yield input
-
-    def deep_iter_child_outputs(self) -> Iterator[Input | Output]:
-        for child_output in self:
-            yield child_output.child_output
 
     def touch(self) -> None:
         for input in self:

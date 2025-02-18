@@ -4,7 +4,7 @@ from pytest import mark, raises
 from dagflow.core.exception import TypeFunctionError
 from dagflow.core.graph import Graph
 from dagflow.plot.graphviz import savegraph
-from dagflow.core.input_handler import MissingInputAddOne
+from dagflow.core.input_strategy import AddNewInputAddAndKeepSingleOutput
 from dagflow.lib.common import Array, Dummy
 from dagflow.core.type_functions import (
     AllPositionals,
@@ -36,7 +36,7 @@ def test_check_input_common(testname, debug_graph, data, dim, shape, dtype):
         arr1 = Array("arr1", array(data, dtype=dtype))
         node = Dummy(
             "node",
-            missing_input_handler=MissingInputAddOne(output_fmt="result"),
+            input_strategy=AddNewInputAddAndKeepSingleOutput(output_fmt="result"),
         )
         arr1 >> node
         copy_from_inputs_to_outputs(node, 0, "result")
@@ -59,7 +59,7 @@ def test_check_inputs_are_square_matrices_00(testname, debug_graph, data):
         arr2 = Array("arr2", array(data, dtype=object))
         node = Dummy(
             "node",
-            missing_input_handler=MissingInputAddOne(output_fmt="result"),
+            input_strategy=AddNewInputAddAndKeepSingleOutput(output_fmt="result"),
         )
         arr1 >> node
         arr2 >> node
@@ -84,7 +84,7 @@ def test_check_inputs_are_square_matrices_01(testname, debug_graph, data):
         arr1 = Array("arr1", array(data))
         node = Dummy(
             "node",
-            missing_input_handler=MissingInputAddOne(output_fmt="result"),
+            input_strategy=AddNewInputAddAndKeepSingleOutput(output_fmt="result"),
         )
         arr1 >> node
         check_inputs_are_square_matrices(node, 0)
@@ -108,7 +108,7 @@ def test_check_inputs_equivalence(testname, debug_graph, dtype, wrongarr):
         arr3 = Array("arr2", array([5, 6], dtype=dtype))
         node = Dummy(
             "node",
-            missing_input_handler=MissingInputAddOne(output_fmt="result"),
+            input_strategy=AddNewInputAddAndKeepSingleOutput(output_fmt="result"),
         )
         (arr1, arr2, arr3) >> node
         check_inputs_equivalence(node)
@@ -135,7 +135,7 @@ def test_check_subtype(testname, debug_graph, dtype):
         arr1 = Array("arr1", array([1, 2], dtype=dtype))
         node = Dummy(
             "node",
-            missing_input_handler=MissingInputAddOne(output_fmt="result"),
+            input_strategy=AddNewInputAddAndKeepSingleOutput(output_fmt="result"),
         )
         arr1 >> node
         check_subtype_of_inputs(node, 0, dtype=floating)
@@ -161,7 +161,7 @@ def test_check_inputs_are_matrix_multipliable_00(testname, debug_graph, data1, d
         arr2 = Array("arr2", array(data2))
         node = Dummy(
             "node",
-            missing_input_handler=MissingInputAddOne(output_fmt="result"),
+            input_strategy=AddNewInputAddAndKeepSingleOutput(output_fmt="result"),
         )
         (arr1, arr2) >> node
         with raises(TypeFunctionError):
@@ -183,7 +183,7 @@ def test_check_inputs_are_matrix_multipliable_01(testname, debug_graph, data1, d
         arr2 = Array("arr2", array(data2))
         node = Dummy(
             "node",
-            missing_input_handler=MissingInputAddOne(output_fmt="result"),
+            input_strategy=AddNewInputAddAndKeepSingleOutput(output_fmt="result"),
         )
         (arr1, arr2) >> node
         check_inputs_are_matrix_multipliable(node, 0, 1)

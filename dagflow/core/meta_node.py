@@ -3,8 +3,9 @@ from __future__ import annotations
 from collections.abc import Sequence
 from typing import TYPE_CHECKING, Literal
 
+from dagflow.core.input_strategy import InheritInputStrategy, InputStrategyBase
+
 from .exception import CriticalError, InitializationError
-from .node import Node
 from .node_base import NodeBase
 
 if TYPE_CHECKING:
@@ -30,25 +31,25 @@ class MetaNode(NodeBase):
         "_call_functions",
         "_node_inputs_pos",
         "_node_outputs_pos",
-        "_missing_input_handler",
+        "_input_strategy",
         "_call_positional_input",
         "__weakref__",  # needed for weakref
     )
 
-    _nodes: list[Node]
+    _nodes: list[NodeBase]
     _strategy: MetaNodeStrategiesType
-    _leading_node: Node | None
-    _new_node_cls: type[Node]
+    _leading_node: NodeBase | None
+    _new_node_cls: type[NodeBase]
     _call_functions: dict[str, Callable]
-    _node_inputs_pos: Node | None
-    _node_outputs_pos: Node | None
-    _missing_input_handler: Callable
+    _node_inputs_pos: NodeBase | None
+    _node_outputs_pos: NodeBase | None
+    _input_strategy: InputStrategyBase
     _call_positional_input: Callable
 
     def __init__(
         self,
         strategy: MetaNodeStrategiesType = "LeadingNode",
-        new_node_cls: type[Node] = Node,
+        new_node_cls: type[NodeBase] = NodeBase,
     ):
         super().__init__()
         if strategy not in MetaNodeStrategies:
@@ -61,7 +62,7 @@ class MetaNode(NodeBase):
         self._leading_node = None
         self._node_inputs_pos = None
         self._node_outputs_pos = None
-        self._missing_input_handler = lambda *_, **__: None
+        self._input_strategy = InputStrategyBase(node=self)
         self._call_functions = {
             "LeadingNode": self._call_leading_node,
             "NewNode": self._call_new_node,
@@ -71,19 +72,19 @@ class MetaNode(NodeBase):
         self._new_node_cls = new_node_cls
 
     @property
-    def nodes(self) -> dict[str, Node]:
+    def nodes(self) -> dict[str, NodeBase]:
         return {node.name: node for node in self._nodes}
 
     @property
-    def leading_node(self) -> Node | None:
+    def leading_node(self) -> NodeBase | None:
         return self._leading_node
 
     @property
-    def new_node_cls(self) -> type[Node]:
+    def new_node_cls(self) -> type[NodeBase]:
         return self._new_node_cls
 
     def _add_input_to_node(
-        self, node: Node, name: str | None = None, *args, **kwargs
+        self, node: NodeBase, name: str | None = None, *args, **kwargs
     ) -> Input | None:
         inp = node(name, *args, **kwargs)
         if inp and inp.name not in self.inputs:
@@ -97,7 +98,7 @@ class MetaNode(NodeBase):
         node_args: dict | None = None,
         input_args: dict | None = None,
         meta_node_args: dict | None = None,
-        new_node_cls: type[Node] | None = None,
+        new_node_cls: type[NodeBase] | None = None,
     ) -> Input | None:
         """
         Creates new node with positional input
@@ -110,12 +111,13 @@ class MetaNode(NodeBase):
             meta_node_args = {}
         if new_node_cls is None:  # use default cls
             new_node_cls = self.new_node_cls
+
         node = new_node_cls(**node_args)
         self._add_node(node, **meta_node_args)
-        # NOTE: pass idx adn idx_out to avoid same naming of the inputs and outputs
-        return self._add_input_to_node(
-            node, idx=len(self._nodes), idx_out=len(self._nodes), **input_args
-        )
+
+        # set input and output indices as nodes count to avoid same naming
+        ln = len(self._nodes)
+        return self._add_input_to_node(node, idx_input=ln, idx_output=ln, **input_args)
 
     def _call_leading_node(self, *args, **kwargs) -> Input | None:
         """
@@ -168,7 +170,7 @@ class MetaNode(NodeBase):
 
     def _add_node(
         self,
-        node: Node,
+        node: NodeBase,
         *,
         inputs_pos: bool = False,
         outputs_pos: bool = False,
@@ -182,7 +184,7 @@ class MetaNode(NodeBase):
         also_missing_outputs: bool = False,
     ) -> None:
         if node in self._nodes:
-            raise RuntimeError("Node already added")
+            raise RuntimeError("NodeBase already added")
 
         self._nodes.append(node)
         node.meta_node = self
@@ -192,7 +194,7 @@ class MetaNode(NodeBase):
         if inputs_pos:
             self._import_pos_inputs(node)
         if outputs_pos:
-            self._import_pos_outputs(node, namefmt = outputs_pos_fmt)
+            self._import_pos_outputs(node, namefmt=outputs_pos_fmt)
         self._import_kw_inputs(node, kw_inputs, merge=merge_inputs)
         if kw_inputs_optional:
             self._import_kw_inputs(node, kw_inputs_optional, merge=merge_inputs, optional=True)
@@ -201,13 +203,13 @@ class MetaNode(NodeBase):
             self._import_kw_outputs(node, kw_outputs_optional, optional=True)
 
         if missing_inputs:
-            self._missing_input_handler = MissingInputInherit(
+            self._input_strategy = InheritInputStrategy(
                 node, self, inherit_outputs=also_missing_outputs
             )
         if not missing_inputs and also_missing_outputs:
             raise RuntimeError("also_missiong_outputs=True option makes no sense")
 
-    def _import_pos_inputs(self, node: Node, *, keyword: bool = True) -> None:
+    def _import_pos_inputs(self, node: NodeBase, *, keyword: bool = True) -> None:
         if self._strategy == "LeadingNode" and self.leading_node is not None:
             keyword = False
         elif self._node_inputs_pos is not None:
@@ -218,11 +220,7 @@ class MetaNode(NodeBase):
             self.inputs.add(input, positional=True, keyword=keyword)
 
     def _import_pos_outputs(
-        self,
-        node: Node,
-        *,
-        namefmt: str | None = None,
-        keyword: bool = True
+        self, node: NodeBase, *, namefmt: str | None = None, keyword: bool = True
     ) -> None:
         if self._strategy == "LeadingNode" and self.leading_node is not None:
             keyword = False
@@ -234,13 +232,13 @@ class MetaNode(NodeBase):
             self.outputs.add(
                 output,
                 positional=True,
-                name = namefmt and namefmt.format(output.name),
-                keyword=keyword
+                name=namefmt and namefmt.format(output.name),
+                keyword=keyword,
             )
 
     def _import_kw_inputs(
         self,
-        node: Node,
+        node: NodeBase,
         kw_inputs: TPairsOrDict = [],
         merge: Sequence[str] = [],
         optional: bool = False,
@@ -260,7 +258,7 @@ class MetaNode(NodeBase):
             self.inputs.add(newinput, name=tname, merge=mergethis, positional=False)
 
     def _import_kw_outputs(
-        self, node: Node, kw_outputs: TPairsOrDict = [], *, optional: bool = True
+        self, node: NodeBase, kw_outputs: TPairsOrDict = [], *, optional: bool = True
     ) -> None:
         iterable = kw_outputs.items() if isinstance(kw_outputs, dict) else kw_outputs
         for oname in iterable:
@@ -280,7 +278,7 @@ class MetaNode(NodeBase):
 
         def getstr(prefix_disconnected, prefix_connected, name, obj):
             if isinstance(obj, tuple):
-                Nconnected = sum(1 for node in obj if node.connected())
+                Nconnected = sum(bool(node.connected()) for node in obj)
                 Nnode = len(obj)
                 Ndisconnected = Nnode - Nconnected
                 if Nconnected == 0:
@@ -307,30 +305,3 @@ class MetaNode(NodeBase):
             for i, node in enumerate(self._nodes):
                 print(f"subnode {i}: ", end="")
                 node.print()
-
-
-class MissingInputInherit:
-    __slots__ = ("_source_node", "_target_node", "_source_handler", "_inherit_outputs")
-    _source_node: Node
-    _target_node: MetaNode
-    _source_handler: Callable
-    _inherit_outputs: bool
-
-    def __init__(self, source_node: Node, target_node: MetaNode, *, inherit_outputs: bool = False):
-        self._source_node = source_node
-        self._target_node = target_node
-        self._inherit_outputs = inherit_outputs
-
-        try:
-            self._source_handler = source_node._missing_input_handler
-        except AttributeError as exc:
-            raise RuntimeError(f"Node {source_node!s} has no missing input handler") from exc
-
-    def __call__(self, *args, **kwargs):
-        newinput = self._source_handler(*args, **kwargs)
-        self._target_node.inputs.add(newinput)
-
-        if self._inherit_outputs and newinput.child_output is not None:
-            self._target_node.outputs.add(newinput.child_output)
-
-        return newinput

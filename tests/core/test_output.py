@@ -27,7 +27,8 @@ def test_Output_02():
         va = Array("test", array_in)
         sm1 = Sum("add 1")
         sm2 = Sum("add 2")
-        va >> sm1 >> sm2
+        va >> sm1
+        sm1 >> sm2
 
     output1 = va.outputs[0]
     output2 = sm1.outputs[0]

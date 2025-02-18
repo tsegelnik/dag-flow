@@ -47,7 +47,7 @@ class View(Node):
     def _function(self):
         self._input.data
 
-    def _typefunc(self) -> None:
+    def _type_function(self) -> None:
         """A output takes this function to determine the dtype and shape"""
         copy_from_inputs_to_outputs(self, 0, 0)
 

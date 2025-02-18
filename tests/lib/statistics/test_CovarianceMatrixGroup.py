@@ -136,10 +136,7 @@ def test_CovarianceMatrixGroup(dtype, correlated: bool, testname):
     if not correlated:
         vsyst_check = 2.0 * vsyst_check_AB + vsyst_check_CD  # because of using AB and A,B
 
-    if correlated:
-        factors = {"d": 0.0, "f": 10000}
-    else:
-        factors = {"d": 0.0, "f": 5000}
+    factors = {"d": 0.0, "f": 10000} if correlated else {"d": 0.0, "f": 5000}
     rtol = finfo(dtype).resolution
     atol = finfo(dtype).resolution
     if not correlated:

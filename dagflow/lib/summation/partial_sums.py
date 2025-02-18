@@ -49,7 +49,7 @@ class PartialSums(OneToOneNode):
         super().__init__(*args, **kwargs)
         self._array = self._add_input("array", positional=False)
 
-    def _typefunc(self) -> None:
+    def _type_function(self) -> None:
         check_node_has_inputs(self, "array")
         check_node_has_inputs(self, AllPositionals)
         check_dimension_of_inputs(self, (AllPositionals, "array"), 1)
