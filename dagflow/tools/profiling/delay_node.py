@@ -4,7 +4,7 @@ from time import sleep
 from typing import TYPE_CHECKING
 
 from dagflow.core.exception import InitializationError
-from dagflow.core.input_handler import MissingInputAdd
+from dagflow.core.input_strategy import AddNewInput
 from dagflow.core.node import Node
 
 if TYPE_CHECKING:
@@ -26,8 +26,7 @@ class DelayNode(Node):
         if not isinstance(sleep_time, (int, float)):
             raise InitializationError("Invalid sleep_time type " "(use `float` or `int`)")
         self._sleep_time = sleep_time
-        kwargs.setdefault("missing_input_handler", MissingInputAdd())
-        super().__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs, input_strategy=AddNewInput())
         self._out = self._add_output("result")
 
     def _function(self):
@@ -35,6 +34,6 @@ class DelayNode(Node):
             inp.touch()
         sleep(self._sleep_time)
 
-    def _typefunc(self):
+    def _type_function(self):
         self._out.dd.dtype = int
         self._out.dd.shape = ()
