@@ -375,7 +375,7 @@ class Output:
     #################################################################
     #####                   CONNECTION
     #################################################################
-    def connect_to_input(self, input) -> None:
+    def _connect_to_input(self, input) -> None:
         """
         The method to connect `Output` to the `Input`.
         It is not possible to connect a closed input and an opened output,
@@ -421,7 +421,7 @@ class Output:
         self._child_inputs.append(input)
         input.set_parent_output(self)
 
-    def connect_to_node(self, node, idx_scope=None, reassign_idx_scope=False) -> None:
+    def _connect_to_node(self, node, idx_scope=None, reassign_idx_scope=False) -> None:
         """
         The method connects `Output` to `Node`:
         if there is no unconnected inputs, attempts to create a new one using `Node(idx_scope=idx_scope)`.
@@ -447,7 +447,7 @@ class Output:
                 node=node,
                 output=self,
             )
-        self.connect_to_input(inp)
+        self._connect_to_input(inp)
         if reassign_idx_scope:
             node.input_strategy._idx_scope = idx_scope
 
@@ -484,12 +484,12 @@ class Output:
 
         match other:
             case Input():
-                self.connect_to_input(other)
+                self._connect_to_input(other)
             case MetaNode():
                 try:
                     # Firstly try a Node-like connection
                     idx_scope = other._input_strategy._idx_scope + 1
-                    self.connect_to_node(other, idx_scope=idx_scope, reassign_idx_scope=True)
+                    self._connect_to_node(other, idx_scope=idx_scope, reassign_idx_scope=True)
                 except Exception:
                     try:
                         # Try to use any custom implementation of connection in the certain MetaNode.
@@ -504,7 +504,7 @@ class Output:
                         ) from exc
             case NodeBase():
                 idx_scope = other._input_strategy._idx_scope + 1
-                self.connect_to_node(other, idx_scope=idx_scope, reassign_idx_scope=True)
+                self._connect_to_node(other, idx_scope=idx_scope, reassign_idx_scope=True)
             case Sequence() | Inputs() | Generator():
                 for subother in other:
                     self >> subother

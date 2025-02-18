@@ -122,9 +122,9 @@ class NodeBase:
         idx_scope = self._input_strategy._idx_scope + 1
         for out in other:
             if isinstance(out, Output):
-                out.connect_to_node(self, idx_scope=idx_scope, reassign_idx_scope=False)
+                out._connect_to_node(self, idx_scope=idx_scope, reassign_idx_scope=False)
             elif isinstance(out, Parameter):
-                out._connectible_output.connect_to_node(
+                out._connectible_output._connect_to_node(
                     self, idx_scope=idx_scope, reassign_idx_scope=False
                 )
             elif isinstance(out, NodeBase):
@@ -135,7 +135,7 @@ class NodeBase:
                         node=out,
                         output=outs,
                     )
-                outs[0].connect_to_node(self, idx_scope=idx_scope, reassign_idx_scope=False)
+                outs[0]._connect_to_node(self, idx_scope=idx_scope, reassign_idx_scope=False)
             else:
                 raise ConnectionError(
                     f"The connection `Sequence[{type(out)}] >> Node` is not allowed!",
