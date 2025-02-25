@@ -36,7 +36,7 @@ def test_full_guide_g0():
     nodes = graph._nodes
 
 
-    ## NodeProfiler used for estimates the execution time for each node `n_runs` times.
+    ## NodeProfiler - estimate the execution time for each node `n_runs` times.
     #  more precisely, it counts the time of the `Node.function`
     node_profiler = NodeProfiler(nodes, n_runs=1_000)
 
