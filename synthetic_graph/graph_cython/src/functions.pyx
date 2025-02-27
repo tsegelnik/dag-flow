@@ -5,37 +5,48 @@ cdef int fcn_ds_default(int* input_sizes):
     return input_sizes[0]
 
 
-cdef double* fcn_default(double** inputs, int* input_sizes, int input_count, double* data):
+cdef void* fcn_default(void** inputs, int* input_sizes, int* input_types, int input_count, void* data, int data_type):
     return data
 
 
-cdef double* fcn_sum(double** inputs, int* input_sizes, int input_count, double* data):
+cdef void* fcn_sum(void** inputs, int* input_sizes, int* input_types, int input_count, void* data, int output_type):
     cdef int size = input_sizes[0]
     cdef int i, j
-
-    for i in range(input_count):
-        for j in range(size):
-            data[j] += inputs[i][j]
-
+    
+    for j in range(size):
+        for i in range(input_count):
+            (<double*>data)[j] += (<double**>inputs)[i][j]
+    
     return data
 
 
-cdef double* fcn_product(double** inputs, int* input_sizes, int input_count, double* data):
+cdef void* fcn_sum_double_int(void** inputs, int* input_sizes, int* input_types, int input_count, void* data, int output_type):
     cdef int size = input_sizes[0]
-    cdef int i, j
-
-    for i in range(input_count):
-        for j in range(size):
-            data[j] *= inputs[i][j]
-
-    return data
-
-
-cdef double* fcn_sin(double** inputs, int* input_sizes, int input_count, double* data):
-    cdef double* input = inputs[0]
     cdef int i
+    
+    for i in range(size):
+        (<double*>data)[i] += (<double**>inputs)[0][i]
+        (<double*>data)[i] += (<int**>inputs)[1][i]
+    
+    return data
 
-    for i in range(input_sizes[0]):
-        data[i] = sin(input[i])
 
+cdef void* fcn_product(void** inputs, int* input_sizes, int* input_types, int input_count, void* data, int output_type):
+    cdef int size = input_sizes[0]
+    cdef int i, j
+    
+    for j in range(size):
+        for i in range(input_count):
+            (<double*>data)[j] *= (<double**>inputs)[i][j]
+    
+    return data
+
+
+cdef void* fcn_sin(void** inputs, int* input_sizes, int* input_types, int input_count, void* data, int output_type):
+    cdef int size = input_sizes[0]
+    cdef int i
+    
+    for i in range(size):
+        (<double*>data)[i] = sin((<double**>inputs)[0][i])
+    
     return data
