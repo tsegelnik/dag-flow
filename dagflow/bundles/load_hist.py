@@ -7,6 +7,7 @@ from typing import TYPE_CHECKING
 from numpy import allclose, asarray
 from schema import And, Optional, Or, Schema, Use
 
+from multikeydict.tools.map import make_reorder_function
 from multikeydict.typing import strkey
 
 from ..core.storage import NodeStorage
@@ -42,6 +43,12 @@ _schema_cfg = Schema(
             And(Or(((str,),), [[str]]), Use(lambda l: tuple(set(k) for k in l))),
         ),
         Optional("key_order", default=None): Or(
+            ((str,), (str,)),
+            [[str], [str]],
+            (int,),
+            [int],
+        ),
+        Optional("output_key_order", default=None): Or(
             ((str,), (str,)),
             [[str], [str]],
             (int,),
@@ -83,6 +90,7 @@ def _load_hist_data(
     name_function = cfg["name_function"]
     skip = cfg["skip"]
     key_order = cfg["key_order"]
+    output_key_order = cfg["output_key_order"]
     normalize = cfg["normalize"]
     dtype = cfg["dtype"]
 
@@ -91,6 +99,7 @@ def _load_hist_data(
 
     edges_list: list[NDArray] = []
     data = {}
+    reorder_output_key = make_reorder_function(output_key_order)
     for _, filename, _, key in iterate_filenames_and_objectnames(
         filenames, file_keys, keys, skip=skip, key_order=key_order
     ):
@@ -104,7 +113,8 @@ def _load_hist_data(
             y /= ysum
             logger.log(INFO3, "[normalize]")
 
-        data[key] = x, y
+        output_key = reorder_output_key(key)
+        data[output_key] = x, y
         edges_list.append(x)
 
     if cfg["merge_x"]:

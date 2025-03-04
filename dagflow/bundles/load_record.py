@@ -46,6 +46,12 @@ _schema_cfg = Schema(
             (int,),
             [int],
         ),
+        Optional("output_key_order", default=None): Or(
+            ((str,), (str,)),
+            [[str], [str]],
+            (int,),
+            [int],
+        ),
         Optional("name_function", default=lambda: lambda st, tpl: st): Or(
             Callable, And({str: str}, Use(lambda dct: lambda st, tpl: dct.get(st, st)))
         ),
@@ -82,21 +88,21 @@ def _load_record_data(
     name_function = cfg["name_function"]
     skip = cfg["skip"]
     key_order = cfg["key_order"]
+    output_key_order = cfg["output_key_order"]
     dtype = cfg["dtype"]
     columns = cfg["columns"]
 
     data: dict[TupleKey, NDArray] = {}
+    reorder_output_key = make_reorder_function(output_key_order)
     for _, filename, _, key in iterate_filenames_and_objectnames(
-        filenames, file_keys, keys, skip=skip
+        filenames, file_keys, keys, skip=skip, key_order=key_order
     ):
         skey = strkey(key)
         logger.log(INFO3, f"Process {skey}")
 
-        reorder_key = make_reorder_function(key_order)
-
         record = FileReader.record[filename, name_function(skey, key)]
         for column in columns:
-            fullkey = reorder_key((column,) + key)
+            fullkey = reorder_output_key((column,) + key)
             rec = record[column][:]
             data[fullkey] = asarray(rec, dtype)
 
