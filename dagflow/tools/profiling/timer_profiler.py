@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from textwrap import shorten
 from typing import TYPE_CHECKING
 
 from numpy import sum as npsum
@@ -98,3 +99,20 @@ class TimerProfiler(Profiler):
             if c.startswith("t_") or c == "time":
                 df[c] /= self._n_runs
         return df
+
+    def _shorten_names(self, nodes, max_length) -> str:
+        """Get a string representation of names of the `nodes`,
+        truncated to not exceed `max_length`.
+
+        Note: This implementation is generally faster than directly applying
+        `shorten(str([n.name for n in nodes]), max_length)`.
+        """
+        names = []
+        names_sum_length = 0
+        for node in nodes:
+            if names_sum_length > max_length:
+                break
+            names.append(node.name)
+            names_sum_length += len(node.name)
+        return shorten(", ".join(names), max_length)
+
