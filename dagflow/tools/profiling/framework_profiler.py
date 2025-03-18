@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-from textwrap import shorten
 from timeit import repeat
 from typing import TYPE_CHECKING
 
@@ -108,16 +107,6 @@ class FrameworkProfiler(TimerProfiler):
         self._restore_functions()
         self._taint_nodes()
         return results
-
-    def _shorten_names(self, nodes, max_length):
-        names = []
-        names_sum_length = 0
-        for node in nodes:
-            if names_sum_length > max_length:
-                break
-            names.append(node.name)
-            names_sum_length += len(node.name)
-        return shorten(", ".join(names), max_length)
 
     def estimate_framework_time(self) -> FrameworkProfiler:
         results = self._estimate_framework_time()
