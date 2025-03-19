@@ -141,8 +141,7 @@ class NodeStorage(NestedMKDict):
     # Connectors
     #
     def __rshift__(self, other: NestedMKDict):
-        """
-        `self >> other`
+        """`self >> other`
 
         The connection is allowed only with `NestedMKDict`.
         It is done within strict matching (by names) of objects in the two dicts.
@@ -185,8 +184,7 @@ class NodeStorage(NestedMKDict):
             del other[key]
 
     def __lshift__(self, other: NestedMKDict):
-        """
-        `self << other`
+        """`self << other`
 
         Such connection iterates over child objects and attemps
         to use `<<` operator implemented inside them. Usually, such child objects are `Node`,
@@ -204,8 +202,7 @@ class NodeStorage(NestedMKDict):
                 ) from e
 
     def __rlshift__(self, other):
-        """
-        `other << self`
+        """`other << self`
 
         Such connection iterates over `other` and attemps to use `<<` operator
         for every element. Usually, such child objects are `Node`,
@@ -710,11 +707,13 @@ class ParametersVisitor(NestedMKDictVisitor):
         if not self._localdata:
             return
 
-        self._data_list.append({
-            "path": f"group: {'.'.join(self._path)} [{len(self._localdata)}]",
-            "count": len(self._localdata),
-            "label": "[group]",
-        })
+        self._data_list.append(
+            {
+                "path": f"group: {'.'.join(self._path)} [{len(self._localdata)}]",
+                "count": len(self._localdata),
+                "label": "[group]",
+            }
+        )
         self._data_list.extend(self._localdata)
         self._localdata = []
 
