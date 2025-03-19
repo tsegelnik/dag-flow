@@ -32,7 +32,7 @@ class VectorMatrixProduct(Node):
     _mat: Input
     _matrix_column: bool
 
-    def __init__(self, *args, mode: Literal["column", "row"] = "column", **kwargs) -> None:
+    def __init__(self, *args, mode: Literal["column", "row"], **kwargs) -> None:
         kwargs.setdefault(
             "input_strategy", AddNewInputAddNewOutput(input_fmt="vector", output_fmt="result")
         )
