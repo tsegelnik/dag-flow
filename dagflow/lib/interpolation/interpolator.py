@@ -130,16 +130,16 @@ class Interpolator(MetaNode):
                 name, method, label=label_int, positionals=False, **kwargs
             )
             nodes[name] = interpolator
-            inputs.child(key_interpolator)[("ycoarse",) + key] = interpolator.inputs["y"]
+            inputs.create_child(key_interpolator)[("ycoarse",) + key] = interpolator.inputs["y"]
             outputs[name] = interpolator.outputs[-1]
 
             if replicate_xcoarse:
-                inputs.child(key_interpolator)[("xcoarse",) + key] = interpolators.inputs["coarse"]
-                inputs.child(key_interpolator)[("xfine",) + key] = interpolators.inputs["fine"]
+                inputs.create_child(key_interpolator)[("xcoarse",) + key] = interpolators.inputs["coarse"]
+                inputs.create_child(key_interpolator)[("xfine",) + key] = interpolators.inputs["fine"]
 
         if not replicate_xcoarse:
-            inputs.child(key_interpolator)["xcoarse"] = interpolators.inputs["coarse"]
-            inputs.child(key_interpolator)["xfine"] = interpolators.inputs["fine"]
+            inputs.create_child(key_interpolator)["xcoarse"] = interpolators.inputs["coarse"]
+            inputs.create_child(key_interpolator)["xfine"] = interpolators.inputs["fine"]
 
         NodeStorage.update_current(storage, strict=True, verbose=verbose)
 

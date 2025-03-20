@@ -39,7 +39,7 @@ def make_y_parameters_for_x(
     index = tuple(namefmt.format(i) for i in range(npars))
 
     labels_storage = NestedMKDict({})
-    labels_loc = labels_storage.child(key)
+    labels_loc = labels_storage.create_child(key)
     for i, (key, value) in enumerate(zip(index, data)):
         labels_loc[key] = (label_loc:=format_dict(
             labels,
