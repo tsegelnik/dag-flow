@@ -13,8 +13,6 @@ if TYPE_CHECKING:
 
     from dagflow.core.node import Node
 
-SOURCE_COL_WIDTH = 32
-SINK_COL_WIDTH = 32
 
 # it is possible to group by two columns
 _ALLOWED_GROUPBY = (
