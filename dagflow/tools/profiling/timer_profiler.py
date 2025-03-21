@@ -45,6 +45,9 @@ _AGGREGATE_ALIASES: dict[str, str | Callable] = {
 
 _DEFAULT_AGGREGATIONS = ("count", "single", "sum", "%_of_total")
 
+SOURCE_COL_WIDTH = 32
+SINK_COL_WIDTH = 32
+
 
 class TimerProfiler(Profiler):
     """Base class for time-related profiling.
@@ -116,3 +119,9 @@ class TimerProfiler(Profiler):
             names_sum_length += len(node.name)
         return shorten(", ".join(names), max_length)
 
+    def _shorten_sources_sinks(self) -> tuple[str, str]:
+        """Get a short string representation of `sources` and `sinks` names"""
+        return (
+            self._shorten_names(self._sources, SOURCE_COL_WIDTH),
+            self._shorten_names(self._sinks, SINK_COL_WIDTH),
+        )
