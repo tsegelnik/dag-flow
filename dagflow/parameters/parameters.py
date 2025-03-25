@@ -83,7 +83,7 @@ class Parameters:
                 raise RuntimeError("Do not know how to handle 0 parameters")
 
     def _close(self) -> None:
-        self._value_node.close(recursive=True)
+        self._value_node.close(close_parents=True)
 
     @property
     def is_variable(self) -> bool:

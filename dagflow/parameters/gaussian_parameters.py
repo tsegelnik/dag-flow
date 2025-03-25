@@ -190,7 +190,7 @@ class GaussianConstraint(Constraint):
         (parameters.value, self.normvalue) >> self._norm_node
         self.normvalue_final = self._norm_node.outputs["normvalue"]
 
-        self._norm_node.close(recursive=True)
+        self._norm_node.close(close_parents=True)
         self._norm_node.touch()
 
         value_output = self._pars.value
