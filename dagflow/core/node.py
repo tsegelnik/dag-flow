@@ -648,6 +648,7 @@ class Node(NodeBase):
 
     def close(
         self,
+        *,
         recursive: bool = True,
         strict: bool = True,
         close_children=False,
@@ -673,11 +674,11 @@ class Node(NodeBase):
                 if strict:
                     raise
         if recursive and not all(
-            _input.parent_node.close(recursive) for _input in self.inputs.iter_all()
+            _input.parent_node.close(recursive=recursive, close_children=True) for _input in self.inputs.iter_all()
         ):
             return False
         for node in together:
-            if not node.close(recursive=recursive):
+            if not node.close(recursive=recursive, close_children=True):
                 return False
         self.fd.closed = self.fd.allocated
         if strict and not self.closed:
@@ -691,16 +692,20 @@ class Node(NodeBase):
         self.logger.debug(f"Node '{self.name}': {self.closed and 'closed' or 'failed to close'}")
         return self.closed
 
-    def open(self, force_taint: bool = False) -> bool:
+    def open(
+        self,
+        *,
+        open_children: bool = False,
+        force_taint: bool = False
+    ) -> bool:
         if not self.closed and not force_taint:
             return True
         self.logger.debug(f"Node '{self.name}': Open")
-        if not all(
-            _input.node.open(force_taint)
-            for output in self.outputs
-            for _input in output.child_inputs
-        ):
-            raise OpeningError(node=self)
+        if open_children:
+            for output in self.outputs:
+                for _input in output.child_inputs:
+                    if not _input.node.open(force_taint=force_taint, open_children=open_children):
+                        raise OpeningError(node=self, output=output)
         self.unfreeze()
         self.taint()
         self.fd.closed = False

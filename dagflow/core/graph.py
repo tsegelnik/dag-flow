@@ -1,8 +1,8 @@
 from __future__ import annotations
 
+from ..tools.logger import Logger, get_logger
 from .exception import ClosedGraphError, ClosingError, InitializationError, UnclosedGraphError
 from .graph_base import GraphBase
-from ..tools.logger import Logger, get_logger
 
 
 class Graph(GraphBase):
@@ -67,13 +67,13 @@ class Graph(GraphBase):
         return self._closed
 
     def label(self):
-        """Returns formatted label"""
+        """Returns formatted label."""
         if self._label:
             return self._label.format(self._label, nodes=len(self._nodes))
 
     def add_node(self, name, **kwargs):
-        """
-        Adds a node, if the graph is opened.
+        """Adds a node, if the graph is opened.
+
         It is possible to pass the node class via the `nodeclass` arg
         (default: `Node`)
         """
@@ -85,7 +85,7 @@ class Graph(GraphBase):
         return kwargs.pop("nodeclass", Node)(name, graph=self, **kwargs)
 
     def add_nodes(self, nodes, **kwargs):
-        """Adds nodes"""
+        """Adds nodes."""
         if self.closed:
             raise ClosedGraphError(node=nodes)
 
@@ -97,7 +97,7 @@ class Graph(GraphBase):
             node.print()
 
     def close(self, *, strict: bool = True, force: bool = False, **kwargs) -> bool:
-        """Closes the graph"""
+        """Closes the graph."""
         if force:
             self._nodes_closed = False
         elif self._closed:
@@ -125,7 +125,7 @@ class Graph(GraphBase):
         self.logger.debug(f"Graph '{self.name}': Closing nodes...")
         for node in nodes_to_process:
             try:
-                self._closed = node.close(**kwargs)
+                self._closed = node.close(close_children=True, **kwargs)
             except ClosingError:
                 if strict:
                     raise
@@ -147,7 +147,7 @@ class Graph(GraphBase):
     def open(
         self, force: bool = False, *, close_on_exit: bool = True, open_nodes: bool = False
     ) -> Graph:
-        """Opens the graph recursively"""
+        """Opens the graph recursively."""
         self._close_on_exit = close_on_exit
 
         if not self._closed and not force:
@@ -156,7 +156,9 @@ class Graph(GraphBase):
         self.logger.debug(f"Graph '{self.name}': Opening...")
 
         if open_nodes:
-            self._closed = not all(node.open(force) for node in self._nodes)
+            self._closed = not all(
+                node.open(force_taint=force, open_children=True) for node in self._nodes
+            )
             self._nodes_closed = False
         else:
             self._closed = False
