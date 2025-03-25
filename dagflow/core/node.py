@@ -607,33 +607,33 @@ class Node(NodeBase):
 
                 self._input_nodes_callbacks.append(node.touch)
 
-    def update_types(self, recursive: bool = True):
+    def update_types(self, update_parents: bool = True):
         if not self.fd.types_tainted:
             return True
         # TODO: causes problems with nodes, that are allocated and closed prior the graph being closed
         # Need a mechanism to request reallocation
-        if recursive:
-            self.logger.debug(f"Node '{self.name}': Trigger recursive update types...")
+        if update_parents:
+            self.logger.debug(f"Node '{self.name}': Trigger update_parents update types...")
             for input in self.inputs.iter_all():
                 if not input.connected():
                     raise ClosingError("Input is not connected", node=self, input=input)
-                input.parent_node.update_types(recursive)
+                input.parent_node.update_types(update_parents)
         self.logger.debug(f"Node '{self.name}': Update types...")
         self._type_function()
         self.fd.types_tainted = False
         self._fd.needs_reallocation = True
 
-    def allocate(self, recursive: bool = True):
+    def allocate(self, allocate_parents: bool = True):
         if self._fd.allocated and not self._fd.needs_reallocation:
             return True
-        if recursive:
-            self.logger.debug(f"Node '{self.name}': Trigger recursive memory allocation...")
+        if allocate_parents:
+            self.logger.debug(f"Node '{self.name}': Trigger allocate_parents memory allocation...")
             for _input in self.inputs.iter_all():
                 try:
                     parent_node = _input.parent_node
                 except AttributeError as exc:
                     raise ClosingError("Parent node is not initialized", input=_input) from exc
-                if not parent_node.allocate(recursive):
+                if not parent_node.allocate(allocate_parents):
                     return False
         self.logger.debug(f"Node '{self.name}': Allocate memory on inputs")
         input_reassigned = self.inputs.allocate()
@@ -649,7 +649,7 @@ class Node(NodeBase):
     def close(
         self,
         *,
-        recursive: bool = True,
+        close_parents: bool = True,
         strict: bool = True,
         close_children=False,
         together: Sequence["Node"] = [],
@@ -663,22 +663,22 @@ class Node(NodeBase):
         self.logger.debug(f"Node '{self.name}': Trigger recursive close")
         for node in [self] + together:
             try:
-                node.update_types(recursive=recursive)
+                node.update_types(update_parents=close_parents)
             except ClosingError:
                 if strict:
                     raise
         for node in [self] + together:
             try:
-                node.allocate(recursive=recursive)
+                node.allocate(allocate_parents=close_parents)
             except ClosingError:
                 if strict:
                     raise
-        if recursive and not all(
-            _input.parent_node.close(recursive=recursive, close_children=True) for _input in self.inputs.iter_all()
-        ):
-            return False
+        if close_parents:
+            for _input in self.inputs.iter_all():
+                if not _input.parent_node.close(close_parents=close_parents):
+                    return False
         for node in together:
-            if not node.close(recursive=recursive, close_children=True):
+            if not node.close(close_parents=close_parents):
                 return False
         self.fd.closed = self.fd.allocated
         if strict and not self.closed:
