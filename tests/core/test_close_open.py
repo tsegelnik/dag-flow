@@ -14,9 +14,20 @@ def test_00(debug_graph):
         Array("weight", (2, 3)) >> ws("weight")
     assert ws.closed
     assert (ws.outputs["result"].data == [0, 5, 10]).all()
-    assert arr.open()
-    assert not ws.inputs["weight"].closed
+
+    assert arr.open(open_children=False)
     assert not arr.closed
+    assert ws.inputs["weight"].closed
+    assert arr.close(close_children=False)
+    assert arr.closed
+    assert ws.inputs["weight"].closed
+
+    assert arr.open(open_children=True)
+    assert not arr.closed
+    assert not ws.inputs["weight"].closed
+    assert arr.close(close_children=True)
+    assert arr.closed
+    assert ws.inputs["weight"].closed
 
 
 def test_01(debug_graph):
@@ -48,7 +59,7 @@ def test_02(debug_graph):
         (arr1, prod) >> sum2  # [4, 5, 6]
     assert sum2.closed
     assert (sum2.outputs["result"].data == [4, 5, 6]).all()
-    assert arr1.open()
+    assert arr1.open(open_children=True)
     assert arr2.closed
     assert arr3.closed
     assert not arr1.closed
@@ -79,7 +90,7 @@ def test_03(debug_graph):
     assert sum2.closed
     assert sum3.closed
     assert (sum3.outputs["result"].data == [4, 6, 8]).all()
-    assert arr1.open()
+    assert arr1.open(open_children=True)
     assert arr2.closed
     assert arr3.closed
     assert arr4.closed
