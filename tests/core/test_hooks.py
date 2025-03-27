@@ -5,7 +5,7 @@ from dagflow.core.exception import CriticalError, ReconnectionError, UnclosedGra
 from dagflow.core.graph import Graph
 from dagflow.lib.common import Array
 from dagflow.lib.abstract import ManyToOneNode
-from dagflow.lib.summation import WeightedSum
+from dagflow.lib.summation import WeightedSum, WeightedSumArgs
 
 
 class ThreeInputsSum(ManyToOneNode):
@@ -42,15 +42,33 @@ def test_00(debug_graph):
 
 
 def test_01(debug_graph):
+    weight_arr = (2, 3)
     with Graph(debug=debug_graph, close_on_exit=True):
         arr = Array("arr", arange(3, dtype="i"))  # [0, 1, 2]
-        ws = WeightedSum("weightedsum")
-        (arr, arr) >> ws
+        weight = Array("weight", weight_arr)
+        weight1 = Array("weight", weight_arr[:1])
+
+        ws1 = WeightedSum("weightedsum")
+        ws2 = WeightedSum("weightedsum-sameweight")
+        ws3 = WeightedSumArgs("weightedsum_args", weight=weight_arr)
+        ws4 = WeightedSumArgs("weightedsum_args-sameweight", weight=weight_arr[:1])
+        (arr, arr) >> ws1
+        (arr, arr) >> ws2
+        (arr, arr) >> ws3
+        (arr, arr) >> ws4
+
         # Error while eval before setting the weight input
         with raises(UnclosedGraphError):
-            ws.eval()
+            ws1.eval()
+
         # multiply the first input by 2 and the second one by 3
-        Array("weight", (2, 3)) >> ws("weight")
+        weight >> ws1("weight")
+        weight1 >> ws2("weight")
+
     with raises(ReconnectionError):
-        Array("weight", (2, 3)) >> ws("weight")
-    assert (ws.outputs["result"].data == [0, 5, 10]).all()
+        weight >> ws1("weight")
+
+    assert (ws1.outputs["result"].data == [0, 5, 10]).all()
+    assert (ws2.outputs["result"].data == [0, 4, 8]).all()
+    assert (ws3.outputs["result"].data == [0, 5, 10]).all()
+    assert (ws4.outputs["result"].data == [0, 4, 8]).all()
