@@ -119,6 +119,8 @@ class FitSimulationProfiler(TimerProfiler):
             f"\nFit simulation Profiling {hex(id(self))}, "
             f"fit steps (n_runs): {self._n_runs}, "
             f"nodes in subgraph: {len(self._target_nodes)}\n"
+            f"eval mode: {self.mode}, "
+            f"{f'derivative points: {self._n_points} \n' if self._mode == 'parameter-wise' else ''}"
             f"sort by: `{sort_by or 'default sorting'}`, "
             f"group by: `{group_by or 'no grouping'}`"
         )
