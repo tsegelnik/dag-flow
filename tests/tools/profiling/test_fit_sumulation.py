@@ -14,10 +14,10 @@ def test_estimate_separately():
     endpoints = [s3, mdvdt]
 
     fit_profiling = FitSimulationProfiler(
-        mode="element-wise",
-        tweakable_params=params,
+        mode="parameter-wise",
+        parameters=params,
         endpoints=endpoints,
-        n_runs=100_000
+        n_runs=10_000
     )
 
     fit_profiling.estimate_fit()
