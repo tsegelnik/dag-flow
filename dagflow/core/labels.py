@@ -14,7 +14,11 @@ def format_latex(k: str, s: str | Any, /, *args, protect_latex: bool = True, **k
     if not isinstance(s, str):
         return s
 
-    if protect_latex and (k == "latex" and "$" in s) or "{" not in s:  # }
+    if "{" not in s:
+        return s
+
+    should_protect_latex = protect_latex and k in {"latex", "axis", "xaxis", "rootaxis"}
+    if should_protect_latex and "{" in s and "{{" not in s:  # }} }
         return s
 
     return s.format(*args, **kwargs)
@@ -69,8 +73,12 @@ def mapping_append_lists(dct: dict, key: str, lst: list):
     if not has_subdicts:
         patch(dct)
 
+
 def repr_pretty(self, p, cycle):
-    """Pretty repr for IPython. To be used as __repr__ method"""
+    """Pretty repr for IPython.
+
+    To be used as __repr__ method
+    """
     p.text("..." if cycle else str(self))
 
 
@@ -172,7 +180,16 @@ class Labels:
             setattr(self, k, v)
 
     def format(self, *args, **kwargs):
-        for name in ("text", "graph", "latex", "xaxis", "plottitle", "roottitle", "rootaxis"):
+        for name in (
+            "text",
+            "graph",
+            "latex",
+            "axis",
+            "xaxis",
+            "plottitle",
+            "roottitle",
+            "rootaxis",
+        ):
             aname = f"_{name}"
             oldvalue = getattr(self, aname)
             newvalue = format_latex(name, oldvalue, *args, **kwargs)
@@ -204,10 +221,10 @@ class Labels:
                 ):
                     return False
             elif (
-                    idxnum[0] not in accepted_list  # key value
-                    and idxnum[1] not in accepted_list  # key index
-                ):
-                    return False
+                idxnum[0] not in accepted_list  # key value
+                and idxnum[1] not in accepted_list  # key index
+            ):
+                return False
 
         return True
 
