@@ -135,9 +135,7 @@ class FrameworkProfiler(TimerProfiler):
         sort_by: str | None = None,
     ) -> DataFrame:
         report = self.make_report(
-            group_by=group_by,
-            aggregations=aggregations,
-            sort_by=sort_by
+            group_by=group_by, aggregations=aggregations, sort_by=sort_by
         )
         print(
             f"\nFramework Profiling {hex(id(self))}, "
