@@ -1,109 +1,105 @@
 from __future__ import annotations
 from collections.abc import Sequence
 from typing import Literal
-from timeit import timeit, repeat
+from timeit import repeat
 
 from pandas import DataFrame
 
 from dagflow.core.node import Node
-from dagflow.lib.common import Array
 
 from .timer_profiler import TimerProfiler
+
+
+_ALLOWED_GROUPBY = (("parameters", "endpoints", "eval mode"),)
 
 
 class FitSimulationProfiler(TimerProfiler):
     """Profiler class for simulating model fit process.
 
     This class inherits from TimerProfiler and uses source nodes
-    as tweakable params to imitate model fit process.
+    as tweakable parameters to imitate model fit process.
     """
 
-    __slots__ = ("_fit_step", "_mode")
+    __slots__ = ("_fit_step", "_mode", "_n_points")
 
     def __init__(
         self,
-        mode: Literal["element-wise", "simultaneous"] = "element-wise",
-        tweakable_params: Sequence[Array] = (),
+        mode: Literal["parameter-wise", "simultaneous"] = "parameter-wise",
+        *,
+        parameters: Sequence[Node] = (),
         endpoints: Sequence[Node] = (),
-        # *,
-        # sources: Sequence[Node] = (),
-        # sinks: Sequence[Node] = (),
         n_runs: int = 10_000,
+        param_mode_n_points: int = 4,
     ):
-        self.mode = mode
-        super().__init__(sources=tweakable_params, sinks=endpoints, n_runs=n_runs)
-        # self._allowed_groupby = _ALLOWED_GROUPBY
+        super().__init__(sources=parameters, sinks=endpoints, n_runs=n_runs)
+        if mode == "parameter-wise":
+            self._fit_step = self._separate_step
+        elif mode == "simultaneous":
+            self._fit_step = self._together_step
+        else:
+            raise ValueError(f"Unknown mode: {mode}")
+        self._mode = mode
+        self._allowed_groupby = _ALLOWED_GROUPBY
         self._primary_col = "time"
         self._default_aggregations = ("count", "single", "sum")
+        self._n_points = param_mode_n_points
 
     @property
     def mode(self):
         return self._mode
 
-    @mode.setter
-    def mode(self, value):
-        if value == "element-wise":
-            self._fit_step = self._separate_step
-        elif value == "simultaneous":
-            self._fit_step = self._together_step
-        else:
-            raise ValueError(f"Unknown mode: {value}")
-        self._mode = value
-
     @property
-    def params(self):
+    def _parameters(self):
+        """Alias for `self._sources`"""
         return self._sources
 
     @property
-    def endpoints(self):
+    def _endpoints(self):
+        """Alias for `self._sinks`"""
         return self._sinks
 
     def _together_step(self):
-        for param in self._sources:
-            param.taint()
+        for parameter in self._sources:
+            parameter.taint()
         self.__call_endpoints()
-        # probably backprop should be here
 
     def _separate_step(self):
-        for param in self._sources:
-            # simulate finding derivative by 4 points
-            for _ in range(4):
-                param.taint()
+        for parameter in self._sources:
+            # simulate finding derivative by N points
+            for _ in range(self._n_points):
+                parameter.taint()
                 self.__call_endpoints()
             # simulate reverting to the initial state
-            param.taint()
+            parameter.taint()
 
         # make a step for all params
-        for param in self._sources:
-            param.taint()
+        for parameter in self._sources:
+            parameter.taint()
         self.__call_endpoints()
 
     def __call_endpoints(self):
-        # TODO: probably there is should be a better name for this function
         for endpoint in self._sinks:
-            # TODO: remove this assertion. It is for development only
-            assert endpoint.tainted
             endpoint.touch()
 
     def _touch_model_nodes(self):
-        for param_node in self._target_nodes:
-            param_node.touch()
+        for node in self._target_nodes:
+            node.touch()
 
     def estimate_fit(self) -> FitSimulationProfiler:
         self._touch_model_nodes()
-        results = repeat(self._fit_step, setup='pass', repeat=self.n_runs, number=1)
+        results = repeat(self._fit_step, setup="pass", repeat=self.n_runs, number=1)
         source_short_names, sink_short_names = self._shorten_sources_sinks()
         self._estimations_table = DataFrame({
-            "tweakable params": source_short_names,
-            "endpoints": sink_short_names,
-            "eval mode": self._mode,
-            "time": results
+                "parameters": source_short_names,
+                "endpoints": sink_short_names,
+                "eval mode": self._mode,
+                "time": results,
         })
         return self
 
     def make_report(
         self,
-        group_by: str | Sequence[str] | None = ("tweakable params", "endpoints", "eval mode"),
+        group_by: str | Sequence[str] | None = ("parameters", "endpoints", "eval mode"),
         aggregations: Sequence[str] | None = None,
         sort_by: str | None = None,
     ) -> DataFrame:
@@ -112,14 +108,12 @@ class FitSimulationProfiler(TimerProfiler):
     def print_report(
         self,
         rows: int | None = 40,
-        group_by: str | Sequence[str] | None = ("tweakable params", "endpoints", "eval mode"),
+        group_by: str | Sequence[str] | None = ("parameters", "endpoints", "eval mode"),
         aggregations: Sequence[str] | None = None,
         sort_by: str | None = None,
     ) -> DataFrame:
         report = self.make_report(
-            group_by=group_by,
-            aggregations=aggregations,
-            sort_by=sort_by
+            group_by=group_by, aggregations=aggregations, sort_by=sort_by
         )
         print(
             f"\nFit simulation Profiling {hex(id(self))}, "
