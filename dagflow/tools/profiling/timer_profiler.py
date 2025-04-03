@@ -120,7 +120,11 @@ class TimerProfiler(Profiler):
         return shorten(", ".join(names), max_length)
 
     def _shorten_sources_sinks(self) -> tuple[str, str]:
-        """Get a short string representation of `sources` and `sinks` names"""
+        """Get a short string representation of `sources` and `sinks` names
+        with truncation by `SOURCE_COL_WIDTH`, `SINK_COL_WIDTH` lengths.
+
+        Return pair (short names of __sources__, short names of __sinks__)
+        """
         return (
             self._shorten_names(self._sources, SOURCE_COL_WIDTH),
             self._shorten_names(self._sinks, SINK_COL_WIDTH),
