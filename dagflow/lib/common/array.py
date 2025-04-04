@@ -125,7 +125,7 @@ class Array(Node):
         *,
         edgesname: str | Sequence[str] = [],
         meshname: str | Sequence[str] = [],
-        remove_used_arrays: bool = False,
+        remove_processed_arrays: bool = False,
         **kwargs,
     ):
         localstorage = storage(path)
@@ -148,7 +148,7 @@ class Array(Node):
                 node.set_mesh(mesh)
                 node.set_edges(edges)
 
-        if remove_used_arrays:
+        if remove_processed_arrays:
             for key in used_array_keys:
                 localstorage.delete_with_parents(key)
             if not localstorage:

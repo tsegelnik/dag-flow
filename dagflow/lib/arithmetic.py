@@ -1,4 +1,4 @@
-from numpy import add, copyto, divide, multiply, sqrt, square
+from numpy import add, copyto, divide, multiply, sqrt, square, subtract
 
 from .abstract import ManyToOneNode, OneToOneNode
 
@@ -11,7 +11,7 @@ class Sum(ManyToOneNode):
     def __init__(self, *args, **kwargs):
         kwargs.setdefault("broadcastable", True)
         super().__init__(*args, **kwargs)
-        self._labels.setdefault("mark", "Σ₁")
+        self._labels.setdefault("mark", "Σᵢ")
 
     def _function(self):
         for callback in self._input_nodes_callbacks:
@@ -21,6 +21,26 @@ class Sum(ManyToOneNode):
         copyto(output_data, self._input_data0)
         for input_data in self._input_data_other:
             add(output_data, input_data, out=output_data)
+
+
+class Difference(ManyToOneNode):
+    """Difference of inputs: A-B-C-..."""
+
+    __slots__ = ()
+
+    def __init__(self, *args, **kwargs):
+        kwargs.setdefault("broadcastable", True)
+        super().__init__(*args, **kwargs)
+        self._labels.setdefault("mark", "a₀-Σᵢ")
+
+    def _function(self):
+        for callback in self._input_nodes_callbacks:
+            callback()
+
+        output_data = self._output_data
+        copyto(output_data, self._input_data0)
+        for input_data in self._input_data_other:
+            subtract(output_data, input_data, out=output_data)
 
 
 class Product(ManyToOneNode):

@@ -4,10 +4,11 @@ from pathlib import Path
 from numpy import asarray
 from schema import And, Optional, Or, Schema, Use
 
+from multikeydict.tools.map import make_reorder_function
 from multikeydict.typing import strkey
 
-from ..lib.common import Array
 from ..core.storage import NodeStorage
+from ..lib.common import Array
 from ..tools.logger import INFO3, logger
 from ..tools.schema import (
     AllFileswithExt,
@@ -29,6 +30,12 @@ _schema_cfg = Schema(
             Or(((str,),), [[str]]), Use(lambda l: tuple(set(k) for k in l))
         ),
         Optional("key_order", default=None): Or(
+            ((str,), (str,)),
+            [[str], [str]],
+            (int,),
+            [int],
+        ),
+        Optional("output_key_order", default=None): Or(
             ((str,), (str,)),
             [[str], [str]],
             (int,),
@@ -68,9 +75,11 @@ def load_array(acfg: Mapping | None = None, *, array_kwargs: Mapping = {}, **kwa
     name_function = cfg["name_function"]
     skip = cfg["skip"]
     key_order = cfg["key_order"]
+    output_key_order = cfg["output_key_order"]
     dtype = cfg["dtype"]
 
     data = {}
+    reorder_output_key = make_reorder_function(output_key_order)
     for _, filename, _, key in iterate_filenames_and_objectnames(
         filenames, file_keys, keys, skip=skip, key_order=key_order
     ):
@@ -78,7 +87,8 @@ def load_array(acfg: Mapping | None = None, *, array_kwargs: Mapping = {}, **kwa
         logger.log(INFO3, f"Process {skey}")
 
         array = FileReader.array[filename, name_function(skey, key)]
-        data[key] = asarray(array, dtype)
+        output_key = reorder_output_key(key)
+        data[output_key] = asarray(array, dtype)
 
     storage = NodeStorage(default_containers=True)
     with storage:

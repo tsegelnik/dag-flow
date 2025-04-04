@@ -353,10 +353,10 @@ def test_06():
 
     (out1, out2) >> n2
 
-    n1.close(recursive=False)
+    n1.close(close_parents=False)
     assert n1.closed
     assert not n2.closed
-    n2.close(recursive=False)
+    n2.close(close_parents=False)
     assert n2.closed
     with raises(ClosedGraphError):
         n2.add_input("i3")

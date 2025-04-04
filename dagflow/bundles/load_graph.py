@@ -7,6 +7,7 @@ from typing import TYPE_CHECKING
 from numpy import allclose, asarray
 from schema import And, Optional, Or, Schema, Use
 
+from multikeydict.tools.map import make_reorder_function
 from multikeydict.typing import strkey
 
 from ..core.storage import NodeStorage
@@ -40,6 +41,12 @@ _schema_cfg = Schema(
             Or(((str,),), [[str]]), Use(lambda l: tuple(set(k) for k in l))
         ),
         Optional("key_order", default=None): Or(
+            ((str,), (str,)),
+            [[str], [str]],
+            (int,),
+            [int],
+        ),
+        Optional("output_key_order", default=None): Or(
             ((str,), (str,)),
             [[str], [str]],
             (int,),
@@ -81,6 +88,7 @@ def _load_graph_data(
     name_function = cfg["name_function"]
     skip = cfg["skip"]
     key_order = cfg["key_order"]
+    output_key_order = cfg["output_key_order"]
     dtype = cfg["dtype"]
 
     xname = name, cfg["x"]
@@ -88,6 +96,7 @@ def _load_graph_data(
 
     meshes_list: list[NDArray] = []
     data: dict[TupleKey, tuple[NDArray, NDArray]] = {}
+    reorder_output_key = make_reorder_function(output_key_order)
     for _, filename, _, key in iterate_filenames_and_objectnames(
         filenames, file_keys, keys, skip=skip, key_order=key_order
     ):
@@ -98,7 +107,8 @@ def _load_graph_data(
         x = asarray(x, dtype)
         y = asarray(y, dtype)
 
-        data[key] = x, y
+        output_key = reorder_output_key(key)
+        data[output_key] = x, y
         meshes_list.append(x)
 
     if cfg["merge_x"]:

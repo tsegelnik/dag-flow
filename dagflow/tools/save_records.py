@@ -102,6 +102,7 @@ def _save_records(
 def save_records(
     data: Mapping[str, NDArray | DataFrame],
     filenames: Path | str | Sequence[Path | str],
+    to_records_kwargs: dict = {},
     **kwargs,
 ) -> None:
     records, dataframes = {}, {}
@@ -111,7 +112,7 @@ def save_records(
                 records[key] = value
                 dataframes[key] = DataFrame(value)
             case DataFrame():
-                records[key] = value.to_records(index=False)
+                records[key] = value.to_records(**to_records_kwargs)
                 dataframes[key] = value
 
     if not isinstance(filenames, Sequence):

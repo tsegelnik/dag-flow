@@ -313,7 +313,7 @@ class Output:
 
         if self._allocating_input:
             _input = self._allocating_input
-            _input.allocate(recursive=False)
+            _input.allocate(allocate_parents=False)
             if _input.has_data:
                 idata = _input._own_data
                 if not self.dd.consistent_with(idata):

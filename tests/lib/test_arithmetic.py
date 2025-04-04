@@ -3,6 +3,7 @@ from pytest import mark
 
 from dagflow.core.graph import Graph
 from dagflow.lib.arithmetic import (
+    Difference,
     Division,
     Product,
     ProductShifted,
@@ -35,6 +36,34 @@ def test_Sum_01(testname, debug_graph, dtype):
     for i in range(len(arrays_in)):
         arrays_in[i][:] = 2.3 * (i + 2) ** 2 + i
         res = arrays_in[0] + arrays_in[1] + arrays_in[2]
+        arrays[i].outputs[0].set(2.3 * (i + 2) ** 2 + i)
+        assert sm.tainted == True
+        assert all(output.data == res)
+        assert sm.tainted == False
+
+    savegraph(graph, f"output/{testname}.png")
+
+
+@mark.parametrize("dtype", ("d", "f"))
+def test_Difference_01(testname, debug_graph, dtype):
+    arrays_in = tuple(arange(12, dtype=dtype) * i for i in (1, 2, 3))
+
+    with Graph(close_on_exit=True, debug=debug_graph) as graph:
+        arrays = tuple(Array(f"arr_{i}", array_in) for i, array_in in enumerate(arrays_in))
+        sm = Difference("sum")
+        arrays >> sm
+
+    output = sm.outputs[0]
+
+    res = arrays_in[0] - sum(arrays_in[1:], axis=0)
+
+    assert sm.tainted == True
+    assert all(output.data == res)
+    assert sm.tainted == False
+
+    for i in range(len(arrays_in)):
+        arrays_in[i][:] = 2.3 * (i + 2) ** 2 + i
+        res = arrays_in[0] - arrays_in[1] - arrays_in[2]
         arrays[i].outputs[0].set(2.3 * (i + 2) ** 2 + i)
         assert sm.tainted == True
         assert all(output.data == res)
@@ -85,11 +114,13 @@ def test_ProductShifted_01(testname, debug_graph, dtype: str, scaled: bool):
         arrays >> prod
 
     output = prod.outputs[0]
+
     def getres():
         if scaled:
             return arrays_in[0] * (shift + arrays_in[1] * arrays_in[2])
 
         return shift + arrays_in[0] * arrays_in[1] * arrays_in[2]
+
     res = getres()
 
     assert prod.tainted == True
