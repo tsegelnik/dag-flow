@@ -1,4 +1,6 @@
 # TODO: reorder imports
+from pytest import raises
+
 from pandas import DataFrame
 from dagflow.tools.profiling import FitSimulationProfiler
 
@@ -57,3 +59,20 @@ def test_estimate_simultaneous():
 
     assert isinstance(report, DataFrame)
     assert not report.empty
+
+
+def test_init():
+    _, nodes = graph_0()
+
+    # see graph structure in test/output/test_profiling_graph_0.png
+    a0, a1, _, _, _, _, _, _, _, s3, _, mdvdt = nodes
+
+    with raises(ValueError, match="one parameter and at least one endpoint"):
+        FitSimulationProfiler()
+
+    with raises(ValueError, match="Unknown mode"):
+        FitSimulationProfiler(
+            mode="some non-existring mode",
+            parameters=[a0, a1],
+            endpoints=[a0, a1]
+        )
