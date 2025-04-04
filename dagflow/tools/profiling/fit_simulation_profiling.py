@@ -32,6 +32,8 @@ class FitSimulationProfiler(TimerProfiler):
         n_runs: int = 10_000,
         derivative_points: int = 4,
     ):
+        if not parameters or not endpoints:
+            raise ValueError("There must be at least one parameter and at least one endpoint")
         super().__init__(sources=parameters, sinks=endpoints, n_runs=n_runs)
         if mode == "parameter-wise":
             self._fit_step = self._separate_step
