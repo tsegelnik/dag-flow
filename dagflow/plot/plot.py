@@ -207,9 +207,9 @@ class plot_auto:
 
             fig = gcf()
             try:
-                ax.text2D(0.05, 0.05, path[0], transform=fig.dpi_scale_trans, fontsize="small")
+                ax.text2D(0.02, 0.02, path[0], transform=fig.dpi_scale_trans, fontsize="small")
             except AttributeError:
-                ax.text(0.05, 0.05, path[0], transform=fig.dpi_scale_trans, fontsize="x-small")
+                ax.text(0.02, 0.02, path[0], transform=fig.dpi_scale_trans, fontsize="x-small")
 
     @property
     def zlabel(self) -> str | None:
