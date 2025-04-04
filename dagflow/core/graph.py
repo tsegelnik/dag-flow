@@ -164,7 +164,7 @@ class Graph(GraphBase):
             self._closed = False
 
         if self._closed:
-            raise UnclosedGraphError("The graph is still closed!")
+            raise ClosedGraphError("The graph is still closed!")
 
         return self
 
