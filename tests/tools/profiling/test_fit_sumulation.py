@@ -72,5 +72,5 @@ def test_init():
         FitSimulationProfiler(
             mode="some non-existring mode",
             parameters=[a0, a1],
-            endpoints=[a0, a1]
+            endpoints=[s3, mdvdt]
         )
