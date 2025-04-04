@@ -32,6 +32,20 @@ class FitSimulationProfiler(TimerProfiler):
         n_runs: int = 10_000,
         derivative_points: int = 4,
     ):
+        """
+        Initializes the FitSimulationProfiler, which simulates model fit.
+
+        There are two different `mode`:
+           - `"parameter-wise"` - calculate n points for the parameter
+           and then make a fit step for all the parameters.
+           - `"simultaneous"` - fits all parameters together,
+           which is similar to backpropogation in real tasks.
+
+        The `parameters` and `endpoints` must each contain at least one node.
+
+        The `derivative_points` specifies the number of points for derivative estimation
+        and only used when `mode="parameter-wise"`. Defaults to `4`.
+        """
         if not parameters or not endpoints:
             raise ValueError("There must be at least one parameter and at least one endpoint")
         super().__init__(sources=parameters, sinks=endpoints, n_runs=n_runs)
