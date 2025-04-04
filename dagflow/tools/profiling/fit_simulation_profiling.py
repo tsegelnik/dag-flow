@@ -1,14 +1,14 @@
 from __future__ import annotations
+
 from collections.abc import Sequence
-from typing import Literal
 from timeit import repeat
+from typing import Literal
 
 from pandas import DataFrame
 
 from dagflow.core.node import Node
 
 from .timer_profiler import TimerProfiler
-
 
 _ALLOWED_GROUPBY = (("parameters", "endpoints", "eval mode"),)
 
@@ -104,6 +104,14 @@ class FitSimulationProfiler(TimerProfiler):
 
     def estimate_fit(self) -> FitSimulationProfiler:
         self._touch_model_nodes()
+        # NOTE: there is a little overhead caused by internal for loop in `repeat`
+        #  which can be noticeable when measuring very fast functions.
+        # Since we have set `number=1`, the internal loop (with 1 iterations)
+        #  called for each measurment of __one__ execution of `self._fit_step`.
+        # This is done to match the FrameworkProfier's time,
+        #  which is also using `repeat` method.
+        # Perhaps, it is possible to change this behavior in the future
+        #  by implementing own time-measurment function.
         results = repeat(self._fit_step, setup="pass", repeat=self.n_runs, number=1)
         source_short_names, sink_short_names = self._shorten_sources_sinks()
         self._estimations_table = DataFrame({
