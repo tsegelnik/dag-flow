@@ -1,9 +1,7 @@
-# TODO: reorder imports
+from pandas import DataFrame
 from pytest import raises
 
-from pandas import DataFrame
 from dagflow.tools.profiling import FitSimulationProfiler
-
 from test_helpers import graph_0
 
 
