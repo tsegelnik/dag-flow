@@ -30,7 +30,7 @@ class FitSimulationProfiler(TimerProfiler):
         parameters: Sequence[Node] = (),
         endpoints: Sequence[Node] = (),
         n_runs: int = 10_000,
-        param_mode_n_points: int = 4,
+        derivative_points: int = 4,
     ):
         super().__init__(sources=parameters, sinks=endpoints, n_runs=n_runs)
         if mode == "parameter-wise":
@@ -43,7 +43,7 @@ class FitSimulationProfiler(TimerProfiler):
         self._allowed_groupby = _ALLOWED_GROUPBY
         self._primary_col = "time"
         self._default_aggregations = ("count", "single", "sum")
-        self._n_points = param_mode_n_points
+        self._n_points = derivative_points
 
     @property
     def mode(self):
