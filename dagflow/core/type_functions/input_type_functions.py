@@ -356,6 +356,8 @@ def find_max_size_of_inputs(node: Node, inputkey: LimbKey = AllPositionals) -> i
 
 def check_inputs_number_is_divisible_by_N(node: Node, N: int) -> None:
     """Check whether inputs count multiple to some N or not"""
+    if N==1:
+        return
     n = node.inputs.len_pos()
     if n % N != 0:
         raise TypeFunctionError(f"Node takes only {N}N inputs, but given {n}", node=node)
