@@ -2,7 +2,7 @@
 from pandas import DataFrame
 from dagflow.tools.profiling import FitSimulationProfiler
 
-from test_helpers import graph_0, graph_1
+from test_helpers import graph_0
 
 
 def test_estimate_separately():
@@ -17,7 +17,7 @@ def test_estimate_separately():
         mode="parameter-wise",
         parameters=params,
         endpoints=endpoints,
-        n_runs=10_000
+        n_runs=1000
     )
 
     fit_profiling.estimate_fit()
@@ -32,3 +32,28 @@ def test_estimate_separately():
     assert not report.empty
 
 
+def test_estimate_simultaneous():
+    _, nodes = graph_0()
+
+    # see graph structure in test/output/test_profiling_graph_0.png
+    a0, a1, _, _, _, _, _, _, _, s3, l_matrix, mdvdt = nodes
+    params = [a0, a1, l_matrix]
+    endpoints = [s3, mdvdt]
+
+    fit_profiling = FitSimulationProfiler(
+        mode="simultaneous",
+        parameters=params,
+        endpoints=endpoints,
+        n_runs=1000
+    )
+
+    fit_profiling.estimate_fit()
+    report = fit_profiling.make_report()
+
+    assert isinstance(report, DataFrame)
+    assert not report.empty
+
+    report = fit_profiling.print_report()
+
+    assert isinstance(report, DataFrame)
+    assert not report.empty
