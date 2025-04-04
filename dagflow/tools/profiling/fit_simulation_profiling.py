@@ -14,9 +14,10 @@ _ALLOWED_GROUPBY = (("parameters", "endpoints", "eval mode"),)
 
 
 class FitSimulationProfiler(TimerProfiler):
-    """Profiler class for simulating model fit process.
+    """Profiler class for estimating the time of model fitting.
+    The fitting is simulated by touching different nodes (depending on the `mode`).
 
-    This class inherits from TimerProfiler and uses source nodes
+    NOTE: This class inherits from `TimerProfiler` and uses `source_nodes`
     as tweakable parameters to imitate model fit process.
     """
 
