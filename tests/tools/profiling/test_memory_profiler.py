@@ -11,7 +11,6 @@ from dagflow.tools.profiling import MemoryProfiler
 from dagflow.core.input import Input
 from test_helpers import graph_0, graph_1
 
-
 if TYPE_CHECKING:
     from dagflow.core.output import Output
     from dagflow.core.input import Input
@@ -23,15 +22,18 @@ def _calc_numpy_size(data: NDArray) -> int:
     length = reduce(mul, data.shape)
     return length * data.dtype.itemsize
 
+
 def get_input_size(inp: Input) -> int:
     if inp.owns_buffer:
         return _calc_numpy_size(inp.own_data)
     return 0
 
+
 def get_output_size(out: Output) -> int:
     if out.owns_buffer or (out.has_data and out._allocating_input is None):
         return _calc_numpy_size(out._data)
     return 0
+
 
 def edge_size(edge: Output | Input) -> int:
     """Return size of `edge` data in bytes"""
@@ -112,9 +114,7 @@ def test_estimate_all_edges():
                 expected += edge_size(edge)
         actual = mp._estimations_table["size"].sum()
 
-        assert expected == actual, (
-            "expected and actual sizes of all edges does not match"
-        )
+        assert expected == actual, "expected and actual sizes of all edges does not match"
 
 
 def test_total_size_property():

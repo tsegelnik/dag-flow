@@ -15,15 +15,15 @@ def test_minimal_example_g0():
 
     node_profiler = NodeProfiler(nodes)
     report = node_profiler.estimate_target_nodes().print_report()
-    report.to_csv('output/test_node_report.csv')
+    report.to_csv("output/test_node_report.csv")
 
     framework_profiler = FrameworkProfiler(nodes)
     report = framework_profiler.estimate_framework_time().print_report()
-    report.to_json('output/test_framework_report.json')
+    report.to_json("output/test_framework_report.json")
 
     calls_profiler = CountCallsProfiler(nodes)
     calls_profiler.estimate_calls()
-    report = calls_profiler.make_report(aggregations=['single', 'std'])
+    report = calls_profiler.make_report(aggregations=["single", "std"])
 
     memory_profiler = MemoryProfiler(nodes)
     report = memory_profiler.estimate_target_nodes().print_report()
@@ -34,7 +34,6 @@ def test_full_guide_g0():
 
     # Obtain nodes from graph instance
     nodes = graph._nodes
-
 
     ## NodeProfiler - estimate the execution time for each node `n_runs` times.
     #  more precisely, it counts the time of the `Node.function`
@@ -79,7 +78,6 @@ def test_full_guide_g0():
     t = node_profiler.estimate_node(node, n_runs=5_000)
     print(f"{node.name}, time: {t}")
 
-
     ## FrameworkProfiler - estimate the overhead of the framework
     # In most cases, you want to measure the overhead for the _entire_ graph.
     framework_profiler = FrameworkProfiler(nodes, n_runs=10_000)
@@ -91,7 +89,6 @@ def test_full_guide_g0():
     framework_profiler.make_report()
     framework_profiler.print_report()
 
-
     ## CountCallsProfiler - obtain the number of calls for nodes
     # May be useful to see how many times each node
     #  was executed during the fit of the model.
@@ -102,10 +99,9 @@ def test_full_guide_g0():
     # 2. make report
     # 3. print report
     # 4. save to some format
-    calls_profiler.estimate_calls().print_report().to_csv('output/test_report.csv')
+    calls_profiler.estimate_calls().print_report().to_csv("output/test_report.csv")
 
-    calls_profiler.print_report(group_by=None, sort_by='calls', rows=10)
-
+    calls_profiler.print_report(group_by=None, sort_by="calls", rows=10)
 
     ## MemoryProfiler - estimate bytes of memory for Inputs/Outputs of given nodes
     memory_profiler = MemoryProfiler(nodes)
@@ -114,4 +110,4 @@ def test_full_guide_g0():
     memory_profiler.estimate_target_nodes(touch=False)
 
     memory_profiler.print_report()
-    memory_profiler.print_report(group_by=None, sort_by='size')
+    memory_profiler.print_report(group_by=None, sort_by="size")
