@@ -11,28 +11,30 @@ from multikeydict.nestedmkdict import NestedMKDict
 from ...core.exception import InitializationError
 from ...core.node import Node
 from ...core.output import Output
+from ...core.type_functions import check_dtype_of_edges, check_edges_consistency_with_array
 from ...tools.iter import iter_sequence_not_string
-from ...core.type_functions import check_edges_consistency_with_array, check_dtype_of_edges
 
 if TYPE_CHECKING:
+    from typing import Literal
+
     from numpy.typing import ArrayLike, DTypeLike, NDArray
 
 
 class Array(Node):
-    """Creates a node with a single data output with predefined array"""
+    """Creates a node with a single data output with predefined array."""
 
     __slots__ = ("_mode", "_data", "_output")
 
-    _mode: str
+    _mode: Literal["store", "store_weak", "fill"]
     _data: NDArray
     _output: Output
 
     def __init__(
         self,
         name: str,
-        array: NDArray | list[float | int] | tuple[float | int,...],
+        array: NDArray | list[float | int] | tuple[float | int, ...],
         *,
-        mode: str = "store",
+        mode: Literal["store", "store_weak", "fill"] = "store",
         outname: str = "array",
         dtype: DTypeLike = None,
         mark: str | None = None,
@@ -92,11 +94,11 @@ class Array(Node):
         *,
         store: bool = False,
         edges: Output | Sequence[Output] | Node | None = None,
-        shape: int | tuple[int,...] |  None = None,
+        shape: int | tuple[int, ...] | None = None,
         dtype: DTypeLike = None,
         **kwargs,
     ):
-        if (shape is None)==(edges is None):
+        if (shape is None) == (edges is None):
             raise RuntimeError("Array: should specify either shape or edges, but not both.")
         match edges:
             case Output():
