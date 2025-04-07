@@ -14,10 +14,7 @@ def test_estimate_separately():
     endpoints = [s3, mdvdt]
 
     fit_profiling = FitSimulationProfiler(
-        mode="parameter-wise",
-        parameters=params,
-        endpoints=endpoints,
-        n_runs=1000
+        mode="parameter-wise", parameters=params, endpoints=endpoints, n_runs=1000
     )
 
     fit_profiling.estimate_fit()
@@ -41,10 +38,7 @@ def test_estimate_simultaneous():
     endpoints = [s3, mdvdt]
 
     fit_profiling = FitSimulationProfiler(
-        mode="simultaneous",
-        parameters=params,
-        endpoints=endpoints,
-        n_runs=1000
+        mode="simultaneous", parameters=params, endpoints=endpoints, n_runs=1000
     )
 
     fit_profiling.estimate_fit()
@@ -70,7 +64,5 @@ def test_init():
 
     with raises(ValueError, match="Unknown mode"):
         FitSimulationProfiler(
-            mode="some non-existring mode",
-            parameters=[a0, a1],
-            endpoints=[s3, mdvdt]
+            mode="some non-existring mode", parameters=[a0, a1], endpoints=[s3, mdvdt]
         )
