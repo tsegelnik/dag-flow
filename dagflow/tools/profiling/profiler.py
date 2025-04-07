@@ -131,10 +131,7 @@ class Profiler(metaclass=ABCMeta):
         self._sinks = sinks
 
     def register_aggregate_func(
-        self,
-        func: Callable,
-        aliases: Sequence[str],
-        column_name: str
+        self, func: Callable, aliases: Sequence[str], column_name: str
     ) -> None:
         """Add user-defined function for the Profiler.
 
@@ -171,7 +168,7 @@ class Profiler(metaclass=ABCMeta):
         self,
         grouped_df: DataFrameGroupBy,
         grouped_by: str | Sequence[str],
-        aggregate_names: Sequence[str]
+        aggregate_names: Sequence[str],
     ) -> DataFrame:
         """Apply pandas built-ins and user-defined aggregate functions (given
         as their aliases) on the `self._primary_col` column of the grouped data
@@ -246,7 +243,7 @@ class Profiler(metaclass=ABCMeta):
             sort_by = sort_by or self._primary_col
         else:
             if isinstance(group_by, Sequence) and not isinstance(group_by, str):
-                group_by = list(group_by)   # pandas accepts only lists
+                group_by = list(group_by)  # pandas accepts only lists
             grouped = report.groupby(group_by, as_index=False)
             report = self._aggregate_df(grouped, group_by, aggregate_names)
             if sort_by is None:
@@ -257,7 +254,7 @@ class Profiler(metaclass=ABCMeta):
     def _print_table(self, df: DataFrame, rows, *, float_fmt="g", int_fmt=","):
         print(
             tabulate(
-                tabular_data=df.head(rows), # type: ignore
+                tabular_data=df.head(rows),  # type: ignore
                 headers="keys",
                 tablefmt="psql",
                 floatfmt=float_fmt,

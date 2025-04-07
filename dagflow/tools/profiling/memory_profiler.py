@@ -153,11 +153,7 @@ class MemoryProfiler(Profiler):
         aggregations: Sequence[str] | None = None,
         sort_by: str | None = None,
     ) -> DataFrame:
-        report = self.make_report(
-            group_by=group_by,
-            aggregations=aggregations,
-            sort_by=sort_by
-        )
+        report = self.make_report(group_by=group_by, aggregations=aggregations, sort_by=sort_by)
         print(
             f"\nMemory Profiling {hex(id(self))}, "
             f"sort by: `{sort_by or 'default sorting'}`, "
