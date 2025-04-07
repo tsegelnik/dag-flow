@@ -51,12 +51,14 @@ class CountCallsProfiler(Profiler):
         self._column_aliases = _COLUMN_ALIASES.copy()
 
     def estimate_calls(self) -> CountCallsProfiler:
-        self._estimations_table = DataFrame({
-            "node": (str(node) for node in self._target_nodes),
-            "type": (type(node).__name__ for node in self._target_nodes),
-            "name": (node.name for node in self._target_nodes),
-            "calls": (node.n_calls for node in self._target_nodes),
-        })
+        self._estimations_table = DataFrame(
+            {
+                "node": (str(node) for node in self._target_nodes),
+                "type": (type(node).__name__ for node in self._target_nodes),
+                "name": (node.name for node in self._target_nodes),
+                "calls": (node.n_calls for node in self._target_nodes),
+            }
+        )
         return self
 
     def make_report(
@@ -83,11 +85,7 @@ class CountCallsProfiler(Profiler):
         aggregations: Sequence[str] | None = None,
         sort_by: str | None = None,
     ) -> DataFrame:
-        report = self.make_report(
-            group_by=group_by,
-            aggregations=aggregations,
-            sort_by=sort_by
-        )
+        report = self.make_report(group_by=group_by, aggregations=aggregations, sort_by=sort_by)
         print(
             f"\nCounts of calls profiling {hex(id(self))}, "
             f"sort by: `{sort_by or 'default sorting'}`, "

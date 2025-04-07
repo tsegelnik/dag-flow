@@ -114,12 +114,14 @@ class FitSimulationProfiler(TimerProfiler):
         #  by implementing own time-measurment function.
         results = repeat(self._fit_step, setup="pass", repeat=self.n_runs, number=1)
         source_short_names, sink_short_names = self._shorten_sources_sinks()
-        self._estimations_table = DataFrame({
+        self._estimations_table = DataFrame(
+            {
                 "parameters": source_short_names,
                 "endpoints": sink_short_names,
                 "eval mode": self._mode,
                 "time": results,
-        })
+            }
+        )
         return self
 
     def make_report(
@@ -137,9 +139,7 @@ class FitSimulationProfiler(TimerProfiler):
         aggregations: Sequence[str] | None = None,
         sort_by: str | None = None,
     ) -> DataFrame:
-        report = self.make_report(
-            group_by=group_by, aggregations=aggregations, sort_by=sort_by
-        )
+        report = self.make_report(group_by=group_by, aggregations=aggregations, sort_by=sort_by)
         print(
             f"\nFit simulation Profiling {hex(id(self))}, "
             f"fit steps (n_runs): {self._n_runs}, "

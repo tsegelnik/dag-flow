@@ -44,22 +44,22 @@ class NodeProfiler(TimerProfiler):
 
         Return the current `NodeProfiler` instance.
         """
-        self._estimations_table = DataFrame({
-            "node": (str(node) for node in self._target_nodes),
-            "type": (type(node).__name__ for node in self._target_nodes),
-            "name": (node.name for node in self._target_nodes),
-            "time": (self.estimate_node(node, self._n_runs)
-                     for node in self._target_nodes)
-        })
+        self._estimations_table = DataFrame(
+            {
+                "node": (str(node) for node in self._target_nodes),
+                "type": (type(node).__name__ for node in self._target_nodes),
+                "name": (node.name for node in self._target_nodes),
+                "time": (self.estimate_node(node, self._n_runs) for node in self._target_nodes),
+            }
+        )
         return self
-
 
     def make_report(
         self,
         *,
         group_by: str | Sequence[str] | None = "type",
         aggregations: Sequence[str] | None = None,
-        sort_by: str | None = None  ,
+        sort_by: str | None = None,
         average_by_runs: bool = True,
     ) -> DataFrame:
         report = super().make_report(group_by, aggregations, sort_by)
@@ -80,11 +80,7 @@ class NodeProfiler(TimerProfiler):
         aggregations: Sequence[str] | None = None,
         sort_by: str | None = None,
     ) -> DataFrame:
-        report = self.make_report(
-            group_by=group_by,
-            aggregations=aggregations,
-            sort_by=sort_by
-        )
+        report = self.make_report(group_by=group_by, aggregations=aggregations, sort_by=sort_by)
         print(
             f"\nNode Profiling {hex(id(self))}, "
             f"n_runs for each node: {self._n_runs}\n"
