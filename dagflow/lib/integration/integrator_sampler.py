@@ -5,7 +5,12 @@ from typing import TYPE_CHECKING, Literal
 from numpy import empty, errstate, integer, linspace, matmul, meshgrid, newaxis
 from numpy.polynomial.legendre import leggauss
 
-from ...core.exception import CalculationError, InitializationError, UnclosedGraphError
+from ...core.exception import (
+    CalculationError,
+    CriticalError,
+    InitializationError,
+    UnclosedGraphError,
+)
 from ...core.node import Node
 from ...core.type_functions import (
     check_dimension_of_inputs,
@@ -140,6 +145,15 @@ class IntegratorSampler(Node):
     def align(self) -> str | None:
         return self._align
 
+    def taint(self, *, caller: Input | None = None, **kwargs):
+        if caller is not None and (caller is self._orders_x or caller is self._orders_y):
+            raise CriticalError(
+                "IntegratorSampler: can not change integration orders without reopening graph",
+                node=self,
+                input=caller,
+            )
+        super().taint(caller=caller, **kwargs)
+
     def _type_function(self) -> None:
         """The function to determine the dtype and shape.
 
@@ -169,7 +183,9 @@ class IntegratorSampler(Node):
             npoints = sum(orders.data)
         except UnclosedGraphError:
             raise CalculationError(
-                "Orders for IntegratorSampler should be available (closed) before the graph is closed"
+                "Orders for IntegratorSampler should be available (closed) before the graph is closed",
+                node=self,
+                input=orders,
             )
 
         return npoints

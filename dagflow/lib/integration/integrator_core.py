@@ -5,7 +5,7 @@ from typing import TYPE_CHECKING
 from numba import njit
 from numpy import empty, floating, integer, multiply
 
-from ...core.exception import CalculationError, TypeFunctionError, UnclosedGraphError
+from ...core.exception import CalculationError, CriticalError, TypeFunctionError, UnclosedGraphError
 from ...core.input_strategy import AddNewInputAddNewOutput
 from ...core.type_functions import (
     check_dimension_of_inputs,
@@ -146,6 +146,17 @@ class IntegratorCore(OneToOneNode):
     def dropdim(self) -> bool:
         return self._dropdim
 
+    def taint(self, *, caller: Input | None = None, **kwargs):
+        if caller is not None and (
+            caller is self._orders_x_input or caller is self._orders_y_input
+        ):
+            raise CriticalError(
+                "IntegratorCore: can not change integration orders without reopening graph",
+                node=self,
+                input=caller,
+            )
+        super().taint(caller=caller, **kwargs)
+
     def _type_function(self) -> None:
         """The function to determine the dtype and shape.
 
@@ -206,7 +217,9 @@ class IntegratorCore(OneToOneNode):
             y = sum(orders.data)
         except UnclosedGraphError:
             raise CalculationError(
-                "Orders for IntegratorCore should be available (closed) before the graph is closed"
+                "Orders for IntegratorCore should be available (closed) before the graph is closed",
+                node=self,
+                input=orders,
             )
         if y != shape:
             raise TypeFunctionError(

@@ -2,7 +2,7 @@ from matplotlib.pyplot import close, subplots
 from numpy import allclose, linspace, meshgrid, pi, vectorize
 from pytest import mark, raises
 
-from dagflow.core.exception import CalculationError, TypeFunctionError
+from dagflow.core.exception import CalculationError, CriticalError, TypeFunctionError
 from dagflow.core.graph import Graph
 from dagflow.lib.abstract import ManyToOneNode, OneToOneNode
 from dagflow.lib.common import Array
@@ -31,7 +31,7 @@ def test_IntegratorCore_rect_center(align, debug_graph, testname):
         sampler.outputs["weights"] >> integrator("weights")
         cosf.outputs[0] >> integrator
         orders_x >> integrator("orders_x")
-    ires = integrator.outputs[0].data # goes first: ensure integrator triggers calculations
+    ires = integrator.outputs[0].data  # goes first: ensure integrator triggers calculations
     res = sinf.outputs[1].data - sinf.outputs[0].data
     assert allclose(ires, res, atol=1e-4)
     integrator.taint()
@@ -59,7 +59,7 @@ def test_IntegratorCore_trap(debug_graph, testname):
         sampler.outputs["weights"] >> integrator("weights")
         cosf.outputs[0] >> integrator
         orders_x >> integrator("orders_x")
-    ires = integrator.outputs[0].data # goes first: ensure integrator triggers calculations
+    ires = integrator.outputs[0].data  # goes first: ensure integrator triggers calculations
     res = sinf.outputs[1].data - sinf.outputs[0].data
     assert allclose(ires, res, atol=1e-2)
     assert integrator.outputs[0].dd.axes_edges == [edges["array"]]
@@ -108,7 +108,7 @@ def test_IntegratorCore_gl1d(debug_graph, testname):
         sampler.outputs["weights"] >> integrator("weights")
         poly0.outputs[0] >> integrator
         orders_x >> integrator("orders_x")
-    ires = integrator.outputs[0].data # goes first: ensure integrator triggers calculations
+    ires = integrator.outputs[0].data  # goes first: ensure integrator triggers calculations
     res = polyres.outputs[1].data - polyres.outputs[0].data
     assert allclose(ires, res, atol=1e-10)
     assert integrator.outputs[0].dd.axes_edges == [edges["array"]]
@@ -165,7 +165,7 @@ def test_IntegratorCore_gl2d(debug_graph, testname):
         orders_x >> integrator("orders_x")
         orders_y >> integrator("orders_y")
 
-    ires = integrator.outputs[0].data # goes first: ensure integrator triggers calculations
+    ires = integrator.outputs[0].data  # goes first: ensure integrator triggers calculations
     res = (polyres.outputs[1].data - polyres.outputs[0].data) * (
         polyres.outputs[3].data - polyres.outputs[2].data
     )
@@ -258,7 +258,7 @@ def test_IntegratorCore_gl2to1d_x(debug_graph, testname, dropdim):
         poly0.outputs[0] >> integrator
         orders_x >> integrator("orders_x")
         orders_y >> integrator("orders_y")
-    ires = integrator.outputs[0].data # goes first: ensure integrator triggers calculations
+    ires = integrator.outputs[0].data  # goes first: ensure integrator triggers calculations
     if dropdim:
         res = (polyres.outputs[1].data.T - polyres.outputs[0].data.T) * (
             polyres.outputs[3].data.T - polyres.outputs[2].data.T
@@ -320,7 +320,7 @@ def test_IntegratorCore_gl2to1d_y(debug_graph, testname, dropdim):
         poly0.outputs[0] >> integrator
         orders_x >> integrator("orders_x")
         orders_y >> integrator("orders_y")
-    ires = integrator.outputs[0].data # goes first: ensure integrator triggers calculations
+    ires = integrator.outputs[0].data  # goes first: ensure integrator triggers calculations
     if dropdim:
         res = (polyres.outputs[1].data - polyres.outputs[0].data) * (
             polyres.outputs[3].data - polyres.outputs[2].data
@@ -354,6 +354,25 @@ def test_IntegratorCore_orders_0(debug_graph):
 
 
 def test_IntegratorSampler_orders_0(debug_graph):
+    """test wrong ordersX: edges not given"""
+    arr = [1.0, 2.0, 3.0]
+    with Graph(debug=debug_graph) as graph:
+        edges = Array("edges", linspace(0, pi, len(arr) + 1), mode="fill")
+        arr1 = Array("array", arr, mode="fill")
+        weights = Array("weights", arr, mode="fill")
+        orders_x_0 = Array("orders_x", [1, 2, 3], mode="store", edges=edges["array"])
+        sampler = IntegratorSampler("sampler", mode="trap")
+        integrator = IntegratorCore("integrator")
+        arr1 >> integrator
+        weights >> integrator("weights")
+        orders_x_0 >> integrator("orders_x")
+        orders_x_0 >> sampler("orders_x")
+
+    with raises(CriticalError):
+        orders_x_0.outputs["array"].set(3)
+
+
+def test_IntegratorSampler_orders_1(debug_graph):
     """test wrong ordersX: edges not given"""
     arr = [1.0, 2.0, 3.0]
     with Graph(debug=debug_graph) as graph:
