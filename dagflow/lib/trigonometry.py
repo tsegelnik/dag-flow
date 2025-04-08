@@ -13,8 +13,11 @@ class Cos(OneToOneNode):
         self._labels.setdefault("mark", "cos")
 
     def _function(self):
-        for indata, outdata in zip(self.inputs.iter_data(), self.outputs.iter_data_unsafe()):
-            cos(indata, out=outdata)
+        for callback in self._input_nodes_callbacks:
+            callback()
+
+        for input_data, output_data in self._input_output_data:
+            cos(input_data, out=output_data)
 
 
 class Sin(OneToOneNode):
@@ -27,8 +30,11 @@ class Sin(OneToOneNode):
         self._labels.setdefault("mark", "sin")
 
     def _function(self):
-        for indata, outdata in zip(self.inputs.iter_data(), self.outputs.iter_data_unsafe()):
-            sin(indata, out=outdata)
+        for callback in self._input_nodes_callbacks:
+            callback()
+
+        for input_data, output_data in self._input_output_data:
+            sin(input_data, out=output_data)
 
 
 class ArcCos(OneToOneNode):
@@ -41,8 +47,11 @@ class ArcCos(OneToOneNode):
         self._labels.setdefault("mark", "acos")
 
     def _function(self):
-        for indata, outdata in zip(self.inputs.iter_data(), self.outputs.iter_data_unsafe()):
-            arccos(indata, out=outdata)
+        for callback in self._input_nodes_callbacks:
+            callback()
+
+        for input_data, output_data in self._input_output_data:
+            arccos(input_data, out=output_data)
 
 
 class ArcSin(OneToOneNode):
@@ -55,8 +64,11 @@ class ArcSin(OneToOneNode):
         self._labels.setdefault("mark", "asin")
 
     def _function(self):
-        for indata, outdata in zip(self.inputs.iter_data(), self.outputs.iter_data_unsafe()):
-            arcsin(indata, out=outdata)
+        for callback in self._input_nodes_callbacks:
+            callback()
+
+        for input_data, output_data in self._input_output_data:
+            arcsin(input_data, out=output_data)
 
 
 class Tan(OneToOneNode):
@@ -69,8 +81,11 @@ class Tan(OneToOneNode):
         self._labels.setdefault("mark", "tan")
 
     def _function(self):
-        for indata, outdata in zip(self.inputs.iter_data(), self.outputs.iter_data_unsafe()):
-            tan(indata, out=outdata)
+        for callback in self._input_nodes_callbacks:
+            callback()
+
+        for input_data, output_data in self._input_output_data:
+            tan(input_data, out=output_data)
 
 
 class ArcTan(OneToOneNode):
@@ -83,5 +98,8 @@ class ArcTan(OneToOneNode):
         self._labels.setdefault("mark", "atan")
 
     def _function(self):
-        for inp, out in zip(self.inputs, self.outputs):
-            arctan(inp.data, out=out._data)
+        for callback in self._input_nodes_callbacks:
+            callback()
+
+        for input_data, output_data in self._input_output_data:
+            arctan(input_data, out=output_data)
