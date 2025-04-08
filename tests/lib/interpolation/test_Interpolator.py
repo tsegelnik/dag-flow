@@ -24,14 +24,14 @@ def test_Interpolator(debug_graph, testname, dtype):
         fineX = linspace(-2, 12, nf + 1)
         shuffle(fineX)
         ycX = a * coarseX + b
-        coarse = Array("coarse", coarseX, label=xlabel, dtype=dtype)
+        coarse = Array("coarse", coarseX, label=xlabel, dtype=dtype, mode="fill")
         fine = Array(
             "fine",
             fineX,
             label={"axis": xlabel},
             dtype=dtype,
         )
-        yc = Array("yc", ycX, dtype=dtype)
+        yc = Array("yc", ycX, dtype=dtype, mode="fill")
         metaint = Interpolator(
             method="linear",
             labels={"interpolator": {"plottitle": "Interpolator", "axis": "y"}},
@@ -41,8 +41,8 @@ def test_Interpolator(debug_graph, testname, dtype):
         fine >> metaint.inputs["fine"]
 
         fcheck = LinearFunction("a*x+b")
-        A = Array("a", array([a], dtype=dtype))
-        B = Array("b", array([b], dtype=dtype))
+        A = Array("a", array([a], dtype=dtype), mode="fill")
+        B = Array("b", array([b], dtype=dtype), mode="fill")
         A >> fcheck("a")
         B >> fcheck("b")
         fine >> fcheck

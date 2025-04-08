@@ -28,7 +28,7 @@ def test_make_fcn_safe(testname, pass_params, pass_output):
         A, B = pars._pars
         A >> f("a")
         B >> f("b")
-        Array("x", x) >> f
+        Array("x", x, mode="fill") >> f
 
     res0 = f.outputs[0].data
     LF = make_fcn(
@@ -72,7 +72,7 @@ def test_make_fcn_nonsafe(testname, pass_params, pass_output):
         A, B = pars._pars
         A >> f("a")
         B >> f("b")
-        Array("x", x) >> f
+        Array("x", x, mode="fill") >> f
 
     res0 = f.outputs[0].data
     res0c = res0.copy()

@@ -17,10 +17,10 @@ def test_LinearFunction_01(dtype, testname):
     x2 = -x1
 
     with Graph(close_on_exit=True) as graph:
-        X1 = Array("x1", x1)
-        X2 = Array("x2", x2)
-        A = Array("a", array([a], dtype=dtype))
-        B = Array("b", array([b], dtype=dtype))
+        X1 = Array("x1", x1, mode="fill")
+        X2 = Array("x2", x2, mode="fill")
+        A = Array("a", array([a], dtype=dtype), mode="fill")
+        B = Array("b", array([b], dtype=dtype), mode="fill")
         Y = LinearFunction("f(x)", label="f(x)=ax+b")
 
         A >> Y("a")

@@ -15,8 +15,8 @@ def test_RenormalizeDiag(testname, debug_graph, ndiag, dtype, mode, scale, debug
     size = 4
     matrix = arange(size**2, dtype=dtype).reshape(size, size)
     with Graph(close_on_exit=True, debug=debug_graph) as graph:
-        array_matrix = Array("matrix", matrix)
-        scale_diag = Array("scale", [scale])
+        array_matrix = Array("matrix", matrix, mode="fill")
+        scale_diag = Array("scale", [scale], mode="fill")
 
         prod = RenormalizeDiag("RenormalizeDiag", mode=mode, ndiag=ndiag)
         array_matrix >> prod

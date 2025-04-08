@@ -13,7 +13,7 @@ def test_graph_small(testname, debug_graph):
     array = arange(4)
     names = "n1", "n2", "n3", "n4"
     with Graph(debug=debug_graph) as graph:
-        initials = [Array(name, array) for name in names]
+        initials = [Array(name, array, mode="fill") for name in names]
         s = Sum("add")
         m = Product("mul")
 

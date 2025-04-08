@@ -14,8 +14,8 @@ def test_PartialSums_01(testname, debug_graph, a):
     arrays_res = tuple(a[ranges[0] : ranges[1]].sum() for ranges in arrays_range)
 
     with Graph(close_on_exit=True, debug=debug_graph) as graph:
-        ranges = tuple(Array(f"range_{i}", arr) for i, arr in enumerate(arrays_range))
-        arra = Array("a", a)
+        ranges = tuple(Array(f"range_{i}", arr, mode="fill") for i, arr in enumerate(arrays_range))
+        arra = Array("a", a, mode="fill")
         ps = PartialSums("partialsums")
         arra >> ps("array")
         ranges >> ps
@@ -35,9 +35,9 @@ def test_PartialSums_01(testname, debug_graph, a):
 def test_PartialSums_edges(debug_graph, a):
     arrays_range = [0, 12], [0, 3], [4, 10], [11, 12]
     with Graph(close_on_exit=False, debug=debug_graph) as graph:
-        edges = Array("edges", linspace(0, 13, 13))
-        arra = Array("a", a, edges=edges["array"])
-        ranges = tuple(Array(f"range_{i}", arr) for i, arr in enumerate(arrays_range))
+        edges = Array("edges", linspace(0, 13, 13), mode="fill")
+        arra = Array("a", a, edges=edges["array"], mode="fill")
+        ranges = tuple(Array(f"range_{i}", arr, mode="fill") for i, arr in enumerate(arrays_range))
         ps = PartialSums("partialsums")
         arra >> ps("array")
         ranges >> ps

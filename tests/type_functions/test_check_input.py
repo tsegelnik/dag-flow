@@ -33,7 +33,7 @@ from dagflow.core.type_functions import (
 )
 def test_check_input_common(testname, debug_graph, data, dim, shape, dtype):
     with Graph(close_on_exit=True, debug=debug_graph) as graph:
-        arr1 = Array("arr1", array(data, dtype=dtype))
+        arr1 = Array("arr1", array(data, dtype=dtype), mode="fill")
         node = Dummy(
             "node",
             input_strategy=AddNewInputAddAndKeepSingleOutput(output_fmt="result"),
@@ -55,8 +55,8 @@ def test_check_input_common(testname, debug_graph, data, dim, shape, dtype):
 @mark.parametrize("data", ([0, 1, 2], [1], [[1, 2], [1, 2, 3]], [[[], [], []]]))
 def test_check_inputs_are_square_matrices_00(testname, debug_graph, data):
     with Graph(close_on_exit=False, debug=debug_graph) as graph:
-        arr1 = Array("arr1", array(data, dtype=object))
-        arr2 = Array("arr2", array(data, dtype=object))
+        arr1 = Array("arr1", array(data, dtype=object), mode="fill")
+        arr2 = Array("arr2", array(data, dtype=object), mode="fill")
         node = Dummy(
             "node",
             input_strategy=AddNewInputAddAndKeepSingleOutput(output_fmt="result"),
@@ -81,7 +81,7 @@ def test_check_inputs_are_square_matrices_00(testname, debug_graph, data):
 )
 def test_check_inputs_are_square_matrices_01(testname, debug_graph, data):
     with Graph(close_on_exit=False, debug=debug_graph) as graph:
-        arr1 = Array("arr1", array(data))
+        arr1 = Array("arr1", array(data), mode="fill")
         node = Dummy(
             "node",
             input_strategy=AddNewInputAddAndKeepSingleOutput(output_fmt="result"),
@@ -103,9 +103,9 @@ def test_check_inputs_are_square_matrices_01(testname, debug_graph, data):
 def test_check_inputs_equivalence(testname, debug_graph, dtype, wrongarr):
     # TODO: check edges and nodes
     with Graph(close_on_exit=False, debug=debug_graph) as graph:
-        arr1 = Array("arr1", array([1, 2], dtype=dtype))
-        arr2 = Array("arr2", array([3, 4], dtype=dtype))
-        arr3 = Array("arr2", array([5, 6], dtype=dtype))
+        arr1 = Array("arr1", array([1, 2], dtype=dtype), mode="fill")
+        arr2 = Array("arr2", array([3, 4], dtype=dtype), mode="fill")
+        arr3 = Array("arr2", array([5, 6], dtype=dtype), mode="fill")
         node = Dummy(
             "node",
             input_strategy=AddNewInputAddAndKeepSingleOutput(output_fmt="result"),
@@ -116,7 +116,7 @@ def test_check_inputs_equivalence(testname, debug_graph, dtype, wrongarr):
         check_dtype_of_inputs(node, AllPositionals, dtype=dtype)
         check_inputs_have_same_dtype(node)
         check_inputs_have_same_shape(node)
-        Array("wrong_array", wrongarr) >> node
+        Array("wrong_array", wrongarr, mode="fill") >> node
         with raises(TypeFunctionError):
             check_inputs_equivalence(node)
         with raises(TypeFunctionError):
@@ -132,7 +132,7 @@ def test_check_inputs_equivalence(testname, debug_graph, dtype, wrongarr):
 )
 def test_check_subtype(testname, debug_graph, dtype):
     with Graph(close_on_exit=False, debug=debug_graph) as graph:
-        arr1 = Array("arr1", array([1, 2], dtype=dtype))
+        arr1 = Array("arr1", array([1, 2], dtype=dtype), mode="fill")
         node = Dummy(
             "node",
             input_strategy=AddNewInputAddAndKeepSingleOutput(output_fmt="result"),
@@ -157,8 +157,8 @@ def test_check_subtype(testname, debug_graph, dtype):
 )
 def test_check_inputs_are_matrix_multipliable_00(testname, debug_graph, data1, data2):
     with Graph(close_on_exit=False, debug=debug_graph) as graph:
-        arr1 = Array("arr1", array(data1))
-        arr2 = Array("arr2", array(data2))
+        arr1 = Array("arr1", array(data1), mode="fill")
+        arr2 = Array("arr2", array(data2), mode="fill")
         node = Dummy(
             "node",
             input_strategy=AddNewInputAddAndKeepSingleOutput(output_fmt="result"),
@@ -179,8 +179,8 @@ def test_check_inputs_are_matrix_multipliable_00(testname, debug_graph, data1, d
 )
 def test_check_inputs_are_matrix_multipliable_01(testname, debug_graph, data1, data2):
     with Graph(close_on_exit=False, debug=debug_graph) as graph:
-        arr1 = Array("arr1", array(data1))
-        arr2 = Array("arr2", array(data2))
+        arr1 = Array("arr1", array(data1), mode="fill")
+        arr2 = Array("arr2", array(data2), mode="fill")
         node = Dummy(
             "node",
             input_strategy=AddNewInputAddAndKeepSingleOutput(output_fmt="result"),

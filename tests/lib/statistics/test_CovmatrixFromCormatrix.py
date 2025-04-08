@@ -19,8 +19,8 @@ def test_CovmatrixFromCormatrix_00(testname, debug_graph, dtype):
         dtype=dtype,
     )
     with Graph(close_on_exit=True, debug=debug_graph) as graph:
-        matrix = Array("matrix", inC)
-        sigma = Array("sigma", inSigma)
+        matrix = Array("matrix", inC, mode="fill")
+        sigma = Array("sigma", inSigma, mode="fill")
         cov = CovmatrixFromCormatrix("covariance")
 
         sigma >> cov.inputs["sigma"]

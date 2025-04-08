@@ -20,8 +20,8 @@ def test_segmentIndex_01(debug_graph, testname, mode):
         coarseX = linspace(0, 10, nc + 1)
         fineX = linspace(0, 10, nf + 1)
         shuffle(fineX)
-        coarse = Array("coarse", coarseX)
-        fine = Array("fine", fineX)
+        coarse = Array("coarse", coarseX, mode="fill")
+        fine = Array("fine", fineX, mode="fill")
         segmentIndex = SegmentIndex("segmentIndex", mode=mode)
         (coarse, fine) >> segmentIndex
     res = coarseX.searchsorted(fineX, side=mode, sorter=coarseX.argsort())
@@ -37,8 +37,8 @@ def test_segmentIndex_02(debug_graph, testname, mode):
         coarseX = linspace(0, 10, nc).reshape(2, nc // 2)
         fineX = linspace(0, 10, nf).reshape(2, nf // 2)
         shuffle(fineX)
-        coarse = Array("coarse", coarseX)
-        fine = Array("fine", fineX)
+        coarse = Array("coarse", coarseX, mode="fill")
+        fine = Array("fine", fineX, mode="fill")
         segmentIndex = SegmentIndex("segmentIndex", mode=mode)
         (coarse, fine) >> segmentIndex
     res = coarseX.ravel().searchsorted(fineX.ravel(), side=mode, sorter=coarseX.ravel().argsort())
@@ -54,8 +54,8 @@ def test_segmentIndex_03(debug_graph, testname, mode):
         coarseX = linspace(0, 10, nc).reshape(nc // 2, 2)
         fineX = linspace(0, 10, nf).reshape(nf // 2, 2)
         shuffle(fineX)
-        coarse = Array("coarse", coarseX)
-        fine = Array("fine", fineX)
+        coarse = Array("coarse", coarseX, mode="fill")
+        fine = Array("fine", fineX, mode="fill")
         segmentIndex = SegmentIndex("segmentIndex", mode=mode)
         (coarse, fine) >> segmentIndex
     res = coarseX.ravel().searchsorted(fineX.ravel(), side=mode, sorter=coarseX.ravel().argsort())

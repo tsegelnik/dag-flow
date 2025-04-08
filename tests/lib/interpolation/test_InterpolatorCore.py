@@ -31,9 +31,9 @@ def test_InterpolatorCore_linear_01(debug_graph, testname, k, b, fine_x_mode):
     ycX = k * coarseX + b
 
     with Graph(debug=debug_graph, close_on_exit=True) as graph:
-        coarse = Array("coarse", coarseX)
-        fine = Array("fine", fineX)
-        yc = Array("yc", ycX)
+        coarse = Array("coarse", coarseX, mode="fill")
+        fine = Array("fine", fineX, mode="fill")
+        yc = Array("yc", ycX, mode="fill")
         segmentIndex = SegmentIndex("indexer")
         interpolator = InterpolatorCore("interpolator", method="linear")
 
@@ -61,8 +61,8 @@ def test_InterpolatorCore_linear_02(debug_graph, testname):
     shuffle(fineX)
 
     with Graph(debug=debug_graph, close_on_exit=True) as graph:
-        coarse = Array("coarse", coarseX)
-        fine = Array("fine", fineX)
+        coarse = Array("coarse", coarseX, mode="fill")
+        fine = Array("fine", fineX, mode="fill")
         ssin = Sin("sin")
         segmentIndex = SegmentIndex("indexer")
         interpolator = InterpolatorCore("interpolator", method="linear")
@@ -92,8 +92,8 @@ def test_InterpolatorCore_ndim(debug_graph, testname, shape):
     shuffle(fineX)
 
     with Graph(debug=debug_graph, close_on_exit=True) as graph:
-        coarse = Array("coarse", coarseX)
-        fine = Array("fine", fineX)
+        coarse = Array("coarse", coarseX, mode="fill")
+        fine = Array("fine", fineX, mode="fill")
         ssin = Sin("sin")
         segmentIndex = SegmentIndex("indexer")
         interpolator = InterpolatorCore("interpolator", method="linear")
@@ -134,9 +134,9 @@ def test_InterpolatorCore_log_01(debug_graph, testname, k, b, fine_x_mode):
     ycX = log(k * coarseX + b)
 
     with Graph(debug=debug_graph, close_on_exit=True) as graph:
-        coarse = Array("coarse", coarseX)
-        fine = Array("fine", fineX)
-        yc = Array("yc", ycX)
+        coarse = Array("coarse", coarseX, mode="fill")
+        fine = Array("fine", fineX, mode="fill")
+        yc = Array("yc", ycX, mode="fill")
         segmentIndex = SegmentIndex("indexer")
         interpolator = InterpolatorCore("interpolator", method="log")
 
@@ -176,9 +176,9 @@ def test_InterpolatorCore_logx_01(debug_graph, testname, k, b, fine_x_mode):
     ycX = k * log(coarseX) + b
 
     with Graph(debug=debug_graph, close_on_exit=True) as graph:
-        coarse = Array("coarse", coarseX)
-        fine = Array("fine", fineX)
-        yc = Array("yc", ycX)
+        coarse = Array("coarse", coarseX, mode="fill")
+        fine = Array("fine", fineX, mode="fill")
+        yc = Array("yc", ycX, mode="fill")
         segmentIndex = SegmentIndex("indexer")
         interpolator = InterpolatorCore("interpolator", method="logx")
 
@@ -217,9 +217,9 @@ def test_InterpolatorCore_exp_01(debug_graph, testname, k, b, fine_x_mode):
     ycX = exp(k * coarseX + b)
 
     with Graph(debug=debug_graph, close_on_exit=True) as graph:
-        coarse = Array("coarse", coarseX)
-        fine = Array("fine", fineX)
-        yc = Array("yc", ycX)
+        coarse = Array("coarse", coarseX, mode="fill")
+        fine = Array("fine", fineX, mode="fill")
+        yc = Array("yc", ycX, mode="fill")
         segmentIndex = SegmentIndex("indexer")
         interpolator = InterpolatorCore("interpolator", method="exp")
 
@@ -269,9 +269,9 @@ def test_InterpolatorCore_lrn_01(
     shuffle(fineX)
 
     with Graph(debug=debug_graph, close_on_exit=True) as graph:
-        coarse = Array("coarse", coarseX)
-        fine = Array("fine", fineX)
-        yc = Array("yc", ycX)
+        coarse = Array("coarse", coarseX, mode="fill")
+        fine = Array("fine", fineX, mode="fill")
+        yc = Array("yc", ycX, mode="fill")
         segmentIndex = SegmentIndex("indexer")
         interpolator = InterpolatorCore("interpolator", method=method)
 
@@ -335,9 +335,9 @@ def test_InterpolatorCore_extrapolation_strategy(debug_graph, testname, k, strat
     ycX = k * coarseX + b
 
     with Graph(debug=debug_graph, close_on_exit=True) as graph:
-        coarse = Array("coarse", coarseX)
-        fine = Array("fine", fineX)
-        yc = Array("yc", ycX)
+        coarse = Array("coarse", coarseX, mode="fill")
+        fine = Array("fine", fineX, mode="fill")
+        yc = Array("yc", ycX, mode="fill")
         segmentIndex = SegmentIndex("indexer")
         interpolator = InterpolatorCore(
             "interpolator",
@@ -408,9 +408,9 @@ def test_InterpolatorCore_exception_02(debug_graph):
     ycX = k * coarseX + b
 
     with Graph(debug=debug_graph, close_on_exit=True):
-        coarse = Array("coarse", coarseX)
-        fine = Array("fine", fineX)
-        yc = Array("yc", ycX)
+        coarse = Array("coarse", coarseX, mode="fill")
+        fine = Array("fine", fineX, mode="fill")
+        yc = Array("yc", ycX, mode="fill")
         segmentIndex = SegmentIndex("indexer")
         interpolator = InterpolatorCore("interpolator", method="linear")
 

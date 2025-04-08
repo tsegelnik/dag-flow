@@ -23,8 +23,8 @@ def test_MatrixProductAB(dtype: str, diag_left: bool, diag_right: bool):
         in_right = diag(right)
 
     with Graph(close_on_exit=True) as graph:
-        array_left = Array("Left", left)
-        array_right = Array("Right", right)
+        array_left = Array("Left", left, mode="fill")
+        array_right = Array("Right", right, mode="fill")
 
         prod = MatrixProductAB("MatrixProductAB")
         array_left >> prod.inputs["left"]

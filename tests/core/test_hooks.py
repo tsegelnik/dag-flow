@@ -31,7 +31,7 @@ class ThreeInputsSum(ManyToOneNode):
 
 def test_00(debug_graph):
     with Graph(debug=debug_graph, close_on_exit=True):
-        arr = Array("arr", arange(3, dtype="i"))  # [0, 1, 2]
+        arr = Array("arr", arange(3, dtype="i"), mode="fill")  # [0, 1, 2]
         node = ThreeInputsSum("threesum")
         for _ in range(3):
             # Error while evaluating before len(inputs) == 3
@@ -44,9 +44,9 @@ def test_00(debug_graph):
 def test_01(debug_graph):
     weight_arr = (2, 3)
     with Graph(debug=debug_graph, close_on_exit=True):
-        arr = Array("arr", arange(3, dtype="i"))  # [0, 1, 2]
-        weight = Array("weight", weight_arr)
-        weight1 = Array("weight", weight_arr[:1])
+        arr = Array("arr", arange(3, dtype="i"), mode="fill")  # [0, 1, 2]
+        weight = Array("weight", weight_arr, mode="fill")
+        weight1 = Array("weight", weight_arr[:1], mode="fill")
 
         ws1 = WeightedSum("weightedsum")
         ws2 = WeightedSum("weightedsum-sameweight")

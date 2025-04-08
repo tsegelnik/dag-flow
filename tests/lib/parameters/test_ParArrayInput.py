@@ -18,7 +18,7 @@ def test_ParArrayInput(dtype, parameters_mode, testname):
 
     with Graph(close_on_exit=True) as graph:
         pars = Parameters.from_numbers(value=values_initial, names=names, dtype=dtype)
-        arr = Array("new values", values_new)
+        arr = Array("new values", values_new, mode="fill")
         parinp = ParArrayInput(
             "ParArrayInput", parameters=pars if parameters_mode == "Parameters" else pars._pars
         )

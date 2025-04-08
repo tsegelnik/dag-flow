@@ -16,10 +16,10 @@ def test_meta_node_strategy_leading_node(testname):
     data4 = linspace(3, 4, 11, dtype="d") * pi
     with Graph(close_on_exit=True) as graph:
         meta_node = MetaNode()
-        arr1 = Array("x1", data1)
-        arr2 = Array("x2", data2)
-        arr3 = Array("x3", data3)
-        arr4 = Array("x4", data4)
+        arr1 = Array("x1", data1, mode="fill")
+        arr2 = Array("x2", data2, mode="fill")
+        arr3 = Array("x3", data3, mode="fill")
+        arr4 = Array("x4", data4, mode="fill")
         node = Cos("cos")
         arr1 >> node
         # adds an input and an output to MetaNode
@@ -46,9 +46,9 @@ def test_meta_node_strategy_new_node(testname):
     data3 = linspace(2, 3, 11, dtype="d") * pi
     with Graph(close_on_exit=True) as graph:
         meta_node = MetaNode(strategy="NewNode", new_node_cls=Cos)
-        arr1 = Array("x1", data1)
-        arr2 = Array("x2", data2)
-        arr3 = Array("x3", data3)
+        arr1 = Array("x1", data1, mode="fill")
+        arr2 = Array("x2", data2, mode="fill")
+        arr3 = Array("x3", data3, mode="fill")
         node = Cos("cos1")
         arr1 >> node
         meta_node._add_node(

@@ -39,7 +39,7 @@ def test_CovarianceMatrixGroup(dtype, correlated: bool, testname):
         correlations = None
 
     with Graph(close_on_exit=True) as graph:
-        X = Array("x", x)
+        X = Array("x", x, mode="fill")
         pars = Parameters.from_numbers(
             value,
             names=list("abcd"),

@@ -53,7 +53,7 @@ def _make_test_graph(datasize: int = 1, width: int = 6, length: int = 7):
                 else:
                     for isource in range(width):
                         data = _make_data(datasize)
-                        array = Array(f"l={ilayer}, g={igroup}, i={isource}", array=data)
+                        array = Array(f"l={ilayer}, g={igroup}, i={isource}", array=data, mode="fill")
                         input_arrays.append(array)
                         array >> head
 
