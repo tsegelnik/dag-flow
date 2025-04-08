@@ -5,13 +5,13 @@ from typing import TYPE_CHECKING, Literal
 from numpy import empty, errstate, integer, linspace, matmul, meshgrid, newaxis
 from numpy.polynomial.legendre import leggauss
 
-from ...core.exception import InitializationError
+from ...core.exception import CalculationError, InitializationError, UnclosedGraphError
 from ...core.node import Node
 from ...core.type_functions import (
     check_dimension_of_inputs,
     check_edges_dimension_of_inputs,
-    check_subtype_of_inputs,
     check_number_of_inputs,
+    check_subtype_of_inputs,
 )
 
 if TYPE_CHECKING:
@@ -45,8 +45,8 @@ def _gl_sampler(orders: NDArray, sample: NDArray, weights: NDArray, edges: NDArr
 
 
 class IntegratorSampler(Node):
-    """
-    The `IntegratorSampler` node creates a sample for the `IntegratorCore` node.
+    """The `IntegratorSampler` node creates a sample for the `IntegratorCore`
+    node.
 
     There are several samplers for `1d` (`rect`, `trap`, `gl`) and only `gl2d`
     for `2d` integrator, where `rect` is the rectangular, `trap` is the trapezoidal,
@@ -165,7 +165,14 @@ class IntegratorSampler(Node):
         check_subtype_of_inputs(self, name, dtype=integer)
         check_edges_dimension_of_inputs(self, name, 1)
         orders = self.inputs[name]
-        return sum(orders.data)
+        try:
+            npoints = sum(orders.data)
+        except UnclosedGraphError:
+            raise CalculationError(
+                "Orders for IntegratorSampler should be available (closed) before the graph is closed"
+            )
+
+        return npoints
 
     def _post_allocate(self) -> None:
         """Allocates the `buffer`"""
@@ -186,7 +193,7 @@ class IntegratorSampler(Node):
     def _fcn_rect(self):
         """The rectangular sampling."""
         orders_x = self._orders_x
-        edges = orders_x.dd.axes_edges[0]._data  # n+1
+        edges = orders_x.dd.axes_edges[0].data  # n+1
         orders = orders_x.data  # n
         sample = self.outputs[0]._data  # m = sum(orders)
         weights = self._weights._data
@@ -221,7 +228,7 @@ class IntegratorSampler(Node):
     def _fcn_trap(self):
         """The trapezoidal sampling."""
         orders_x = self._orders_x
-        edges = orders_x.dd.axes_edges[0]._data  # n+1
+        edges = orders_x.dd.axes_edges[0].data  # n+1
         orders = orders_x.data  # n
         sample = self.outputs[0]._data  # m = sum(orders)
         weights = self._weights._data
@@ -243,7 +250,7 @@ class IntegratorSampler(Node):
     def _fcn_gl1d(self):
         """The 1d Gauss-Legendre sampling."""
         orders_x = self._orders_x
-        edges = orders_x.dd.axes_edges[0]._data
+        edges = orders_x.dd.axes_edges[0].data
         orders = orders_x.data
         sample = self.outputs[0]._data
         weights = self._weights._data
@@ -254,8 +261,8 @@ class IntegratorSampler(Node):
         """The 2d Gauss-Legendre sampling."""
         orders_x = self._orders_x
         orders_y = self._orders_y
-        edgesX = orders_x.dd.axes_edges[0]._data  # p + 1
-        edgesY = orders_y.dd.axes_edges[0]._data  # q + 1
+        edgesX = orders_x.dd.axes_edges[0].data  # p + 1
+        edgesY = orders_y.dd.axes_edges[0].data  # q + 1
         orders_x = orders_x.data
         orders_y = orders_y.data
         weightsX = self.__bufferX[0]  # (n, )
