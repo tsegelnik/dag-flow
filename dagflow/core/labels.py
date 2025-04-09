@@ -106,15 +106,17 @@ class Labels:
         "_name",
         "_index_values",
         "_index_dict",
-        "_text",       # for terminal
-        "_graph",      # for the graph
+        "_text",       # for plain text (terminal)
+        "_graph",      # for the graph, or text_unit
         "_latex",      # for latex output, or to replace plottitle
         "_mark",       # for short mark on the graphiz graph
-        "_xaxis",      # when object is used as X axis for other object
         "_axis",       # for the relevant axis, will be replaced with plottitle if not found
+        "_xaxis",      # for own x axis, when it is not provided
         "_plottitle",  # for plot title, will be replaced by latex if not found
         "_roottitle",  # for canvas title (root), will be replaced by plottitle with \→# substitution
         "_rootaxis",
+        "_unit",       # for text unit
+        "_latexunit",  # for latex text unit
         "_paths",
         "_plotmethod",
         "_node_hidden",
@@ -131,6 +133,8 @@ class Labels:
     _plottitle: str | None
     _roottitle: str | None
     _rootaxis: str | None
+    _unit: str | None
+    _latexunit: str | None
     _mark: str | None
     _paths: list[str]
     _plotmethod: str | None
@@ -189,6 +193,8 @@ class Labels:
             "plottitle",
             "roottitle",
             "rootaxis",
+            "unit",
+            "latexunit",
         ):
             aname = f"_{name}"
             oldvalue = getattr(self, aname)
@@ -277,8 +283,22 @@ class Labels:
         self._text = value
 
     @property
+    def text_unit(self) -> str | None:
+        if (unit:=self.unit):
+            text = self._text
+            if isinstance(text, str) and "\n" in text:
+                return text.replace("\n", f"[{unit}] \n", 1)
+            else:
+                return f"{text} [{unit}]"
+
+        return self._text
+
+    @property
     def graph(self) -> str | None:
-        return self._graph or self._text
+        if (self._graph):
+            return self._graph
+
+        return self.text_unit
 
     @graph.setter
     def graph(self, value: str | None):
@@ -293,8 +313,15 @@ class Labels:
         self._latex = value
 
     @property
+    def latex_unit(self) -> str | None:
+        if (unit:=self.latexunit):
+            return f"{self.latex} [{unit}]"
+
+        return self.latex
+
+    @property
     def plottitle(self) -> str | None:
-        return self._plottitle or self._latex or self._text
+        return self._plottitle or self._latex or self._text.replace(r"\n", "\n")
 
     @plottitle.setter
     def plottitle(self, value: str | None):
@@ -319,6 +346,10 @@ class Labels:
         self._rootaxis = value
 
     @property
+    def rootaxis_unit(self) -> str | None:
+        return _latex_to_root(self.axis_unit) if self._rootaxis is None else self._rootaxis
+
+    @property
     def axis(self) -> str | None:
         return self._axis or self.plottitle
 
@@ -327,12 +358,42 @@ class Labels:
         self._axis = value
 
     @property
+    def axis_unit(self) -> str | None:
+        if (unit:=self.latexunit):
+            return f"{self.axis} [{unit}]"
+
+        return self.axis
+
+    @property
     def xaxis(self) -> str | None:
         return self._xaxis
+
+    @property
+    def xaxis_unit(self) -> str | None:
+        if (unit:=self.latexunit):
+            return f"{self.xaxis} [{unit}]"
+
+        return self.xaxis
 
     @xaxis.setter
     def xaxis(self, value: str | None):
         self._xaxis = value
+
+    @property
+    def unit(self) -> str | None:
+        return self._unit
+
+    @unit.setter
+    def unit(self, value: str | None):
+        self._unit = value
+
+    @property
+    def latexunit(self) -> str | None:
+        return self._latexunit or self.unit
+
+    @latexunit.setter
+    def latexunit(self, value: str | None):
+        self._latexunit = value
 
     @property
     def mark(self) -> str | None:
