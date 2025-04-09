@@ -487,6 +487,8 @@ class PlotVisitor(NestedMKDictVisitor):
         "_format",
         "_args",
         "_kwargs",
+        "_i_element",
+        "_n_elements",
         "_minimal_data_size",
         "_active_figures",
         "_overlay_priority",
@@ -498,6 +500,8 @@ class PlotVisitor(NestedMKDictVisitor):
     _format: str | None
     _args: Sequence
     _kwargs: dict
+    _i_element: int
+    _n_elements: int
     _minimal_data_size: int
     _active_figures: dict
     _overlay_priority: Sequence[OrderedSet]
@@ -519,7 +523,9 @@ class PlotVisitor(NestedMKDictVisitor):
         self._format = format
         self._args = args
         self._kwargs = kwargs
-        self._minimal_data_size =  minimal_data_size
+        self._i_element = 0
+        self._n_elements = 0
+        self._minimal_data_size = minimal_data_size
         self._overlay_priority = tuple(OrderedSet(sq) for sq in overlay_priority)
         self._currently_active_overlay = None
         self._close_on_exitdict = False
@@ -531,29 +537,34 @@ class PlotVisitor(NestedMKDictVisitor):
         elif self._folder is not None:
             self._kwargs["close"] = False
 
-    def _try_start_join(self, key: TupleKey) -> tuple[tuple[str, ...] | None, str | None, bool]:
+    def _try_start_join(
+        self, key: TupleKey
+    ) -> tuple[tuple[str, ...] | None, str | None, bool, bool]:
         key_set = OrderedSet(key)
         need_new_figure = True
+        need_group_figure = False
         if self._currently_active_overlay is None:
             for indices_set in self._overlay_priority:
                 if match := indices_set.intersection(key_set):
                     self._currently_active_overlay = indices_set
                     self._close_on_exitdict = match[0] == key_set[-1]
+                    need_group_figure = True
                     break
             else:
-                return key, None, True
+                return key, None, True, need_group_figure
         elif match := self._currently_active_overlay.intersection(key_set):
             need_new_figure = False
+            need_group_figure = True
         else:
             self._currently_active_overlay = None
-            return key, None, True
+            return key, None, True, need_group_figure
 
-        key_major = key_set.difference(self._currently_active_overlay)
-        return tuple(key_major), match[0], need_new_figure
+        key_group = key_set.difference(self._currently_active_overlay)
+        return tuple(key_group), match[0], need_new_figure, need_group_figure
 
     def _makefigure(
-        self, key: TupleKey, *, force_new: bool = False
-    ) -> tuple[Axes, tuple[str, ...] | None, str | None, bool]:
+        self, key: TupleKey, *, force_new: bool = False, force_group: bool = False
+    ) -> tuple[Axes | None, tuple[str, ...] | None, str | None, bool]:
         from matplotlib.pyplot import sca, subplots
 
         def mkfig(storekey: TupleKey | None = None) -> Axes:
@@ -563,14 +574,19 @@ class PlotVisitor(NestedMKDictVisitor):
             return ax
 
         if force_new:
+            assert not force_group, "arguments force_new and force_group are exclusive"
             return mkfig(), key, None, True
 
-        index_major, index_minor, need_new_figure = self._try_start_join(key)
-        if need_new_figure or (fig := self._active_figures.get(tuple(index_major))) is None:
-            return mkfig(index_major), index_major, index_minor, True
+        index_group, index_item, need_new_figure, need_group_figure = self._try_start_join(key)
+        if force_group or not need_group_figure:
+            return None, None, None, False
 
-        sca(ax := fig.axes[0])
-        return ax, index_major, index_minor, False
+        if need_new_figure or (fig := self._active_figures.get(tuple(index_group))) is None:
+            return mkfig(index_group), index_group, index_item, True
+
+        ax = fig.axes[0]
+        sca(ax)
+        return ax, index_group, index_item, False
 
     def _savefig(self, key: TupleKey, *, close: bool = True):
         from os import makedirs
@@ -584,7 +600,7 @@ class PlotVisitor(NestedMKDictVisitor):
             filename = f"{self._folder}/{path}.{self._format}"
             makedirs(dirname(filename), exist_ok=True)
 
-            logger.log(INFO1, f"Write: {filename}")
+            logger.log(INFO1, f"Write: {filename} [{self._i_element}/{self._n_elements}]")
             savefig(filename)
 
         if close:
@@ -599,7 +615,10 @@ class PlotVisitor(NestedMKDictVisitor):
         self._active_figures = {}
 
     def start(self, dct):
-        pass
+        self._n_elements = 0
+        for _ in dct.walkitems():
+            self._n_elements+=1
+        self._i_element = 0
 
     def enterdict(self, key, v):
         pass
@@ -617,6 +636,7 @@ class PlotVisitor(NestedMKDictVisitor):
 
     def visit(self, key, output):
         from ..plot.plot import plot_auto
+        self._i_element+=1
 
         if not isinstance(output, Output) or not output.labels.plottable:
             logger.log(DEBUG, f"Do not plot {strkey(key)} of not supported type")
@@ -624,21 +644,28 @@ class PlotVisitor(NestedMKDictVisitor):
         if not output.labels.plottable:
             logger.log(DEBUG, f"Do not plot {strkey(key)}, configured to be not plottable")
             return
-        if output.dd.size<self._minimal_data_size:
-            logger.log(DEBUG, f"Do not plot {strkey(key)} of size {output.dd.size}<{self._minimal_data_size}")
+        if output.dd.size < self._minimal_data_size:
+            logger.log(
+                DEBUG,
+                f"Do not plot {strkey(key)} of size {output.dd.size}<{self._minimal_data_size}",
+            )
             return
 
         nd = output.dd.dim
-        _, index_major, index_minor, newfig = self._makefigure(key, force_new=(nd == 2))
+        ax, index_group, index_item, figure_is_new = self._makefigure(key, force_new=True)
 
-        kwargs = self._kwargs.copy()
-        if index_minor:
-            kwargs.setdefault("label", index_minor)
-        kwargs.setdefault("show_path", newfig)
-
+        kwargs = dict({"show_path": figure_is_new}, **self._kwargs)
         plot_auto(output, *self._args, **kwargs)
-        if not index_minor:
+        if not index_item:
             self._savefig(key, close=True)
+
+        if nd == 1:
+            ax, index_group, index_item, figure_is_new = self._makefigure(key, force_group=False)
+            if not index_item:
+                return
+
+            kwargs = dict({"show_path": figure_is_new, "label": index_item}, **self._kwargs)
+            plot_auto(output, *self._args, **kwargs)
 
     def stop(self, dct):
         from matplotlib.pyplot import show
