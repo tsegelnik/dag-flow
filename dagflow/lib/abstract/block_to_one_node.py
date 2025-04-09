@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from itertools import batched
 from typing import TYPE_CHECKING
 
 from multikeydict.typing import properkey
@@ -30,11 +31,13 @@ class BlockToOneNode(Node):
     __slots__ = (
         "_broadcastable",
         "_input_data",
+        "_blocks_input_data",
         "_output_data",
     )
 
     _broadcastable: bool
     _input_data: list[NDArray]
+    _blocks_input_data: list[tuple[NDArray,...]]
     _output_data: list[NDArray]
 
     def __init__(self, *args, broadcastable: bool = False, output_name: str = "result", **kwargs):
@@ -45,6 +48,7 @@ class BlockToOneNode(Node):
         super().__init__(*args, **kwargs)
         self._broadcastable = broadcastable
 
+        self._blocks_input_data = []
         self._input_data = []
         self._output_data = []
 
@@ -77,6 +81,10 @@ class BlockToOneNode(Node):
 
         self._input_data = [input._data for input in self.inputs]
         self._output_data = [output._data for output in self.outputs]
+        if (block_size:=self._inputs_block_size())>0:
+            self._blocks_input_data = list(batched(self._input_data, n=block_size))
+        else:
+            self._blocks_input_data = []
 
     @classmethod
     def replicate(
