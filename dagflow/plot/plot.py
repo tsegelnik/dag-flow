@@ -97,7 +97,7 @@ class plot_auto:
             if colorbar is True:
                 colorbar = {}
             if self._output and isinstance(colorbar, Mapping):
-                colorbar.setdefault("label", self._output.labels.axis)
+                colorbar.setdefault("label", self._output.labels.axis_unit)
             self._ret = plot_array_2d(
                 self._array,
                 self._edges,
@@ -159,15 +159,15 @@ class plot_auto:
         labels = self._output.labels
 
         self._title = labels.plottitle
-        self._xlabel = self._output.dd.axis_label(0) or labels.xaxis or "Index"
+        self._xlabel = self._output.dd.axis_label(0) or labels.xaxis_unit or "Index [#]"
 
-        self._ylabel = labels.axis
+        self._ylabel = labels.axis_unit
         if self._output.dd.dim == 2:
             if self._plotmethod == "slicesx":
-                self._xlabel = self._output.dd.axis_label(1) or labels.xaxis or "Index"
-                self._zlabel = self._output.dd.axis_label(0) or labels.xaxis or "Index"
+                self._xlabel = self._output.dd.axis_label(1) or labels.xaxis_unit or "Index [#]"
+                self._zlabel = self._output.dd.axis_label(0) or labels.xaxis_unit or "Index [#]"
             elif self._plotmethod == "slicesy":
-                self._zlabel = self._output.dd.axis_label(1) or labels.xaxis or "Index"
+                self._zlabel = self._output.dd.axis_label(1) or labels.xaxis_unit or "Index [#]"
             else:
                 self._zlabel = self._ylabel
                 self._ylabel = self._output.dd.axis_label(1)
@@ -448,9 +448,10 @@ def plot_array_2d_vs_slicesx(
     haslabels = False
     zlabel = plotter and plotter.zlabel or "value"
 
+    legtitle = f"Slice {zlabel}:"
     for data, slicey, slicex in zip(Z, x, y):
         if (slicey[0] == slicey).all():
-            label = f"slice {zlabel}={slicey[0]:.2g}"
+            label = f"${slicey[0]:.2g}$"
             haslabels = True
         else:
             label = None
@@ -458,7 +459,7 @@ def plot_array_2d_vs_slicesx(
 
     if haslabels is not None:
         ax = gca()
-        ax.legend()
+        ax.legend(title=legtitle)
 
 
 def plot_array_2d_vs_slicesy(Z: NDArray, meshes: list[NDArray], *args, **kwargs):
