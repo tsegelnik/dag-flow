@@ -1,6 +1,21 @@
 from __future__ import annotations
 
-from itertools import batched
+try:
+    from itertools import batched
+except ImportError:
+    from itertools import islice
+
+    def batched(iterable, n, *, strict=True):
+        # batched('ABCDEFG', 3) → ABC DEF G
+        if n < 1:
+            raise ValueError("n must be at least one")
+        iterator = iter(iterable)
+        while batch := tuple(islice(iterator, n)):
+            if strict and len(batch) != n:
+                raise ValueError("batched(): incomplete batch")
+            yield batch
+
+
 from typing import TYPE_CHECKING
 
 from multikeydict.typing import properkey
@@ -37,7 +52,7 @@ class BlockToOneNode(Node):
 
     _broadcastable: bool
     _input_data: list[NDArray]
-    _blocks_input_data: list[tuple[NDArray,...]]
+    _blocks_input_data: list[tuple[NDArray, ...]]
     _output_data: list[NDArray]
 
     def __init__(self, *args, broadcastable: bool = False, output_name: str = "result", **kwargs):
@@ -81,7 +96,7 @@ class BlockToOneNode(Node):
 
         self._input_data = [input._data for input in self.inputs]
         self._output_data = [output._data for output in self.outputs]
-        if (block_size:=self._inputs_block_size())>0:
+        if (block_size := self._inputs_block_size()) > 0:
             self._blocks_input_data = list(batched(self._input_data, n=block_size))
         else:
             self._blocks_input_data = []
