@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from textwrap import shorten
 from typing import TYPE_CHECKING
+from time import perf_counter
 
 from numpy import sum as npsum
 from pandas import DataFrame, Series
@@ -47,6 +48,7 @@ _DEFAULT_AGGREGATIONS = ("count", "single", "sum", "%_of_total")
 
 SOURCE_COL_WIDTH = 32
 SINK_COL_WIDTH = 32
+default_timer = perf_counter
 
 
 class TimerProfiler(Profiler):
@@ -56,7 +58,7 @@ class TimerProfiler(Profiler):
     you should consider `NodeProfiler` or `FrameworkProfiler`.
     """
 
-    __slots__ = ("_n_runs",)
+    __slots__ = ("_n_runs", "_timer")
     _n_runs: int
 
     def __init__(
@@ -65,11 +67,13 @@ class TimerProfiler(Profiler):
         sources: Sequence[Node] = (),
         sinks: Sequence[Node] = (),
         n_runs: int = 100,
+        timer: Callable = default_timer,
     ):
         self._default_aggregations = _DEFAULT_AGGREGATIONS
         self._column_aliases = _COLUMN_ALIASES.copy()
         self._aggregate_aliases = _AGGREGATE_ALIASES.copy()
         self._n_runs = n_runs
+        self._timer = timer
         self.register_aggregate_func(
             func=self._t_percentage,
             aliases=["%_of_total", "percentage", "t_percentage"],
@@ -84,6 +88,18 @@ class TimerProfiler(Profiler):
     @n_runs.setter
     def n_runs(self, value):
         self._n_runs = value
+
+    def timeit(self, stmt: Callable, runs: int, setup: Callable | None = None) -> float:
+        timer = self._timer
+        total_time = 0
+        for i in range(runs):
+            if setup is not None:
+                setup()
+            t_0 = timer()
+            stmt()
+            t_1 = timer()
+            total_time += t_1 - t_0
+        return total_time
 
     def _t_percentage(self, _s: Series) -> Series:
         """User-defined aggregate function to calculate the percentage of group
