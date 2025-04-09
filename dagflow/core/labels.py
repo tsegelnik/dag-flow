@@ -111,12 +111,13 @@ class Labels:
         "_latex",      # for latex output, or to replace plottitle
         "_mark",       # for short mark on the graphiz graph
         "_axis",       # for the relevant axis, will be replaced with plottitle if not found
-        "_xaxis",      # for own x axis, when it is not provided
+        "_xaxis",      # for own X axis, when it is not provided
         "_plottitle",  # for plot title, will be replaced by latex if not found
         "_roottitle",  # for canvas title (root), will be replaced by plottitle with \→# substitution
         "_rootaxis",
         "_unit",       # for text unit
         "_latexunit",  # for latex text unit
+        "_xunit",       # for text unit for own X axis
         "_paths",
         "_plotmethod",
         "_node_hidden",
@@ -135,6 +136,7 @@ class Labels:
     _rootaxis: str | None
     _unit: str | None
     _latexunit: str | None
+    _xunit: str | None
     _mark: str | None
     _paths: list[str]
     _plotmethod: str | None
@@ -195,6 +197,7 @@ class Labels:
             "rootaxis",
             "unit",
             "latexunit",
+            "xunit",
         ):
             aname = f"_{name}"
             oldvalue = getattr(self, aname)
@@ -370,7 +373,7 @@ class Labels:
 
     @property
     def xaxis_unit(self) -> str | None:
-        if (unit:=self.latexunit):
+        if (unit:=self.xunit):
             return f"{self.xaxis} [{unit}]"
 
         return self.xaxis
@@ -394,6 +397,14 @@ class Labels:
     @latexunit.setter
     def latexunit(self, value: str | None):
         self._latexunit = value
+
+    @property
+    def xunit(self) -> str | None:
+        return self._xunit
+
+    @xunit.setter
+    def xunit(self, value: str | None):
+        self._xunit = value
 
     @property
     def mark(self) -> str | None:
