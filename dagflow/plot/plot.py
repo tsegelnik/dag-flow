@@ -237,6 +237,11 @@ class plot_auto:
         if legend:
             ax.legend()
 
+        if (plot_diagonal:=self._plotoptions.get("plot_diagonal")) is not None:
+            xlim = ax.get_xlim()
+            ax.plot(xlim, xlim, **plot_diagonal)
+
+
         if show_path:
             path = labels.paths
             if not path:
