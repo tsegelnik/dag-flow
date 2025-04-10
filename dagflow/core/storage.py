@@ -494,6 +494,7 @@ class PlotVisitor(NestedMKDictVisitor):
         "_overlay_priority",
         "_currently_active_overlay",
         "_close_on_exitdict",
+        "_exact_substitutions",
     )
     _show_all: bool
     _folder: str | None
@@ -507,6 +508,7 @@ class PlotVisitor(NestedMKDictVisitor):
     _overlay_priority: Sequence[OrderedSet]
     _currently_active_overlay: OrderedSet | None
     _close_on_exitdict: bool
+    _exact_substitutions: Mapping[str, str]
 
     def __init__(
         self,
@@ -516,6 +518,7 @@ class PlotVisitor(NestedMKDictVisitor):
         format: str = "pdf",
         minimal_data_size: int = 1,
         overlay_priority: Sequence[Sequence[str]] = ((),),
+        exact_substitutions: Mapping[str, str] = {},
         **kwargs,
     ):
         self._show_all = show_all
@@ -526,6 +529,7 @@ class PlotVisitor(NestedMKDictVisitor):
         self._i_element = 0
         self._n_elements = 0
         self._minimal_data_size = minimal_data_size
+        self._exact_substitutions = exact_substitutions
         self._overlay_priority = tuple(OrderedSet(sq) for sq in overlay_priority)
         self._currently_active_overlay = None
         self._close_on_exitdict = False
@@ -612,6 +616,7 @@ class PlotVisitor(NestedMKDictVisitor):
         for key, fig in self._active_figures.items():
             sca(fig.axes[0])
             self._savefig(key, close=True)
+        # print(f"Close {len(self._active_figures)} figures")
         self._active_figures = {}
 
     def start(self, dct):
@@ -635,8 +640,8 @@ class PlotVisitor(NestedMKDictVisitor):
             self._currently_active_overlay = None
 
     def visit(self, key, output):
-        from ..plot.plot import plot_auto
         from ..core.labels import apply_substitutions
+        from ..plot.plot import plot_auto
 
         self._i_element += 1
 
@@ -658,15 +663,15 @@ class PlotVisitor(NestedMKDictVisitor):
 
         kwargs = dict({"show_path": figure_is_new}, **self._kwargs)
         plot_auto(output, *self._args, **kwargs)
-        if not index_item:
-            self._savefig(key, close=True)
+        self._savefig(key, close=True)
 
         if nd == 1:
             ax, index_group, index_item, figure_is_new = self._makefigure(key, force_group=False)
             if not index_item:
                 return
 
-            kwargs = dict({"show_path": figure_is_new, "label": index_item}, **self._kwargs)
+            label = apply_substitutions(index_item, self._exact_substitutions, full_string=True)
+            kwargs = dict({"show_path": figure_is_new, "label": label}, **self._kwargs)
             plot_auto(output, *self._args, **kwargs)
 
     def stop(self, dct):
