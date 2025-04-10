@@ -143,14 +143,16 @@ class plot_auto:
             closefig()
 
     def _get_output_data(self, *args, **kwargs):
+        if (plotoptions := self._output.labels.plotoptions):
+            self._plotoptions = dict(plotoptions, **self._plotoptions)
+
+        if (masked_value:=self._plotoptions.get("mask_value", None)) is not None:
+            kwargs = dict(kwargs, masked_value=masked_value)
+
         data = _mask_if_needed(self._output.data, *args, **kwargs)
         self._array = data
         self._edges = self._output.dd.edges_arrays
         self._meshes = self._output.dd.meshes_arrays
-
-        self._plotoptions = self._output.labels.plotoptions
-        if self._plotoptions in ("none", "auto"):
-            self._plotoptions = {"method": "auto"}
 
     def _get_array_data(self, *args, **kwargs):
         self._array = _mask_if_needed(self._object, *args, **kwargs)
@@ -167,12 +169,6 @@ class plot_auto:
                 kwargs = dict(kwargs, masked_value=masked_value)
             self._get_array_data(*args, **kwargs)
             return
-
-        if (plotoptions := self._output.labels.plotoptions):
-            self._plotoptions = dict(plotoptions, **self._plotoptions)
-
-        if (masked_value:=self._plotoptions.get("mask_value", None)) is not None:
-            kwargs = dict(kwargs, masked_value=masked_value)
 
         self._get_output_data(*args, **kwargs)
 
