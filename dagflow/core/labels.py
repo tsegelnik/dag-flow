@@ -1,7 +1,8 @@
 from __future__ import annotations
 
 from pathlib import Path
-from typing import TYPE_CHECKING, Mapping
+from typing import TYPE_CHECKING
+from collections.abc import Mapping
 
 from ..tools.schema import LoadYaml
 
@@ -105,15 +106,10 @@ def apply_substitutions(
     s: str,
     substitutions: Mapping[str, str] = {},
     *,
-    latex: bool = False,
     full_string: bool = False,
 ) -> str:
     if not substitutions or not s:
         return s
-
-    if latex and r"\n" in substitutions:
-        substitutions = dict(substitutions)
-        substitutions.pop(r"\n")
 
     if substitutions:
         if full_string:
@@ -138,12 +134,14 @@ class Labels:
         "_mark",  # for short mark on the graphiz graph
         "_axis",  # for the relevant axis, will be replaced with plottitle if not found
         "_xaxis",  # for own X axis, when it is not provided
+        "_yaxis",  # for own Y axis, when it is not provided
         "_plottitle",  # for plot title, will be replaced by latex if not found
         "_roottitle",  # for canvas title (root), will be replaced by plottitle with \→# substitution
         "_rootaxis",
         "_unit",  # for text unit
         "_latexunit",  # for latex text unit
         "_xunit",  # for text unit for own X axis
+        "_yunit",  # for text unit for own Y axis
         "_paths",
         "_plotoptions",
         "_node_hidden",
@@ -157,12 +155,14 @@ class Labels:
     _latex: str | None
     _axis: str | None
     _xaxis: str | None
+    _yaxis: str | None
     _plottitle: str | None
     _roottitle: str | None
     _rootaxis: str | None
     _unit: str | None
     _latexunit: str | None
     _xunit: str | None
+    _yunit: str | None
     _mark: str | None
     _paths: list[str]
     _plotoptions: dict[str, Any] | None
@@ -218,12 +218,14 @@ class Labels:
             "latex",
             "axis",
             "xaxis",
+            "yaxis",
             "plottitle",
             "roottitle",
             "rootaxis",
             "unit",
             "latexunit",
             "xunit",
+            "yunit",
         ):
             aname = f"_{name}"
             oldvalue = getattr(self, aname)
@@ -339,9 +341,9 @@ class Labels:
 
     def get_latex(self, *, substitutions: Mapping[str, str] = {}) -> str:
         if self._latex:
-            return apply_substitutions(self._latex, substitutions, latex=True)
+            return apply_substitutions(self._latex, substitutions)
 
-        return apply_substitutions(self._text or "", substitutions, latex=True)
+        return apply_substitutions((self._text or "").replace(r"\n", "\n") or "", substitutions)
 
     @latex.setter
     def latex(self, value: str):
@@ -359,7 +361,7 @@ class Labels:
         return self._plottitle or self._latex or self._text.replace(r"\n", "\n")
 
     def get_plottitle(self, *, substitutions: Mapping[str, str] = {}) -> str | None:
-        return self._plottitle or self.get_latex(substitutions=dict({r"\n": "\n"}, **substitutions))
+        return self._plottitle or self.get_latex(substitutions=substitutions)
 
     @plottitle.setter
     def plottitle(self, value: str | None):
@@ -418,6 +420,21 @@ class Labels:
         self._xaxis = value
 
     @property
+    def yaxis(self) -> str | None:
+        return self._yaxis
+
+    @property
+    def yaxis_unit(self) -> str | None:
+        if unit := self.yunit:
+            return f"{self.yaxis} [{unit}]"
+
+        return self.yaxis
+
+    @yaxis.setter
+    def yaxis(self, value: str | None):
+        self._yaxis = value
+
+    @property
     def unit(self) -> str | None:
         return self._unit
 
@@ -440,6 +457,14 @@ class Labels:
     @xunit.setter
     def xunit(self, value: str | None):
         self._xunit = value
+
+    @property
+    def yunit(self) -> str | None:
+        return self._yunit
+
+    @yunit.setter
+    def yunit(self, value: str | None):
+        self._yunit = value
 
     @property
     def mark(self) -> str | None:
