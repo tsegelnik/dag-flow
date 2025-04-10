@@ -81,25 +81,35 @@ class plot_auto:
         show: bool = False,
         save_kw: dict = {},
         latex_substitutions: Mapping[str, str] = {},
+        plotoptions: Mapping[str, Any] | str = {},
         **kwargs,
     ):
         self._object = object
         self._output = None
-        self._plotoptions = {}
         self._latex_substitutions = latex_substitutions
         self._ret = ()
         self._get_data(**filter_kw)
         self._get_labels()
 
-        if self._plotoptions:
-            kwargs.setdefault("plotoptions", self._plotoptions)
+        match plotoptions:
+            case str():
+                self._plotoptions = {"method": plotoptions}
+            case Mapping():
+                self._plotoptions = dict(plotoptions)
+            case _:
+                raise ValueError(plotoptions)
 
         ndim = len(self._array.shape)
         if ndim == 1:
             self._edges = self._edges[0] if self._edges else None
             self._meshes = self._meshes[0] if self._meshes else None
             self._ret = plot_array_1d(
-                self._array, self._edges, self._meshes, *args, plotter=self, **kwargs
+                self._array,
+                self._edges,
+                self._meshes,
+                *args,
+                plotter=self,
+                **kwargs,
             )
         elif ndim == 2:
             colorbar = kwargs.pop("colorbar", {})
@@ -114,6 +124,7 @@ class plot_auto:
                 *args,
                 plotter=self,
                 colorbar=colorbar,
+                plotoptions=self._plotoptions,
                 **kwargs,
             )
         else:
