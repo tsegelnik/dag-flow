@@ -104,7 +104,9 @@ def _make_formatter(fmt: str | Callable | dict | None) -> Callable:
 def apply_substitutions(
     s: str,
     substitutions: Mapping[str, str] = {},
+    *,
     latex: bool = False,
+    full_string: bool = False,
 ) -> str:
     if not substitutions or not s:
         return s
@@ -114,8 +116,13 @@ def apply_substitutions(
         substitutions.pop(r"\n")
 
     if substitutions:
-        for pattern, substitution in substitutions.items():
-            s = s.replace(pattern, substitution)
+        if full_string:
+            for pattern, substitution in substitutions.items():
+                if s==pattern:
+                    return substitution
+        else:
+            for pattern, substitution in substitutions.items():
+                s = s.replace(pattern, substitution)
 
     return s
 
