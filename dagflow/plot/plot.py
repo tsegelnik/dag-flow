@@ -84,13 +84,6 @@ class plot_auto:
         plotoptions: Mapping[str, Any] | str = {},
         **kwargs,
     ):
-        self._object = object
-        self._output = None
-        self._latex_substitutions = latex_substitutions
-        self._ret = ()
-        self._get_data(**filter_kw)
-        self._get_labels()
-
         match plotoptions:
             case str():
                 self._plotoptions = {"method": plotoptions}
@@ -98,6 +91,13 @@ class plot_auto:
                 self._plotoptions = dict(plotoptions)
             case _:
                 raise ValueError(plotoptions)
+
+        self._object = object
+        self._output = None
+        self._latex_substitutions = latex_substitutions
+        self._ret = ()
+        self._get_data(**filter_kw)
+        self._get_labels()
 
         ndim = len(self._array.shape)
         if ndim == 1:
@@ -163,8 +163,16 @@ class plot_auto:
         elif isinstance(self._object, NodeBase):
             self._output = self._object.outputs[0]
         else:
+            if (masked_value:=self._plotoptions.get("mask_value", None)):
+                kwargs = dict(kwargs, masked_value=masked_value)
             self._get_array_data(*args, **kwargs)
             return
+
+        if (plotoptions := self._output.labels.plotoptions):
+            self._plotoptions = dict(plotoptions, **self._plotoptions)
+
+        if (masked_value:=self._plotoptions.get("mask_value", None)) is not None:
+            kwargs = dict(kwargs, masked_value=masked_value)
 
         self._get_output_data(*args, **kwargs)
 
@@ -187,13 +195,13 @@ class plot_auto:
 
             self._zlabel = self._ylabel
             if method == "slicesx":
-                self._xlabel = self._output.dd.axis_label(1) or "Index [#]"
+                self._xlabel = self._output.dd.axis_label(1) or labels.yaxis_unit or "Index [#]"
                 self._zlabel = self._output.dd.axis_label(0) or labels.xaxis_unit or "Index [#]"
             elif method == "slicesy":
                 self._zlabel = self._output.dd.axis_label(1) or "Index [#]"
             else:
                 self._zlabel = self._ylabel
-                self._ylabel = self._output.dd.axis_label(1)
+                self._ylabel = self._output.dd.axis_label(1) or  labels.yaxis_unit or "Index [#]"
 
     def annotate_axes(
         self,
@@ -207,7 +215,14 @@ class plot_auto:
         labels = self._output.labels
 
         if self._title and not ax.get_title():
-            ax.set_title(self._title)
+            if self._array.ndim>1:
+                nlines = self._title.count("\n")+1
+                fontsize = nlines>1 and "x-small" or "medium"
+            else:
+                fontsize = "medium"
+
+            ax.set_title(self._title, size=fontsize)
+
         if self._xlabel and not ax.get_xlabel():
             ax.set_xlabel(self._xlabel)
         if self._ylabel and not ax.get_ylabel():
@@ -219,6 +234,9 @@ class plot_auto:
         if self._zlabel and prev_zlabel:
             with suppress(AttributeError):
                 ax.set_zlabel(self._zlabel)
+
+        if (aspect:=self._plotoptions.get("aspect")):
+            ax.set_aspect(aspect)
 
         if legend:
             ax.legend()
@@ -306,12 +324,17 @@ def plot_array_1d_array(array: NDArray, *args, plotter: plot_auto | None = None,
 
 
 def plot_array_2d(
-    array: NDArray, edges: EdgesLike, meshes: MeshesLike, *args, **kwargs
+    array: NDArray,
+    edges: EdgesLike,
+    meshes: MeshesLike,
+    *args,
+    plotoptions: Mapping[str, Any] = {},
+    **kwargs,
 ) -> tuple[tuple, ...]:
     if edges:
-        return plot_array_2d_hist(array, edges, *args, **kwargs)
+        return plot_array_2d_hist(array, edges, *args, plotoptions=plotoptions, **kwargs)
     elif meshes:
-        return plot_array_2d_vs(array, meshes, *args, **kwargs)
+        return plot_array_2d_vs(array, meshes, *args, plotoptions=plotoptions, **kwargs)
     else:
         return plot_array_2d_array(array, *args, **kwargs)
 
