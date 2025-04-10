@@ -638,11 +638,11 @@ class PlotVisitor(NestedMKDictVisitor):
         from ..plot.plot import plot_auto
         self._i_element+=1
 
-        if not isinstance(output, Output) or not output.labels.plottable:
+        if not isinstance(output, Output) or not output.labels.plotable:
             logger.log(DEBUG, f"Do not plot {strkey(key)} of not supported type")
             return
-        if not output.labels.plottable:
-            logger.log(DEBUG, f"Do not plot {strkey(key)}, configured to be not plottable")
+        if not output.labels.plotable:
+            logger.log(DEBUG, f"Do not plot {strkey(key)}, configured to be not plotable")
             return
         if output.dd.size < self._minimal_data_size:
             logger.log(
