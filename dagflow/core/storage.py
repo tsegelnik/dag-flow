@@ -617,7 +617,7 @@ class PlotVisitor(NestedMKDictVisitor):
     def start(self, dct):
         self._n_elements = 0
         for _ in dct.walkitems():
-            self._n_elements+=1
+            self._n_elements += 1
         self._i_element = 0
 
     def enterdict(self, key, v):
@@ -636,7 +636,9 @@ class PlotVisitor(NestedMKDictVisitor):
 
     def visit(self, key, output):
         from ..plot.plot import plot_auto
-        self._i_element+=1
+        from ..core.labels import apply_substitutions
+
+        self._i_element += 1
 
         if not isinstance(output, Output) or not output.labels.plotable:
             logger.log(DEBUG, f"Do not plot {strkey(key)} of not supported type")

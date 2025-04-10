@@ -101,6 +101,25 @@ def _make_formatter(fmt: str | Callable | dict | None) -> Callable:
     return fmt
 
 
+def apply_substitutions(
+    s: str,
+    substitutions: Mapping[str, str] = {},
+    latex: bool = False,
+) -> str:
+    if not substitutions or not s:
+        return s
+
+    if latex and r"\n" in substitutions:
+        substitutions = dict(substitutions)
+        substitutions.pop(r"\n")
+
+    if substitutions:
+        for pattern, substitution in substitutions.items():
+            s = s.replace(pattern, substitution)
+
+    return s
+
+
 class Labels:
     __slots__ = (
         "_name",
@@ -312,18 +331,10 @@ class Labels:
         return self._latex or self._text
 
     def get_latex(self, *, substitutions: Mapping[str, str] = {}) -> str:
-        ret = self._latex
-        if ret is None:
-            ret = self._text or ""
-        elif r"\n" in substitutions:
-            substitutions = dict(substitutions)
-            substitutions.pop(r"\n")
+        if self._latex:
+            return apply_substitutions(self._latex, substitutions, latex=True)
 
-        if substitutions:
-            for pattern, substitution in substitutions.items():
-                ret = ret.replace(pattern, substitution)
-
-        return ret
+        return apply_substitutions(self._text or "", substitutions, latex=True)
 
     @latex.setter
     def latex(self, value: str):
