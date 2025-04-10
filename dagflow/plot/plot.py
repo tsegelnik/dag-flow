@@ -2,12 +2,14 @@ from __future__ import annotations
 
 from collections.abc import Mapping
 from contextlib import suppress
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 from matplotlib import colormaps
 from matplotlib.axes import Axes
 from matplotlib.pyplot import close as closefig
-from matplotlib.pyplot import cm
+from matplotlib.pyplot import (
+    cm,
+)
 from matplotlib.pyplot import colorbar as plot_colorbar
 from matplotlib.pyplot import (
     errorbar,
@@ -22,13 +24,15 @@ from matplotlib.pyplot import (
     sca,
 )
 from matplotlib.pyplot import show as showfig
-from matplotlib.pyplot import stairs
+from matplotlib.pyplot import (
+    stairs,
+)
 from numpy import asanyarray, meshgrid, zeros_like
 from numpy.ma import array as masked_array
 
-from ..tools.logger import INFO1, logger
 from ..core.node_base import NodeBase
 from ..core.output import Output
+from ..tools.logger import INFO1, logger
 
 if TYPE_CHECKING:
     from numpy.typing import ArrayLike, NDArray
@@ -43,25 +47,28 @@ class plot_auto:
         "_array",
         "_edges",
         "_meshes",
-        "_plotmethod",
+        "_plotoptions",
         "_ret",
         "_title",
         "_xlabel",
         "_ylabel",
         "_zlabel",
+        "_latex_substitutions",
     )
     _object: NodeBase | Output | ArrayLike
     _output: Output | None
     _array: NDArray
     _edges: EdgesLike
     _meshes: MeshesLike
-    _plotmethod: str | None
+    _plotoptions: dict[str, Any] | None
     _ret: tuple
 
     _title: str | None
     _xlabel: str | None
     _ylabel: str | None
     _zlabel: str | None
+
+    _latex_substitutions: Mapping[str, str]
 
     def __init__(
         self,
@@ -73,17 +80,19 @@ class plot_auto:
         close: bool = False,
         show: bool = False,
         save_kw: dict = {},
+        latex_substitutions: Mapping[str, str] = {},
         **kwargs,
     ):
         self._object = object
         self._output = None
-        self._plotmethod = None
+        self._plotoptions = {}
+        self._latex_substitutions = latex_substitutions
         self._ret = ()
         self._get_data(**filter_kw)
         self._get_labels()
 
-        if self._plotmethod:
-            kwargs.setdefault("method", self._plotmethod)
+        if self._plotoptions:
+            kwargs.setdefault("plotoptions", self._plotoptions)
 
         ndim = len(self._array.shape)
         if ndim == 1:
@@ -128,9 +137,9 @@ class plot_auto:
         self._edges = self._output.dd.edges_arrays
         self._meshes = self._output.dd.meshes_arrays
 
-        self._plotmethod = self._output.labels.plotmethod
-        if self._plotmethod in ("none", "auto"):
-            self._plotmethod = None
+        self._plotoptions = self._output.labels.plotoptions or {}
+        if self._plotoptions in ("none", "auto"):
+            self._plotoptions = {"method": "auto"}
 
     def _get_array_data(self, *args, **kwargs):
         self._array = _mask_if_needed(self._object, *args, **kwargs)
@@ -158,16 +167,19 @@ class plot_auto:
 
         labels = self._output.labels
 
-        self._title = labels.plottitle
+        self._title = labels.get_plottitle(substitutions=self._latex_substitutions)
         self._xlabel = self._output.dd.axis_label(0) or labels.xaxis_unit or "Index [#]"
-
         self._ylabel = labels.axis_unit
+
         if self._output.dd.dim == 2:
-            if self._plotmethod == "slicesx":
-                self._xlabel = self._output.dd.axis_label(1) or labels.xaxis_unit or "Index [#]"
+            method = self._plotoptions.get("method")
+
+            self._zlabel = self._ylabel
+            if method == "slicesx":
+                self._xlabel = self._output.dd.axis_label(1) or "Index [#]"
                 self._zlabel = self._output.dd.axis_label(0) or labels.xaxis_unit or "Index [#]"
-            elif self._plotmethod == "slicesy":
-                self._zlabel = self._output.dd.axis_label(1) or labels.xaxis_unit or "Index [#]"
+            elif method == "slicesy":
+                self._zlabel = self._output.dd.axis_label(1) or "Index [#]"
             else:
                 self._zlabel = self._ylabel
                 self._ylabel = self._output.dd.axis_label(1)
@@ -400,15 +412,15 @@ plot_array_2d_hist_methods = {
 
 
 def plot_array_2d_hist(
-    dZ: NDArray, edges: list[NDArray], *args, method: str | None = None, **kwargs
+    dZ: NDArray, edges: list[NDArray], *args, plotoptions: Mapping[str, Any] = {}, **kwargs
 ) -> tuple:
     smethod: str = (
-        "pcolormesh" if method in {"auto", None} else method
-    )  # pyright: ignore [reportGeneralTypeIssues]
+        "pcolormesh" if (method := plotoptions.get("method", "auto")) == "auto" else method
+    )
     try:
         function = plot_array_2d_hist_methods[smethod]
     except KeyError as e:
-        raise RuntimeError(f"Invlid 2d hist method: {method}") from e
+        raise RuntimeError(f"Invlid 2d hist plotoptions: {plotoptions}") from e
 
     return function(dZ, edges, *args, **kwargs)
 
@@ -514,10 +526,14 @@ plot_array_2d_vs_methods = {
 
 
 def plot_array_2d_vs(
-    array: NDArray, meshes: list[NDArray], *args, method: str | None = None, **kwargs
+    array: NDArray,
+    meshes: list[NDArray],
+    *args,
+    plotoptions: Mapping[str, Any] = {},
+    **kwargs,
 ) -> tuple:
     smethod: str = (
-        "pcolormesh" if method in {"auto", None} else method
+        "pcolormesh" if (method := plotoptions.get("method", "auto")) == "auto" else method
     )  # pyright: ignore [reportGeneralTypeIssues]
     try:
         function = plot_array_2d_vs_methods[smethod]
@@ -537,7 +553,8 @@ def _mask_if_needed(datain: ArrayLike, /, *, masked_value: float | None = None) 
 
 
 def _patch_with_colorbar(function, mode3d=False):
-    """Patch pyplot.function or ax.method by adding a "colorbar" option"""
+    """Patch pyplot.function or ax.plotoptions by adding a "colorbar"
+    option."""
     returner = mode3d and _colorbar_or_not_3d or _colorbar_or_not
     if isinstance(function, str):
 
@@ -591,7 +608,7 @@ def add_colorbar(
     label: str | None = None,
     **kwargs,
 ):
-    """Add a colorbar to the axis with height aligned to the axis"""
+    """Add a colorbar to the axis with height aligned to the axis."""
     ax = gca()
     from mpl_toolkits.axes_grid1 import make_axes_locatable
 
@@ -624,7 +641,7 @@ def add_colorbar(
 
 
 def add_colorbar_3d(res, cbaropt: dict = {}, mappable=None):
-    """Add a colorbar to the 3d axis with height aligned to the axis"""
+    """Add a colorbar to the 3d axis with height aligned to the axis."""
     cbaropt.setdefault("aspect", 4)
     cbaropt.setdefault("shrink", 0.5)
 
