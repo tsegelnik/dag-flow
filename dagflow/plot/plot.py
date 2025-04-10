@@ -60,7 +60,7 @@ class plot_auto:
     _array: NDArray
     _edges: EdgesLike
     _meshes: MeshesLike
-    _plotoptions: dict[str, Any] | None
+    _plotoptions: dict[str, Any]
     _ret: tuple
 
     _title: str | None
@@ -148,7 +148,7 @@ class plot_auto:
         self._edges = self._output.dd.edges_arrays
         self._meshes = self._output.dd.meshes_arrays
 
-        self._plotoptions = self._output.labels.plotoptions or {}
+        self._plotoptions = self._output.labels.plotoptions
         if self._plotoptions in ("none", "auto"):
             self._plotoptions = {"method": "auto"}
 

@@ -567,12 +567,17 @@ class PlotVisitor(NestedMKDictVisitor):
         return tuple(key_group), match[0], need_new_figure, need_group_figure
 
     def _makefigure(
-        self, key: TupleKey, *, force_new: bool = False, force_group: bool = False
+        self,
+        key: TupleKey,
+        *,
+        force_new: bool = False,
+        force_group: bool = False,
+        **kwargs
     ) -> tuple[Axes | None, tuple[str, ...] | None, str | None, bool]:
         from matplotlib.pyplot import sca, subplots
 
         def mkfig(storekey: TupleKey | None = None) -> Axes:
-            fig, ax = subplots(1, 1)
+            fig, ax = subplots(1, 1, **kwargs)
             if storekey is not None:
                 self._active_figures[tuple(storekey)] = fig
             return ax
@@ -645,7 +650,7 @@ class PlotVisitor(NestedMKDictVisitor):
 
         self._i_element += 1
 
-        if not isinstance(output, Output) or not output.labels.plotable:
+        if not isinstance(output, Output):
             logger.log(DEBUG, f"Do not plot {strkey(key)} of not supported type")
             return
         if not output.labels.plotable:
@@ -658,15 +663,17 @@ class PlotVisitor(NestedMKDictVisitor):
             )
             return
 
+        figure_kw = output.labels.plotoptions.get("figure_kw", {})
+
         nd = output.dd.dim
-        ax, index_group, index_item, figure_is_new = self._makefigure(key, force_new=True)
+        ax, index_group, index_item, figure_is_new = self._makefigure(key, force_new=True, **figure_kw)
 
         kwargs = dict({"show_path": figure_is_new}, **self._kwargs)
         plot_auto(output, *self._args, **kwargs)
         self._savefig(key, close=True)
 
         if nd == 1:
-            ax, index_group, index_item, figure_is_new = self._makefigure(key, force_group=False)
+            ax, index_group, index_item, figure_is_new = self._makefigure(key, force_group=False, **figure_kw)
             if not index_item:
                 return
 

@@ -165,7 +165,7 @@ class Labels:
     _yunit: str | None
     _mark: str | None
     _paths: list[str]
-    _plotoptions: dict[str, Any] | None
+    _plotoptions: dict[str, Any]
     _node_hidden: bool | None
 
     def __init__(self, label: dict[str, str] | str | Path | None = None):
@@ -175,6 +175,7 @@ class Labels:
         self._index_values = []
         self._index_dict = {}
         self._node_hidden = False
+        self._plotoptions = {}
 
         if isinstance(label, str):
             if label.endswith(".yaml"):
@@ -491,13 +492,13 @@ class Labels:
 
     @property
     def plotable(self) -> bool:
-        if self._plotoptions is None:
+        if not self._plotoptions:
             return True
 
         return self._plotoptions.get("method") != "none"
 
     @property
-    def plotoptions(self) -> dict[str, Any] | None:
+    def plotoptions(self) -> dict[str, Any]:
         return self._plotoptions
 
     @plotoptions.setter
