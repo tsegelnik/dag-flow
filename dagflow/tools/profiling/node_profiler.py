@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-from timeit import timeit
 from typing import TYPE_CHECKING
 
 from pandas import DataFrame
@@ -36,7 +35,7 @@ class NodeProfiler(TimerProfiler):
     def estimate_node(cls, node: Node, n_runs: int = 10_000):
         for input in node.inputs.iter_all():
             input.touch()
-        return timeit(stmt=node.function, number=n_runs)
+        return cls._timeit_all_runs(stmt=node.function, n_runs=n_runs)
 
     def estimate_target_nodes(self) -> NodeProfiler:
         """

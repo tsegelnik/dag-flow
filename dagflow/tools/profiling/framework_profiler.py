@@ -1,9 +1,8 @@
 from __future__ import annotations
 
-from timeit import repeat
 from typing import TYPE_CHECKING
 
-from numpy import mean
+from numpy import mean, ndarray
 from pandas import DataFrame, Series
 
 from .timer_profiler import TimerProfiler
@@ -88,19 +87,18 @@ class FrameworkProfiler(TimerProfiler):
             node.function = self._replaced_fcns[node]
         self._replaced_fcns = {}
 
-    def _estimate_framework_time(self) -> list[float]:
+    def _estimate_framework_time(self) -> ndarray:
         self._set_functions_empty()
 
-        def repeat_statement():
+        def evaluate_graph():
             for sink_node in self._sinks:
                 sink_node.eval()
 
-        repeat_statement()  # touch all dependent nodes before estimations
-        results = repeat(
-            stmt=repeat_statement,
+        evaluate_graph()  # touch all dependent nodes before estimations
+        results = self._timeit_each_run(
+            stmt=evaluate_graph,
+            n_runs=self._n_runs,
             setup=self._taint_nodes,
-            repeat=self._n_runs,
-            number=1,
         )
         self._restore_functions()
         self._taint_nodes()
