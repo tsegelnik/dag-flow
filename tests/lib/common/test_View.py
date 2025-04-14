@@ -14,7 +14,7 @@ def test_View_00():
     """
     array = arange(5.0)
     with Graph(close_on_exit=True) as graph:
-        initial = Array("array", array)
+        initial = Array("array", array, mode="fill")
         view = View("view")
         view2 = View("view2")
 

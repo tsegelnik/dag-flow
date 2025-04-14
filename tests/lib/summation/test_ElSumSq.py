@@ -13,7 +13,7 @@ def test_ElSumSq_01(testname, debug_graph, dtype):
     arrays2_in = tuple(a**2 for a in arrays_in)
 
     with Graph(close_on_exit=True, debug=debug_graph) as graph:
-        arrays = tuple(Array("test", array_in) for array_in in arrays_in)
+        arrays = tuple(Array("test", array_in, mode="fill") for array_in in arrays_in)
         sm = ElSumSq("sumsq")
         arrays >> sm
 

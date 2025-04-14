@@ -20,8 +20,8 @@ def test_MatrixProductDVDt_2d(dtype):
     )
 
     with Graph(close_on_exit=True) as graph:
-        l_array = Array("Left", left)
-        s_array = Array("Square", square)
+        l_array = Array("Left", left, mode="fill")
+        s_array = Array("Square", square, mode="fill")
 
         prod = MatrixProductDVDt("MatrixProductDVDt2d")
         l_array >> prod.inputs["left"]
@@ -41,8 +41,8 @@ def test_MatrixProductDVDt_1d(dtype):
     diagonal = array([9, 4, 5], dtype=dtype)
 
     with Graph(close_on_exit=True) as graph:
-        l_array = Array("Left", left)
-        s_array = Array("Diagonal", diagonal)
+        l_array = Array("Left", left, mode="fill")
+        s_array = Array("Diagonal", diagonal, mode="fill")
 
         prod = MatrixProductDVDt("MatrixProductDVDt1d")
         l_array >> prod.inputs["left"]

@@ -27,9 +27,9 @@ from dagflow.core.type_functions import (
 )
 def test_edges_00(testname, debug_graph, data, edgesdata):
     with Graph(close_on_exit=True, debug=debug_graph) as graph:
-        edges = Array("edges", edgesdata).outputs["array"]
-        arr1 = Array("arr1", array(data), edges=edges)
-        arr2 = Array("arr2", 2 * array(data), edges=edges)
+        edges = Array("edges", edgesdata, mode="fill").outputs["array"]
+        arr1 = Array("arr1", array(data), edges=edges, mode="fill")
+        arr2 = Array("arr2", 2 * array(data), edges=edges, mode="fill")
         node = Dummy(
             "node",
             input_strategy=AddNewInputAddAndKeepSingleOutput(output_fmt="result"),
@@ -57,11 +57,11 @@ def test_edges_00(testname, debug_graph, data, edgesdata):
 )
 def test_edges_01(testname, debug_graph, data, edgesdataX, edgesdataY):
     with Graph(close_on_exit=True, debug=debug_graph) as graph:
-        edgesX = Array("edgesX", edgesdataX).outputs["array"]
-        edgesY = Array("edgesY", edgesdataY).outputs["array"]
+        edgesX = Array("edgesX", edgesdataX, mode="fill").outputs["array"]
+        edgesY = Array("edgesY", edgesdataY, mode="fill").outputs["array"]
         edges = [edgesX, edgesY]
-        arr1 = Array("arr1", array(data), edges=edges)
-        arr2 = Array("arr2", 2 * array(data), edges=edges)
+        arr1 = Array("arr1", array(data), edges=edges, mode="fill")
+        arr2 = Array("arr2", 2 * array(data), edges=edges, mode="fill")
         node = Dummy(
             "node",
             input_strategy=AddNewInputAddAndKeepSingleOutput(output_fmt="result"),

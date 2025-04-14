@@ -19,8 +19,8 @@ def test_inputs_number_00(debug_graph):
 
 def test_inputs_number_01(testname, debug_graph):
     with Graph(close_on_exit=True, debug=debug_graph) as graph:
-        arr1 = Array("arr1", [1, 2, 3])
-        arr2 = Array("arr2", [3, 2, 1])
+        arr1 = Array("arr1", [1, 2, 3], mode="fill")
+        arr2 = Array("arr2", [3, 2, 1], mode="fill")
         ssum = Sum("sum")
         (arr1, arr2) >> ssum
     check_node_has_inputs(ssum, (0, 1))

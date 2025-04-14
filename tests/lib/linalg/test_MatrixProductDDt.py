@@ -12,7 +12,7 @@ def test_MatrixProductDVDt_2d(dtype):
     left = array([[1, 2, 3], [3, 4, 5]], dtype=dtype)
 
     with Graph(close_on_exit=True) as graph:
-        l_array = Array("Left", left)
+        l_array = Array("Left", left, mode="fill")
 
         prod = MatrixProductDDt("MatrixProductDDt2d")
         l_array >> prod

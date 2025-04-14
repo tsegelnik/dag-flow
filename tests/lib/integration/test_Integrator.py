@@ -16,10 +16,10 @@ def test_Integrator_trap(debug_graph):
     xlabel = "Edges for the integrator"
     with Graph(debug=debug_graph, close_on_exit=True) as graph:
         npoints = 10
-        edges = Array("edges", linspace(0, pi, npoints + 1), label={"axis": xlabel})
-        orders_x = Array("orders_x", [1000] * npoints, edges=edges["array"])
-        A = Array("A", edges._data[:-1])
-        B = Array("B", edges._data[1:])
+        edges = Array("edges", linspace(0, pi, npoints + 1), label={"axis": xlabel}, mode="store")
+        orders_x = Array("orders_x", [1000] * npoints, edges=edges["array"], mode="store")
+        A = Array("A", edges._data[:-1], mode="fill")
+        B = Array("B", edges._data[1:], mode="fill")
 
         metaint = Integrator(
             "trap",
@@ -55,3 +55,4 @@ def test_Integrator_trap(debug_graph):
     close()
 
     savegraph(graph, "output/test_Integrator_trap_meta.pdf", show="all")
+

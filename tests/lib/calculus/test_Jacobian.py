@@ -23,8 +23,8 @@ def test_Jacobian_01(dtype, testname):
     sigmas = ones(size, dtype=dtype)
 
     with Graph(close_on_exit=True) as graph:
-        valueslist = [Array(f"arr_{i:02d}", [val]) for i, val in enumerate(values)]
-        sigmaslist = [Array(f"sigma_{i:02d}", [sigma]) for i, sigma in enumerate(sigmas)]
+        valueslist = [Array(f"arr_{i:02d}", [val], mode="fill") for i, val in enumerate(values)]
+        sigmaslist = [Array(f"sigma_{i:02d}", [sigma], mode="fill") for i, sigma in enumerate(sigmas)]
         pars = [
             GaussianParameter(
                 parent=None,
@@ -73,15 +73,15 @@ def test_Jacobian_02(dtype, testname):
     sigmas = (0.5, 2.0)
 
     with Graph(close_on_exit=True) as graph:
-        X = Array("x", x)
-        A = Array("a", array([a], dtype=dtype))
-        B = Array("b", array([b], dtype=dtype))
+        X = Array("x", x, mode="fill")
+        A = Array("a", array([a], dtype=dtype), mode="fill")
+        B = Array("b", array([b], dtype=dtype), mode="fill")
         Y = LinearFunction("f(x)", label="f(x)=ax+b")
         A >> Y("a")
         B >> Y("b")
         X >> Y
 
-        sigmaslist = [Array(f"sigma_{i:02d}", [sigma]) for i, sigma in enumerate(sigmas)]
+        sigmaslist = [Array(f"sigma_{i:02d}", [sigma], mode="fill") for i, sigma in enumerate(sigmas)]
         pars = [
             GaussianParameter(
                 parent=None,
@@ -126,16 +126,16 @@ def test_Jacobian_03(dtype, testname):
     sigmas = (0.5, 2.0, 3.0)
 
     with Graph(close_on_exit=True) as graph:
-        X = Array("x", x)
-        A = Array("a", array([a], dtype=dtype))
-        B = Array("b", array([b], dtype=dtype))
-        C = Array("c", array([c], dtype=dtype))
+        X = Array("x", x, mode="fill")
+        A = Array("a", array([a], dtype=dtype), mode="fill")
+        B = Array("b", array([b], dtype=dtype), mode="fill")
+        C = Array("c", array([c], dtype=dtype), mode="fill")
 
         first = Product.from_args("a²x", A, A, X)
         second = Product.from_args("bx", B, X)
         Y = Sum.from_args("f(x)=a²x+bx+c", first, second, C)
 
-        sigmaslist = [Array(f"sigma_{i:02d}", [sigma]) for i, sigma in enumerate(sigmas)]
+        sigmaslist = [Array(f"sigma_{i:02d}", [sigma], mode="fill") for i, sigma in enumerate(sigmas)]
         pars = [
             GaussianParameter(
                 parent=None,

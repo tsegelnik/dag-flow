@@ -15,7 +15,7 @@ def test_SumSq_01(dtype):
     arrays2_in = tuple(a**2 for a in arrays_in)
 
     with Graph(close_on_exit=True) as graph:
-        arrays = tuple(Array("test", array_in) for array_in in arrays_in)
+        arrays = tuple(Array("test", array_in, mode="fill") for array_in in arrays_in)
         sm = SumSq("sumsq")
         arrays >> sm
 

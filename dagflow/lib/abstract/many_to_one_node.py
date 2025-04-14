@@ -2,8 +2,6 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-from numpy.typing import NDArray
-
 from multikeydict.typing import properkey
 
 from ...core.input_strategy import AddNewInputAddAndKeepSingleOutput
@@ -11,8 +9,9 @@ from ...core.node import Node
 from ...core.storage import NodeStorage
 from ...core.type_functions import (
     AllPositionals,
-    check_node_has_inputs,
     check_inputs_equivalence,
+    check_inputs_number_is_divisible_by_N,
+    check_node_has_inputs,
     copy_from_inputs_to_outputs,
     evaluate_dtype_of_outputs,
 )
@@ -21,14 +20,14 @@ if TYPE_CHECKING:
     from collections.abc import Sequence
     from typing import Any
 
+    from numpy.typing import NDArray
+
     from multikeydict.typing import KeyLike, TupleKey
 
 
 class ManyToOneNode(Node):
-    """
-    The abstract node with only one output `result`,
-    which is the result of some function of all the positional inputs
-    """
+    """The abstract node with only one output `result`, which is the result of
+    some function of all the positional inputs."""
 
     __slots__ = (
         "_broadcastable",
@@ -63,17 +62,22 @@ class ManyToOneNode(Node):
         self._broadcastable = broadcastable
         self._check_edges_contents = check_edges_contents
 
-        self._input_data0 = None # pyright: ignore [reportAttributeAccessIssue]
+        self._input_data0 = None  # pyright: ignore [reportAttributeAccessIssue]
         self._input_data_other = []
         self._input_data = []
-        self._output_data = None # pyright: ignore [reportAttributeAccessIssue]
+        self._output_data = None  # pyright: ignore [reportAttributeAccessIssue]
 
     @staticmethod
     def _input_names() -> tuple[str, ...]:
         return ("input",)
 
+    @classmethod
+    def _input_block_size(cls) -> int:
+        return len(cls._input_names())
+
     def _type_function(self) -> None:
-        """A output takes this function to determine the dtype and shape"""
+        """A output takes this function to determine the dtype and shape."""
+        check_inputs_number_is_divisible_by_N(self, self._input_block_size())
         check_node_has_inputs(self)  # at least one input
         check_inputs_equivalence(
             self, broadcastable=self._broadcastable, check_edges_contents=self._check_edges_contents

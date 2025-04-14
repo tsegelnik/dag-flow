@@ -14,8 +14,8 @@ def test_ArraySum_01(testname, debug_graph, a):
     array2_res = a2.sum()
 
     with Graph(close_on_exit=True, debug=debug_graph) as graph:
-        arra = Array("a", a)
-        arra2 = Array("a2", a2)
+        arra = Array("a", a, mode="fill")
+        arra2 = Array("a2", a2, mode="fill")
         arraysum = ArraySum("arraysum")
         (arra, arra2) >> arraysum
 

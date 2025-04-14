@@ -26,7 +26,7 @@ from dagflow.core.type_functions import (
 def test_copy_input_dtype_and_shape(testname, debug_graph, data, dtype):
     with Graph(close_on_exit=False, debug=debug_graph) as graph:
         arrdata = array(data, dtype=dtype)
-        arr1 = Array("arr1", arrdata)
+        arr1 = Array("arr1", arrdata, mode="fill")
         node = Dummy(
             "node",
             input_strategy=AddNewInputAddAndKeepSingleOutput(output_fmt="result"),
@@ -43,8 +43,8 @@ def test_copy_input_dtype_and_shape(testname, debug_graph, data, dtype):
 @mark.parametrize("dtype", ("i", "d", "float64"))
 def test_output_eval_dtype(testname, debug_graph, dtype):
     with Graph(close_on_exit=False, debug=debug_graph) as graph:
-        arr1 = Array("arr1", array([1, 2, 3, 4], dtype="i"))
-        arr2 = Array("arr2", array([3, 2, 1], dtype=dtype))
+        arr1 = Array("arr1", array([1, 2, 3, 4], dtype="i"), mode="fill")
+        arr2 = Array("arr2", array([3, 2, 1], dtype=dtype), mode="fill")
         node = Dummy(
             "node",
             input_strategy=AddNewInputAddAndKeepSingleOutput(output_fmt="result"),
@@ -79,12 +79,12 @@ def test_copy_from_input_00(testname, debug_graph):
 def test_copy_from_input_01(testname, debug_graph, dtype):
     # TODO: adding axes_meshes check
     with Graph(close_on_exit=False, debug=debug_graph) as graph:
-        edges1 = Array("edges1", [0, 1, 2, 3, 4]).outputs["array"]
-        edges2 = Array("edges2", [0, 1, 2, 3]).outputs["array"]
-        # nodes1 = Array("nodes1", [0.5, 1.5, 2.5, 3.5])
-        # nodes2 = Array("nodes2", [0.5, 1.5, 2.5])
-        arr1 = Array("arr1", array([1, 2, 3, 4], dtype="i"), edges=edges1)  # , nodes=nodes1)
-        arr2 = Array("arr2", array([3, 2, 1], dtype=dtype), edges=edges2)  # , nodes=nodes2)
+        edges1 = Array("edges1", [0, 1, 2, 3, 4], mode="fill").outputs["array"]
+        edges2 = Array("edges2", [0, 1, 2, 3], mode="fill").outputs["array"]
+        # nodes1 = Array("nodes1", [0.5, 1.5, 2.5, 3.5], mode="fill")
+        # nodes2 = Array("nodes2", [0.5, 1.5, 2.5], mode="fill")
+        arr1 = Array("arr1", array([1, 2, 3, 4], dtype="i"), edges=edges1, mode="fill")  # , nodes=nodes1)
+        arr2 = Array("arr2", array([3, 2, 1], dtype=dtype), edges=edges2, mode="fill")  # , nodes=nodes2)
         node = Dummy(
             "node",
             input_strategy=AddNewInputAddNewOutputForBlock(),

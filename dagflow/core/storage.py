@@ -7,7 +7,7 @@ from numpy import nan, ndarray
 from ordered_set import OrderedSet
 
 from multikeydict.nestedmkdict import NestedMKDict
-from multikeydict.typing import Key, KeyLike, TupleKey
+from multikeydict.typing import Key, KeyLike, TupleKey, strkey
 from multikeydict.visitor import NestedMKDictVisitor
 
 from ..tools.logger import DEBUG, INFO1, INFO3, logger
@@ -487,6 +487,7 @@ class PlotVisitor(NestedMKDictVisitor):
         "_format",
         "_args",
         "_kwargs",
+        "_minimal_data_size",
         "_active_figures",
         "_overlay_priority",
         "_currently_active_overlay",
@@ -497,6 +498,7 @@ class PlotVisitor(NestedMKDictVisitor):
     _format: str | None
     _args: Sequence
     _kwargs: dict
+    _minimal_data_size: int
     _active_figures: dict
     _overlay_priority: Sequence[OrderedSet]
     _currently_active_overlay: OrderedSet | None
@@ -508,6 +510,7 @@ class PlotVisitor(NestedMKDictVisitor):
         show_all: bool = False,
         folder: str | None = None,
         format: str = "pdf",
+        minimal_data_size: int = 1,
         overlay_priority: Sequence[Sequence[str]] = ((),),
         **kwargs,
     ):
@@ -516,6 +519,7 @@ class PlotVisitor(NestedMKDictVisitor):
         self._format = format
         self._args = args
         self._kwargs = kwargs
+        self._minimal_data_size =  minimal_data_size
         self._overlay_priority = tuple(OrderedSet(sq) for sq in overlay_priority)
         self._currently_active_overlay = None
         self._close_on_exitdict = False
@@ -615,6 +619,13 @@ class PlotVisitor(NestedMKDictVisitor):
         from ..plot.plot import plot_auto
 
         if not isinstance(output, Output) or not output.labels.plottable:
+            logger.log(DEBUG, f"Do not plot {strkey(key)} of not supported type")
+            return
+        if not output.labels.plottable:
+            logger.log(DEBUG, f"Do not plot {strkey(key)}, configured to be not plottable")
+            return
+        if output.dd.size<self._minimal_data_size:
+            logger.log(DEBUG, f"Do not plot {strkey(key)} of size {output.dd.size}<{self._minimal_data_size}")
             return
 
         nd = output.dd.dim

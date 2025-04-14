@@ -5,21 +5,22 @@ from typing import TYPE_CHECKING
 from numba import njit
 from numpy import empty, floating, integer, multiply
 
-from ...core.exception import TypeFunctionError
+from ...core.exception import CalculationError, CriticalError, TypeFunctionError, UnclosedGraphError
 from ...core.input_strategy import AddNewInputAddNewOutput
 from ...core.type_functions import (
-    check_node_has_inputs,
     check_dimension_of_inputs,
     check_dtype_of_inputs,
     check_edges_dimension_of_inputs,
+    check_node_has_inputs,
     check_shape_of_inputs,
     check_subtype_of_inputs,
 )
 from ..abstract import OneToOneNode
 
 if TYPE_CHECKING:
-    from numpy.typing import NDArray
     from typing import Literal
+
+    from numpy.typing import NDArray
 
     from ...core.input import Input
     from ...core.types import ShapeLike
@@ -72,12 +73,10 @@ def _integrate2to1d(result: NDArray, data: NDArray, orders: NDArray):
 
 
 class IntegratorCore(OneToOneNode):
-    """
-    self.inputs:
-        `i`: function (computed at integration nodes) to integrate
-        `orders_x`: array with orders to integrate by x-axis (1d array) 
-        `weights`: array with weights (1d or 2d array)
-        `orders_y` (optional): array with orders to integrate by y-axis (1d array)
+    """self.inputs: `i`: function (computed at integration nodes) to integrate
+    `orders_x`: array with orders to integrate by x-axis (1d array) `weights`:
+    array with weights (1d or 2d array) `orders_y` (optional): array with
+    orders to integrate by y-axis (1d array)
 
     self.outputs:
         `i`: result of integration
@@ -147,6 +146,17 @@ class IntegratorCore(OneToOneNode):
     def dropdim(self) -> bool:
         return self._dropdim
 
+    def taint(self, *, caller: Input | None = None, **kwargs):
+        if caller is not None and (
+            caller is self._orders_x_input or caller is self._orders_y_input
+        ):
+            raise CriticalError(
+                "IntegratorCore: can not change integration orders without reopening graph",
+                node=self,
+                input=caller,
+            )
+        super().taint(caller=caller, **kwargs)
+
     def _type_function(self) -> None:
         """The function to determine the dtype and shape.
 
@@ -203,7 +213,15 @@ class IntegratorCore(OneToOneNode):
         check_dimension_of_inputs(self, name, 1)
         check_subtype_of_inputs(self, name, dtype=integer)
         orders = self.inputs[name]
-        if (y := sum(orders.data)) != shape:
+        try:
+            y = sum(orders.data)
+        except UnclosedGraphError:
+            raise CalculationError(
+                "Orders for IntegratorCore should be available (closed) before the graph is closed",
+                node=self,
+                input=orders,
+            )
+        if y != shape:
             raise TypeFunctionError(
                 (
                     f"Orders '{name}' must be consistent with self.inputs len={shape}, "

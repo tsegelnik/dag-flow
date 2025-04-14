@@ -8,7 +8,7 @@ def test_Output_01():
     array_in = (value,)
     array_alt = (value + 1,)
     with Graph(close_on_exit=True):
-        va = Array("test", array_in)
+        va = Array("test", array_in, mode="fill")
         s = Sum("add")
         va >> s
     out = s.outputs[0]
@@ -24,7 +24,7 @@ def test_Output_02():
     array_in = (value,)
     array_alt = (value + 1,)
     with Graph(close_on_exit=True):
-        va = Array("test", array_in)
+        va = Array("test", array_in, mode="fill")
         sm1 = Sum("add 1")
         sm2 = Sum("add 2")
         va >> sm1

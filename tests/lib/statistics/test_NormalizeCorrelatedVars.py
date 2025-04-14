@@ -22,12 +22,12 @@ def test_NormalizeCorrelatedVars_00(dtype):
     inOffset = array((-10.0, 20.0, 30.0), dtype=dtype)
     inVec = inCentral + inOffset
     with Graph(close_on_exit=True) as graph:
-        matrix = Array("matrix", inV)
-        diag = Array("diag", inD)
+        matrix = Array("matrix", inV, mode="fill")
+        diag = Array("diag", inD, mode="fill")
         Lmatrix = Cholesky("cholesky 1d")
         Ldiag = Cholesky("cholesky 2d")
-        central = Array("central", inCentral)
-        vec = Array("vec", inVec)
+        central = Array("central", inCentral, mode="fill")
+        vec = Array("vec", inVec, mode="fill")
         norm1d_fwd = NormalizeCorrelatedVars("norm1d fwd")
         norm2d_fwd = NormalizeCorrelatedVars("norm2d fwd")
 
@@ -107,16 +107,16 @@ def test_NormalizeCorrelatedVars_01(dtype="d"):
     inV = array([[10, 2, 1], [2, 12, 3], [1, 3, 13]], dtype=dtype)
     inD = inV.diagonal()
     with Graph() as graph1:
-        diag = Array("diag", inD)
-        vec = Array("vec", inVec)
+        diag = Array("diag", inD, mode="fill")
+        vec = Array("vec", inVec, mode="fill")
         norm1d_fwd = NormalizeCorrelatedVars("norm1d fwd")
 
         vec >> norm1d_fwd.inputs["central"]
         diag >> norm1d_fwd.inputs["matrix"]
 
     with Graph() as graph2:
-        matrix = Array("matrix", inV)
-        vec = Array("vec", inVec)
+        matrix = Array("matrix", inV, mode="fill")
+        vec = Array("vec", inVec, mode="fill")
         norm2d_fwd = NormalizeCorrelatedVars("norm2d fwd")
 
         vec >> norm2d_fwd.inputs["central"]

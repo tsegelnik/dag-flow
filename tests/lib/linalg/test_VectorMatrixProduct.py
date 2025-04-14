@@ -32,15 +32,15 @@ def test_VectorMatrixProduct(dtype: str, diag_matrix: bool, mode: str):
         desired = (row @ in_matrix).ravel()
 
     with Graph(close_on_exit=True) as graph:
-        array_vector = Array("Vector", vector)
-        array_edgesX = Array("edgesX", edgesX)
-        array_edgesY = Array("edgesY", edgesY)
+        array_vector = Array("Vector", vector, mode="fill")
+        array_edgesX = Array("edgesX", edgesX, mode="fill")
+        array_edgesY = Array("edgesY", edgesY, mode="fill")
         edges = (
             (array_edgesX.outputs["array"], array_edgesY.outputs["array"])
             if matrix.ndim == 2
             else (array_edgesX.outputs["array"],)
         )
-        array_matrix = Array("Matrix", matrix, edges=edges)
+        array_matrix = Array("Matrix", matrix, edges=edges, mode="fill")
 
         prod = VectorMatrixProduct("VectorMatrixProduct", mode=mode)
         array_matrix >> prod.inputs["matrix"]

@@ -53,7 +53,7 @@ def test_Array_01_set():
     value = 123.0
     array_in = (value,)
     array_alt = (value + 1,)
-    va = Array("test", array_in)
+    va = Array("test", array_in, mode="fill")
     sm = Sum("sum")
     va >> sm
     va.close()

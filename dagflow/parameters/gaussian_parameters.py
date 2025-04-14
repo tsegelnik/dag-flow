@@ -195,7 +195,7 @@ class GaussianConstraint(Constraint):
 
         value_output = self._pars.value
         self._pars._reset_pars()
-        npars = value_output._data.size
+        npars = value_output.dd.size
         for i in range(npars):
             ci = None if npars == 1 else i
             self._pars._pars.append(

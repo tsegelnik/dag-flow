@@ -14,8 +14,8 @@ def test_BinCenter_01(testname, debug_graph, dtype):
     array2 = geomspace(1e-2, 1e2, 10, dtype=dtype)
 
     with Graph(close_on_exit=True, debug=debug_graph) as graph:
-        arr1 = Array("linspace", array1)
-        arr2 = Array("geomspace", array2)
+        arr1 = Array("linspace", array1, mode="fill")
+        arr2 = Array("geomspace", array2, mode="fill")
         bc = BinCenter("centers")
         arr1 >> bc
         arr2 >> bc("geomspace")

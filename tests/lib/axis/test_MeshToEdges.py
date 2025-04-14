@@ -13,7 +13,7 @@ def test_MeshToEdges_Center_01(testname, debug_graph, dtype):
     array1 = linspace(0, 100, 26, dtype=dtype)
 
     with Graph(close_on_exit=True, debug=debug_graph) as graph:
-        arr1 = Array("linspace", array1)
+        arr1 = Array("linspace", array1, mode="fill")
         me = MeshToEdges("edges")
         arr1 >> me
 

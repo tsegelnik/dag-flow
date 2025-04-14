@@ -14,7 +14,11 @@ def format_latex(k: str, s: str | Any, /, *args, protect_latex: bool = True, **k
     if not isinstance(s, str):
         return s
 
-    if protect_latex and (k == "latex" and "$" in s) or "{" not in s:  # }
+    if "{" not in s:
+        return s
+
+    should_protect_latex = protect_latex and k in {"latex", "axis", "xaxis", "rootaxis"}
+    if should_protect_latex and "{" in s and "{{" not in s:  # }} }
         return s
 
     return s.format(*args, **kwargs)
@@ -69,8 +73,12 @@ def mapping_append_lists(dct: dict, key: str, lst: list):
     if not has_subdicts:
         patch(dct)
 
+
 def repr_pretty(self, p, cycle):
-    """Pretty repr for IPython. To be used as __repr__ method"""
+    """Pretty repr for IPython.
+
+    To be used as __repr__ method
+    """
     p.text("..." if cycle else str(self))
 
 
@@ -98,14 +106,14 @@ class Labels:
         "_name",
         "_index_values",
         "_index_dict",
-        "_text",
-        "_graph",
-        "_latex",
-        "_mark",
-        "_xaxis",
-        "_axis",
-        "_plottitle",
-        "_roottitle",
+        "_text",       # for terminal
+        "_graph",      # for the graph
+        "_latex",      # for latex output, or to replace plottitle
+        "_mark",       # for short mark on the graphiz graph
+        "_xaxis",      # when object is used as X axis for other object
+        "_axis",       # for the relevant axis, will be replaced with plottitle if not found
+        "_plottitle",  # for plot title, will be replaced by latex if not found
+        "_roottitle",  # for canvas title (root), will be replaced by plottitle with \→# substitution
         "_rootaxis",
         "_paths",
         "_plotmethod",
@@ -172,7 +180,16 @@ class Labels:
             setattr(self, k, v)
 
     def format(self, *args, **kwargs):
-        for name in ("text", "graph", "latex", "xaxis", "plottitle", "roottitle", "rootaxis"):
+        for name in (
+            "text",
+            "graph",
+            "latex",
+            "axis",
+            "xaxis",
+            "plottitle",
+            "roottitle",
+            "rootaxis",
+        ):
             aname = f"_{name}"
             oldvalue = getattr(self, aname)
             newvalue = format_latex(name, oldvalue, *args, **kwargs)
@@ -204,10 +221,10 @@ class Labels:
                 ):
                     return False
             elif (
-                    idxnum[0] not in accepted_list  # key value
-                    and idxnum[1] not in accepted_list  # key index
-                ):
-                    return False
+                idxnum[0] not in accepted_list  # key value
+                and idxnum[1] not in accepted_list  # key index
+            ):
+                return False
 
         return True
 

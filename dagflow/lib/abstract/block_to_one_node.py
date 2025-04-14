@@ -1,5 +1,21 @@
 from __future__ import annotations
 
+try:
+    from itertools import batched
+except ImportError:
+    from itertools import islice
+
+    def batched(iterable, n, *, strict=True):
+        # batched('ABCDEFG', 3) → ABC DEF G
+        if n < 1:
+            raise ValueError("n must be at least one")
+        iterator = iter(iterable)
+        while batch := tuple(islice(iterator, n)):
+            if strict and len(batch) != n:
+                raise ValueError("batched(): incomplete batch")
+            yield batch
+
+
 from typing import TYPE_CHECKING
 
 from multikeydict.typing import properkey
@@ -9,8 +25,8 @@ from ...core.node import Node
 from ...core.storage import NodeStorage
 from ...core.type_functions import (
     AllPositionals,
-    check_node_has_inputs,
     check_inputs_equivalence,
+    check_node_has_inputs,
     copy_from_inputs_to_outputs,
     evaluate_dtype_of_outputs,
 )
@@ -19,17 +35,25 @@ if TYPE_CHECKING:
     from collections.abc import Sequence
     from typing import Any
 
+    from numpy.typing import NDArray
+
     from multikeydict.typing import KeyLike, TupleKey
 
 
 class BlockToOneNode(Node):
-    """
-    The abstract node with only one output per block of N inputs
-    """
+    """The abstract node with only one output per block of N inputs."""
 
-    __slots__ = ("_broadcastable",)
+    __slots__ = (
+        "_broadcastable",
+        "_input_data",
+        "_blocks_input_data",
+        "_output_data",
+    )
 
     _broadcastable: bool
+    _input_data: list[NDArray]
+    _blocks_input_data: list[tuple[NDArray, ...]]
+    _output_data: list[NDArray]
 
     def __init__(self, *args, broadcastable: bool = False, output_name: str = "result", **kwargs):
         kwargs.setdefault(
@@ -38,6 +62,10 @@ class BlockToOneNode(Node):
         )
         super().__init__(*args, **kwargs)
         self._broadcastable = broadcastable
+
+        self._blocks_input_data = []
+        self._input_data = []
+        self._output_data = []
 
     @staticmethod
     def _input_names() -> tuple[str, ...]:
@@ -48,7 +76,7 @@ class BlockToOneNode(Node):
         return len(cls._input_names())
 
     def _type_function(self) -> None:
-        """A output takes this function to determine the dtype and shape"""
+        """A output takes this function to determine the dtype and shape."""
         check_node_has_inputs(self)  # at least one input
         check_inputs_equivalence(
             self, broadcastable=self._broadcastable
@@ -62,6 +90,16 @@ class BlockToOneNode(Node):
             prefer_input_with_edges=True,
         )  # copy shape to results
         evaluate_dtype_of_outputs(self, AllPositionals, AllPositionals)  # eval dtype of results
+
+    def _post_allocate(self):
+        super()._post_allocate()
+
+        self._input_data = [input._data for input in self.inputs]
+        self._output_data = [output._data for output in self.outputs]
+        if (block_size := self._inputs_block_size()) > 0:
+            self._blocks_input_data = list(batched(self._input_data, n=block_size))
+        else:
+            self._blocks_input_data = []
 
     @classmethod
     def replicate(

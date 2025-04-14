@@ -11,7 +11,7 @@ def test_Proxy_several_inputs(testname, debug_graph):
     arrays = [arange(5) + i for i in range(8)]
 
     with Graph(close_on_exit=True, debug=debug_graph) as graph:
-        array0 = Array("Array 0", arrays[0])
+        array0 = Array("Array 0", arrays[0], mode="fill")
         proxy = Proxy("proxy node")
         array0 >> proxy
 
@@ -21,7 +21,7 @@ def test_Proxy_several_inputs(testname, debug_graph):
     with graph:
         graph.open(open_nodes=True)
         for i, array in enumerate(arrays[1:], 1):
-            array1 = Array(f"Array {i}", array)
+            array1 = Array(f"Array {i}", array, mode="fill")
             array1 >> proxy
 
     for i, array in enumerate(arrays):
@@ -47,11 +47,11 @@ def test_Proxy_closed_graph_positional_input():
     np_array1 = array([0, 1, 2, 3, 4])
 
     with Graph(close_on_exit=True):
-        array0 = Array("Array 0", np_array0)
+        array0 = Array("Array 0", np_array0, mode="fill")
         proxy = Proxy("proxy node")
         array0 >> proxy
 
-    array1 = Array("Array 1", np_array1)
+    array1 = Array("Array 1", np_array1, mode="fill")
     with raises(ClosedGraphError) as e_info:
         array1 >> proxy
 
@@ -60,7 +60,7 @@ def test_Proxy_closed_graph_named_input():
     np_array0 = array([1, 2, 3, 4, 5])
 
     with Graph(close_on_exit=True):
-        array0 = Array("Array 0", np_array0)
+        array0 = Array("Array 0", np_array0, mode="fill")
         proxy = Proxy("proxy node")
         array0 >> proxy
 
