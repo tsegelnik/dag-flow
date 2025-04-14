@@ -115,6 +115,7 @@ class plot_auto:
             colorbar = kwargs.pop("colorbar", {})
             if colorbar is True:
                 colorbar = {}
+            kwargs.setdefault("rasterized", self._plotoptions.get("rasterized", True))
             if self._output and isinstance(colorbar, Mapping):
                 colorbar.setdefault("label", self._output.labels.axis_unit)
             self._ret = plot_array_2d(
@@ -333,6 +334,7 @@ def plot_array_2d(
     **kwargs,
 ) -> tuple[tuple, ...]:
     if edges:
+
         return plot_array_2d_hist(array, edges, *args, plotoptions=plotoptions, **kwargs)
     elif meshes:
         return plot_array_2d_vs(array, meshes, *args, plotoptions=plotoptions, **kwargs)
