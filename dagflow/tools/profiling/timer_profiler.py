@@ -2,9 +2,9 @@ from __future__ import annotations
 
 from textwrap import shorten
 from typing import TYPE_CHECKING
-from time import perf_counter
+from time import perf_counter_ns
 
-from numpy import sum as npsum
+from numpy import sum as npsum, empty, ndarray
 from pandas import DataFrame, Series
 
 from dagflow.core.node import Node
@@ -48,7 +48,6 @@ _DEFAULT_AGGREGATIONS = ("count", "single", "sum", "%_of_total")
 
 SOURCE_COL_WIDTH = 32
 SINK_COL_WIDTH = 32
-default_timer = perf_counter
 
 
 class TimerProfiler(Profiler):
@@ -67,13 +66,11 @@ class TimerProfiler(Profiler):
         sources: Sequence[Node] = (),
         sinks: Sequence[Node] = (),
         n_runs: int = 100,
-        timer: Callable = default_timer,
     ):
         self._default_aggregations = _DEFAULT_AGGREGATIONS
         self._column_aliases = _COLUMN_ALIASES.copy()
         self._aggregate_aliases = _AGGREGATE_ALIASES.copy()
         self._n_runs = n_runs
-        self._timer = timer
         self.register_aggregate_func(
             func=self._t_percentage,
             aliases=["%_of_total", "percentage", "t_percentage"],
@@ -89,17 +86,31 @@ class TimerProfiler(Profiler):
     def n_runs(self, value):
         self._n_runs = value
 
-    def timeit(self, stmt: Callable, runs: int, setup: Callable | None = None) -> float:
-        timer = self._timer
-        total_time = 0
-        for i in range(runs):
+    @classmethod
+    def _timeit_all_runs(cls, stmt: Callable, n_runs: int, setup: Callable | None = None) -> float:
+        """Estimate the time of a statement by running it multiple times.
+        Use `time.perf_counter_ns` internally to measure time in nanoseconds
+        and then convert it to seconds by dividing the total time by 1 billion.
+
+        Args:
+            stmt (Callable): The function/method whose execution time is measured.
+            n_runs (int): The number of executions.
+            setup (Callable | None, optional): Preliminary actions that are executed
+            before each function measurement.
+
+        Returns:
+            float: Execution time in seconds for `n_runs`.
+        """
+        timer = perf_counter_ns
+        total_nanoseconds = 0
+        for i in range(n_runs):
             if setup is not None:
                 setup()
             t_0 = timer()
             stmt()
             t_1 = timer()
-            total_time += t_1 - t_0
-        return total_time
+            total_nanoseconds += t_1 - t_0
+        return total_nanoseconds / 1_000_000_000
 
     def _t_percentage(self, _s: Series) -> Series:
         """User-defined aggregate function to calculate the percentage of group
