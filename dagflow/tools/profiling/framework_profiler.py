@@ -119,7 +119,7 @@ class FrameworkProfiler(TimerProfiler):
         aggregations: Sequence[str] | None = None,
         sort_by: str | None = None,
     ) -> DataFrame:
-        return super().make_report(group_by, aggregations, sort_by)
+        return super().make_report(group_by=group_by, aggregations=aggregations, sort_by=sort_by)
 
     def print_report(
         self,

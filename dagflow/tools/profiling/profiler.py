@@ -225,6 +225,7 @@ class Profiler(metaclass=ABCMeta):
     @abstractmethod
     def make_report(
         self,
+        *,
         group_by: str | Sequence[str] | None,
         aggregations: Sequence[str] | None,
         sort_by: str | None,
@@ -267,6 +268,7 @@ class Profiler(metaclass=ABCMeta):
     @abstractmethod
     def print_report(
         self,
+        *,
         rows: int | None,
         group_by: str | Sequence[str] | None,
         aggregations: Sequence[str] | None,

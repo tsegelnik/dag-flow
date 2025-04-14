@@ -61,7 +61,7 @@ class NodeProfiler(TimerProfiler):
         sort_by: str | None = None,
         average_by_runs: bool = True,
     ) -> DataFrame:
-        report = super().make_report(group_by, aggregations, sort_by)
+        report = super().make_report(group_by=group_by, aggregations=aggregations, sort_by=sort_by)
         if average_by_runs:
             return self._compute_average(report)
         return report

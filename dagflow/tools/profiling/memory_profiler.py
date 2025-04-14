@@ -130,7 +130,7 @@ class MemoryProfiler(Profiler):
         aggregations: Sequence[str] | None = None,
         sort_by: str | None = None,
     ) -> DataFrame:
-        return super().make_report(group_by, aggregations, sort_by)
+        return super().make_report(group_by=group_by, aggregations=aggregations, sort_by=sort_by)
 
     def _present_in_units(self, value, separator="\n\t") -> str:
         """Convert the `value` in bytes to kilobytes, and megabytes.
