@@ -87,8 +87,10 @@ class TimerProfiler(Profiler):
         self._n_runs = value
 
     @classmethod
-    def _timeit_all_runs(cls, stmt: Callable, n_runs: int, setup: Callable | None = None) -> float:
-        """Estimate the time of a statement by running it multiple times.
+    def _timeit_all_runs(
+        cls, stmt: Callable, n_runs: int, setup: Callable | None = None
+    ) -> float:
+        """Estimate total time of the statement running multiple times.
         Use `time.perf_counter_ns` internally to measure time in nanoseconds
         and then convert it to seconds by dividing the total time by 1 billion.
 
@@ -116,7 +118,7 @@ class TimerProfiler(Profiler):
     def _timeit_each_run(
         cls, stmt: Callable, n_runs: int, setup: Callable | None = None
     ) -> ndarray:
-        """Estimate execution times of the statement by running it multiple times.
+        """Estimate execution time of the statement for each run.
         Similar to `self.estimate_runs`, but returns a `numpy.ndarray` where each
         value is the execution time of the i-th run.
 
