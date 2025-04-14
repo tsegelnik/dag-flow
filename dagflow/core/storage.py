@@ -597,7 +597,13 @@ class PlotVisitor(NestedMKDictVisitor):
         sca(ax)
         return ax, index_group, index_item, False
 
-    def _savefig(self, key: TupleKey, *, close: bool = True):
+    def _savefig(
+        self,
+        key: TupleKey,
+        *,
+        close: bool = True,
+        overlay: bool = False
+    ):
         from os import makedirs
         from os.path import dirname
 
@@ -620,7 +626,7 @@ class PlotVisitor(NestedMKDictVisitor):
 
         for key, fig in self._active_figures.items():
             sca(fig.axes[0])
-            self._savefig(key, close=True)
+            self._savefig(key, close=True, overlay=True)
         # print(f"Close {len(self._active_figures)} figures")
         self._active_figures = {}
 
