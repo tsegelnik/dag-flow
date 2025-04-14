@@ -112,6 +112,34 @@ class TimerProfiler(Profiler):
             total_nanoseconds += t_1 - t_0
         return total_nanoseconds / 1_000_000_000
 
+    @classmethod
+    def _timeit_each_run(
+        cls, stmt: Callable, n_runs: int, setup: Callable | None = None
+    ) -> ndarray:
+        """Estimate execution times of the statement by running it multiple times.
+        Similar to `self.estimate_runs`, but returns a `numpy.ndarray` where each
+        value is the execution time of the i-th run.
+
+        Args:
+            stmt (Callable): The function/method whose execution time is measured.
+            n_runs (int): The number of executions.
+            setup (Callable | None, optional): Preliminary actions that are executed
+            before each function measurement.
+
+        Returns:
+            ndarray: Execution time in seconds of `stmt` for each run with the shape `(n_runs, )`.
+        """
+        timer = perf_counter_ns
+        nanoseconds = empty(n_runs)
+        for i in range(n_runs):
+            if setup is not None:
+                setup()
+            t_0 = timer()
+            stmt()
+            t_1 = timer()
+            nanoseconds[i] = t_1 - t_0
+        return nanoseconds / 1_000_000_000
+
     def _t_percentage(self, _s: Series) -> Series:
         """User-defined aggregate function to calculate the percentage of group
         given as `pandas.Series`."""
