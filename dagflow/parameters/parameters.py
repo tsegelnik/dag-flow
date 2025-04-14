@@ -72,7 +72,7 @@ class Parameters:
         if close:
             self._close()
 
-            npars = self.value._data.size
+            npars = self.value.dd.size
             if npars > 1:
                 for i in range(npars):
                     ilabel = label.get(names[i], {})
