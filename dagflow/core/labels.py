@@ -642,4 +642,4 @@ def inherit_labels(
 
 
 def _latex_to_root(text: str | None) -> str | None:
-    return text.replace(r"\rm ", "").replace("\\", "#").replace("$", "") if text else text
+    return text.replace(r"\rm ", "").replace(r"\overline", r"\bar").replace("\\", "#").replace("$", "") if text else text
