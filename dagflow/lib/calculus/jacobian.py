@@ -78,6 +78,7 @@ class Jacobian(OneToOneNode):
 
     def compute(self) -> None:
         self.unfreeze()
+        self.taint()
         self.touch(force_computation=True)
 
 
