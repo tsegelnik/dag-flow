@@ -130,7 +130,8 @@ class Parameter:
         if not self._connectible_output:
             return ""
 
-        labels = self._connectible_output.node.labels
+        node = self._connectible_output.node
+        labels = node.labels
         return labels.path or node.name or ""
 
     def connected(self) -> bool:
