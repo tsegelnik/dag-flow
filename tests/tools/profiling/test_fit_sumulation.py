@@ -2,11 +2,10 @@ from pandas import DataFrame
 from pytest import raises
 
 from dagflow.tools.profiling import FitSimulationProfiler
-from test_helpers import graph_0
 
 
-def test_estimate_separately():
-    _, nodes = graph_0()
+def test_estimate_separately(graph_0):
+    _, nodes = graph_0
 
     # see graph structure in test/output/test_profiling_graph_0.png
     a0, a1, a2, _, _, _, _, _, _, s3, _, mdvdt = nodes
@@ -29,8 +28,8 @@ def test_estimate_separately():
     assert not report.empty
 
 
-def test_estimate_simultaneous():
-    _, nodes = graph_0()
+def test_estimate_simultaneous(graph_0):
+    _, nodes = graph_0
 
     # see graph structure in test/output/test_profiling_graph_0.png
     a0, a1, _, _, _, _, _, _, _, s3, l_matrix, mdvdt = nodes
@@ -53,8 +52,8 @@ def test_estimate_simultaneous():
     assert not report.empty
 
 
-def test_init():
-    _, nodes = graph_0()
+def test_init(graph_0):
+    _, nodes = graph_0
 
     # see graph structure in test/output/test_profiling_graph_0.png
     a0, a1, _, _, _, _, _, _, _, s3, _, mdvdt = nodes

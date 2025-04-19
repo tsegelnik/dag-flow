@@ -3,7 +3,6 @@ from __future__ import annotations
 from pandas import DataFrame
 
 from dagflow.tools.profiling import CountCallsProfiler
-from test_helpers import graph_0
 
 
 def eval_n_times(node, n):
@@ -16,15 +15,15 @@ def get_estimated_calls(profiler, node):
     """Return the estimated number of calls for the given node.
     This is a helper function.
     Note: This method of retrieving the number of calls should never be used in
-    production code, as some nodes could have the same name.
+    real code, as some nodes could have the same name.
     """
     indexing = profiler._estimations_table["name"] == node.name
     estimated_calls = profiler._estimations_table.loc[indexing, "calls"]
     return estimated_calls.iloc[0]
 
 
-def test_one_call_g0():
-    _, nodes = graph_0()
+def test_one_call(graph_0):
+    _, nodes = graph_0
 
     cc_profiler = CountCallsProfiler(nodes)
     cc_profiler.estimate_calls()
@@ -35,8 +34,8 @@ def test_one_call_g0():
         assert est_calls == node.n_calls
 
 
-def test_multiple_calls_g0():
-    _, nodes = graph_0()
+def test_multiple_calls(graph_0):
+    _, nodes = graph_0
     a0, _, _, _, p0, _, _, _, _, s3, _, mdvdt = nodes
 
     target_calls = [11, 3, 17, 14]
@@ -56,8 +55,8 @@ def test_multiple_calls_g0():
         assert calls == 1
 
 
-def test_reports_g1():
-    _, nodes = graph_0()
+def test_reports(graph_0):
+    _, nodes = graph_0
     _, _, _, a3, _, p1, _, _, _, _, l_matrix, _ = nodes
 
     eval_n_times(a3, 42)

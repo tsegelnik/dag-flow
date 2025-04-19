@@ -1,7 +1,5 @@
 # NOTE: consider to run pytest with "-s" flag to see outputs from this tests
 
-from test_helpers import graph_0
-
 from dagflow.tools.profiling import (
     CountCallsProfiler,
     FrameworkProfiler,
@@ -10,8 +8,8 @@ from dagflow.tools.profiling import (
 )
 
 
-def test_minimal_example_g0():
-    _, nodes = graph_0()
+def test_minimal_example(graph_0):
+    _, nodes = graph_0
 
     node_profiler = NodeProfiler(nodes)
     report = node_profiler.estimate_target_nodes().print_report()
@@ -29,8 +27,8 @@ def test_minimal_example_g0():
     report = memory_profiler.estimate_target_nodes().print_report()
 
 
-def test_full_guide_g0():
-    graph, _ = graph_0()
+def test_full_guide(graph_0):
+    graph, _ = graph_0
 
     # Obtain nodes from graph instance
     nodes = graph._nodes
