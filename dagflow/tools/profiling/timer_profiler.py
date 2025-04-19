@@ -112,7 +112,7 @@ class TimerProfiler(Profiler):
             stmt()
             t_1 = timer()
             total_nanoseconds += t_1 - t_0
-        return total_nanoseconds / 1_000_000_000
+        return total_nanoseconds / 1e9
 
     @classmethod
     def _timeit_each_run(
@@ -140,7 +140,7 @@ class TimerProfiler(Profiler):
             stmt()
             t_1 = timer()
             nanoseconds[i] = t_1 - t_0
-        return nanoseconds / 1_000_000_000
+        return nanoseconds / 1e9
 
     def _t_percentage(self, _s: Series) -> Series:
         """User-defined aggregate function to calculate the percentage of group
