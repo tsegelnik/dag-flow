@@ -1,6 +1,8 @@
 from __future__ import annotations
 
 from collections.abc import Generator, Sequence
+from os import makedirs
+from pathlib import Path
 from typing import TYPE_CHECKING
 
 from numpy import nan, ndarray
@@ -79,8 +81,6 @@ class NodeStorage(NestedMKDict):
         accept_index: Mapping[str, str | int | Container[str | int]] | None = None,
         **kwargs,
     ):
-        from os import makedirs
-
         from ..parameters import Parameters
         from ..plot.graphviz import GraphDot
 
@@ -429,7 +429,14 @@ class NodeStorage(NestedMKDict):
                 logger.log(INFO1, f"Write: {filename}")
                 out.write(tex)
 
-        return tex, df if return_df else tex
+        if return_df:
+            return tex, df
+
+        return tex
+
+    def to_latex_files_split(self, dirname: str, **kwargs) -> None:
+        visitor = LatexVisitor(dirname, kwargs)
+        self.visit(visitor)
 
     def to_datax(self, filename: str, **kwargs) -> None:
         from LaTeXDatax import datax
@@ -567,12 +574,7 @@ class PlotVisitor(NestedMKDictVisitor):
         return tuple(key_group), match[0], need_new_figure, need_group_figure
 
     def _makefigure(
-        self,
-        key: TupleKey,
-        *,
-        force_new: bool = False,
-        force_group: bool = False,
-        **kwargs
+        self, key: TupleKey, *, force_new: bool = False, force_group: bool = False, **kwargs
     ) -> tuple[Axes | None, tuple[str, ...] | None, str | None, bool]:
         from matplotlib.pyplot import sca, subplots
 
@@ -597,14 +599,7 @@ class PlotVisitor(NestedMKDictVisitor):
         sca(ax)
         return ax, index_group, index_item, False
 
-    def _savefig(
-        self,
-        key: TupleKey,
-        *,
-        close: bool = True,
-        overlay: bool = False
-    ):
-        from os import makedirs
+    def _savefig(self, key: TupleKey, *, close: bool = True, overlay: bool = False):
         from os.path import dirname
 
         from matplotlib.pyplot import close as closefig
@@ -672,14 +667,18 @@ class PlotVisitor(NestedMKDictVisitor):
         figure_kw = output.labels.plotoptions.get("figure_kw", {})
 
         nd = output.dd.dim
-        ax, index_group, index_item, figure_is_new = self._makefigure(key, force_new=True, **figure_kw)
+        ax, index_group, index_item, figure_is_new = self._makefigure(
+            key, force_new=True, **figure_kw
+        )
 
         kwargs = dict({"show_path": figure_is_new}, **self._kwargs)
         plot_auto(output, *self._args, **kwargs)
         self._savefig(key, close=True)
 
         if nd == 1:
-            ax, index_group, index_item, figure_is_new = self._makefigure(key, force_group=False, **figure_kw)
+            ax, index_group, index_item, figure_is_new = self._makefigure(
+                key, force_group=False, **figure_kw
+            )
             if not index_item:
                 return
 
@@ -774,6 +773,51 @@ class ParametersVisitor(NestedMKDictVisitor):
         )
         self._data_list.extend(self._localdata)
         self._localdata = []
+
+    def stop(self, dct):
+        pass
+
+
+class LatexVisitor(NestedMKDictVisitor):
+    __slots__ = ("_dirname", "_kwargs")
+    _dirname: Path
+    _kwargs: dict
+
+    def __init__(
+        self,
+        dirname: str,
+        kwargs: dict,
+    ):
+        self._dirname = Path(dirname)
+        self._kwargs = kwargs
+
+        a = 1
+
+    def _write(self, key, mapping: NestedMKDict) -> None:
+        filename = self._dirname / ("/".join(key).replace(".", "_") + ".tex")
+        makedirs(filename.parent, exist_ok=True)
+
+        df = mapping.to_df(label_from="latex", **self._kwargs)
+        tex = df.to_latex(escape=False)
+
+        with open(filename, "w") as out:
+            logger.log(INFO1, f"Write: {filename}")
+            out.write(tex)
+
+    def start(self, dct):
+        pass
+
+    def enterdict(self, k, mapping: NestedMKDict):
+        self._write(k, mapping)
+
+    def visit(self, key, value):
+        pass
+
+    def exitdict(self, k, v):
+        pass
+
+    def _store(self):
+        pass
 
     def stop(self, dct):
         pass
