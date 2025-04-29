@@ -18,7 +18,7 @@ from .node import Node
 from .output import Output
 
 if TYPE_CHECKING:
-    from collections.abc import Container, Mapping, MutableSet
+    from collections.abc import Container, Iterable, Mapping, MutableSet
     from typing import Any, Literal
 
     from matplotlib.axes import Axes
@@ -359,6 +359,7 @@ class NodeStorage(NestedMKDict):
                 del df[key]
             else:
                 _fillna(df, key, "-")
+        df["count"] = df["count"].map(lambda e: int(e) if isinstance(e, float) else e)
 
         if "value" in df.columns:
             _fillna(df, "value", "-")
@@ -435,7 +436,7 @@ class NodeStorage(NestedMKDict):
         return tex
 
     def to_latex_files_split(self, dirname: str, **kwargs) -> None:
-        visitor = LatexVisitor(dirname, kwargs)
+        visitor = LatexVisitor(dirname, **kwargs)
         self.visit(visitor)
 
     def to_datax(self, filename: str, **kwargs) -> None:
@@ -779,26 +780,43 @@ class ParametersVisitor(NestedMKDictVisitor):
 
 
 class LatexVisitor(NestedMKDictVisitor):
-    __slots__ = ("_dirname", "_kwargs")
+    __slots__ = ("_dirname", "_df_kwargs", "_column_labels", "_filter_columns")
     _dirname: Path
-    _kwargs: dict
+    _df_kwargs: dict[str, Any]
+    _column_labels: dict[str, str]
+    _filter_columns: list[str]
 
     def __init__(
         self,
         dirname: str,
-        kwargs: dict,
+        *,
+        filter_columns: Iterable[str] = (),
+        df_kwargs: dict = {},
     ):
         self._dirname = Path(dirname)
-        self._kwargs = kwargs
+        self._df_kwargs = df_kwargs
 
-        a = 1
+        self._filter_columns = list(filter_columns)
 
-    def _write(self, key, mapping: NestedMKDict) -> None:
+        self._column_labels = {
+            "path": "Location",
+            "value": "Value $v$",
+            "central": "$v_0$",
+            "sigma": r"$\sigma$",
+            "sigma_rel_perc": r"$\sigma/v$, \%",
+            "flags": "Flag",
+            "count": "Count",
+            "label": "Description",
+        }
+
+    def _write(self, key, mapping: NodeStorage) -> None:
         filename = self._dirname / ("/".join(key).replace(".", "_") + ".tex")
         makedirs(filename.parent, exist_ok=True)
 
-        df = mapping.to_df(label_from="latex", **self._kwargs)
-        tex = df.to_latex(escape=False)
+        df = mapping.to_df(label_from="latex", **self._df_kwargs)
+        df.drop(self._filter_columns, axis=1, inplace=True)
+        header = [self._column_labels.get(s, s) for s in df.columns]
+        tex = df.to_latex(escape=False, header=header)
 
         with open(filename, "w") as out:
             logger.log(INFO1, f"Write: {filename}")
@@ -807,10 +825,10 @@ class LatexVisitor(NestedMKDictVisitor):
     def start(self, dct):
         pass
 
-    def enterdict(self, k, mapping: NestedMKDict):
-        self._write(k, mapping)
+    def enterdict(self, k, v: NodeStorage):
+        self._write(k, v)
 
-    def visit(self, key, value):
+    def visit(self, k, v):
         pass
 
     def exitdict(self, k, v):
