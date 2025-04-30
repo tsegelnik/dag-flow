@@ -780,26 +780,36 @@ class ParametersVisitor(NestedMKDictVisitor):
 
 
 class LatexVisitor(NestedMKDictVisitor):
-    __slots__ = ("_dirname", "_df_kwargs", "_column_labels", "_filter_columns")
+    __slots__ = (
+        "_dirname",
+        "_df_kwargs",
+        "_to_latex_kwargs" "_filter_columns",
+        "_column_labels",
+        "_column_formats",
+    )
     _dirname: Path
     _df_kwargs: dict[str, Any]
-    _column_labels: dict[str, str]
+    _to_latex_kwargs: dict[str, Any]
     _filter_columns: list[str]
+    _column_labels: dict[str, str]
+    _column_formats: dict[str, str]
 
     def __init__(
         self,
         dirname: str,
         *,
         filter_columns: Iterable[str] = (),
-        df_kwargs: dict = {},
+        df_kwargs: Mapping[str, Any] = {},
+        to_latex_kwargs: dict = {},
     ):
         self._dirname = Path(dirname)
-        self._df_kwargs = df_kwargs
+        self._df_kwargs = dict(df_kwargs)
+        self._to_latex_kwargs = dict(to_latex_kwargs)
 
         self._filter_columns = list(filter_columns)
 
         self._column_labels = {
-            "path": "Location",
+            "path": "Name",
             "value": "Value $v$",
             "central": "$v_0$",
             "sigma": r"$\sigma$",
@@ -809,18 +819,40 @@ class LatexVisitor(NestedMKDictVisitor):
             "label": "Description",
         }
 
+        self._column_formats = {
+            "path": "l",
+            "value": "r",
+            "central": "r",
+            "sigma": "r",
+            "sigma_rel_perc": "r",
+            "flags": "r",
+            "count": "r",
+            "label": r"m{0.5\linewidth}",
+        }
+
     def _write(self, key, mapping: NodeStorage) -> None:
         filename = self._dirname / ("/".join(key).replace(".", "_") + ".tex")
         makedirs(filename.parent, exist_ok=True)
 
         df = mapping.to_df(label_from="latex", **self._df_kwargs)
-        df.drop(self._filter_columns, axis=1, inplace=True)
-        header = [self._column_labels.get(s, s) for s in df.columns]
-        tex = df.to_latex(escape=False, header=header)
+        df.drop(columns=self._filter_columns, inplace=True, errors="ignore")
+        header = self._make_header(df)
+        column_format = self._make_column_format(df)
+
+        df["path"] = df["path"].map(lambda s: s.replace("_", r"\_") if isinstance(s, str) else s)
+        tex = df.to_latex(
+            escape=False, header=header, column_format=column_format, **self._to_latex_kwargs
+        )
 
         with open(filename, "w") as out:
             logger.log(INFO1, f"Write: {filename}")
             out.write(tex)
+
+    def _make_header(self, df: DataFrame) -> list[str]:
+        return [self._column_labels.get(s, s) for s in df.columns]
+
+    def _make_column_format(self, df: DataFrame) -> str:
+        return "".join(self._column_formats.get(s, "l") for s in df.columns)
 
     def start(self, dct):
         pass
