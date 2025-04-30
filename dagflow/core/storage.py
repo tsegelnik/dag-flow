@@ -9,7 +9,7 @@ from numpy import nan, ndarray
 from ordered_set import OrderedSet
 
 from multikeydict.nestedmkdict import NestedMKDict
-from multikeydict.typing import Key, KeyLike, TupleKey, strkey
+from multikeydict.typing import Key, KeyLike, TupleKey, properkey, strkey
 from multikeydict.visitor import NestedMKDictVisitor
 
 from ..tools.logger import DEBUG, INFO1, INFO3, logger
@@ -327,10 +327,10 @@ class NodeStorage(NestedMKDict):
     # Converters
     #
     def to_list(self, **kwargs) -> list:
-        return self.visit(ParametersVisitor(kwargs)).data_list
+        return self.visit(ParametersVisitor(**kwargs)).data_list
 
     def to_dict(self, **kwargs) -> NestedMKDict:
-        return self.visit(ParametersVisitor(kwargs)).data_dict
+        return self.visit(ParametersVisitor(**kwargs)).data_dict
 
     def to_df(self, *, columns: list[str] | None = None, **kwargs) -> DataFrame:
         from pandas import DataFrame
@@ -696,18 +696,24 @@ class PlotVisitor(NestedMKDictVisitor):
 
 
 class ParametersVisitor(NestedMKDictVisitor):
-    __slots__ = ("_kwargs", "_data_list", "_localdata", "_path")
+    __slots__ = (
+        "_kwargs",
+        "_data_list",
+        "_localdata",
+        "_path",
+        "_parent_key",
+    )
     _kwargs: dict
     _data_list: list[dict]
     _data_dict: NestedMKDict
     _localdata: list[dict]
     _paths: list[tuple[str, ...]]
     _path: tuple[str, ...]
-    # _npars: List[int]
+    _parent_key: tuple[str, ...]
 
-    def __init__(self, kwargs: dict):
+    def __init__(self, *, parent_key: KeyLike = (), **kwargs):
         self._kwargs = kwargs
-        # self._npars = []
+        self._parent_key = properkey(parent_key)
 
     @property
     def data_list(self) -> list[dict]:
@@ -767,9 +773,9 @@ class ParametersVisitor(NestedMKDictVisitor):
 
         self._data_list.append(
             {
-                "path": f"group: {'.'.join(self._path)} [{len(self._localdata)}]",
+                "path": f"group [{len(self._localdata)}]",
                 "count": len(self._localdata),
-                "label": "[group]",
+                "label": ".".join(self._parent_key + self._path),
             }
         )
         self._data_list.extend(self._localdata)
@@ -834,7 +840,7 @@ class LatexVisitor(NestedMKDictVisitor):
         filename = self._dirname / ("/".join(key).replace(".", "_") + ".tex")
         makedirs(filename.parent, exist_ok=True)
 
-        df = mapping.to_df(label_from="latex", **self._df_kwargs)
+        df = mapping.to_df(label_from="latex", parent_key=key, **self._df_kwargs)
         df.drop(columns=self._filter_columns, inplace=True, errors="ignore")
         header = self._make_header(df)
         column_format = self._make_column_format(df)
