@@ -1,8 +1,8 @@
 from __future__ import annotations
 
+from collections.abc import Mapping
 from pathlib import Path
 from typing import TYPE_CHECKING
-from collections.abc import Mapping
 
 from ..tools.schema import LoadYaml
 
@@ -114,7 +114,7 @@ def apply_substitutions(
     if substitutions:
         if full_string:
             for pattern, substitution in substitutions.items():
-                if s==pattern:
+                if s == pattern:
                     return substitution
         else:
             for pattern, substitution in substitutions.items():
@@ -377,6 +377,12 @@ class Labels:
     @roottitle.setter
     def roottitle(self, value: str | None):
         self._roottitle = value
+
+    def get_roottitle(self, **kwargs) -> str | None:
+        if self._roottitle is not None:
+            return self._roottitle
+
+        return _latex_to_root(self.get_plottitle(**kwargs))
 
     @property
     def rootaxis(self) -> str | None:
@@ -642,4 +648,12 @@ def inherit_labels(
 
 
 def _latex_to_root(text: str | None) -> str | None:
-    return text.replace(r"\rm ", "").replace(r"\overline", r"\bar").replace("\\", "#").replace("$", "") if text else text
+    return (
+        text.replace(r"\rm ", "")
+        .replace(r"\overline", r"\bar")
+        .replace(r"\\", " | ")
+        .replace("\\", "#")
+        .replace("$", "")
+        if text
+        else text
+    )

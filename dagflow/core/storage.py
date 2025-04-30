@@ -448,10 +448,10 @@ class NodeStorage(NestedMKDict):
         logger.log(INFO1, f"Write: {filename}")
         datax(filename, **odict)
 
-    def to_root(self, filename: str) -> None:
+    def to_root(self, filename: str, **kwargs) -> None:
         from ..export.to_root import ExportToRootVisitor
 
-        visitor = ExportToRootVisitor(filename)
+        visitor = ExportToRootVisitor(filename, **kwargs)
         self.visit(visitor)
 
     #
@@ -508,7 +508,7 @@ class PlotVisitor(NestedMKDictVisitor):
     _folder: str | None
     _format: str | None
     _args: Sequence
-    _kwargs: dict
+    _kwargs: dict[str, Any]
     _i_element: int
     _n_elements: int
     _minimal_data_size: int
@@ -516,7 +516,7 @@ class PlotVisitor(NestedMKDictVisitor):
     _overlay_priority: Sequence[OrderedSet]
     _currently_active_overlay: OrderedSet | None
     _close_on_exitdict: bool
-    _exact_substitutions: Mapping[str, str]
+    _exact_substitutions: dict[str, str]
 
     def __init__(
         self,
@@ -537,7 +537,7 @@ class PlotVisitor(NestedMKDictVisitor):
         self._i_element = 0
         self._n_elements = 0
         self._minimal_data_size = minimal_data_size
-        self._exact_substitutions = exact_substitutions
+        self._exact_substitutions = dict(exact_substitutions)
         self._overlay_priority = tuple(OrderedSet(sq) for sq in overlay_priority)
         self._currently_active_overlay = None
         self._close_on_exitdict = False
