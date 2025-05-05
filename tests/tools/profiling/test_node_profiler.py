@@ -6,14 +6,11 @@ from pytest import raises
 from dagflow.tools.profiling import NodeProfiler
 from dagflow.core.node import Node
 
-from test_helpers import graph_0, graph_1
-
-
 n_runs = 1000
 
 
-def test_init():
-    _, nodes = graph_0()
+def test_init(graph_0):
+    _, nodes = graph_0
     a0, a1, a2, _, _, p1, _, _, s2, s3, _, _ = nodes
     target_nodes = [a0, a1, s3, s2]
     profiling = NodeProfiler(target_nodes)
@@ -28,36 +25,32 @@ def check_inputs_taint(node: Node):
     return any(inp.tainted for inp in node.inputs)
 
 
-def test_estimate_node_g0():
-    _, nodes = graph_0()
+def test_estimate_node_g0(graph_0):
+    _, nodes = graph_0
     print(f"(graph 0) NodeProfiler.estimate_node (n_runs={n_runs}):")
     for node in nodes:
-        print(
-            f"\t{node.name} estimated with:", NodeProfiler.estimate_node(node, n_runs)
-        )
+        print(f"\t{node.name} estimated with:", NodeProfiler.estimate_node(node, n_runs))
         assert check_inputs_taint(node) == False
 
 
-def test_estimate_node_g1():
-    _, nodes = graph_1()
+def test_estimate_node_g1(graph_1):
+    _, nodes = graph_1
     print(f"(graph 1) NodeProfiler.estimate_node (n_runs={n_runs}):")
     for node in nodes:
-        print(
-            f"\t{node.name} estimated with:", NodeProfiler.estimate_node(node, n_runs)
-        )
+        print(f"\t{node.name} estimated with:", NodeProfiler.estimate_node(node, n_runs))
         assert check_inputs_taint(node) == False
 
 
-def test_estimate_target_nodes_g0():
-    g, _ = graph_0()
+def test_estimate_target_nodes_g0(graph_0):
+    g, _ = graph_0
     target_nodes = g._nodes
     profiling = NodeProfiler(target_nodes, n_runs=n_runs)
     profiling.estimate_target_nodes()
     assert hasattr(profiling, "_estimations_table")
 
 
-def test_t_percentage():
-    _, _n = graph_0()
+def test_t_percentage(graph_0):
+    _, _n = graph_0
     profiler = NodeProfiler(_n).estimate_target_nodes()
     some_group = Series({"time": [0, 0, 0, 0, 0]})
     profiler._estimations_table["time"].values[:] = 0
@@ -66,8 +59,8 @@ def test_t_percentage():
     assert "is zero" in str(excinfo.value)
 
 
-def test_make_report_g0():
-    g, _ = graph_0()
+def test_make_report_g0(graph_0):
+    g, _ = graph_0
     target_nodes = g._nodes
     profiling = NodeProfiler(target_nodes, n_runs=n_runs)
 
@@ -87,8 +80,8 @@ def test_make_report_g0():
     assert "No estimations found" in str(excinfo.value)
 
 
-def test_make_report_g1():
-    g, _ = graph_1()
+def test_make_report_g1(graph_1):
+    g, _ = graph_1
     target_nodes = g._nodes
     profiling = NodeProfiler(target_nodes, n_runs=n_runs)
     profiling.estimate_target_nodes()
@@ -114,8 +107,8 @@ def test_make_report_g1():
     profiling.make_report(aggregations=["min", "count", "single"], sort_by=None)
 
 
-def test_print_report_g1_1():
-    g, _ = graph_1()
+def test_print_report_g1_1(graph_1):
+    g, _ = graph_1
     target_nodes = g._nodes
     profiling = NodeProfiler(target_nodes, n_runs=n_runs)
     profiling.estimate_target_nodes()
@@ -124,13 +117,11 @@ def test_print_report_g1_1():
     profiling.print_report(aggregations=["min"], rows=1)
     profiling.print_report(group_by=None, rows=2)
     profiling.print_report(group_by=None, rows=20)
-    profiling.print_report(
-        aggregations=["single", "count", "sum", "percentage"], sort_by="single"
-    )
+    profiling.print_report(aggregations=["single", "count", "sum", "percentage"], sort_by="single")
 
 
-def test_print_report_g1_2():
-    g, _ = graph_1()
+def test_print_report_g1_2(graph_1):
+    g, _ = graph_1
     target_nodes = g._nodes
 
     for i in range(2, 5):
@@ -140,8 +131,8 @@ def test_print_report_g1_2():
         profiling.print_report(aggregations=["single", "count", "sum", "percentage"])
 
 
-def test_print_report_g1_3():
-    g, _ = graph_1()
+def test_print_report_g1_3(graph_1):
+    g, _ = graph_1
     target_nodes = g._nodes
     profiling = NodeProfiler(target_nodes, n_runs=n_runs)
     profiling.estimate_target_nodes()

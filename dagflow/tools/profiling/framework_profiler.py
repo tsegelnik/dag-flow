@@ -1,10 +1,8 @@
 from __future__ import annotations
 
-from textwrap import shorten
-from timeit import repeat
 from typing import TYPE_CHECKING
 
-from numpy import mean
+from numpy import mean, ndarray
 from pandas import DataFrame, Series
 
 from .timer_profiler import TimerProfiler
@@ -14,8 +12,6 @@ if TYPE_CHECKING:
 
     from dagflow.core.node import Node
 
-SOURCE_COL_WIDTH = 32
-SINK_COL_WIDTH = 32
 
 # it is possible to group by two columns
 _ALLOWED_GROUPBY = (
@@ -91,43 +87,29 @@ class FrameworkProfiler(TimerProfiler):
             node.function = self._replaced_fcns[node]
         self._replaced_fcns = {}
 
-    def _estimate_framework_time(self) -> list[float]:
+    def _estimate_framework_time(self) -> ndarray:
         self._set_functions_empty()
 
-        def repeat_statement():
+        def evaluate_graph():
             for sink_node in self._sinks:
                 sink_node.eval()
 
-        repeat_statement()  # touch all dependent nodes before estimations
-        results = repeat(
-            stmt=repeat_statement,
+        evaluate_graph()  # touch all dependent nodes before estimations
+        results = self._timeit_each_run(
+            stmt=evaluate_graph,
+            n_runs=self._n_runs,
             setup=self._taint_nodes,
-            repeat=self._n_runs,
-            number=1,
         )
         self._restore_functions()
         self._taint_nodes()
         return results
 
-    def _shorten_names(self, nodes, max_length):
-        names = []
-        names_sum_length = 0
-        for node in nodes:
-            if names_sum_length > max_length:
-                break
-            names.append(node.name)
-            names_sum_length += len(node.name)
-        return shorten(", ".join(names), max_length)
-
     def estimate_framework_time(self) -> FrameworkProfiler:
         results = self._estimate_framework_time()
-        sinks_short = self._shorten_names(self._sinks, SINK_COL_WIDTH)
-        sources_short = self._shorten_names(self._sources, SOURCE_COL_WIDTH)
-        self._estimations_table = DataFrame({
-            "source nodes": sources_short,
-            "sink nodes": sinks_short,
-            "time": results
-        })
+        sources_col, sinks_col = self._shorten_sources_sinks()
+        self._estimations_table = DataFrame(
+            {"source nodes": sources_col, "sink nodes": sinks_col, "time": results}
+        )
         return self
 
     def make_report(
@@ -137,7 +119,7 @@ class FrameworkProfiler(TimerProfiler):
         aggregations: Sequence[str] | None = None,
         sort_by: str | None = None,
     ) -> DataFrame:
-        return super().make_report(group_by, aggregations, sort_by)
+        return super().make_report(group_by=group_by, aggregations=aggregations, sort_by=sort_by)
 
     def print_report(
         self,
@@ -147,11 +129,7 @@ class FrameworkProfiler(TimerProfiler):
         aggregations: Sequence[str] | None = None,
         sort_by: str | None = None,
     ) -> DataFrame:
-        report = self.make_report(
-            group_by=group_by,
-            aggregations=aggregations,
-            sort_by=sort_by
-        )
+        report = self.make_report(group_by=group_by, aggregations=aggregations, sort_by=sort_by)
         print(
             f"\nFramework Profiling {hex(id(self))}, "
             f"n_runs for given subgraph: {self._n_runs}, "

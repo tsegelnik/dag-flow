@@ -2,11 +2,10 @@ from types import MethodType
 from collections import Counter
 
 from dagflow.tools.profiling import FrameworkProfiler
-from test_helpers import graph_0, graph_1
 
 
-def test_init_g0():
-    _, nodes = graph_0()
+def test_init_g0(graph_0):
+    _, nodes = graph_0
     _, a1, a2, _, p0, p1, s0, s1, s2, s3, _, _ = nodes
 
     target_nodes = [a1, a2, s0, p1, p0, s1, s2, s3]
@@ -21,8 +20,8 @@ def test_init_g0():
     assert Counter(profiling._target_nodes) == Counter(target_nodes)
 
 
-def test_reveal_source_sink_g0():
-    _, nodes = graph_0()
+def test_reveal_source_sink_g0(graph_0):
+    _, nodes = graph_0
     a0, a1, a2, a3, _, _, _, s1, s2, s3, l_matrix, mdvdt = nodes
 
     sources, sinks = [a0, a1, a2, a3, l_matrix], [mdvdt, s3]
@@ -37,8 +36,8 @@ def test_reveal_source_sink_g0():
     assert Counter(profiling._sinks) == Counter(sinks)
 
 
-def test_taint_nodes_g0():
-    _, nodes = graph_0()
+def test_taint_nodes_g0(graph_0):
+    _, nodes = graph_0
 
     profiling = FrameworkProfiler(nodes)
     profiling._taint_nodes()
@@ -46,15 +45,13 @@ def test_taint_nodes_g0():
     assert all(n.tainted for n in nodes)
 
 
-def test_make_fcns_empty_g0():
-    _, nodes = graph_0()
+def test_make_fcns_empty_g0(graph_0):
+    _, nodes = graph_0
     _, a1, a2, _, _, p1, _, _, s2, s3, _, _ = nodes
 
     profiling = FrameworkProfiler(nodes)
     profiling._set_functions_empty()
-    assert all(
-        n.function == MethodType(FrameworkProfiler.function_stub, n) for n in nodes
-    )
+    assert all(n.function == MethodType(FrameworkProfiler.function_stub, n) for n in nodes)
 
     profiling._taint_nodes()
     assert a2.tainted == a1.tainted == p1.tainted == s2.tainted == True
@@ -66,8 +63,8 @@ def test_make_fcns_empty_g0():
     assert s3.tainted == True
 
 
-def test_underscore_estimate_framework_time_g0():
-    _, nodes = graph_0()
+def test_underscore_estimate_framework_time_g0(graph_0):
+    _, nodes = graph_0
 
     original_fcns = [n.function for n in nodes]
     profiling = FrameworkProfiler(nodes, n_runs=1000)
@@ -79,8 +76,8 @@ def test_underscore_estimate_framework_time_g0():
     assert final_fcns == original_fcns
 
 
-def test_estimate_framework_time_g0():
-    _, nodes = graph_0()
+def test_estimate_framework_time_g0(graph_0):
+    _, nodes = graph_0
 
     FrameworkProfiler(nodes).estimate_framework_time()
 
@@ -90,8 +87,8 @@ def test_estimate_framework_time_g0():
     profiling.estimate_framework_time()
 
 
-def test_print_report_g0():
-    _, nodes = graph_0()
+def test_print_report_g0(graph_0):
+    _, nodes = graph_0
 
     profiling = FrameworkProfiler(nodes, n_runs=1000)
     profiling.estimate_framework_time().print_report()
@@ -101,16 +98,16 @@ def test_print_report_g0():
     profiling.print_report(aggregations=["min", "max", "count"])
 
 
-def test_print_report_g1():
-    _, nodes = graph_1()
+def test_print_report_g1(graph_1):
+    _, nodes = graph_1
 
     profiling = FrameworkProfiler(nodes, n_runs=1000)
     profiling.estimate_framework_time()
     profiling.print_report(aggregations=["single", "sum", "count"])
 
 
-def test_single_by_node_g0():
-    _, nodes = graph_0()
+def test_single_by_node_g0(graph_0):
+    _, nodes = graph_0
 
     profiling = FrameworkProfiler(nodes, n_runs=1500)
     profiling.estimate_framework_time()

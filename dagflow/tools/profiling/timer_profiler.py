@@ -1,8 +1,10 @@
 from __future__ import annotations
 
+from textwrap import shorten
 from typing import TYPE_CHECKING
+from time import perf_counter_ns
 
-from numpy import sum as npsum
+from numpy import sum as npsum, empty, ndarray
 from pandas import DataFrame, Series
 
 from dagflow.core.node import Node
@@ -44,6 +46,9 @@ _AGGREGATE_ALIASES: dict[str, str | Callable] = {
 
 _DEFAULT_AGGREGATIONS = ("count", "single", "sum", "%_of_total")
 
+SOURCE_COL_WIDTH = 32
+SINK_COL_WIDTH = 32
+
 
 class TimerProfiler(Profiler):
     """Base class for time-related profiling.
@@ -52,7 +57,7 @@ class TimerProfiler(Profiler):
     you should consider `NodeProfiler` or `FrameworkProfiler`.
     """
 
-    __slots__ = ("_n_runs",)
+    __slots__ = ("_n_runs", "_timer")
     _n_runs: int
 
     def __init__(
@@ -81,6 +86,62 @@ class TimerProfiler(Profiler):
     def n_runs(self, value):
         self._n_runs = value
 
+    @classmethod
+    def _timeit_all_runs(
+        cls, stmt: Callable, n_runs: int, setup: Callable | None = None
+    ) -> float:
+        """Estimate total time of the statement running multiple times.
+        Use `time.perf_counter_ns` internally to measure time in nanoseconds
+        and then convert it to seconds by dividing the total time by 1 billion.
+
+        Args:
+            stmt (Callable): The function/method whose execution time is measured.
+            n_runs (int): The number of executions.
+            setup (Callable | None, optional): Preliminary actions that are executed
+            before each function measurement.
+
+        Returns:
+            float: Execution time in seconds for `n_runs`.
+        """
+        timer = perf_counter_ns
+        total_nanoseconds = 0
+        for i in range(n_runs):
+            if setup is not None:
+                setup()
+            t_0 = timer()
+            stmt()
+            t_1 = timer()
+            total_nanoseconds += t_1 - t_0
+        return total_nanoseconds / 1e9
+
+    @classmethod
+    def _timeit_each_run(
+        cls, stmt: Callable, n_runs: int, setup: Callable | None = None
+    ) -> ndarray:
+        """Estimate execution time of the statement for each run.
+        Similar to `self.estimate_runs`, but returns a `numpy.ndarray` where each
+        value is the execution time of the i-th run.
+
+        Args:
+            stmt (Callable): The function/method whose execution time is measured.
+            n_runs (int): The number of executions.
+            setup (Callable | None, optional): Preliminary actions that are executed
+            before each function measurement.
+
+        Returns:
+            ndarray: Execution time in seconds of `stmt` for each run with the shape `(n_runs, )`.
+        """
+        timer = perf_counter_ns
+        nanoseconds = empty(n_runs)
+        for i in range(n_runs):
+            if setup is not None:
+                setup()
+            t_0 = timer()
+            stmt()
+            t_1 = timer()
+            nanoseconds[i] = t_1 - t_0
+        return nanoseconds / 1e9
+
     def _t_percentage(self, _s: Series) -> Series:
         """User-defined aggregate function to calculate the percentage of group
         given as `pandas.Series`."""
@@ -98,3 +159,30 @@ class TimerProfiler(Profiler):
             if c.startswith("t_") or c == "time":
                 df[c] /= self._n_runs
         return df
+
+    def _shorten_names(self, nodes, max_length) -> str:
+        """Get a string representation of names of the `nodes`,
+        truncated to not exceed `max_length`.
+
+        Note: This implementation is generally faster than directly applying
+        `shorten(str([n.name for n in nodes]), max_length)`.
+        """
+        names = []
+        names_sum_length = 0
+        for node in nodes:
+            if names_sum_length > max_length:
+                break
+            names.append(node.name)
+            names_sum_length += len(node.name)
+        return shorten(", ".join(names), max_length)
+
+    def _shorten_sources_sinks(self) -> tuple[str, str]:
+        """Get a short string representation of `sources` and `sinks` names
+        with truncation by `SOURCE_COL_WIDTH`, `SINK_COL_WIDTH` lengths.
+
+        Return pair (short names of __sources__, short names of __sinks__)
+        """
+        return (
+            self._shorten_names(self._sources, SOURCE_COL_WIDTH),
+            self._shorten_names(self._sinks, SINK_COL_WIDTH),
+        )
