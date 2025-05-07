@@ -108,7 +108,7 @@ def apply_substitutions(
     *,
     full_string: bool = False,
 ) -> str:
-    if not substitutions or not s:
+    if not substitutions or not s or not isinstance(s, str):
         return s
 
     if substitutions:

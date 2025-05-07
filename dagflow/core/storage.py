@@ -424,7 +424,7 @@ class NodeStorage(NestedMKDict):
     ) -> str | tuple[str, DataFrame]:
         df = self.to_df(
             label_from="latex",
-            group_path_format = "{group} [{nitems}]",
+            group_path_format = "group [{nitems}]",
             **kwargs
         )
         tex = df.to_latex(escape=False)
@@ -442,7 +442,7 @@ class NodeStorage(NestedMKDict):
     def to_latex_files_split(self, dirname: str, **kwargs) -> None:
         visitor = ParametersVisitorLatex(
             dirname,
-            df_kwargs = {"group_path_format": "{group} [{nitems}]",},
+            df_kwargs = {"group_path_format": "group [{nitems}]",},
             **kwargs
         )
         self.visit(visitor)
@@ -809,9 +809,11 @@ class ParametersVisitorLatex(NestedMKDictVisitor):
     __slots__ = (
         "_dirname",
         "_df_kwargs",
-        "_to_latex_kwargs" "_filter_columns",
+        "_to_latex_kwargs",
+        "_filter_columns",
         "_column_labels",
         "_column_formats",
+        "_latex_substitutions"
     )
     _dirname: Path
     _df_kwargs: dict[str, Any]
@@ -819,6 +821,7 @@ class ParametersVisitorLatex(NestedMKDictVisitor):
     _filter_columns: list[str]
     _column_labels: dict[str, str]
     _column_formats: dict[str, str]
+    _latex_substitutions: dict[str, str]
 
     def __init__(
         self,
@@ -827,6 +830,7 @@ class ParametersVisitorLatex(NestedMKDictVisitor):
         filter_columns: Iterable[str] = (),
         df_kwargs: Mapping[str, Any] = {},
         to_latex_kwargs: dict = {},
+        latex_substitutions: Mapping[str, str] = {}
     ):
         self._dirname = Path(dirname)
         self._df_kwargs = dict(df_kwargs)
@@ -856,7 +860,11 @@ class ParametersVisitorLatex(NestedMKDictVisitor):
             "label": r"m{0.5\linewidth}",
         }
 
+        self._latex_substitutions = dict(latex_substitutions)
+
     def _write(self, key, mapping: NodeStorage) -> None:
+        from ..core.labels import apply_substitutions
+
         filename = self._dirname / ("/".join(key).replace(".", "_") + ".tex")
         makedirs(filename.parent, exist_ok=True)
 
@@ -866,6 +874,7 @@ class ParametersVisitorLatex(NestedMKDictVisitor):
         column_format = self._make_column_format(df)
 
         df["path"] = df["path"].map(lambda s: s.replace("_", r"\_") if isinstance(s, str) else s)
+        df["label"] = df["label"].map(lambda s: apply_substitutions(s, self._latex_substitutions))
         tex = df.to_latex(
             escape=False, header=header, column_format=column_format, **self._to_latex_kwargs
         )
