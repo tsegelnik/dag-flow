@@ -327,10 +327,10 @@ class NodeStorage(NestedMKDict):
     # Converters
     #
     def to_list(self, **kwargs) -> list:
-        return self.visit(ParametersVisitor(**kwargs)).data_list
+        return self.visit(ParametersVisitorText(**kwargs)).data_list
 
     def to_dict(self, **kwargs) -> NestedMKDict:
-        return self.visit(ParametersVisitor(**kwargs)).data_dict
+        return self.visit(ParametersVisitorText(**kwargs)).data_dict
 
     def to_df(self, *, columns: list[str] | None = None, **kwargs) -> DataFrame:
         from pandas import DataFrame
@@ -422,7 +422,11 @@ class NodeStorage(NestedMKDict):
     def to_latex_file(
         self, filename: str | None = None, *, return_df: bool = False, **kwargs
     ) -> str | tuple[str, DataFrame]:
-        df = self.to_df(label_from="latex", **kwargs)
+        df = self.to_df(
+            label_from="latex",
+            group_path_format = "{group} [{nitems}]",
+            **kwargs
+        )
         tex = df.to_latex(escape=False)
 
         if filename:
@@ -436,7 +440,11 @@ class NodeStorage(NestedMKDict):
         return tex
 
     def to_latex_files_split(self, dirname: str, **kwargs) -> None:
-        visitor = LatexVisitor(dirname, **kwargs)
+        visitor = ParametersVisitorLatex(
+            dirname,
+            df_kwargs = {"group_path_format": "{group} [{nitems}]",},
+            **kwargs
+        )
         self.visit(visitor)
 
     def to_datax(self, filename: str, **kwargs) -> None:
@@ -695,13 +703,14 @@ class PlotVisitor(NestedMKDictVisitor):
         self._close_figures()
 
 
-class ParametersVisitor(NestedMKDictVisitor):
+class ParametersVisitorText(NestedMKDictVisitor):
     __slots__ = (
         "_kwargs",
         "_data_list",
         "_localdata",
         "_path",
         "_parent_key",
+        "_group_path_format"
     )
     _kwargs: dict
     _data_list: list[dict]
@@ -711,9 +720,18 @@ class ParametersVisitor(NestedMKDictVisitor):
     _path: tuple[str, ...]
     _parent_key: tuple[str, ...]
 
-    def __init__(self, *, parent_key: KeyLike = (), **kwargs):
+    _group_path_format: str
+
+    def __init__(
+        self,
+        *,
+        parent_key: KeyLike = (),
+        group_path_format: str = "{path} [{nitems}]",
+        **kwargs
+    ):
         self._kwargs = kwargs
         self._parent_key = properkey(parent_key)
+        self._group_path_format = group_path_format
 
     @property
     def data_list(self) -> list[dict]:
@@ -771,11 +789,13 @@ class ParametersVisitor(NestedMKDictVisitor):
         if not self._localdata:
             return
 
+        strkey = ".".join(self._parent_key + self._path)
+        nitems = len(self._localdata)
         self._data_list.append(
             {
-                "path": f"group [{len(self._localdata)}]",
+                "path": self._group_path_format.format(path=strkey, nitems=nitems),
                 "count": len(self._localdata),
-                "label": ".".join(self._parent_key + self._path),
+                "label": strkey,
             }
         )
         self._data_list.extend(self._localdata)
@@ -785,7 +805,7 @@ class ParametersVisitor(NestedMKDictVisitor):
         pass
 
 
-class LatexVisitor(NestedMKDictVisitor):
+class ParametersVisitorLatex(NestedMKDictVisitor):
     __slots__ = (
         "_dirname",
         "_df_kwargs",
