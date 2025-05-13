@@ -865,10 +865,15 @@ class ParametersVisitorLatex(NestedMKDictVisitor):
     def _write(self, key, mapping: NodeStorage) -> None:
         from ..core.labels import apply_substitutions
 
+        if not key:
+            key = ("__self__",)
+            parent_key = ()
+        else:
+            parent_key = key
         filename = self._dirname / ("/".join(key).replace(".", "_") + ".tex")
         makedirs(filename.parent, exist_ok=True)
 
-        df = mapping.to_df(label_from="latex", parent_key=key, **self._df_kwargs)
+        df = mapping.to_df(label_from="latex", parent_key=parent_key, **self._df_kwargs)
         df.drop(columns=self._filter_columns, inplace=True, errors="ignore")
         header = self._make_header(df)
         column_format = self._make_column_format(df)
