@@ -1,0 +1,7 @@
+numpy
+ordered-set
+
+[dev]
+pytest
+pytest-cov
+coverage
