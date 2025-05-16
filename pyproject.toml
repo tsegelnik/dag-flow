@@ -45,6 +45,4 @@ exclude = [
   "tests*",
   "docs*",
   "example*",
-  "submodules*",
-  "multikeydict",
 ] # Исключает целые папки при необходимости

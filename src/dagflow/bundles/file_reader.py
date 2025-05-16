@@ -7,8 +7,8 @@ from typing import TYPE_CHECKING
 
 from numpy import concatenate, double, dtype, frombuffer, linspace, ndarray
 
-from multikeydict.tools.map import make_reorder_function
-from multikeydict.typing import properkey
+from nestedmapping.tools.map import make_reorder_function
+from nestedmapping.typing import properkey
 
 from ..tools.logger import INFO1, INFO2, INFO3, logger
 
@@ -19,7 +19,7 @@ if TYPE_CHECKING:
     import ROOT
     from numpy.typing import NDArray
 
-    from multikeydict.typing import KeyLike, TupleKey
+    from nestedmapping.typing import KeyLike, TupleKey
 
 file_readers = {}
 

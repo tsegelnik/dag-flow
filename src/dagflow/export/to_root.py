@@ -5,7 +5,7 @@ from typing import TYPE_CHECKING
 from numpy import allclose, array, dtype, frombuffer
 from numpy.typing import NDArray
 
-from multikeydict.visitor import NestedMKDictVisitor
+from nestedmapping.visitor import NestedMappingVisitor
 
 from ..core.output import Output
 from ..tools.logger import INFO1, INFO2, logger
@@ -146,7 +146,7 @@ def to_TGraph2(output):
     return graph
 
 
-class ExportToRootVisitor(NestedMKDictVisitor):
+class ExportToRootVisitor(NestedMappingVisitor):
     __slots__ = ("_file", "_cwd", "_prevd", "_level")
     _file: TFile
     _prevd: list["TDirectory"]

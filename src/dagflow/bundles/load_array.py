@@ -4,8 +4,8 @@ from pathlib import Path
 from numpy import asarray
 from schema import And, Optional, Or, Schema, Use
 
-from multikeydict.tools.map import make_reorder_function
-from multikeydict.typing import strkey
+from nestedmapping.tools.map import make_reorder_function
+from nestedmapping.typing import strkey
 
 from ..core.storage import NodeStorage
 from ..lib.common import Array

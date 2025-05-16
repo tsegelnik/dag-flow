@@ -5,8 +5,8 @@ from collections.abc import Generator
 from contextlib import suppress
 from typing import TYPE_CHECKING, Sequence
 
-from multikeydict.nestedmkdict import NestedMKDict
-from multikeydict.typing import KeyLike, TupleKey, properkey
+from nestedmapping import NestedMapping
+from nestedmapping.typing import KeyLike, TupleKey, properkey
 
 from ...core.exception import ConnectionError
 from ...core.meta_node import MetaNode
@@ -27,8 +27,8 @@ CovarianceMatrixParameterType = (
     | Sequence[GaussianParameter]
     | Sequence[Sequence[NormalizedGaussianParameter]]
     | Sequence[Sequence[GaussianParameter]]
-    | Sequence[NestedMKDict]
-    | NestedMKDict
+    | Sequence[NestedMapping]
+    | NestedMapping
 )
 
 
@@ -227,11 +227,11 @@ class CovarianceMatrixGroup(MetaNode):
                 return ((parameter_groups,),)  # pyright: ignore [reportReturnType]
             case [NormalizedGaussianParameter() | GaussianParameter(), *_]:
                 return (parameter_groups,)  # pyright: ignore [reportReturnType]
-            case NestedMKDict():
+            case NestedMapping():
                 return (tuple(parameter_groups.walkvalues()),)  # pyright: ignore [reportReturnType]
             case [[NormalizedGaussianParameter() | GaussianParameter(), *_], *_]:
                 return parameter_groups
-            case [NestedMKDict(), *_]:
+            case [NestedMapping(), *_]:
                 return tuple(tuple(group.walkvalues()) for group in parameter_groups)  # pyright: ignore [reportReturnType]
 
         raise RuntimeError("Invalid parameter_groups type")

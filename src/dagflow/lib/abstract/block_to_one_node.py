@@ -18,7 +18,7 @@ except ImportError:
 
 from typing import TYPE_CHECKING
 
-from multikeydict.typing import properkey
+from nestedmapping.typing import properkey
 
 from ...core.input_strategy import AddNewInputAddNewOutputForBlock
 from ...core.node import Node
@@ -37,7 +37,7 @@ if TYPE_CHECKING:
 
     from numpy.typing import NDArray
 
-    from multikeydict.typing import KeyLike, TupleKey
+    from nestedmapping.typing import KeyLike, TupleKey
 
 
 class BlockToOneNode(Node):
@@ -171,8 +171,8 @@ class BlockToOneNode(Node):
         def fcn_outer_after(_):
             outputs[outname] = instance.outputs[-1]
 
-        from multikeydict.nestedmkdict import walkkeys
-        from multikeydict.tools import match_keys
+        from nestedmapping import walkkeys
+        from nestedmapping.tools import match_keys
 
         keys_left = tuple(tuple(walkkeys(arg)) for arg in args)
         match_keys(
@@ -236,7 +236,7 @@ class BlockToOneNode(Node):
             nonlocal outname, instance
             outputs[outname] = instance.outputs[-1]
 
-        from multikeydict.tools import match_keys
+        from nestedmapping.tools import match_keys
 
         match_keys(
             (replicate_inputs,),
