@@ -1,5 +1,5 @@
 [project]
-name = "dagflow"
+name = "dagmodelling"
 version = "0.9.0"
 description = "The DAGFlow package is a python implementation of the dataflow programming with the lazy graph evaluation."
 authors = [{ name = "DAGFlow Team", email = "dagflow@jinr.ru" }]

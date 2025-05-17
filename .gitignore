@@ -26,6 +26,10 @@ cov.*
 .lark-cache*
 *.bak
 *.backup
+
+# build
+dist
+build
 *.egg*
 
 # vim
