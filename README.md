@@ -68,7 +68,7 @@ with Graph(debug=debug) as graph:
     savegraph(graph, "dagflow_example_1a.png")
 ```
 The printed result must be `[0. 3. 12.]`, and the created image looks as
-![](example/dagflow_example_1a.png)
+![](https://raw.githubusercontent.com/dagflow-team/dag-flow/refs/heads/0.9.0/example/dagflow_example_1a.png)
 
 
 For more examples see [example/example.py](https://github.com/dagflow-team/dag-flow/blob/master/example/example.py) or [tests](https://github.com/dagflow-team/dag-flow/tree/master/tests).
