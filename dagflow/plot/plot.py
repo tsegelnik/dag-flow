@@ -59,7 +59,7 @@ class plot_auto:
         save: str | None = None,
         close: bool = False,
         show: bool = False,
-        save_kw: dict = {},
+        savefig_kw: dict = {},
         latex_substitutions: Mapping[str, str] = {},
         plotoptions: Mapping[str, Any] | str = {},
         **kwargs,
@@ -117,7 +117,7 @@ class plot_auto:
 
         if save:
             logger.log(INFO1, f"Write: {save}")
-            plt.savefig(save, **save_kw)
+            plt.savefig(save, **savefig_kw)
         if show:
             plt.show()
         if close:
