@@ -349,17 +349,22 @@ class NodeStorage(NestedMKDict):
             ]
         df = DataFrame(dct, columns=columns)
 
-        df.insert(4, "sigma_rel_perc", df["sigma"])
-        sigma_rel_perc = df["sigma"] / df["central"] * 100.0
-        sigma_rel_perc[df["central"] == 0] = nan
-        df["sigma_rel_perc"] = sigma_rel_perc
+        if "sigma" in df.columns:
+            df.insert(4, "sigma_rel_perc", df["sigma"])
+            sigma_rel_perc = df["sigma"] / df["central"] * 100.0
+            sigma_rel_perc[df["central"] == 0] = nan
+            df["sigma_rel_perc"] = sigma_rel_perc
 
         for key in ("count", "shape", "value", "central", "sigma", "sigma_rel_perc"):
+            if not key in df.columns:
+                continue
+
             if df[key].isna().all():
                 del df[key]
             else:
                 _fillna(df, key, "-")
-        df["count"] = df["count"].map(lambda e: int(e) if isinstance(e, float) else e)
+        if "count" in df.columns:
+            df["count"] = df["count"].map(lambda e: int(e) if isinstance(e, float) else e)
 
         if "value" in df.columns:
             _fillna(df, "value", "-")
@@ -368,8 +373,9 @@ class NodeStorage(NestedMKDict):
             if col in df.columns:
                 _fillna(df, col, "")
 
-        if (df["flags"] == "").all():
-            del df["flags"]
+        if "flags" in df.columns:
+            if (df["flags"] == "").all():
+                del df["flags"]
 
         return df
 
