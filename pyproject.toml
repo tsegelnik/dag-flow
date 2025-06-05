@@ -1,6 +1,6 @@
 [project]
 name = "dagmodelling"
-version = "0.9.3"
+version = "0.9.4"
 description = "The DAGFlow package is a python implementation of the dataflow programming with the lazy graph evaluation."
 authors = [{ name = "DAGFlow Team", email = "dagflow@jinr.ru" }]
 maintainers = [{ name = "DAGFlow Team", email = "dagflow@jinr.ru" }]
@@ -27,9 +27,9 @@ dependencies = [
 ]
 
 [project.urls]
-homepage = "https://github.com/dagflow-team/dagflow"
-repository = "https://github.com/dagflow-team/dagflow"
-documentation = "https://github.com/dagflow-team/dagflow/wiki"
+homepage = "https://github.com/dagflow-team/dag-flow"
+repository = "https://github.com/dagflow-team/dag-flow"
+documentation = "https://github.com/dagflow-team/dag-flow/wiki"
 "DAGFlow Team" = "https://github.com/dagflow-team"
 
 [project.optional-dependencies]
