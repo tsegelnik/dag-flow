@@ -44,3 +44,5 @@ class BinWidth(OneToOneNode):
             inputdd = _input.dd
             _output.dd.dtype = inputdd.dtype
             _output.dd.shape = (inputdd.shape[0] - 1,)
+
+            _output.dd.axes_edges = (_input.parent_output,)
