@@ -79,6 +79,9 @@ class plot_auto:
         self._get_data(**filter_kw)
         self._get_labels()
 
+        if (kwargs_extra:=self._plotoptions.get("kwargs")) is not None:
+            kwargs = dict(kwargs, **kwargs_extra)
+
         ndim = len(self._array.shape)
         if ndim == 1:
             self._edges = self._edges[0] if self._edges else None

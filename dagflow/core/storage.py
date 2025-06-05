@@ -517,6 +517,7 @@ class PlotVisitor(NestedMKDictVisitor):
         "_currently_active_overlay",
         "_close_on_exitdict",
         "_exact_substitutions",
+        "_savefig_kwargs"
     )
     _show_all: bool
     _folder: str | None
@@ -531,6 +532,7 @@ class PlotVisitor(NestedMKDictVisitor):
     _currently_active_overlay: OrderedSet | None
     _close_on_exitdict: bool
     _exact_substitutions: dict[str, str]
+    _savefig_kwargs: Mapping[str, str]
 
     def __init__(
         self,
@@ -541,6 +543,7 @@ class PlotVisitor(NestedMKDictVisitor):
         minimal_data_size: int = 1,
         overlay_priority: Sequence[Sequence[str]] = ((),),
         exact_substitutions: Mapping[str, str] = {},
+        savefig_kwargs: Mapping[str, str] = {},
         **kwargs,
     ):
         self._show_all = show_all
@@ -552,6 +555,8 @@ class PlotVisitor(NestedMKDictVisitor):
         self._n_elements = 0
         self._minimal_data_size = minimal_data_size
         self._exact_substitutions = dict(exact_substitutions)
+        self._savefig_kwargs = savefig_kwargs
+
         self._overlay_priority = tuple(OrderedSet(sq) for sq in overlay_priority)
         self._currently_active_overlay = None
         self._close_on_exitdict = False
@@ -626,7 +631,7 @@ class PlotVisitor(NestedMKDictVisitor):
             makedirs(dirname(filename), exist_ok=True)
 
             logger.log(INFO1, f"Write: {filename} [{self._i_element}/{self._n_elements}]")
-            savefig(filename)
+            savefig(filename, **self._savefig_kwargs)
 
         if close:
             closefig()
