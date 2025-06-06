@@ -355,7 +355,7 @@ def _exp_interpolation(
     yc1: float,
     fine: float,
 ) -> float:
-    return yc0 * exp((coarse0 - fine) * log(yc0 / yc1) / (coarse1 - coarse0))
+    return yc0 * exp((fine - coarse0) * log(yc1 / yc0) / (coarse1 - coarse0))
 
 
 @njit(cache=True, inline="always")
