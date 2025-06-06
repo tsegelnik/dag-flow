@@ -38,10 +38,10 @@ def test_segmentIndex_01(debug_graph, testname, mode, offset: float | int, dtype
         mask = (expect == 0) * ((fineX + tolerance) >= coarseX[0])
         expect[mask] = 1
 
-    if dtype=="f":
-        assert tolerance==1.e-4
-    elif dtype=="d":
-        assert tolerance==1.e-10
+    if dtype == "f":
+        assert tolerance == 1.0e-4
+    elif dtype == "d":
+        assert tolerance == 1.0e-10
 
     res = segmentIndex.outputs[0].data
     assert all(res == expect)
@@ -83,8 +83,8 @@ def test_segmentIndex_02(debug_graph, testname, mode, offset):
 def test_segmentIndex_03(debug_graph, testname, mode):
     seed(10)
     nc, nf = 10, 100
-    ne = nc+1
-    coarseX = linspace(0, 10, nc+1)
+    ne = nc + 1
+    coarseX = linspace(0, 10, nc + 1)
     fineX0 = linspace(0, 10, nf)
     shuffle(fineX0)
     fineX = fineX0.reshape(4, nf // 4)
