@@ -3,6 +3,7 @@ from __future__ import annotations
 from typing import TYPE_CHECKING, Literal
 
 from numba import njit
+from numpy import finfo, result_type
 
 from ...core.exception import CalculationError, InitializationError
 from ...core.node import Node
@@ -69,18 +70,26 @@ class SegmentIndex(Node):
         `right`: `a[i-1] <= v < a[i]`
     """
 
-    __slots__ = ("_mode", "_coarse", "_fine", "_indices", "_tolerance")
+    __slots__ = (
+        "_mode",
+        "_coarse",
+        "_fine",
+        "_indices",
+        "_tolerance",
+        "_tolerances",
+    )
 
     _coarse: Input
     _fine: Input
     _indices: Output
-    _tolerance: float
+    _tolerance: float | None
+    _tolerances: dict[str, float]
 
     def __init__(
         self,
         *args,
         mode: Literal["left", "right"] = "right",
-        tolerance: float = 1.0e-10,
+        tolerances: dict[str, float] = {"f": 1e-4, "d": 1e-10},
         **kwargs,
     ) -> None:
         super().__init__(*args, **kwargs, allowed_kw_inputs=("coarse", "fine"))
@@ -94,7 +103,8 @@ class SegmentIndex(Node):
         self._coarse = self._add_input("coarse")  # 0
         self._fine = self._add_input("fine")  # 1
         self._indices = self._add_output("indices")  # 0
-        self._tolerance = tolerance
+        self._tolerance = None
+        self._tolerances = tolerances
 
     @property
     def mode(self) -> str:
@@ -110,6 +120,10 @@ class SegmentIndex(Node):
         check_number_of_inputs(self, 2)
         copy_from_inputs_to_outputs(self, 1, 0, dtype=False, shape=True, edges=False, meshes=False)
         self._indices.dd.dtype = "i"
+
+        dtype = result_type(*(inp.dd.dtype for inp in self.inputs))
+        assert dtype == "d" or dtype == "f"
+        self._tolerance = self._tolerances[dtype.char]
 
     def _function(self):
         """Uses `numpy.ndarray.searchsorted` and `numpy.ndarray.argsort`"""
