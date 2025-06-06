@@ -4,9 +4,13 @@ from typing import TYPE_CHECKING, Literal
 
 from numba import njit
 
-from ...core.exception import InitializationError, CalculationError
+from ...core.exception import CalculationError, InitializationError
 from ...core.node import Node
-from ...core.type_functions import check_number_of_inputs, copy_from_inputs_to_outputs
+from ...core.type_functions import (
+    check_dimension_of_inputs,
+    check_number_of_inputs,
+    copy_from_inputs_to_outputs,
+)
 
 if TYPE_CHECKING:
     from numpy.typing import NDArray
@@ -29,6 +33,27 @@ def _is_sorted(array: NDArray) -> bool:
     return True
 
 
+@njit(cache=True)
+def _shift_last_edge_inside_right(
+    fine: NDArray, idxs: NDArray, coarse: NDArray, tolerance: float
+) -> None:
+    overflow_idx = coarse.size
+    last_edge = coarse[overflow_idx - 1]
+    for i, idx in enumerate(idxs):
+        if idx == overflow_idx and (fine[i] - tolerance) <= last_edge:
+            idxs[i] = overflow_idx - 1
+
+
+@njit(cache=True)
+def _shift_last_edge_inside_left(
+    fine: NDArray, idxs: NDArray, coarse: NDArray, tolerance: float
+) -> None:
+    first_edge = coarse[0]
+    for i, idx in enumerate(idxs):
+        if idx == 0 and (fine[i] + tolerance) >= first_edge:
+            idxs[i] = 1
+
+
 class SegmentIndex(Node):
     """
     inputs:
@@ -44,21 +69,18 @@ class SegmentIndex(Node):
         `right`: `a[i-1] <= v < a[i]`
     """
 
-    __slots__ = (
-        "_mode",
-        "_coarse",
-        "_fine",
-        "_indices",
-    )
+    __slots__ = ("_mode", "_coarse", "_fine", "_indices", "_tolerance")
 
     _coarse: Input
     _fine: Input
     _indices: Output
+    _tolerance: float
 
     def __init__(
         self,
         *args,
         mode: Literal["left", "right"] = "right",
+        tolerance: float = 1.0e-10,
         **kwargs,
     ) -> None:
         super().__init__(*args, **kwargs, allowed_kw_inputs=("coarse", "fine"))
@@ -72,15 +94,19 @@ class SegmentIndex(Node):
         self._coarse = self._add_input("coarse")  # 0
         self._fine = self._add_input("fine")  # 1
         self._indices = self._add_output("indices")  # 0
+        self._tolerance = tolerance
 
     @property
     def mode(self) -> str:
         return self._mode
 
+    @property
+    def tolerance(self):
+        return self._tolerance
+
     def _type_function(self) -> None:
-        """
-        The function to determine the dtype and shape of the ouput.
-        """
+        """The function to determine the dtype and shape of the ouput."""
+        check_dimension_of_inputs(self, ("coarse",), 1)
         check_number_of_inputs(self, 2)
         copy_from_inputs_to_outputs(self, 1, 0, dtype=False, shape=True, edges=False, meshes=False)
         self._indices.dd.dtype = "i"
@@ -93,3 +119,7 @@ class SegmentIndex(Node):
         if not _is_sorted(coarse):
             raise CalculationError("Coarse array is not sorted", node=self, input=self._coarse)
         out[:] = coarse.searchsorted(fine, side=self.mode)
+        if self.mode == "right":
+            _shift_last_edge_inside_right(fine, out, coarse, self._tolerance)
+        else:
+            _shift_last_edge_inside_left(fine, out, coarse, self._tolerance)
