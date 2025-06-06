@@ -230,7 +230,7 @@ class InterpolatorCore(Node):
         for callback in self._input_nodes_callbacks:
             callback()
 
-        _interpolation(
+        _interpolation_numba(
             self._method,
             self._coarse,
             self._y,
@@ -244,8 +244,7 @@ class InterpolatorCore(Node):
         )
 
 
-@njit(cache=True)
-def _interpolation(
+def _interpolation_python(
     method: Callable[[float, float, float, float, float], float],
     coarse: NDArray[double],
     yc: NDArray[double],
@@ -260,10 +259,7 @@ def _interpolation(
     nseg = coarse.size - 1
     has_last_y_input = coarse.size == yc.size
     for i, j in enumerate(indices):
-        if abs(fine[i] - coarse[j]) < tolerance:
-            # get precise value from coarse
-            result[i] = yc[j]
-        elif j > nseg:  # overflow
+        if j > nseg:  # overflow
             if overflow == ExtrapolationStrategy.constant:  # constant
                 result[i] = fillvalue
             elif overflow == ExtrapolationStrategy.nearestedge:  # nearestedge
@@ -298,10 +294,18 @@ def _interpolation(
                     fine[i],
                 )
         elif has_last_y_input or j < nseg:  # interpolate
-            result[i] = method(coarse[j - 1], coarse[j], yc[j - 1], yc[j], fine[i])
+            if abs(fine[i] - coarse[j]) < tolerance:
+                result[i] = yc[j]
+            else:
+                result[i] = method(coarse[j - 1], coarse[j], yc[j - 1], yc[j], fine[i])
         else:  # interpolate
-            result[i] = method(coarse[j - 1], coarse[j], yc[j - 1], yc[j - 1], fine[i])
+            if abs(fine[i] - coarse[j]) < tolerance:
+                # get precise value from coarse
+                result[i] = yc[j - 1]
+            else:
+                result[i] = method(coarse[j - 1], coarse[j], yc[j - 1], yc[j - 1], fine[i])
 
+_interpolation_numba: Callable = njit(cache=True)(_interpolation_python)
 
 @njit(cache=True, inline="always")
 def _linear_interpolation(
