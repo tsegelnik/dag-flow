@@ -121,6 +121,9 @@ class Node(NodeBase):
     def __str__(self):
         return f"{{{self.name}}} {super().__str__()}"
 
+    def choose_function(self, name: str):
+        self.function = self._functions_dict[name]
+
     @classmethod
     def from_args(
         cls, name, *positional_connectibles, kwargs: Mapping = {}, **key_connectibles
