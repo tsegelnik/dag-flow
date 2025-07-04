@@ -1,4 +1,4 @@
-from numpy import allclose, arange, linspace, sqrt, square, sum
+from numpy import allclose, arange, linspace, sqrt, square, sum, abs, array as np_array
 from pytest import mark
 
 from dagflow.core.graph import Graph
@@ -11,6 +11,7 @@ from dagflow.lib.arithmetic import (
     Sqrt,
     Square,
     Sum,
+    Abs,
 )
 from dagflow.lib.common import Array
 from dagflow.plot.graphviz import savegraph
@@ -203,3 +204,18 @@ def test_Powers_01(testname, debug_graph, function, dtype):
         assert node.tainted == False
 
     savegraph(graph, f"output/{testname}.png", show="full")
+
+@mark.parametrize("dtype", ("d", "f"))
+@mark.parametrize("data", ([1, -1], [1], [-1]))
+def test_Abs(testname, debug_graph, data, dtype):
+    array_data = np_array(data)
+    with Graph(close_on_exit=True, debug=debug_graph) as graph:
+        array = Array(f"arr", array_data, mode="fill")
+        abs_node = Abs("prod")
+        array >> abs_node
+
+    output = abs_node.outputs[0]
+
+    assert abs_node.tainted == True
+    assert (output.data == abs(data)).all()
+    assert abs_node.tainted == False

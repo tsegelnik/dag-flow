@@ -1,4 +1,4 @@
-from numpy import add, copyto, divide, multiply, sqrt, square, subtract
+from numpy import add, abs, copyto, divide, multiply, sqrt, square, subtract
 
 from .abstract import ManyToOneNode, OneToOneNode
 
@@ -176,3 +176,20 @@ class Sqrt(OneToOneNode):
 
         for input_data, output_data in self._input_output_data:
             sqrt(input_data, out=output_data)
+
+
+class Abs(OneToOneNode):
+    """Modulus function."""
+
+    __slots__ = ()
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self._labels.setdefault("mark", "|x|")
+
+    def _function(self):
+        for callback in self._input_nodes_callbacks:
+            callback()
+
+        for input_data, output_data in self._input_output_data:
+            abs(input_data, out=output_data)
