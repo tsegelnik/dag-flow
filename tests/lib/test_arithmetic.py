@@ -1,8 +1,11 @@
-from numpy import allclose, arange, linspace, sqrt, square, sum, abs, array as np_array
+from numpy import abs, allclose, arange
+from numpy import array as np_array
+from numpy import linspace, sqrt, square, sum
 from pytest import mark
 
 from dagflow.core.graph import Graph
 from dagflow.lib.arithmetic import (
+    Abs,
     Difference,
     Division,
     Product,
@@ -11,7 +14,6 @@ from dagflow.lib.arithmetic import (
     Sqrt,
     Square,
     Sum,
-    Abs,
 )
 from dagflow.lib.common import Array
 from dagflow.plot.graphviz import savegraph
@@ -22,7 +24,9 @@ def test_Sum_01(testname, debug_graph, dtype):
     arrays_in = tuple(arange(12, dtype=dtype) * i for i in (1, 2, 3))
 
     with Graph(close_on_exit=True, debug=debug_graph) as graph:
-        arrays = tuple(Array(f"arr_{i}", array_in, mode="fill") for i, array_in in enumerate(arrays_in))
+        arrays = tuple(
+            Array(f"arr_{i}", array_in, mode="fill") for i, array_in in enumerate(arrays_in)
+        )
         sm = Sum("sum")
         arrays >> sm
 
@@ -50,7 +54,9 @@ def test_Difference_01(testname, debug_graph, dtype):
     arrays_in = tuple(arange(12, dtype=dtype) * i for i in (1, 2, 3))
 
     with Graph(close_on_exit=True, debug=debug_graph) as graph:
-        arrays = tuple(Array(f"arr_{i}", array_in, mode="fill") for i, array_in in enumerate(arrays_in))
+        arrays = tuple(
+            Array(f"arr_{i}", array_in, mode="fill") for i, array_in in enumerate(arrays_in)
+        )
         sm = Difference("sum")
         arrays >> sm
 
@@ -78,7 +84,9 @@ def test_Product_01(testname, debug_graph, dtype):
     arrays_in = tuple(arange(12, dtype=dtype) * i for i in (1, 2, 3))
 
     with Graph(close_on_exit=True, debug=debug_graph) as graph:
-        arrays = tuple(Array(f"arr_{i}", array_in, mode="fill") for i, array_in in enumerate(arrays_in))
+        arrays = tuple(
+            Array(f"arr_{i}", array_in, mode="fill") for i, array_in in enumerate(arrays_in)
+        )
         prod = Product("prod")
         arrays >> prod
 
@@ -107,7 +115,9 @@ def test_ProductShifted_01(testname, debug_graph, dtype: str, scaled: bool):
     shift = 1.23245
 
     with Graph(close_on_exit=True, debug=debug_graph) as graph:
-        arrays = tuple(Array(f"arr_{i}", array_in, mode="fill") for i, array_in in enumerate(arrays_in))
+        arrays = tuple(
+            Array(f"arr_{i}", array_in, mode="fill") for i, array_in in enumerate(arrays_in)
+        )
         if scaled:
             prod = ProductShiftedScaled("prod", shift=shift)
         else:
@@ -144,7 +154,9 @@ def test_Division_01(testname, debug_graph, dtype):
     arrays_in = tuple(arange(12, dtype=dtype) * i + 1 for i in (1, 2, 3))
 
     with Graph(close_on_exit=True, debug=debug_graph) as graph:
-        arrays = tuple(Array(f"arr_{i}", array_in, mode="fill") for i, array_in in enumerate(arrays_in))
+        arrays = tuple(
+            Array(f"arr_{i}", array_in, mode="fill") for i, array_in in enumerate(arrays_in)
+        )
         div = Division("division")
         arrays >> div
 
@@ -205,6 +217,7 @@ def test_Powers_01(testname, debug_graph, function, dtype):
 
     savegraph(graph, f"output/{testname}.png", show="full")
 
+
 @mark.parametrize("dtype", ("d", "f"))
 @mark.parametrize("data", ([1, -1], [1], [-1]))
 def test_Abs(testname, debug_graph, data, dtype):
@@ -217,5 +230,5 @@ def test_Abs(testname, debug_graph, data, dtype):
     output = abs_node.outputs[0]
 
     assert abs_node.tainted == True
-    assert (output.data == abs(data)).all()
+    assert (output.data == [x if x > 0 else -x for x in data]).all()
     assert abs_node.tainted == False
